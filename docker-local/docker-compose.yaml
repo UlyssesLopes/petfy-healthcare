@@ -6,9 +6,9 @@ services:
     container_name: petfy-postgres
     restart: always
     environment:
-      POSTGRES_DB: petfy_db
-      POSTGRES_USER: petfy_user
-      POSTGRES_PASSWORD: petfy_pass
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
     ports:
       - "5432:5432"
     volumes:
