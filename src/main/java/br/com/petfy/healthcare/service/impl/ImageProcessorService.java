@@ -20,17 +20,17 @@ public class ImageProcessorService {
         graphics.drawImage(originalImage, 0, 0, null);
         graphics.dispose();
 
-        BufferedImage bynariImage = new BufferedImage(
+        BufferedImage binaryImage = new BufferedImage(
           grayImage.getWidth(),
           grayImage.getHeight(),
           BufferedImage.TYPE_BYTE_BINARY
         );
 
-        Graphics2D graphics2D = bynariImage.createGraphics();
+        Graphics2D graphics2D = binaryImage.createGraphics();
         graphics2D.drawImage(grayImage, 0, 0, null);
         graphics.dispose();
 
-        return bynariImage;
+        return binaryImage;
     }
 
 
