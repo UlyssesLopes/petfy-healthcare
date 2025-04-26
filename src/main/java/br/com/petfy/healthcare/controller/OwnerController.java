@@ -19,20 +19,29 @@ public class OwnerController {
 
     @PostMapping("/include")
     public ResponseEntity<OwnerResponseDTO> createOwner(@RequestBody OwnerRequestDTO request) {
-        OwnerResponseDTO createdOwner = ownerService.createOwner(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdOwner);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ownerService.createOwner(request));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{ownerId}")
     public ResponseEntity<OwnerResponseDTO> getOwnerById(@PathVariable("id") UUID ownerId) {
-        OwnerResponseDTO ownerById = ownerService.getOwnerById(ownerId);
-        return ResponseEntity.ok(ownerById);
+        return ResponseEntity.ok(ownerService.getOwnerById(ownerId));
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<OwnerResponseDTO>> getAllOwners() {
-        List<OwnerResponseDTO> owners = ownerService.listAllOwners();
-        return ResponseEntity.ok(owners);
+        return ResponseEntity.ok(ownerService.listAllOwners());
     }
+
+    @PutMapping("/{ownerId}")
+    public ResponseEntity<OwnerResponseDTO> updateOwner(@PathVariable UUID id, @RequestBody OwnerRequestDTO request) {
+        return ResponseEntity.ok(ownerService.updateOwner(id, request));
+    }
+
+    @DeleteMapping("/{ownerId}")
+    public ResponseEntity<Void> deleteOwner(@PathVariable UUID id) {
+        ownerService.deleteOwner(id);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }

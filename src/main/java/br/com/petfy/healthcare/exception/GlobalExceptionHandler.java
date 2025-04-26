@@ -14,14 +14,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PetfyHealthcareException.class)
     public ResponseEntity<ErrorResponse> handlePetfyHealthCareException(PetfyHealthcareException ex) {
         log.error("Handled business exception: {}", ex.getMessage(), ex);
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), ex.getHttpStatus().value(), LocalDateTime.now());
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage(), ex.getCode(), ex.getHttpStatus().value(), LocalDateTime.now());
         return ResponseEntity.status(ex.getHttpStatus()).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         log.error("Unhandled exception: {}", ex.getMessage(), ex);
-        ErrorResponse error = new ErrorResponse("Internal server error", 500, LocalDateTime.now());
+        ErrorResponse error = new ErrorResponse("Internal server error",500, 500, LocalDateTime.now());
         return ResponseEntity.status(500).body(error);
     }
 

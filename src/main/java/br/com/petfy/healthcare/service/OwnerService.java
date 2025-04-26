@@ -14,4 +14,8 @@ public interface OwnerService {
 
     OwnerResponseDTO getOwnerById(UUID ownerId);
 
+    OwnerResponseDTO updateOwner(UUID id, OwnerRequestDTO request);
+
+    void deleteOwner(UUID id);
+
 }

@@ -6,6 +6,7 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -50,8 +51,43 @@ public class OwnerServiceImpl implements OwnerService {
     @Override
     public OwnerResponseDTO getOwnerById(UUID ownerId) {
         Owner owner = ownerRepository.findById(ownerId)
-                .orElseThrow(() -> new PetfyHealthcareException("Owner not found with id: " + ownerId, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.OWNER_NOT_FOUND.getMessage(), ErrorMessageEnum.OWNER_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
         return toResponseDTO(owner);
+    }
+
+    @Override
+    public OwnerResponseDTO updateOwner(UUID ownerId, OwnerRequestDTO request) {
+        Owner existingOwner = ownerRepository.findById(ownerId)
+                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.OWNER_NOT_FOUND.getMessage(), ErrorMessageEnum.OWNER_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
+
+        if (request.getName() != null) {
+            existingOwner.setName(request.getName());
+        }
+
+        if (request.getEmail() != null) {
+            existingOwner.setEmail(request.getEmail());
+        }
+
+        if (request.getPhone() != null) {
+            existingOwner.setPhone(request.getPhone());
+        }
+
+        if (request.getAddress() != null) {
+            existingOwner.setAddress(request.getAddress());
+        }
+
+        existingOwner.setUpdateDate(LocalDateTime.now());
+
+        Owner updatedOwner = ownerRepository.save(existingOwner);
+        return toResponseDTO(updatedOwner);
+    }
+
+    @Override
+    public void deleteOwner(UUID ownerId) {
+        if (!ownerRepository.existsById(ownerId)) {
+            throw new PetfyHealthcareException(ErrorMessageEnum.OWNER_NOT_FOUND.getMessage(), ErrorMessageEnum.OWNER_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
+        }
+        ownerRepository.deleteById(ownerId);
     }
 
     private OwnerResponseDTO toResponseDTO(Owner owner) {
