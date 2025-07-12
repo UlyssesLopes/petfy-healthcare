@@ -1,0 +1,67 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven
+
+      - name: Compile and run tests
+        run: mvn clean verify
+
+      - name: Run code coverage (JaCoCo)
+        run: mvn jacoco:report
+
+      - name: Analyze with SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn sonar:sonar -Dsonar.projectKey=petfy-healthcare \
+          -Dsonar.host.url=http://sonarqube.local \
+          -Dsonar.login=$SONAR_TOKEN
+
+  docker-and-deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t myregistry.io/petfy-healthcare:${{ github.sha }} .
+          docker push myregistry.io/petfy-healthcare:${{ github.sha }}
+
+      - name: Update Kubernetes manifest
+        run: |
+          sed -i "s|image: .*|image: myregistry.io/petfy-healthcare:${{ github.sha }}|" k8s/deployment.yaml
+          git config --global user.email "ulysses.rlopes@gmail.com"
+          git config --global user.name "Ulysses Lopes"
+          git add k8s/deployment.yaml
+          git commit -m "Update image to ${{ github.sha }}"
+          git push

@@ -15,13 +15,21 @@ public class PetResponseDTO {
 
     private UUID petId;
 
+    private String generalRegistry;
+
     private String name;
 
     private String type;
 
     private String breed;
 
+    private String color;
+
+    private Boolean microchip;
+
     private LocalDate bornDate;
+
+    private String bornLocal;
 
     private Double weight;
 
