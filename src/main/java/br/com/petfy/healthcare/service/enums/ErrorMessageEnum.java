@@ -10,7 +10,8 @@ public enum ErrorMessageEnum {
     CLINIC_NOT_FOUND(103, "Clinic not found"),
     VACCINE_NOT_FOUND(104, "Vaccine not found"),
     HEALTH_RECORD_NOT_FOUND(105, "Health record not found"),
-    INVALID_REQUEST(400, "Invalid request");
+    INVALID_REQUEST(400, "Invalid request"),
+    INVALID_CREDENTIALS(401, "Invalid email or password");
 
     private final int code;
     private final String message;

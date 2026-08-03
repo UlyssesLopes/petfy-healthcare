@@ -48,12 +48,35 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
 
-        <!-- so o modulo de criptografia, sem o starter completo: da o BCrypt
-             sem ligar a auto-configuracao de seguranca web, que bloquearia
-             todos os endpoints antes de existir um fluxo de autenticacao -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- o jjwt divide api e implementacao de proposito: so a api aparece
+             em tempo de compilacao, o resto entra apenas em runtime -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.11.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.11.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.11.5</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
