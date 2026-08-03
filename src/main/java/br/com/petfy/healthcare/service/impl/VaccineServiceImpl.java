@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.VaccineService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +31,11 @@ public class VaccineServiceImpl implements VaccineService {
 
     private final ClinicRepository clinicRepository;
 
+    private final CurrentOwnerProvider currentOwnerProvider;
+
     @Override
     public VaccineResponseDTO createVaccine(VaccineRequestDTO request) {
-        Pet pet = petRepository.findById(request.getPetId())
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.PET_NOT_FOUND.getMessage(), ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
+        Pet pet = buscarPetDoOwnerAutenticado(request.getPetId());
 
         Clinic clinic = request.getClinicId() != null
                 ? clinicRepository.findById(request.getClinicId())
@@ -56,8 +58,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public VaccineResponseDTO updateVaccine(UUID id, VaccineRequestDTO request) {
-        Vaccine existing = vaccineRepository.findById(id)
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(), ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
+        Vaccine existing = buscarDoOwnerAutenticado(id);
 
         if (request.getVaccineName() != null) existing.setVaccineName(request.getVaccineName());
         if (request.getApplicationDate() != null) existing.setApplicationDate(request.getApplicationDate());
@@ -65,9 +66,7 @@ public class VaccineServiceImpl implements VaccineService {
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
         if (request.getPetId() != null) {
-            Pet pet = petRepository.findById(request.getPetId())
-                    .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.PET_NOT_FOUND.getMessage(), ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
-            existing.setPet(pet);
+            existing.setPet(buscarPetDoOwnerAutenticado(request.getPetId()));
         }
 
         if (request.getClinicId() != null) {
@@ -83,24 +82,46 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public void deleteVaccine(UUID id) {
-        Vaccine existing = vaccineRepository.findById(id)
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(), ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
-        vaccineRepository.delete(existing);
+        vaccineRepository.delete(buscarDoOwnerAutenticado(id));
     }
 
     @Override
     public VaccineResponseDTO getVaccineById(UUID id) {
-        return vaccineRepository.findById(id)
-                .map(this::toResponse)
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(), ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
+        return toResponse(buscarDoOwnerAutenticado(id));
     }
 
     @Override
     public List<VaccineResponseDTO> listAllVaccines() {
-        return vaccineRepository.findAll()
+        return vaccineRepository.findByPetOwnerOwnerId(currentOwnerProvider.require().getOwnerId())
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Vacina de pet de outro dono responde VACCINE_NOT_FOUND, e nao 403: um 403
+     * confirmaria que aquele id existe.
+     */
+    private Vaccine buscarDoOwnerAutenticado(UUID vaccineId) {
+        UUID ownerId = currentOwnerProvider.require().getOwnerId();
+
+        return vaccineRepository.findById(vaccineId)
+                .filter(vaccine -> vaccine.getPet().getOwner().getOwnerId().equals(ownerId))
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
+                        ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(),
+                        HttpStatus.NOT_FOUND));
+    }
+
+    private Pet buscarPetDoOwnerAutenticado(UUID petId) {
+        UUID ownerId = currentOwnerProvider.require().getOwnerId();
+
+        return petRepository.findById(petId)
+                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
+                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
+                        HttpStatus.NOT_FOUND));
     }
 
     private VaccineResponseDTO toResponse(Vaccine vaccine) {

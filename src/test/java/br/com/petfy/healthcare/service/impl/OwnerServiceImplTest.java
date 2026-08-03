@@ -4,28 +4,23 @@ import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
-import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.mockito.InjectMocks;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,12 +33,14 @@ class OwnerServiceImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private CurrentOwnerProvider currentOwnerProvider;
+
     @InjectMocks
     private OwnerServiceImpl ownerService;
 
-    private static final String HASH = "$2a$10$hashDeMentiraParaOTeste";
-
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final String HASH = "$2a$10$hashDeMentiraParaOTeste";
 
     private Owner existingOwner() {
         return Owner.builder()
@@ -106,70 +103,33 @@ class OwnerServiceImplTest {
     }
 
     @Nested
-    @DisplayName("getOwnerById")
-    class GetOwnerById {
+    @DisplayName("getCurrentOwner")
+    class GetCurrentOwner {
 
         @Test
-        @DisplayName("deve retornar o owner quando existe")
-        void deveRetornarOwnerQuandoExiste() {
-            when(ownerRepository.findById(OWNER_ID)).thenReturn(Optional.of(existingOwner()));
+        @DisplayName("deve devolver o owner autenticado, sem receber id de fora")
+        void deveDevolverOwnerAutenticado() {
+            when(currentOwnerProvider.require()).thenReturn(existingOwner());
 
-            var result = ownerService.getOwnerById(OWNER_ID);
+            var result = ownerService.getCurrentOwner();
 
             assertThat(result.getOwnerId()).isEqualTo(OWNER_ID);
             assertThat(result.getName()).isEqualTo("Ulysses");
         }
-
-        @Test
-        @DisplayName("deve lancar OWNER_NOT_FOUND com 404 quando nao existe")
-        void deveLancarQuandoNaoExiste() {
-            when(ownerRepository.findById(OWNER_ID)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> ownerService.getOwnerById(OWNER_ID))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Owner not found")
-                    .extracting("code", "httpStatus")
-                    .containsExactly(101, HttpStatus.NOT_FOUND);
-        }
     }
 
     @Nested
-    @DisplayName("listAllOwners")
-    class ListAllOwners {
-
-        @Test
-        @DisplayName("deve mapear todos os owners retornados pelo repositorio")
-        void deveMapearTodosOsOwners() {
-            when(ownerRepository.findAll()).thenReturn(List.of(existingOwner()));
-
-            var result = ownerService.listAllOwners();
-
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).getOwnerId()).isEqualTo(OWNER_ID);
-        }
-
-        @Test
-        @DisplayName("deve retornar lista vazia quando nao ha owners")
-        void deveRetornarListaVaziaQuandoNaoHaOwners() {
-            when(ownerRepository.findAll()).thenReturn(List.of());
-
-            assertThat(ownerService.listAllOwners()).isEmpty();
-        }
-    }
-
-    @Nested
-    @DisplayName("updateOwner")
-    class UpdateOwner {
+    @DisplayName("updateCurrentOwner")
+    class UpdateCurrentOwner {
 
         @Test
         @DisplayName("deve preservar os campos nao enviados no request")
         void devePreservarCamposNaoEnviados() {
-            var owner = existingOwner();
-            when(ownerRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+            when(currentOwnerProvider.require()).thenReturn(existingOwner());
             when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
             var request = new OwnerRequestDTO(null, null, null, "11888888888", null);
-            var result = ownerService.updateOwner(OWNER_ID, request);
+            var result = ownerService.updateCurrentOwner(request);
 
             assertThat(result.getPhone()).isEqualTo("11888888888");
             assertThat(result.getName()).isEqualTo("Ulysses");
@@ -179,56 +139,47 @@ class OwnerServiceImplTest {
         }
 
         @Test
-        @DisplayName("nao deve alterar a senha - updateOwner ignora o campo password")
+        @DisplayName("nao deve alterar a senha - troca de senha pede endpoint proprio")
         void naoDeveAlterarSenha() {
-            var owner = existingOwner();
-            when(ownerRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+            when(currentOwnerProvider.require()).thenReturn(existingOwner());
             when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
-            ownerService.updateOwner(OWNER_ID, new OwnerRequestDTO(null, null, "nova-senha", null, null));
+            ownerService.updateCurrentOwner(new OwnerRequestDTO(null, null, "nova-senha", null, null));
 
             var captor = ArgumentCaptor.forClass(Owner.class);
             verify(ownerRepository).save(captor.capture());
             assertThat(captor.getValue().getPassword()).isEqualTo("senha-atual");
+            verify(passwordEncoder, org.mockito.Mockito.never()).encode(any());
         }
 
         @Test
-        @DisplayName("deve lancar OWNER_NOT_FOUND sem tentar salvar quando nao existe")
-        void deveLancarSemSalvarQuandoNaoExiste() {
-            when(ownerRepository.findById(OWNER_ID)).thenReturn(Optional.empty());
+        @DisplayName("deve atualizar sempre o owner do token, nunca um id vindo do payload")
+        void deveAtualizarSempreOOwnerDoToken() {
+            var autenticado = existingOwner();
+            when(currentOwnerProvider.require()).thenReturn(autenticado);
+            when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
-            assertThatThrownBy(() -> ownerService.updateOwner(OWNER_ID, new OwnerRequestDTO()))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Owner not found");
+            ownerService.updateCurrentOwner(new OwnerRequestDTO("Outro Nome", null, null, null, null));
 
-            verify(ownerRepository, never()).save(any());
+            var captor = ArgumentCaptor.forClass(Owner.class);
+            verify(ownerRepository).save(captor.capture());
+            assertThat(captor.getValue().getOwnerId()).isEqualTo(OWNER_ID);
         }
     }
 
     @Nested
-    @DisplayName("deleteOwner")
-    class DeleteOwner {
+    @DisplayName("deleteCurrentOwner")
+    class DeleteCurrentOwner {
 
         @Test
-        @DisplayName("deve remover o owner quando existe")
-        void deveRemoverQuandoExiste() {
-            when(ownerRepository.existsById(OWNER_ID)).thenReturn(true);
+        @DisplayName("deve remover o owner autenticado")
+        void deveRemoverOwnerAutenticado() {
+            var autenticado = existingOwner();
+            when(currentOwnerProvider.require()).thenReturn(autenticado);
 
-            ownerService.deleteOwner(OWNER_ID);
+            ownerService.deleteCurrentOwner();
 
-            verify(ownerRepository).deleteById(OWNER_ID);
-        }
-
-        @Test
-        @DisplayName("deve lancar OWNER_NOT_FOUND sem remover quando nao existe")
-        void deveLancarSemRemoverQuandoNaoExiste() {
-            when(ownerRepository.existsById(OWNER_ID)).thenReturn(false);
-
-            assertThatThrownBy(() -> ownerService.deleteOwner(OWNER_ID))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Owner not found");
-
-            verify(ownerRepository, never()).deleteById(any());
+            verify(ownerRepository).delete(autenticado);
         }
     }
 }

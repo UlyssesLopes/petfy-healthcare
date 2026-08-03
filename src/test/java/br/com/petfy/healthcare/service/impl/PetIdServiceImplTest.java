@@ -1,8 +1,8 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,28 +38,26 @@ class PetIdServiceImplTest {
     private PetRepository petRepository;
 
     @Mock
-    private OwnerRepository ownerRepository;
+    private CurrentOwnerProvider currentOwnerProvider;
 
     @InjectMocks
     private PetIdServiceImpl petIdService;
-
-    private static final UUID OWNER_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Nested
     @DisplayName("importPetFromIdCard")
     class ImportPetFromIdCard {
 
         @Test
-        @DisplayName("deve lancar OWNER_NOT_FOUND antes de processar a imagem quando o owner nao existe")
-        void deveLancarAntesDeProcessarImagem() {
-            when(ownerRepository.findById(OWNER_ID)).thenReturn(Optional.empty());
+        @DisplayName("deve resolver o owner antes de processar a imagem, e nao aceitar id do cliente")
+        void deveResolverOwnerAntesDeProcessarImagem() {
+            when(currentOwnerProvider.require()).thenThrow(new PetfyHealthcareException(
+                    "Invalid email or password", 401, HttpStatus.UNAUTHORIZED));
             var file = new MockMultipartFile("file", "carteirinha.png", "image/png", new byte[]{1, 2, 3});
 
-            assertThatThrownBy(() -> petIdService.importPetFromIdCard(OWNER_ID, file))
+            assertThatThrownBy(() -> petIdService.importPetFromIdCard(file))
                     .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Owner not found")
-                    .extracting("code", "httpStatus")
-                    .containsExactly(101, HttpStatus.NOT_FOUND);
+                    .extracting("httpStatus")
+                    .isEqualTo(HttpStatus.UNAUTHORIZED);
 
             verifyNoInteractions(imageProcessorService, tesseractOcrService, petRepository);
         }

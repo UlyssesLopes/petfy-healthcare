@@ -5,7 +5,7 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
-import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.PetIdService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class PetIdServiceImpl implements PetIdService {
     private final TesseractOcrServiceImpl tesseractOcrService;
     private final ImageProcessorService imageProcessorService;
     private final PetRepository petRepository;
-    private final OwnerRepository ownerRepository;
+    private final CurrentOwnerProvider currentOwnerProvider;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -44,10 +44,9 @@ public class PetIdServiceImpl implements PetIdService {
     );
 
     @Override
-    public PetResponseDTO importPetFromIdCard(UUID ownerId, MultipartFile file) throws IOException, TesseractException {
+    public PetResponseDTO importPetFromIdCard(MultipartFile file) throws IOException, TesseractException {
 
-        Owner ownerById = ownerRepository.findById(ownerId)
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.OWNER_NOT_FOUND.getMessage(), ErrorMessageEnum.OWNER_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
+        Owner ownerById = currentOwnerProvider.require();
 
         BufferedImage imageFile = ImageIO.read(file.getInputStream());
         BufferedImage bufferedImage = imageProcessorService.preProcess(imageFile);

@@ -93,36 +93,35 @@ class ControllerPathVariableTest {
             return mockMvc;
         }
 
-        @Test
-        @DisplayName("GET /owners/{ownerId} deve repassar o id da rota para o service")
-        void getDeveRepassarIdDaRota() throws Exception {
-            when(ownerService.getOwnerById(ID)).thenReturn(OwnerResponseDTO.builder().ownerId(ID).name("Ulysses").build());
+        // owner nao tem rota por id: um usuario so acessa a si mesmo, entao o id
+        // vem do token. Sobra o /me, que nao tem path variable para errar.
 
-            mockMvc().perform(get("/owners/{ownerId}", ID))
+        @Test
+        @DisplayName("GET /owners/me deve resolver o owner pelo token, sem id na rota")
+        void getMeDeveResolverPeloToken() throws Exception {
+            when(ownerService.getCurrentOwner()).thenReturn(OwnerResponseDTO.builder().ownerId(ID).name("Ulysses").build());
+
+            mockMvc().perform(get("/owners/me"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.ownerId").value(ID.toString()));
 
-            verify(ownerService).getOwnerById(ID);
+            verify(ownerService).getCurrentOwner();
         }
 
         @Test
-        @DisplayName("DELETE /owners/{ownerId} deve repassar o id da rota e responder 204")
-        void deleteDeveRepassarIdDaRota() throws Exception {
-            mockMvc().perform(delete("/owners/{ownerId}", ID))
+        @DisplayName("DELETE /owners/me deve responder 204")
+        void deleteMeDeveResponder204() throws Exception {
+            mockMvc().perform(delete("/owners/me"))
                     .andExpect(status().isNoContent());
 
-            verify(ownerService).deleteOwner(ID);
+            verify(ownerService).deleteCurrentOwner();
         }
 
         @Test
-        @DisplayName("GET /owners/all nao deve colidir com a rota de busca por id")
-        void listagemNaoDeveColidirComBuscaPorId() throws Exception {
-            when(ownerService.listAllOwners()).thenReturn(java.util.List.of());
-
+        @DisplayName("nao deve existir rota de listagem de todos os owners")
+        void naoDeveExistirListagemDeOwners() throws Exception {
             mockMvc().perform(get("/owners/all"))
-                    .andExpect(status().isOk());
-
-            verify(ownerService).listAllOwners();
+                    .andExpect(status().isNotFound());
         }
     }
 

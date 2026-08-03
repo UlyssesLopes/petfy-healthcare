@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.HealthRecordService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,8 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
     private final ClinicRepository clinicRepository;
 
+    private final CurrentOwnerProvider currentOwnerProvider;
+
     @Override
     public HealthRecordResponseDTO createHealthRecord(HealthRecordRequestDTO request) {
         Pet pet = findPet(request.getPetId());
@@ -50,14 +53,13 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
     @Override
     public HealthRecordResponseDTO getHealthRecordById(UUID healthRecordId) {
-        return healthRecordRepository.findById(healthRecordId)
-                .map(this::toResponse)
-                .orElseThrow(this::notFound);
+        return toResponse(buscarDoOwnerAutenticado(healthRecordId));
     }
 
     @Override
     public List<HealthRecordResponseDTO> listAllHealthRecords() {
-        return healthRecordRepository.findAll()
+        return healthRecordRepository
+                .findByPetOwnerOwnerIdOrderByEventDateDesc(currentOwnerProvider.require().getOwnerId())
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -77,8 +79,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
     @Override
     public HealthRecordResponseDTO updateHealthRecord(UUID healthRecordId, HealthRecordRequestDTO request) {
-        HealthRecord existing = healthRecordRepository.findById(healthRecordId)
-                .orElseThrow(this::notFound);
+        HealthRecord existing = buscarDoOwnerAutenticado(healthRecordId);
 
         if (request.getEventType() != null) existing.setEventType(request.getEventType());
         if (request.getEventDate() != null) existing.setEventDate(request.getEventDate());
@@ -99,13 +100,27 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
     @Override
     public void deleteHealthRecord(UUID healthRecordId) {
-        HealthRecord existing = healthRecordRepository.findById(healthRecordId)
-                .orElseThrow(this::notFound);
-        healthRecordRepository.delete(existing);
+        healthRecordRepository.delete(buscarDoOwnerAutenticado(healthRecordId));
     }
 
+    /**
+     * Registro de pet de outro dono responde HEALTH_RECORD_NOT_FOUND, e nao 403:
+     * um 403 confirmaria que aquele id existe.
+     */
+    private HealthRecord buscarDoOwnerAutenticado(UUID healthRecordId) {
+        UUID ownerId = currentOwnerProvider.require().getOwnerId();
+
+        return healthRecordRepository.findById(healthRecordId)
+                .filter(registro -> registro.getPet().getOwner().getOwnerId().equals(ownerId))
+                .orElseThrow(this::notFound);
+    }
+
+    /** Pet de outro dono e indistinguivel de pet inexistente, pelo mesmo motivo. */
     private Pet findPet(UUID petId) {
+        UUID ownerId = currentOwnerProvider.require().getOwnerId();
+
         return petRepository.findById(petId)
+                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
                 .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.PET_NOT_FOUND.getMessage(), ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
     }
 

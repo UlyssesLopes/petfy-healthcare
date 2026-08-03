@@ -3,19 +3,18 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 
-import java.util.List;
-import java.util.UUID;
-
+/**
+ * Nao ha busca por id nem listagem: um owner so enxerga a si mesmo, entao o id
+ * viria sempre do token e nunca da URL.
+ */
 public interface OwnerService {
 
     OwnerResponseDTO createOwner(OwnerRequestDTO request);
 
-    List<OwnerResponseDTO> listAllOwners();
+    OwnerResponseDTO getCurrentOwner();
 
-    OwnerResponseDTO getOwnerById(UUID ownerId);
+    OwnerResponseDTO updateCurrentOwner(OwnerRequestDTO request);
 
-    OwnerResponseDTO updateOwner(UUID id, OwnerRequestDTO request);
-
-    void deleteOwner(UUID id);
+    void deleteCurrentOwner();
 
 }

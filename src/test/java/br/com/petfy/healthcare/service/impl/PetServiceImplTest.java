@@ -3,9 +3,9 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.PetRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ class PetServiceImplTest {
     private PetRepository petRepository;
 
     @Mock
-    private OwnerRepository ownerRepository;
+    private CurrentOwnerProvider currentOwnerProvider;
 
     @InjectMocks
     private PetServiceImpl petService;
@@ -49,7 +49,7 @@ class PetServiceImplTest {
         return Owner.builder().ownerId(id).name("Ulysses").email("ulysses@petfy.com.br").build();
     }
 
-    private Pet existingPet() {
+    private Pet petDe(UUID ownerId) {
         return Pet.builder()
                 .petId(PET_ID)
                 .name("Rex")
@@ -58,7 +58,7 @@ class PetServiceImplTest {
                 .bornDate(LocalDate.of(2021, 3, 15))
                 .weight(12.5)
                 .gender("Macho")
-                .owner(owner(OWNER_ID))
+                .owner(owner(ownerId))
                 .creationDate(LocalDateTime.of(2025, 1, 1, 10, 0))
                 .build();
     }
@@ -71,8 +71,11 @@ class PetServiceImplTest {
                 .bornDate(LocalDate.of(2021, 3, 15))
                 .weight(12.5)
                 .gender("Macho")
-                .ownerId(OWNER_ID)
                 .build();
+    }
+
+    private void autenticadoComo(UUID ownerId) {
+        when(currentOwnerProvider.require()).thenReturn(owner(ownerId));
     }
 
     @Nested
@@ -80,14 +83,13 @@ class PetServiceImplTest {
     class CreatePet {
 
         @Test
-        @DisplayName("deve vincular o pet ao owner informado")
-        void deveVincularPetAoOwner() {
-            when(ownerRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner(OWNER_ID)));
-            when(petRepository.save(any(Pet.class))).thenReturn(existingPet());
+        @DisplayName("deve vincular o pet ao owner autenticado")
+        void deveVincularPetAoOwnerAutenticado() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.save(any(Pet.class))).thenReturn(petDe(OWNER_ID));
 
             var result = petService.createPet(request());
 
-            assertThat(result.getPetId()).isEqualTo(PET_ID);
             assertThat(result.getOwnerId()).isEqualTo(OWNER_ID);
 
             var captor = ArgumentCaptor.forClass(Pet.class);
@@ -97,17 +99,11 @@ class PetServiceImplTest {
         }
 
         @Test
-        @DisplayName("deve lancar OWNER_NOT_FOUND sem salvar quando o owner nao existe")
-        void deveLancarQuandoOwnerNaoExiste() {
-            when(ownerRepository.findById(OWNER_ID)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> petService.createPet(request()))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Owner not found")
-                    .extracting("code", "httpStatus")
-                    .containsExactly(101, HttpStatus.NOT_FOUND);
-
-            verify(petRepository, never()).save(any());
+        @DisplayName("o request nao deve conseguir escolher o dono do pet")
+        void requestNaoDeveEscolherODono() {
+            assertThat(PetRequestDTO.class.getDeclaredFields())
+                    .extracting(java.lang.reflect.Field::getName)
+                    .doesNotContain("ownerId");
         }
     }
 
@@ -116,27 +112,39 @@ class PetServiceImplTest {
     class GetPetById {
 
         @Test
-        @DisplayName("deve retornar o pet quando existe")
-        void deveRetornarPetQuandoExiste() {
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(existingPet()));
+        @DisplayName("deve retornar o pet quando pertence ao owner autenticado")
+        void deveRetornarPetDoProprioOwner() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
 
             var result = petService.getPetById(PET_ID);
 
             assertThat(result.getPetId()).isEqualTo(PET_ID);
             assertThat(result.getName()).isEqualTo("Rex");
-            assertThat(result.getOwnerId()).isEqualTo(OWNER_ID);
         }
 
         @Test
-        @DisplayName("deve lancar PET_NOT_FOUND com 404 quando nao existe")
-        void deveLancarQuandoNaoExiste() {
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.empty());
+        @DisplayName("deve responder PET_NOT_FOUND para pet de outro dono, sem revelar que existe")
+        void deveResponderNotFoundParaPetDeOutroDono() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
 
             assertThatThrownBy(() -> petService.getPetById(PET_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage("Pet not found")
                     .extracting("code", "httpStatus")
                     .containsExactly(102, HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("deve lancar PET_NOT_FOUND quando o pet nao existe")
+        void deveLancarQuandoNaoExiste() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> petService.getPetById(PET_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Pet not found");
         }
     }
 
@@ -145,14 +153,16 @@ class PetServiceImplTest {
     class ListAllPets {
 
         @Test
-        @DisplayName("deve mapear todos os pets retornados pelo repositorio")
-        void deveMapearTodosOsPets() {
-            when(petRepository.findAll()).thenReturn(List.of(existingPet()));
+        @DisplayName("deve listar apenas os pets do owner autenticado")
+        void deveListarApenasPetsDoOwnerAutenticado() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(petDe(OWNER_ID)));
 
             var result = petService.listAllPets();
 
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getName()).isEqualTo("Rex");
+            assertThat(result.get(0).getOwnerId()).isEqualTo(OWNER_ID);
+            verify(petRepository, never()).findAll();
         }
     }
 
@@ -163,50 +173,25 @@ class PetServiceImplTest {
         @Test
         @DisplayName("deve preservar os campos nao enviados no request")
         void devePreservarCamposNaoEnviados() {
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(existingPet()));
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
             when(petRepository.save(any(Pet.class))).thenAnswer(i -> i.getArgument(0));
 
-            var request = PetRequestDTO.builder().weight(14.0).build();
-            var result = petService.updatePet(PET_ID, request);
+            var result = petService.updatePet(PET_ID, PetRequestDTO.builder().weight(14.0).build());
 
             assertThat(result.getWeight()).isEqualTo(14.0);
             assertThat(result.getName()).isEqualTo("Rex");
             assertThat(result.getBreed()).isEqualTo("Vira-lata");
-            assertThat(result.getBornDate()).isEqualTo(LocalDate.of(2021, 3, 15));
             assertThat(result.getUpdateDate()).isNotNull();
         }
 
         @Test
-        @DisplayName("deve transferir o pet quando um novo owner e informado")
-        void deveTransferirPetParaNovoOwner() {
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(existingPet()));
-            when(ownerRepository.findById(OUTRO_OWNER_ID)).thenReturn(Optional.of(owner(OUTRO_OWNER_ID)));
-            when(petRepository.save(any(Pet.class))).thenAnswer(i -> i.getArgument(0));
+        @DisplayName("nao deve permitir alterar pet de outro dono")
+        void naoDevePermitirAlterarPetDeOutroDono() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
 
-            var result = petService.updatePet(PET_ID, PetRequestDTO.builder().ownerId(OUTRO_OWNER_ID).build());
-
-            assertThat(result.getOwnerId()).isEqualTo(OUTRO_OWNER_ID);
-        }
-
-        @Test
-        @DisplayName("deve lancar OWNER_NOT_FOUND sem salvar quando o novo owner nao existe")
-        void deveLancarQuandoNovoOwnerNaoExiste() {
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(existingPet()));
-            when(ownerRepository.findById(OUTRO_OWNER_ID)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> petService.updatePet(PET_ID, PetRequestDTO.builder().ownerId(OUTRO_OWNER_ID).build()))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Owner not found");
-
-            verify(petRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("deve lancar PET_NOT_FOUND sem salvar quando o pet nao existe")
-        void deveLancarQuandoPetNaoExiste() {
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> petService.updatePet(PET_ID, request()))
+            assertThatThrownBy(() -> petService.updatePet(PET_ID, PetRequestDTO.builder().name("Invadido").build()))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage("Pet not found");
 
@@ -219,9 +204,10 @@ class PetServiceImplTest {
     class DeletePet {
 
         @Test
-        @DisplayName("deve remover o pet quando existe")
-        void deveRemoverQuandoExiste() {
-            var pet = existingPet();
+        @DisplayName("deve remover o pet do proprio owner")
+        void deveRemoverPetDoProprioOwner() {
+            var pet = petDe(OWNER_ID);
+            autenticadoComo(OWNER_ID);
             when(petRepository.findById(PET_ID)).thenReturn(Optional.of(pet));
 
             petService.deletePet(PET_ID);
@@ -230,9 +216,10 @@ class PetServiceImplTest {
         }
 
         @Test
-        @DisplayName("deve lancar PET_NOT_FOUND sem remover quando nao existe")
-        void deveLancarSemRemoverQuandoNaoExiste() {
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.empty());
+        @DisplayName("nao deve permitir remover pet de outro dono")
+        void naoDevePermitirRemoverPetDeOutroDono() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
 
             assertThatThrownBy(() -> petService.deletePet(PET_ID))
                     .isInstanceOf(PetfyHealthcareException.class)

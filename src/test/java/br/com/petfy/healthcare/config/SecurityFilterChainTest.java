@@ -127,9 +127,9 @@ class SecurityFilterChainTest {
     @Test
     @DisplayName("as demais rotas de owner devem continuar exigindo token")
     void demaisRotasDeOwnerDevemExigirToken() throws Exception {
-        mockMvc.perform(get("/owners/all"))
+        mockMvc.perform(get("/owners/me"))
                 .andExpect(status().isUnauthorized());
 
-        verify(ownerService, never()).listAllOwners();
+        verify(ownerService, never()).getCurrentOwner();
     }
 }

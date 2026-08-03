@@ -40,10 +40,20 @@ máquina.
 
 Perfis: `local` (app na máquina) e `docker` (app em container, banco no host).
 
-## Autenticação
+## Autenticação e autorização
 
 A API é stateless. O cadastro de owner e o login são públicos; todo o resto exige
 `Authorization: Bearer <token>`.
+
+Autenticar não basta: **cada owner só enxerga os próprios dados**. Pets são
+filtrados pelo dono, e vacinas e histórico de saúde pelo dono do pet. Recurso de
+outra pessoa responde `404`, e não `403` — um `403` confirmaria que aquele id
+existe, o que permitiria varrer ids para descobrir o que há na base.
+
+Onde o dono é obrigatório, ele vem sempre do token, nunca do payload: por isso
+`PetRequestDTO` não tem `ownerId` e a importação por OCR não recebe o dono como
+parâmetro. E como um owner só acessa a si mesmo, não existem `GET /owners/{id}`
+nem `GET /owners/all` — só `/owners/me`.
 
 ```bash
 # cadastro
@@ -68,13 +78,13 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 
 | Recurso | Base | Extras |
 |---|---|---|
-| Autenticação | `/auth` | `POST /auth/login` |
-| Owners | `/owners` | cadastro é público |
-| Pets | `/pets` | |
-| Clínicas | `/clinics` | |
-| Vacinas | `/vaccines` | listagem em `GET /vaccines` |
+| Autenticação | `/auth` | `POST /auth/login` (público) |
+| Owners | `/owners` | `POST /owners/include` (público) e `GET`/`PUT`/`DELETE /owners/me` |
+| Pets | `/pets` | escopado ao dono autenticado |
+| Clínicas | `/clinics` | diretório compartilhado, sem dono |
+| Vacinas | `/vaccines` | listagem em `GET /vaccines`, escopada pelo dono do pet |
 | Histórico de saúde | `/health-records` | `GET /health-records/pet/{petId}` |
-| Importação por OCR | `/pet-id` | `POST /pet-id/import-pet-id-card?ownerId={uuid}` (multipart) |
+| Importação por OCR | `/pet-id` | `POST /pet-id/import-pet-id-card` (multipart) |
 
 O `PUT` é parcial de propósito: campos ausentes no payload são preservados. Por
 isso a validação de payload (`@Valid`) vale apenas nos `POST` — os dois
@@ -124,8 +134,13 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   descobre o `tessdata` no build, mas isso não foi exercitado.
 - **Troca de senha não existe.** O `PUT /owners/{id}` ignora o campo `password`
   de propósito; trocar senha merece endpoint próprio, com confirmação da atual.
-- **Não há autorização, só autenticação.** Qualquer usuário autenticado enxerga
-  os dados de todos — nada amarra um pet ao owner que fez a requisição.
+- **Clínicas não têm dono e são compartilhadas.** Qualquer usuário autenticado lê
+  e escreve o cadastro de clínicas, o que só se resolve de verdade com papéis
+  (dono de pet x veterinário), que ainda não existem.
+- **O escopo por dono nas listagens depende de queries não verificadas contra
+  banco real** (`findByOwnerOwnerId` e afins) — mesma limitação de UUID no H2
+  descrita acima. As checagens de propriedade item a item, essas sim, estão
+  cobertas por teste.
 
 ## Arquitetura
 

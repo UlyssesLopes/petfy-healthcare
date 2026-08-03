@@ -105,13 +105,13 @@ class RequestValidationTest {
     @DisplayName("o update deve seguir aceitando payload parcial - a validacao nao vale para PUT")
     void updateDeveAceitarPayloadParcial() throws Exception {
         var id = UUID.randomUUID();
-        when(ownerService.updateOwner(any(), any())).thenReturn(OwnerResponseDTO.builder().ownerId(id).build());
+        when(ownerService.updateCurrentOwner(any())).thenReturn(OwnerResponseDTO.builder().ownerId(id).build());
 
         var body = json(Map.of("phone", "11888888888"));
 
-        mockMvc.perform(put("/owners/{ownerId}", id).contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(put("/owners/me").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
 
-        verify(ownerService).updateOwner(any(), any());
+        verify(ownerService).updateCurrentOwner(any());
     }
 }

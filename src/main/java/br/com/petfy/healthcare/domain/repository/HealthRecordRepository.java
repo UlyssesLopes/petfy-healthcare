@@ -12,4 +12,6 @@ public interface HealthRecordRepository extends JpaRepository<HealthRecord, UUID
 
     List<HealthRecord> findByPetPetIdOrderByEventDateDesc(UUID petId);
 
+    List<HealthRecord> findByPetOwnerOwnerIdOrderByEventDateDesc(UUID ownerId);
+
 }

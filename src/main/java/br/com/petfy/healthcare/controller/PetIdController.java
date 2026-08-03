@@ -23,8 +23,8 @@ public class PetIdController {
     private final PetIdService petIdService;
 
     @PostMapping("/import-pet-id-card")
-    public ResponseEntity<PetResponseDTO> importPetIdCard(@RequestParam UUID ownerId, @RequestParam MultipartFile file) throws IOException, TesseractException {
-        PetResponseDTO dto = petIdService.importPetFromIdCard(ownerId, file);
+    public ResponseEntity<PetResponseDTO> importPetIdCard(@RequestParam MultipartFile file) throws IOException, TesseractException {
+        PetResponseDTO dto = petIdService.importPetFromIdCard(file);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
