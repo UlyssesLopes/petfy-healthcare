@@ -35,9 +35,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @TestPropertySource(properties = {
         "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-        // o schema.sql do projeto e escrito para Postgres e ja esta defasado em
-        // relacao as entidades; aqui quem cria as tabelas e o proprio Hibernate
-        "spring.sql.init.mode=never"
+        // a migration do Flyway e escrita para Postgres; neste teste quem cria
+        // as tabelas no H2 e o proprio Hibernate
+        "spring.flyway.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 class HealthRecordRepositoryTest {
 
