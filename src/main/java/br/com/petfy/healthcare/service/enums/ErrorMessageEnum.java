@@ -9,6 +9,7 @@ public enum ErrorMessageEnum {
     PET_NOT_FOUND(102, "Pet not found"),
     CLINIC_NOT_FOUND(103, "Clinic not found"),
     VACCINE_NOT_FOUND(104, "Vaccine not found"),
+    HEALTH_RECORD_NOT_FOUND(105, "Health record not found"),
     INVALID_REQUEST(400, "Invalid request");
 
     private final int code;
