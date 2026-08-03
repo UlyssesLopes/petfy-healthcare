@@ -24,19 +24,19 @@ public class VaccineController {
     }
 
     @PutMapping("/{vaccineId}")
-    public ResponseEntity<VaccineResponseDTO> updateVaccine(@PathVariable UUID id, @RequestBody VaccineRequestDTO request) {
-        return ResponseEntity.ok(vaccineService.updateVaccine(id, request));
+    public ResponseEntity<VaccineResponseDTO> updateVaccine(@PathVariable UUID vaccineId, @RequestBody VaccineRequestDTO request) {
+        return ResponseEntity.ok(vaccineService.updateVaccine(vaccineId, request));
     }
 
     @DeleteMapping("/{vaccineId}")
-    public ResponseEntity<Void> deleteVaccine(@PathVariable UUID id) {
-        vaccineService.deleteVaccine(id);
+    public ResponseEntity<Void> deleteVaccine(@PathVariable UUID vaccineId) {
+        vaccineService.deleteVaccine(vaccineId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{vaccineId}")
-    public ResponseEntity<VaccineResponseDTO> getVaccineById(@PathVariable UUID id) {
-        return ResponseEntity.ok(vaccineService.getVaccineById(id));
+    public ResponseEntity<VaccineResponseDTO> getVaccineById(@PathVariable UUID vaccineId) {
+        return ResponseEntity.ok(vaccineService.getVaccineById(vaccineId));
     }
 
     @GetMapping

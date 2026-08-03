@@ -24,8 +24,8 @@ public class PetController {
     }
 
     @GetMapping("/{petId}")
-    public ResponseEntity<PetResponseDTO> getPet(@PathVariable UUID id) {
-        return ResponseEntity.ok(petService.getPetById(id));
+    public ResponseEntity<PetResponseDTO> getPet(@PathVariable UUID petId) {
+        return ResponseEntity.ok(petService.getPetById(petId));
     }
 
     @GetMapping("/all")
@@ -34,13 +34,13 @@ public class PetController {
     }
 
     @PutMapping("/{petId}")
-    public ResponseEntity<PetResponseDTO> updatePet(@PathVariable UUID id, @RequestBody PetRequestDTO dto) {
-        return ResponseEntity.ok(petService.updatePet(id, dto));
+    public ResponseEntity<PetResponseDTO> updatePet(@PathVariable UUID petId, @RequestBody PetRequestDTO dto) {
+        return ResponseEntity.ok(petService.updatePet(petId, dto));
     }
 
     @DeleteMapping("/{petId}")
-    public ResponseEntity<Void> deletePet(@PathVariable UUID id) {
-        petService.deletePet(id);
+    public ResponseEntity<Void> deletePet(@PathVariable UUID petId) {
+        petService.deletePet(petId);
         return ResponseEntity.noContent().build();
     }
 

@@ -23,7 +23,7 @@ public class OwnerController {
     }
 
     @GetMapping("/{ownerId}")
-    public ResponseEntity<OwnerResponseDTO> getOwnerById(@PathVariable("id") UUID ownerId) {
+    public ResponseEntity<OwnerResponseDTO> getOwnerById(@PathVariable UUID ownerId) {
         return ResponseEntity.ok(ownerService.getOwnerById(ownerId));
     }
 
@@ -33,13 +33,13 @@ public class OwnerController {
     }
 
     @PutMapping("/{ownerId}")
-    public ResponseEntity<OwnerResponseDTO> updateOwner(@PathVariable UUID id, @RequestBody OwnerRequestDTO request) {
-        return ResponseEntity.ok(ownerService.updateOwner(id, request));
+    public ResponseEntity<OwnerResponseDTO> updateOwner(@PathVariable UUID ownerId, @RequestBody OwnerRequestDTO request) {
+        return ResponseEntity.ok(ownerService.updateOwner(ownerId, request));
     }
 
     @DeleteMapping("/{ownerId}")
-    public ResponseEntity<Void> deleteOwner(@PathVariable UUID id) {
-        ownerService.deleteOwner(id);
+    public ResponseEntity<Void> deleteOwner(@PathVariable UUID ownerId) {
+        ownerService.deleteOwner(ownerId);
         return ResponseEntity.noContent().build();
     }
 
