@@ -87,6 +87,8 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 | Catálogo de vacinas | `/vaccine-catalog` | somente leitura, mantido por migration |
 | Histórico de saúde | `/health-records` | `GET /health-records/pet/{petId}` |
 | Importação por OCR | `/pet-id` | `POST /pet-id/import-pet-id-card` (multipart) |
+| Compartilhamento | `/pets/{petId}/shares` | criar e listar links; `DELETE /shares/{id}` revoga |
+| Carteira compartilhada | `/share/{token}` | **público** — não exige autenticação |
 
 O `PUT` é parcial de propósito: campos ausentes no payload são preservados. Por
 isso a validação de payload (`@Valid`) vale apenas nos `POST` — os dois
@@ -124,6 +126,43 @@ aceita, só sem cálculo automático.
 O catálogo é somente leitura na API e mantido por migration: incluir ou corrigir
 vacina é uma migration nova. Isso o mantém versionado sem exigir um papel de
 administrador, que o sistema não tem.
+
+## Compartilhar a carteira
+
+O momento de uso de uma carteira de vacinação é apresentá-la: hotelzinho,
+creche, banho e tosa, vet novo. O tutor gera um link de leitura com validade e
+manda para quem pediu — quem recebe **não precisa ter conta**.
+
+```bash
+# gerar (autenticado). expiresInDays é opcional, default 30, teto 365
+curl -X POST localhost:8080/pets/$PET_ID/shares \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"expiresInDays":7}'
+
+# abrir (público)
+curl localhost:8080/share/$SHARE_TOKEN
+
+# listar e revogar
+curl localhost:8080/pets/$PET_ID/shares -H "Authorization: Bearer $TOKEN"
+curl -X DELETE localhost:8080/shares/$SHARE_ID -H "Authorization: Bearer $TOKEN"
+```
+
+**O link mostra a carteira, não o prontuário.** O histórico de saúde fica de fora
+de propósito: quem pede a carteira precisa saber se as vacinas estão em dia, não
+que o pet fez uma cirurgia. Do tutor sai só o nome — e-mail, telefone e endereço
+não aparecem. Cada vacina vem classificada pela mesma regra da agenda
+(`VaccineStatusCalculator`), para o link e o app não discordarem sobre o que
+está vencido.
+
+**O token é guardado como hash.** Ele é a única credencial do link, então um
+vazamento do banco não pode entregar as carteiras ativas. A consequência de
+produto é que o token **só aparece uma vez, na criação** — não dá para reexibir o
+que não está guardado. Quem perdeu o link revoga e cria outro. Se o incômodo
+superar o ganho, é trocar o `hash()` por armazenamento direto no
+`PetShareServiceImpl`.
+
+Token inexistente, expirado e revogado respondem igual, para não confirmar a
+quem tem um link velho que aquele pet existe.
 
 ## Lembretes de vacina
 
@@ -210,6 +249,10 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   doses e intervalos distintos entre elas.
 - **A espécie do catálogo é informativa.** `Pet.type` é texto livre, então não há
   filtro automático entre o pet e as vacinas aplicáveis a ele.
+- **Link de compartilhamento não tem limite de acesso nem rastro.** Quem tem a
+  URL abre quantas vezes quiser, e não há registro de quem abriu. Para uma
+  carteira de vacinação isso é aceitável; se um dia guardar dado mais sensível,
+  vale limitar por número de acessos e registrar os acessos.
 - **Clínicas não têm dono e são compartilhadas.** Qualquer usuário autenticado lê
   e escreve o cadastro de clínicas, o que só se resolve de verdade com papéis
   (dono de pet x veterinário), que ainda não existem.

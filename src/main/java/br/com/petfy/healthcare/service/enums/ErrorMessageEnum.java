@@ -11,6 +11,7 @@ public enum ErrorMessageEnum {
     VACCINE_NOT_FOUND(104, "Vaccine not found"),
     HEALTH_RECORD_NOT_FOUND(105, "Health record not found"),
     VACCINE_CATALOG_NOT_FOUND(106, "Vaccine catalog entry not found"),
+    SHARE_NOT_FOUND(107, "Share link not found or no longer valid"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

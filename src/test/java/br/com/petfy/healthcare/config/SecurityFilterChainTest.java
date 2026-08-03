@@ -3,7 +3,11 @@ package br.com.petfy.healthcare.config;
 import br.com.petfy.healthcare.controller.AuthController;
 import br.com.petfy.healthcare.controller.OwnerController;
 import br.com.petfy.healthcare.controller.PetController;
+import br.com.petfy.healthcare.controller.PetShareController;
+import br.com.petfy.healthcare.controller.SharedCardController;
+import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.service.PetShareService;
 import br.com.petfy.healthcare.security.JwtAuthenticationFilter;
 import br.com.petfy.healthcare.security.JwtService;
 import br.com.petfy.healthcare.service.AuthService;
@@ -36,7 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * SecurityFilterChain de verdade para conferir o que e publico e o que exige
  * token.
  */
-@WebMvcTest(controllers = {AuthController.class, PetController.class, OwnerController.class})
+@WebMvcTest(controllers = {AuthController.class, PetController.class, OwnerController.class,
+        SharedCardController.class, PetShareController.class})
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
 @TestPropertySource(properties = {
         "petfy.jwt.secret=segredo-de-teste-com-mais-de-32-caracteres",
@@ -58,6 +63,9 @@ class SecurityFilterChainTest {
 
     @MockBean
     private OwnerService ownerService;
+
+    @MockBean
+    private PetShareService petShareService;
 
     private String tokenValido() {
         return jwtService.generateToken(Owner.builder()
@@ -122,6 +130,27 @@ class SecurityFilterChainTest {
                 .andExpect(status().isCreated());
 
         verify(ownerService).createOwner(any());
+    }
+
+    @Test
+    @DisplayName("a carteira compartilhada deve ser publica - quem recebe o link nao tem conta")
+    void carteiraCompartilhadaDeveSerPublica() throws Exception {
+        when(petShareService.viewSharedCard("um-token")).thenReturn(SharedVaccineCardDTO.builder().petName("Rex").build());
+
+        mockMvc.perform(get("/share/{token}", "um-token"))
+                .andExpect(status().isOk());
+
+        verify(petShareService).viewSharedCard("um-token");
+    }
+
+    @Test
+    @DisplayName("criar link de compartilhamento deve exigir token - so o tutor compartilha")
+    void criarLinkDeveExigirToken() throws Exception {
+        mockMvc.perform(post("/pets/{petId}/shares", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+
+        verify(petShareService, never()).createShare(any(), any());
     }
 
     @Test

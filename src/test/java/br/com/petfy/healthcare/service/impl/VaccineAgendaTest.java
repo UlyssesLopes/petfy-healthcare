@@ -6,12 +6,14 @@ import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
@@ -35,6 +37,11 @@ class VaccineAgendaTest {
 
     @Mock
     private CurrentOwnerProvider currentOwnerProvider;
+
+    // calculator real: a classificacao e justamente o que este teste verifica,
+    // entao mocka-la esvaziaria o teste
+    @Spy
+    private VaccineStatusCalculator vaccineStatusCalculator = new VaccineStatusCalculator();
 
     @InjectMocks
     private VaccineServiceImpl vaccineService;

@@ -36,6 +36,9 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 // cadastro precisa ser publico, senao nao existe primeiro usuario
                 .antMatchers(HttpMethod.POST, "/owners/include").permitAll()
+                // carteira compartilhada: quem recebe o link nao tem conta. O
+                // token no path faz o papel da credencial
+                .antMatchers(HttpMethod.GET, "/share/*").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 // sem entry point explicito o Spring Security devolve 403 para

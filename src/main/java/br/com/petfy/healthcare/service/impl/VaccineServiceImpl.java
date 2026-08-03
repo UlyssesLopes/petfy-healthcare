@@ -16,6 +16,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.VaccineService;
+import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,8 @@ public class VaccineServiceImpl implements VaccineService {
     private final VaccineCatalogRepository vaccineCatalogRepository;
 
     private final CurrentOwnerProvider currentOwnerProvider;
+
+    private final VaccineStatusCalculator vaccineStatusCalculator;
 
     @Override
     public VaccineResponseDTO createVaccine(VaccineRequestDTO request) {
@@ -166,14 +169,13 @@ public class VaccineServiceImpl implements VaccineService {
     @Override
     public VaccineAgendaResponseDTO getAgenda(int windowDays) {
         LocalDate hoje = LocalDate.now();
-        LocalDate limite = hoje.plusDays(windowDays);
 
         // filtra em memoria de proposito: a agenda cobre as vacinas de um tutor,
         // que sao poucas, e assim a classificacao inteira fica testavel sem banco
         List<Vaccine> doTutor = vaccineRepository.findByPetOwnerOwnerId(currentOwnerProvider.require().getOwnerId());
 
         Map<VaccineStatus, List<VaccineAgendaItemDTO>> porStatus = doTutor.stream()
-                .map(vaccine -> toAgendaItem(vaccine, hoje, limite))
+                .map(vaccine -> toAgendaItem(vaccine, hoje, windowDays))
                 .collect(Collectors.groupingBy(VaccineAgendaItemDTO::getStatus));
 
         List<VaccineAgendaItemDTO> acionaveis = Stream.concat(
@@ -193,25 +195,11 @@ public class VaccineServiceImpl implements VaccineService {
                 .build();
     }
 
-    private VaccineAgendaItemDTO toAgendaItem(Vaccine vaccine, LocalDate hoje, LocalDate limite) {
+    private VaccineAgendaItemDTO toAgendaItem(Vaccine vaccine, LocalDate hoje, int windowDays) {
         LocalDate proximaDose = vaccine.getNextDoseDate();
 
-        VaccineStatus status;
-        Long diasAte = null;
-
-        if (proximaDose == null) {
-            status = VaccineStatus.NO_NEXT_DOSE;
-        } else {
-            diasAte = ChronoUnit.DAYS.between(hoje, proximaDose);
-            // vencer hoje conta como vencendo, nao como vencido
-            if (proximaDose.isBefore(hoje)) {
-                status = VaccineStatus.OVERDUE;
-            } else if (!proximaDose.isAfter(limite)) {
-                status = VaccineStatus.DUE_SOON;
-            } else {
-                status = VaccineStatus.UP_TO_DATE;
-            }
-        }
+        VaccineStatus status = vaccineStatusCalculator.classify(proximaDose, hoje, windowDays);
+        Long diasAte = proximaDose != null ? ChronoUnit.DAYS.between(hoje, proximaDose) : null;
 
         return VaccineAgendaItemDTO.builder()
                 .vaccineId(vaccine.getVaccineId())

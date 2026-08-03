@@ -21,4 +21,6 @@ public interface VaccineRepository extends JpaRepository<Vaccine, UUID> {
      */
     List<Vaccine> findByNextDoseDateLessThanEqual(LocalDate limite);
 
+    List<Vaccine> findByPetPetIdOrderByApplicationDateDesc(UUID petId);
+
 }
