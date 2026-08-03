@@ -5,9 +5,13 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.service.PetIdService;
+import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.TesseractException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.ImageIO;
@@ -16,9 +20,11 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PetIdServiceImpl implements PetIdService {
@@ -28,6 +34,8 @@ public class PetIdServiceImpl implements PetIdService {
     private final PetRepository petRepository;
     private final OwnerRepository ownerRepository;
 
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private static final List<String> knownFields = List.of(
             "Nome do Animal", "Registro Geral do Animal", "Microchip",
             "Castrado", "Cor", "Espécie", "Sexo",
@@ -35,7 +43,10 @@ public class PetIdServiceImpl implements PetIdService {
     );
 
     @Override
-    public PetResponseDTO importPetFromIdCard(MultipartFile file) throws IOException, TesseractException {
+    public PetResponseDTO importPetFromIdCard(UUID ownerId, MultipartFile file) throws IOException, TesseractException {
+
+        Owner ownerById = ownerRepository.findById(ownerId)
+                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.OWNER_NOT_FOUND.getMessage(), ErrorMessageEnum.OWNER_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
 
         BufferedImage imageFile = ImageIO.read(file.getInputStream());
         BufferedImage bufferedImage = imageProcessorService.preProcess(imageFile);
@@ -45,8 +56,6 @@ public class PetIdServiceImpl implements PetIdService {
         Map<String, String> stringStringMap = parseFields(extractedText);
 
         PetResponseDTO petResponseDTO = parse(stringStringMap);
-
-        Owner ownerById = ownerRepository.findById(UUID.fromString("386b64d9-eebe-4122-b4cf-5b128316b79f")).get();
 
         Pet pet = Pet.builder()
                 .name(petResponseDTO.getName())
@@ -69,7 +78,7 @@ public class PetIdServiceImpl implements PetIdService {
         PetResponseDTO petResponse = new PetResponseDTO();
         petResponse.setName(stringStringMap.get("Nome do Animal"));
         petResponse.setGeneralRegistry(stringStringMap.get("Registro Geral do Animal"));
-        petResponse.setMicrochip(Boolean.valueOf(stringStringMap.get("Microship")));
+        petResponse.setMicrochip(parseSimNao(stringStringMap.get("Microchip")));
         petResponse.setColor(stringStringMap.get("Cor"));
         petResponse.setBreed(stringStringMap.get("Espécie"));
         petResponse.setGender(stringStringMap.get("Sexo"));
@@ -80,8 +89,30 @@ public class PetIdServiceImpl implements PetIdService {
     }
 
     public LocalDate bornDateStringFormat(String bornStringDate) {
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        return LocalDate.parse(bornStringDate, dateTimeFormatter);
+        if (bornStringDate == null || bornStringDate.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(bornStringDate, DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            log.warn("Data de nascimento nao reconhecida no OCR: '{}'", bornStringDate);
+            return null;
+        }
+    }
+
+    private Boolean parseSimNao(String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return null;
+        }
+        String normalized = rawValue.trim().toLowerCase();
+        if (normalized.startsWith("s")) {
+            return Boolean.TRUE;
+        }
+        if (normalized.startsWith("n")) {
+            return Boolean.FALSE;
+        }
+        log.warn("Valor booleano nao reconhecido no OCR: '{}'", rawValue);
+        return null;
     }
 
     public Map<String, String> parseFields(String ocrText) {

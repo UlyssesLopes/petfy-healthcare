@@ -2,11 +2,8 @@ package br.com.petfy.healthcare.service.impl;
 
 import org.springframework.stereotype.Service;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 
 @Service
 public class ImageProcessorService {
@@ -14,8 +11,6 @@ public class ImageProcessorService {
     public BufferedImage preProcess(BufferedImage originalImage) {
 
         BufferedImage croppedImage = cropToDataRegion(originalImage);
-
-        saveDebugImage(croppedImage, "corte-preview.png");
 
         BufferedImage grayImage = new BufferedImage(
                 croppedImage.getWidth(),
@@ -48,16 +43,6 @@ public class ImageProcessorService {
         int height = (int) (original.getHeight() * 0.68);
 
         return original.getSubimage(x, y, width, height);
-    }
-
-    private void saveDebugImage(BufferedImage image, String fileName) {
-        try {
-            File outputfile = new File(fileName);
-            ImageIO.write(image, "png", outputfile);
-            System.out.println("Imagem cortada salva em: " + outputfile.getAbsolutePath());
-        } catch (IOException e) {
-            System.err.println("Erro ao salvar imagem cortada: " + e.getMessage());
-        }
     }
 
 }
