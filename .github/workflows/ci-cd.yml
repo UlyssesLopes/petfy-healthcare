@@ -2,9 +2,19 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "*" ]
+    branches: [ "**" ]
   pull_request:
-    branches: [ "*" ]
+    branches: [ main ]
+
+# corridas antigas do mesmo ref sao canceladas quando chega um push novo
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # o ghcr.io rejeita maiuscula no nome da imagem e github.repository preserva
+  # o case do dono (UlyssesLopes), entao o caminho vai em minusculo na mao
+  IMAGE_NAME: ghcr.io/ulysseslopes/petfy-healthcare
 
 jobs:
   build-and-test:
@@ -12,56 +22,84 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: maven
 
-      - name: Cache Maven packages
-        uses: actions/cache@v3
+      # verify ja roda os testes e gera o relatorio do jacoco (a execucao 'report'
+      # esta amarrada na fase verify no pom), entao nao precisa de passo separado
+      - name: Build e testes
+        run: mvn -B clean verify
+
+      - name: Publica relatorios de teste e cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven
+          name: test-reports
+          path: |
+            target/surefire-reports/
+            target/site/jacoco/
+          if-no-files-found: warn
 
-      - name: Compile and run tests
-        run: mvn clean verify
+      - name: Publica o jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+          if-no-files-found: error
 
-      - name: Run code coverage (JaCoCo)
-        run: mvn jacoco:report
-
-      - name: Analyze with SonarQube
+      # so roda quando SONAR_TOKEN estiver configurado no repositorio; sem isso
+      # o passo e pulado em vez de quebrar o pipeline inteiro
+      - name: Analise SonarQube
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn sonar:sonar -Dsonar.projectKey=petfy-healthcare \
-          -Dsonar.host.url=http://sonarqube.local \
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        if: env.SONAR_TOKEN != ''
+        run: >
+          mvn -B sonar:sonar
+          -Dsonar.projectKey=petfy-healthcare
+          -Dsonar.host.url=$SONAR_HOST_URL
           -Dsonar.login=$SONAR_TOKEN
 
-  docker-and-deploy:
+  docker:
     needs: build-and-test
     runs-on: ubuntu-latest
+    # a imagem so e publicada a partir da main; branch de feature para no build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      # reaproveita o jar do job anterior em vez de compilar de novo;
+      # o Dockerfile faz COPY target/*.jar e precisa do arquivo no lugar
+      - name: Baixa o jar do build
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: target
 
-      - name: Build Docker image
-        run: |
-          docker build -t myregistry.io/petfy-healthcare:${{ github.sha }} .
-          docker push myregistry.io/petfy-healthcare:${{ github.sha }}
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update Kubernetes manifest
-        run: |
-          sed -i "s|image: .*|image: myregistry.io/petfy-healthcare:${{ github.sha }}|" k8s/deployment.yaml
-          git config --global user.email "ulysses.rlopes@gmail.com"
-          git config --global user.name "Ulysses Lopes"
-          git add k8s/deployment.yaml
-          git commit -m "Update image to ${{ github.sha }}"
-          git push
+      - name: Build e push da imagem
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
