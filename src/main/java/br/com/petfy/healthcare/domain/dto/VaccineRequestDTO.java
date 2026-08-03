@@ -22,7 +22,13 @@ public class VaccineRequestDTO {
     @NotNull(message = "petId e obrigatorio")
     private UUID petId;
 
-    @NotBlank(message = "nome da vacina e obrigatorio")
+    /**
+     * Quando informado, o nome e a data da proxima dose saem do catalogo. O que
+     * vier explicito no request continua tendo precedencia.
+     */
+    private UUID vaccineCatalogId;
+
+    /** Obrigatorio apenas quando nao vem do catalogo - ver validacao no service. */
     private String vaccineName;
 
     private LocalDate applicationDate;

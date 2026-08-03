@@ -5,8 +5,10 @@ import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
+import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
@@ -47,10 +49,25 @@ class VaccineServiceImplTest {
     private ClinicRepository clinicRepository;
 
     @Mock
+    private VaccineCatalogRepository vaccineCatalogRepository;
+
+    @Mock
     private CurrentOwnerProvider currentOwnerProvider;
 
     @InjectMocks
     private VaccineServiceImpl vaccineService;
+
+    private static final UUID CATALOG_ID = UUID.fromString("a1000000-0000-4000-8000-000000000002");
+
+    private VaccineCatalog catalogoV10() {
+        return VaccineCatalog.builder()
+                .vaccineCatalogId(CATALOG_ID)
+                .code("V10")
+                .name("V10 (Polivalente canina)")
+                .species("CANINA")
+                .defaultIntervalDays(365)
+                .build();
+    }
 
     private static final UUID VACCINE_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
@@ -129,6 +146,111 @@ class VaccineServiceImplTest {
             var captor = ArgumentCaptor.forClass(Vaccine.class);
             verify(vaccineRepository).save(captor.capture());
             assertThat(captor.getValue().getClinic()).isNull();
+        }
+
+        @Test
+        @DisplayName("deve calcular a proxima dose somando o intervalo do catalogo a data de aplicacao")
+        void deveCalcularProximaDosePeloCatalogo() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            vaccineService.createVaccine(VaccineRequestDTO.builder()
+                    .petId(PET_ID)
+                    .vaccineCatalogId(CATALOG_ID)
+                    .applicationDate(LocalDate.of(2025, 6, 1))
+                    .build());
+
+            var captor = ArgumentCaptor.forClass(Vaccine.class);
+            verify(vaccineRepository).save(captor.capture());
+            assertThat(captor.getValue().getNextDoseDate()).isEqualTo(LocalDate.of(2026, 6, 1));
+        }
+
+        @Test
+        @DisplayName("deve usar o nome do catalogo quando o request nao manda nome")
+        void deveUsarNomeDoCatalogo() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            vaccineService.createVaccine(VaccineRequestDTO.builder()
+                    .petId(PET_ID).vaccineCatalogId(CATALOG_ID)
+                    .applicationDate(LocalDate.of(2025, 6, 1)).build());
+
+            var captor = ArgumentCaptor.forClass(Vaccine.class);
+            verify(vaccineRepository).save(captor.capture());
+            assertThat(captor.getValue().getVaccineName()).isEqualTo("V10 (Polivalente canina)");
+            assertThat(captor.getValue().getCatalog().getVaccineCatalogId()).isEqualTo(CATALOG_ID);
+        }
+
+        @Test
+        @DisplayName("data explicita deve vencer o calculo do catalogo - o vet pode orientar diferente")
+        void dataExplicitaDeveVencerOCatalogo() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            vaccineService.createVaccine(VaccineRequestDTO.builder()
+                    .petId(PET_ID).vaccineCatalogId(CATALOG_ID)
+                    .applicationDate(LocalDate.of(2025, 6, 1))
+                    .nextDoseDate(LocalDate.of(2025, 12, 1))
+                    .build());
+
+            var captor = ArgumentCaptor.forClass(Vaccine.class);
+            verify(vaccineRepository).save(captor.capture());
+            assertThat(captor.getValue().getNextDoseDate()).isEqualTo(LocalDate.of(2025, 12, 1));
+        }
+
+        @Test
+        @DisplayName("deve aceitar vacina em texto livre, sem catalogo")
+        void deveAceitarVacinaEmTextoLivre() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            vaccineService.createVaccine(VaccineRequestDTO.builder()
+                    .petId(PET_ID).vaccineName("Vacina importada").build());
+
+            var captor = ArgumentCaptor.forClass(Vaccine.class);
+            verify(vaccineRepository).save(captor.capture());
+            assertThat(captor.getValue().getVaccineName()).isEqualTo("Vacina importada");
+            assertThat(captor.getValue().getCatalog()).isNull();
+            assertThat(captor.getValue().getNextDoseDate()).isNull();
+        }
+
+        @Test
+        @DisplayName("deve recusar com 400 quando nao ha nem nome nem catalogo")
+        void deveRecusarSemNomeESemCatalogo() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+
+            assertThatThrownBy(() -> vaccineService.createVaccine(
+                    VaccineRequestDTO.builder().petId(PET_ID).build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("httpStatus")
+                    .isEqualTo(HttpStatus.BAD_REQUEST);
+
+            verify(vaccineRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("deve lancar VACCINE_CATALOG_NOT_FOUND quando o catalogo informado nao existe")
+        void deveLancarQuandoCatalogoNaoExiste() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> vaccineService.createVaccine(
+                    VaccineRequestDTO.builder().petId(PET_ID).vaccineCatalogId(CATALOG_ID).build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Vaccine catalog entry not found")
+                    .extracting("code", "httpStatus")
+                    .containsExactly(106, HttpStatus.NOT_FOUND);
+
+            verify(vaccineRepository, never()).save(any());
         }
 
         @Test

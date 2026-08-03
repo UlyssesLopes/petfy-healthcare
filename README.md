@@ -83,6 +83,8 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 | Pets | `/pets` | escopado ao dono autenticado |
 | Clínicas | `/clinics` | diretório compartilhado, sem dono |
 | Vacinas | `/vaccines` | listagem em `GET /vaccines`, escopada pelo dono do pet |
+| Agenda de vacinas | `/vaccines/agenda` | `?windowDays=30` — o que está vencido ou vencendo |
+| Catálogo de vacinas | `/vaccine-catalog` | somente leitura, mantido por migration |
 | Histórico de saúde | `/health-records` | `GET /health-records/pet/{petId}` |
 | Importação por OCR | `/pet-id` | `POST /pet-id/import-pet-id-card` (multipart) |
 
@@ -93,6 +95,35 @@ compartilham o mesmo DTO.
 Erros são padronizados por `ErrorMessageEnum` e tratados no
 `GlobalExceptionHandler`. Campos de auditoria (`creationDate`, `updateDate`)
 existem em todas as entidades.
+
+## Agenda de vacinas
+
+É a única parte do sistema que produz informação em vez de devolver o que foi
+digitado. `GET /vaccines/agenda` cruza as vacinas de todos os pets do tutor e
+classifica pela próxima dose:
+
+| Status | Critério |
+|---|---|
+| `OVERDUE` | próxima dose antes de hoje |
+| `DUE_SOON` | próxima dose entre hoje e o fim da janela (inclusive) |
+| `UP_TO_DATE` | próxima dose depois da janela |
+| `NO_NEXT_DOSE` | sem próxima dose — dose única, ou não preenchido |
+
+A lista traz só o que pede ação (`OVERDUE` e `DUE_SOON`), da mais atrasada para
+a menos urgente, com o nome do pet junto para a tela não precisar de outra
+chamada. Os contadores cobrem os quatro status, para mostrar "3 em dia" sem uma
+segunda requisição. A janela é ajustável via `?windowDays=`.
+
+Para que isso seja confiável, a próxima dose precisa ser confiável — daí o
+catálogo. Ao registrar uma vacina com `vaccineCatalogId`, o nome e o
+`nextDoseDate` saem do catálogo (`applicationDate + defaultIntervalDays`) em vez
+de serem estimados pelo tutor. Data enviada explicitamente sempre vence, para o
+caso de orientação diferente do veterinário. Vacina em texto livre continua
+aceita, só sem cálculo automático.
+
+O catálogo é somente leitura na API e mantido por migration: incluir ou corrigir
+vacina é uma migration nova. Isso o mantém versionado sem exigir um papel de
+administrador, que o sistema não tem.
 
 ## Banco
 
@@ -134,6 +165,15 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   descobre o `tessdata` no build, mas isso não foi exercitado.
 - **Troca de senha não existe.** O `PUT /owners/{id}` ignora o campo `password`
   de propósito; trocar senha merece endpoint próprio, com confirmação da atual.
+- **A agenda não notifica ninguém.** Ela responde quando perguntada; não há
+  e-mail, push nem job agendado. O alerta de fato é o passo seguinte, e depende
+  de escolher um canal.
+- **O protocolo de filhote não está modelado.** O `defaultIntervalDays` do
+  catálogo é o intervalo de reforço (anual na maioria). O esquema inicial de
+  várias doses a cada 21–30 dias exigiria representar protocolo com número de
+  doses e intervalos distintos entre elas.
+- **A espécie do catálogo é informativa.** `Pet.type` é texto livre, então não há
+  filtro automático entre o pet e as vacinas aplicáveis a ele.
 - **Clínicas não têm dono e são compartilhadas.** Qualquer usuário autenticado lê
   e escreve o cadastro de clínicas, o que só se resolve de verdade com papéis
   (dono de pet x veterinário), que ainda não existem.

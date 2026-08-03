@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.controller;
 
+import br.com.petfy.healthcare.domain.dto.VaccineAgendaResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.service.VaccineService;
@@ -43,6 +44,17 @@ public class VaccineController {
     @GetMapping
     public ResponseEntity<List<VaccineResponseDTO>> listAllVaccines() {
         return ResponseEntity.ok(vaccineService.listAllVaccines());
+    }
+
+    /**
+     * Declarado antes de /{vaccineId} nao por exigencia do Spring, que casa a
+     * rota literal primeiro, mas para deixar visivel que as duas dividem o
+     * mesmo nivel do path.
+     */
+    @GetMapping("/agenda")
+    public ResponseEntity<VaccineAgendaResponseDTO> getAgenda(
+            @RequestParam(defaultValue = "30") int windowDays) {
+        return ResponseEntity.ok(vaccineService.getAgenda(windowDays));
     }
 
 }

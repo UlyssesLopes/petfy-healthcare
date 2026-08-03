@@ -43,6 +43,11 @@ public class Vaccine {
     @JoinColumn(name = "clinic_id")
     private Clinic clinic;
 
+    /** Nulo para vacina digitada em texto livre e para os registros anteriores ao catalogo. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vaccine_catalog_id")
+    private VaccineCatalog catalog;
+
     private LocalDateTime creationDate;
 
     private LocalDateTime updateDate;
