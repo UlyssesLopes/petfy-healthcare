@@ -39,7 +39,7 @@ public class PetIdServiceImpl implements PetIdService {
 
     private static final List<String> knownFields = List.of(
             "Nome do Animal", "Registro Geral do Animal", "Microchip",
-            "Castrado", "Cor", "Espécie", "Sexo",
+            "Castrado", "Cor", "Espécie", "Raça", "Sexo",
             "Data de Nascimento", "Naturalidade"
     );
 
@@ -61,6 +61,7 @@ public class PetIdServiceImpl implements PetIdService {
         Pet pet = Pet.builder()
                 .name(petResponseDTO.getName())
                 .owner(ownerById)
+                .type(petResponseDTO.getType())
                 .breed(petResponseDTO.getBreed())
                 .bornDate(petResponseDTO.getBornDate())
                 .gender(petResponseDTO.getGender())
@@ -81,7 +82,9 @@ public class PetIdServiceImpl implements PetIdService {
         petResponse.setGeneralRegistry(stringStringMap.get("Registro Geral do Animal"));
         petResponse.setMicrochip(parseSimNao(stringStringMap.get("Microchip")));
         petResponse.setColor(stringStringMap.get("Cor"));
-        petResponse.setBreed(stringStringMap.get("Espécie"));
+        // "Especie" e canina/felina, que corresponde ao type; a raca vem em campo proprio
+        petResponse.setType(stringStringMap.get("Espécie"));
+        petResponse.setBreed(stringStringMap.get("Raça"));
         petResponse.setGender(stringStringMap.get("Sexo"));
         petResponse.setBornDate(bornDateStringFormat(stringStringMap.get("Data de Nascimento")));
         petResponse.setBornLocal(stringStringMap.get("Naturalidade"));

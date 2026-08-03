@@ -116,6 +116,27 @@ class PetIdServiceImplTest {
             assertThat(result.getBornLocal()).isEqualTo("Sao Paulo");
         }
 
+        @Test
+        @DisplayName("deve mapear Especie para type e Raca para breed")
+        void deveMapearEspecieParaTypeERacaParaBreed() {
+            var result = petIdService.parse(Map.of(
+                    "Espécie", "Canina",
+                    "Raça", "Labrador"
+            ));
+
+            assertThat(result.getType()).isEqualTo("Canina");
+            assertThat(result.getBreed()).isEqualTo("Labrador");
+        }
+
+        @Test
+        @DisplayName("deve deixar breed nulo quando o documento nao traz o campo Raca")
+        void deveDeixarBreedNuloSemCampoRaca() {
+            var result = petIdService.parse(Map.of("Espécie", "Felina"));
+
+            assertThat(result.getType()).isEqualTo("Felina");
+            assertThat(result.getBreed()).isNull();
+        }
+
         @ParameterizedTest
         @ValueSource(strings = {"Sim", "sim", "SIM", "S"})
         @DisplayName("deve interpretar o microchip como true quando o documento diz Sim")
