@@ -6,11 +6,11 @@ services:
     container_name: petfy-postgres
     restart: always
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: ${DB_NAME:-petfy}
+      POSTGRES_USER: ${DB_USER:-petfy}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-petfy}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
