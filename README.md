@@ -125,6 +125,39 @@ O catálogo é somente leitura na API e mantido por migration: incluir ou corrig
 vacina é uma migration nova. Isso o mantém versionado sem exigir um papel de
 administrador, que o sistema não tem.
 
+## Lembretes de vacina
+
+Uma rotina diária varre as doses pendentes e avisa o tutor. **Desligada por
+padrão** — ver abaixo o porquê.
+
+```properties
+petfy.reminders.enabled=true          # default false
+petfy.reminders.channel=log           # log | email
+petfy.reminders.window-days=30        # antecedência do aviso
+petfy.reminders.cooldown-days=7       # intervalo mínimo entre avisos da mesma dose
+petfy.reminders.cron=0 0 9 * * *      # 9h, America/Sao_Paulo
+```
+
+**Um lembrete por tutor, não um por dose.** Quem tem três pets atrasados recebe
+uma mensagem com três linhas, não três mensagens.
+
+**O cooldown existe porque dose vencida continua vencida.** Sem ele, o mesmo
+lembrete sairia todo dia até a pessoa vacinar o pet — o caminho mais curto para
+o aviso ser ignorado. O envio é marcado em `vaccines.last_reminder_sent_at`,
+sempre **depois** do envio: se o canal falhar, o rollback deixa a dose elegível
+na próxima execução, em vez de registrar como avisada uma dose que ninguém
+recebeu.
+
+**Canais.** `log` é o padrão e escreve no log da aplicação — não é um stub: a
+rotina roda inteira (varre, agrupa, monta a mensagem, marca o envio) sem
+depender de credencial de SMTP. `email` exige `spring.mail.*` configurado;
+trocar de canal não mexe na regra de quando avisar.
+
+**Por que vem desligada:** com mais de uma instância no ar, todas disparariam a
+rotina e o tutor receberia o lembrete repetido. Ligar exige decidir quem executa
+— uma instância só, ou um agendador externo chamando a rotina. Enquanto essa
+decisão não existe, o default seguro é não enviar.
+
 ## Banco
 
 O schema é versionado com Flyway em `src/main/resources/db/migration`. O
@@ -165,9 +198,12 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   descobre o `tessdata` no build, mas isso não foi exercitado.
 - **Troca de senha não existe.** O `PUT /owners/{id}` ignora o campo `password`
   de propósito; trocar senha merece endpoint próprio, com confirmação da atual.
-- **A agenda não notifica ninguém.** Ela responde quando perguntada; não há
-  e-mail, push nem job agendado. O alerta de fato é o passo seguinte, e depende
-  de escolher um canal.
+- **O envio por e-mail nunca foi exercitado contra um SMTP real.** O
+  `EmailReminderNotifier` é coberto só pela montagem da mensagem; não houve
+  entrega de verdade.
+- **A rotina de lembretes não é segura para múltiplas instâncias.** Não há lock
+  distribuído: se duas instâncias rodarem com `reminders.enabled=true`, as duas
+  varrem e o tutor recebe repetido. Daí o default desligado.
 - **O protocolo de filhote não está modelado.** O `defaultIntervalDays` do
   catálogo é o intervalo de reforço (anual na maioria). O esquema inicial de
   várias doses a cada 21–30 dias exigiria representar protocolo com número de

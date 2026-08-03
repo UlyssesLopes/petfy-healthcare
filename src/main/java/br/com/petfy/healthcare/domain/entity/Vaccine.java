@@ -48,6 +48,9 @@ public class Vaccine {
     @JoinColumn(name = "vaccine_catalog_id")
     private VaccineCatalog catalog;
 
+    /** Quando o ultimo lembrete desta dose foi enviado. Nulo se nunca avisamos. */
+    private LocalDateTime lastReminderSentAt;
+
     private LocalDateTime creationDate;
 
     private LocalDateTime updateDate;
