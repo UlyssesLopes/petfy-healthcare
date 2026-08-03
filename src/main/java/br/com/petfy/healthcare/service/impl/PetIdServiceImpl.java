@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.*;
 
 
@@ -176,6 +177,9 @@ public class PetIdServiceImpl implements PetIdService {
                 fields.add(field);
             }
         }
+        // os valores da linha seguinte sao casados por posicao, entao os rotulos
+        // precisam sair na ordem em que aparecem na linha - nao na ordem do knownFields
+        fields.sort(Comparator.comparingInt(line::indexOf));
         return fields;
     }
 
