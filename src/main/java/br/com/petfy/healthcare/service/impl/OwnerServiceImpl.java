@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.service.OwnerService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class OwnerServiceImpl implements OwnerService {
 
     private final OwnerRepository ownerRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public OwnerResponseDTO createOwner(OwnerRequestDTO request) {
@@ -28,7 +30,7 @@ public class OwnerServiceImpl implements OwnerService {
         Owner owner = Owner.builder()
                 .name(request.getName())
                 .email(request.getEmail())
-                .password(request.getPassword())
+                .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .address(request.getAddress())
                 .creationDate(LocalDateTime.now())

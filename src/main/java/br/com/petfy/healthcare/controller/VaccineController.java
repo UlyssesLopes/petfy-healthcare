@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +20,7 @@ public class VaccineController {
     private final VaccineService vaccineService;
 
     @PostMapping("/include")
-    public ResponseEntity<VaccineResponseDTO> createVaccine(@RequestBody VaccineRequestDTO request) {
+    public ResponseEntity<VaccineResponseDTO> createVaccine(@Valid @RequestBody VaccineRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(vaccineService.createVaccine(request));
     }
 

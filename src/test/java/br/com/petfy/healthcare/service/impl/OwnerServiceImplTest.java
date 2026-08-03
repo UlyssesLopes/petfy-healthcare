@@ -13,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.mockito.InjectMocks;
 
 import java.lang.reflect.Field;
@@ -34,8 +35,13 @@ class OwnerServiceImplTest {
     @Mock
     private OwnerRepository ownerRepository;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private OwnerServiceImpl ownerService;
+
+    private static final String HASH = "$2a$10$hashDeMentiraParaOTeste";
 
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
@@ -58,7 +64,8 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve persistir o owner com os dados do request e data de criacao")
         void devePersistirOwnerComDadosDoRequest() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nha", "11999999999", "Rua A, 100");
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", "11999999999", "Rua A, 100");
+            when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
             when(ownerRepository.save(any(Owner.class))).thenReturn(existingOwner());
 
             var result = ownerService.createOwner(request);
@@ -69,8 +76,24 @@ class OwnerServiceImplTest {
             var captor = ArgumentCaptor.forClass(Owner.class);
             verify(ownerRepository).save(captor.capture());
             assertThat(captor.getValue().getName()).isEqualTo("Ulysses");
-            assertThat(captor.getValue().getPassword()).isEqualTo("s3nha");
             assertThat(captor.getValue().getCreationDate()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("nao deve persistir a senha em texto puro")
+        void naoDevePersistirSenhaEmTextoPuro() {
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null);
+            when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
+            when(ownerRepository.save(any(Owner.class))).thenReturn(existingOwner());
+
+            ownerService.createOwner(request);
+
+            var captor = ArgumentCaptor.forClass(Owner.class);
+            verify(ownerRepository).save(captor.capture());
+            assertThat(captor.getValue().getPassword())
+                    .isEqualTo(HASH)
+                    .isNotEqualTo("s3nhaForte");
+            verify(passwordEncoder).encode("s3nhaForte");
         }
 
         @Test
