@@ -435,9 +435,29 @@ sempre **depois** do envio: se o canal falhar, o rollback deixa a dose elegível
 na próxima execução, em vez de registrar como avisada uma dose que ninguém
 recebeu.
 
-**Canais.** `log` é o padrão e escreve no log da aplicação — não é um stub: a
-rotina roda inteira (varre, agrupa, monta a mensagem, marca o envio) sem
-depender de credencial de SMTP. `email` exige SMTP configurado:
+**Canais.** São três: `log`, `resend` e `email`.
+
+`log` é o padrão e escreve no log da aplicação — não é um stub: a rotina roda
+inteira (varre, agrupa, monta a mensagem, marca o envio) sem depender de
+credencial nenhuma.
+
+`resend` envia por **API HTTP**, e é o que funciona em produção. O motivo é
+concreto: o provedor de hospedagem bloqueia saída em porta de SMTP, então a
+conexão com `smtp.gmail.com:587` nunca se estabelece — `SocketTimeoutException`
+puro, que nenhuma configuração resolve. HTTPS passa.
+
+| Variável | Para quê |
+|---|---|
+| `NOTIFICATIONS_CHANNEL=resend` | troca o canal |
+| `RESEND_API_KEY` | chave da conta Resend |
+| `NOTIFICATIONS_FROM` | remetente; sem domínio próprio, só `onboarding@resend.dev` |
+
+Sem domínio verificado, o Resend só aceita `onboarding@resend.dev` como
+remetente — e entrega **apenas para o e-mail dono da conta**. Basta para
+desenvolvimento; no dia em que houver tutor de verdade, é preciso um domínio.
+
+`email` usa SMTP e continua no código para ambiente onde a porta não seja
+bloqueada:
 
 | Variável | Para quê |
 |---|---|
