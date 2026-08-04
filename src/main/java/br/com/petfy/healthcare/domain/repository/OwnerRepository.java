@@ -15,6 +15,8 @@ public interface OwnerRepository extends JpaRepository<Owner, UUID> {
 
     Optional<Owner> findByEmail(String email);
 
+    boolean existsByEmail(String email);
+
     /**
      * So a coluna, e nao o owner inteiro: isto roda no filtro, em toda requisicao
      * autenticada, e carregar a entidade completa ali seria desperdicio.

@@ -31,12 +31,14 @@ esquecimento — ver a seção Frontend.
 
 ## Status
 
-**Passos 1 e 2 concluídos em 2026-08-04**, ambos validados contra o `dev` em
-`petfy-healthcare-development.up.railway.app`.
+**Passos 1, 2 e 3 concluídos em 2026-08-04**, todos validados contra o `dev` em
+`petfy-healthcare-development.up.railway.app`. O passo 3 fica **ligado em `dev`**;
+a virada em `prd` só faz sentido depois que `prd` existir, o que só acontece
+depois da Fase 5.
 
-**Próximo: fechar o passo 3.** Restam duas tarefas, e as duas são de operação, não
-de código: exercitar o lembrete com envio real e então ligar
-`REMINDERS_ENABLED=true`. O canal de e-mail já funciona, então nada mais bloqueia.
+**Próximo: passo 4 (contrato da API).** Antes de qualquer cliente fossilizar
+`/include` e `/all` como nome, expor OpenAPI e decidir a semântica do `PUT`
+parcial.
 
 O Railway constrói a partir do repositório, não da imagem do ghcr — o registry
 privado não tem onde receber credencial na UI dele. A imagem continua sendo
@@ -193,9 +195,11 @@ original da trava — varredura duplicada — deixa de existir.
       de requisição, por ser agendada, e depende da semântica atual de falha: a
       exceção sobe, o rollback desfaz a marcação em `last_reminder_sent_at`, e a
       dose volta a ser elegível na próxima execução. Async quebraria isso.
-- [ ] Exercitar em `dev` e `stg` com caixa de captura, e só então ligar em `prd`:
-      `REMINDERS_ENABLED=true` e `NOTIFICATIONS_CHANNEL=email`. Um lembrete errado
-      em `prd` chega na caixa de um tutor de verdade e não tem como ser desfeito.
+- [x] Exercitar em `dev` com envio real e ligar `REMINDERS_ENABLED=true` lá.
+      Validado em 2026-08-04: dose vencida gerou um e-mail no dia certo, e o
+      cooldown de 7 dias impediu o reenvio na varredura seguinte. `stg` e `prd`
+      seguem pendentes por não existirem; a virada de `NOTIFICATIONS_CHANNEL` em
+      `prd` só faz sentido quando houver tutor real chegando pelo frontend.
 - [x] Log do resultado de cada varredura, **inclusive quando não há nada a
       enviar**. Sem essa linha, uma varredura que rodou e não achou dose fica
       indistinguível de uma que não rodou ou morreu no meio — e a diferença só

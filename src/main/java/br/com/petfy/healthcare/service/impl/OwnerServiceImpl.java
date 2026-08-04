@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
+import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.EmailVerificationService;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 public class OwnerServiceImpl implements OwnerService {
 
     private final OwnerRepository ownerRepository;
+    private final VetRepository vetRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
@@ -33,6 +35,8 @@ public class OwnerServiceImpl implements OwnerService {
 
     @Override
     public OwnerResponseDTO createOwner(OwnerRequestDTO request) {
+
+        garantirEmailLivre(request.getEmail());
 
         Owner owner = Owner.builder()
                 .name(request.getName())
@@ -136,6 +140,17 @@ public class OwnerServiceImpl implements OwnerService {
         emailVerificationTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
 
         ownerRepository.delete(owner);
+    }
+
+    private void garantirEmailLivre(String email) {
+        boolean jaUsado = ownerRepository.existsByEmail(email) || vetRepository.existsByEmail(email);
+
+        if (jaUsado) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.EMAIL_ALREADY_USED.getMessage(),
+                    ErrorMessageEnum.EMAIL_ALREADY_USED.getCode(),
+                    HttpStatus.CONFLICT);
+        }
     }
 
     private OwnerResponseDTO toResponseDTO(Owner owner) {
