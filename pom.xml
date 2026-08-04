@@ -62,6 +62,15 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
 
+        <!-- Do Flyway 10 (que veio junto do Boot 3.2) o suporte a Postgres
+             saiu do core e virou modulo proprio. Sem esta dependencia o
+             Flyway sobe mas recusa o banco com "Unsupported Database:
+             PostgreSQL 14.x". -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
