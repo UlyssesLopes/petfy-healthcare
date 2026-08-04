@@ -10,10 +10,10 @@ depois, guiada pelo que doer no uso.
 
 ## Status
 
-Passo 1 em andamento: as tarefas de código estão feitas (perfil `prod`, actuator,
-`show-sql`), falta provisionar o PaaS e o Postgres gerenciado e setar as
-variáveis. O CI publica a imagem em `ghcr.io/ulysseslopes/petfy-healthcare`, mas
-nada consome ela ainda.
+Passo 1 em andamento, no ambiente de **`dev`**: as tarefas de código estão feitas
+(perfil `hosted` com os grupos `dev`/`stg`/`prd`, actuator, `show-sql`), falta
+provisionar o PaaS e o Postgres gerenciado e setar as variáveis. O CI publica a
+imagem em `ghcr.io/ulysseslopes/petfy-healthcare`, mas nada consome ela ainda.
 
 ## Decisões já tomadas
 
@@ -22,37 +22,77 @@ nada consome ela ainda.
 | Hospedagem em PaaS de container (Fly/Railway/Render), imagem puxada do ghcr | Postgres gerenciado, HTTPS e domínio vêm do provedor; não há IAM/VPC para montar |
 | **Uma instância**, escala vertical | O lembrete de vacina dispensa lock distribuído. Escalar para duas reintroduz o problema — está registrado no passo 3 |
 | Monólito organizado por domínio | Os microserviços com RabbitMQ que o README cita como intenção original ficam fora desta rodada; não servem o objetivo de usuários reais |
+| Três ambientes, criados em ordem: `dev`, depois `stg`, depois `prd` | Nenhum cliente real chega antes de existir um lugar para homologar. Detalhe abaixo |
+
+## Ambientes
+
+A ordem é deliberada e cada ambiente só nasce quando há o que fazer nele:
+
+| Ambiente | Para quê | Quando nasce |
+|---|---|---|
+| `dev` | Onde o desenvolvimento de tudo que falta acontece, já hospedado — não na sua máquina | **Agora**, no passo 1. É pré-requisito de todo o resto |
+| `stg` | Homologação: validar o fluxo completo com dado de mentira antes de qualquer pessoa de fora | Ao fim da Fase 2, quando existe cliente e a API está estável o bastante para ser homologada |
+| `prd` | Clientes de verdade | Depois de o fluxo passar por `stg`: conta recuperável, lembrete saindo e cliente funcionando |
+
+Os três compartilham a mesma estrutura de configuração e diferem por valor, por
+isso o comum mora em `application-hosted.properties` e cada ambiente é um
+*profile group* que o inclui. Consequências práticas:
+
+- **Nenhum dado real fora do `prd`.** Copiar base de `prd` para `dev` transforma
+  o `show-sql` religado do `dev` em vazamento, e faz o lembrete enviar e-mail
+  para tutor de verdade a partir de um ambiente de teste.
+- **Envio de e-mail em `dev` e `stg` vai para caixa de captura**, nunca para um
+  SMTP que entrega. Vale principalmente no passo 2, que é todo sobre e-mail.
+- **`prd` é o único que decide sozinho.** O que quebrar em `dev` ou `stg` não
+  gera incidente, então é lá que os passos abaixo são exercitados primeiro.
 
 ## Fase 1 — pôr no ar e virar o usuário zero
 
-### 1. Ambiente acessível de fora
+### 1. Ambiente de dev no ar
 
 A configuração já é toda dirigida por variável de ambiente
 (`${VAR:default}` em `application.properties`), então o trabalho aqui é menos
 código e mais provisionar. As duas exceções estão na lista.
 
-- [x] Criar `application-prod.properties`. O perfil `docker` não serve: o
+- [x] Criar o perfil `hosted`, comum aos três ambientes, e os grupos `dev`, `stg`
+      e `prd` que o incluem. O perfil `docker` não serve para nenhum deles: o
       datasource dele aponta para `host.docker.internal`, que só existe na
       máquina de desenvolvimento.
 - [x] Desligar `spring.jpa.show-sql` fora de desenvolvimento — despejava SQL com
-      dados no log. Agora `false` no compartilhado e `true` só no `local`.
+      dados no log. Agora `false` no compartilhado, `true` em `local` e `dev`.
 - [x] Adicionar `spring-boot-starter-actuator` e expor apenas `health` e `info`.
       `GET /actuator/health` precisou entrar como rota pública no
       `SecurityConfig`, senão o provedor lê 401 e reinicia a instância em loop —
       coberto no `SecurityFilterChainTest`.
-- [ ] Provisionar o Postgres gerenciado e apontar `DB_*`. O Flyway aplica as 9
-      migrations no primeiro boot — é o mesmo caminho que o
+- [ ] Provisionar o Postgres gerenciado do `dev` e apontar `DB_*`. O Flyway aplica
+      as 9 migrations no primeiro boot — é o mesmo caminho que o
       `SchemaMigrationContainerTest` já exercita no CI.
-- [ ] Definir `JWT_SECRET` no cofre do provedor (mínimo 32 caracteres). Sem ele
-      a aplicação não sobe fora do perfil `local`, de propósito.
-- [ ] Definir `SPRING_PROFILES_ACTIVE=prod` no ambiente. A imagem traz `docker`
-      no Dockerfile; esquecer disso faz a instância tentar
-      `host.docker.internal` e entrar em loop de reinício.
-- [ ] Estender o job `docker` do pipeline com o deploy, ou disparar pelo webhook
-      do provedor a partir da tag `:latest` que já é publicada.
+- [ ] Definir `JWT_SECRET` no cofre do provedor (mínimo 32 caracteres), **um por
+      ambiente**. Sem ele a aplicação não sobe fora do perfil `local`, de
+      propósito. Segredo compartilhado entre ambientes faria token de `dev` valer
+      em `prd`.
+- [ ] Definir `SPRING_PROFILES_ACTIVE=dev` no ambiente. A imagem traz `docker` no
+      Dockerfile; esquecer disso faz a instância tentar `host.docker.internal` e
+      entrar em loop de reinício.
+- [ ] Decidir o gatilho do deploy de `dev`. A tag `:latest` só é publicada em push
+      na `main`, então ou o `dev` acompanha a `main`, ou o pipeline passa a
+      publicar tag por branch. Vale escolher agora: é o que define se `dev` serve
+      para testar branch antes do merge.
 
-**Pronto quando:** você acessa a API de outro dispositivo, `/actuator/health`
-responde, e as 9 migrations foram aplicadas num Postgres de verdade.
+**Pronto quando:** você acessa a API do `dev` de outro dispositivo,
+`/actuator/health` responde, e as 9 migrations foram aplicadas num Postgres de
+verdade.
+
+### 1b. `stg` e `prd`, quando chegar a hora
+
+Não são passos separados de trabalho: com o `hosted` pronto, subir cada um é
+repetir o provisionamento com outros valores. Ficam registrados aqui só para não
+virarem surpresa.
+
+- [ ] `stg` ao fim da Fase 2, com dado de mentira e caixa de captura de e-mail.
+- [ ] `prd` depois que o fluxo completo passar por `stg`. É aqui que
+      `REMINDERS_ENABLED=true` e `NOTIFICATIONS_CHANNEL=email` apontam para envio
+      de verdade.
 
 ### 2. Ciclo de vida da conta
 
@@ -94,7 +134,9 @@ original da trava — varredura duplicada — deixa de existir.
       de requisição, por ser agendada, e depende da semântica atual de falha: a
       exceção sobe, o rollback desfaz a marcação em `last_reminder_sent_at`, e a
       dose volta a ser elegível na próxima execução. Async quebraria isso.
-- [ ] Ligar em produção: `REMINDERS_ENABLED=true` e `NOTIFICATIONS_CHANNEL=email`.
+- [ ] Exercitar em `dev` e `stg` com caixa de captura, e só então ligar em `prd`:
+      `REMINDERS_ENABLED=true` e `NOTIFICATIONS_CHANNEL=email`. Um lembrete errado
+      em `prd` chega na caixa de um tutor de verdade e não tem como ser desfeito.
 - [ ] Log do resultado de cada varredura (quantos tutores, quantas doses), senão
       não há como saber se a rotina rodou e não tinha nada a enviar, ou se
       falhou silenciosamente.
