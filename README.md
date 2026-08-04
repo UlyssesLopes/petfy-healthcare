@@ -42,8 +42,21 @@ Perfis: `local` (app na máquina) e `docker` (app em container, banco no host).
 
 ## Autenticação e autorização
 
-A API é stateless. O cadastro de owner e o login são públicos; todo o resto exige
-`Authorization: Bearer <token>`.
+Existem **dois tipos de conta**: `OWNER` (tutor) e `VET` (veterinário, vinculado
+a uma clínica). Cada um tem sua tabela — tutor e veterinário têm dados e ciclos
+de vida diferentes, e uni-los numa conta genérica obrigaria a reescrever
+autenticação e todas as checagens de propriedade que já existem.
+
+Os dois entram pelo **mesmo** `POST /auth/login`. O papel sai de qual tabela o
+e-mail aparece, nunca de um campo do request — deixar o cliente declarar o
+próprio papel seria deixá-lo escolher a própria permissão. O token carrega o
+papel, e o `LoginResponseDTO` devolve `role` para o cliente saber que tela abrir.
+
+O preço de duas tabelas é que a unicidade de e-mail entre elas não é garantida
+pelo banco: o cadastro de vet checa os dois lados, senão o login ficaria ambíguo.
+
+A API é stateless. Cadastro de owner, cadastro de vet, login e a carteira
+compartilhada são públicos; todo o resto exige `Authorization: Bearer <token>`.
 
 Autenticar não basta: **cada owner só enxerga os próprios dados**. Pets são
 filtrados pelo dono, e vacinas e histórico de saúde pelo dono do pet. Recurso de
@@ -81,7 +94,8 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 | Autenticação | `/auth` | `POST /auth/login` (público) |
 | Owners | `/owners` | `POST /owners/include` (público) e `GET`/`PUT`/`DELETE /owners/me` |
 | Pets | `/pets` | escopado ao dono autenticado |
-| Clínicas | `/clinics` | diretório compartilhado, sem dono |
+| Veterinários | `/vets` | `POST /vets/include` (público) e `GET /vets/me` |
+| Clínicas | `/clinics` | leitura e criação abertas; **editar e remover exigem ser vet da clínica** |
 | Vacinas | `/vaccines` | listagem em `GET /vaccines`, escopada pelo dono do pet |
 | Agenda de vacinas | `/vaccines/agenda` | `?windowDays=30` — o que está vencido ou vencendo |
 | Catálogo de vacinas | `/vaccine-catalog` | somente leitura, mantido por migration |
@@ -253,9 +267,15 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   URL abre quantas vezes quiser, e não há registro de quem abriu. Para uma
   carteira de vacinação isso é aceitável; se um dia guardar dado mais sensível,
   vale limitar por número de acessos e registrar os acessos.
-- **Clínicas não têm dono e são compartilhadas.** Qualquer usuário autenticado lê
-  e escreve o cadastro de clínicas, o que só se resolve de verdade com papéis
-  (dono de pet x veterinário), que ainda não existem.
+- **Não há verificação de identidade profissional.** Qualquer pessoa se cadastra
+  como veterinário informando um CRMV que ninguém confere, e entra numa clínica
+  existente só informando o `clinicId` — sem aprovação de quem já está lá. É o
+  buraco mais sério do modelo de vet, e fecha com validação de CRMV e convite
+  por quem já pertence à clínica.
+- **O veterinário ainda não alcança pets.** Ele tem conta, clínica e mantém o
+  cadastro dela, mas não registra vacina no pet de um tutor — isso precisa de um
+  modelo de concessão de acesso (o tutor autoriza a clínica a ver o pet), que é
+  o passo seguinte.
 - **O escopo por dono nas listagens depende de queries não verificadas contra
   banco real** (`findByOwnerOwnerId` e afins) — mesma limitação de UUID no H2
   descrita acima. As checagens de propriedade item a item, essas sim, estão

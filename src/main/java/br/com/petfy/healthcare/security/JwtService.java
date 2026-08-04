@@ -1,6 +1,5 @@
 package br.com.petfy.healthcare.security;
 
-import br.com.petfy.healthcare.domain.entity.Owner;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -14,9 +13,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class JwtService {
+
+    private static final String CLAIM_ROLE = "role";
+    private static final String CLAIM_SUBJECT_ID = "subjectId";
 
     private final SecretKey key;
     private final Duration expiration;
@@ -30,12 +33,13 @@ public class JwtService {
         this.expiration = Duration.ofMinutes(expirationMinutes);
     }
 
-    public String generateToken(Owner owner) {
+    public String generateToken(String email, UserRole role, UUID subjectId) {
         Instant agora = Instant.now();
 
         return Jwts.builder()
-                .setSubject(owner.getEmail())
-                .claim("ownerId", owner.getOwnerId().toString())
+                .setSubject(email)
+                .claim(CLAIM_ROLE, role.name())
+                .claim(CLAIM_SUBJECT_ID, subjectId.toString())
                 .setIssuedAt(Date.from(agora))
                 .setExpiration(Date.from(agora.plus(expiration)))
                 .signWith(key)
@@ -44,10 +48,14 @@ public class JwtService {
 
     /**
      * Devolve vazio para qualquer token invalido - assinatura errada, expirado,
-     * malformado ou ausente. Quem chama nao precisa distinguir os casos: em
-     * todos eles a requisicao segue sem autenticacao.
+     * malformado, ausente ou com papel desconhecido. Quem chama nao precisa
+     * distinguir os casos: em todos eles a requisicao segue sem autenticacao.
+     *
+     * Papel irreconhecivel entra nessa lista de proposito: um token assinado por
+     * uma versao futura com papel novo nao pode ser tratado como se nao tivesse
+     * papel algum.
      */
-    public Optional<String> extractEmail(String token) {
+    public Optional<JwtPrincipal> extractPrincipal(String token) {
         try {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -55,7 +63,14 @@ public class JwtService {
                     .parseClaimsJws(token)
                     .getBody();
 
-            return Optional.ofNullable(claims.getSubject());
+            String email = claims.getSubject();
+            String role = claims.get(CLAIM_ROLE, String.class);
+
+            if (email == null || role == null) {
+                return Optional.empty();
+            }
+
+            return Optional.of(new JwtPrincipal(email, UserRole.valueOf(role)));
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }

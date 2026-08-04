@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -35,9 +36,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // token invalido nao rejeita a requisicao aqui: apenas nao autentica.
             // Quem decide se a rota exige autenticacao e a SecurityFilterChain,
             // entao um token ruim em rota publica continua passando
-            jwtService.extractEmail(token).ifPresent(email -> {
-                var authentication = new UsernamePasswordAuthenticationToken(email, null, List.of());
+            jwtService.extractPrincipal(token).ifPresent(principal -> {
+                var authorities = List.of(new SimpleGrantedAuthority(principal.getRole().asAuthority()));
+
+                var authentication = new UsernamePasswordAuthenticationToken(
+                        principal.getEmail(), null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             });
         }

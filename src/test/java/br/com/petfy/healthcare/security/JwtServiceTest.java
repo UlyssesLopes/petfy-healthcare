@@ -1,6 +1,5 @@
 package br.com.petfy.healthcare.security;
 
-import br.com.petfy.healthcare.domain.entity.Owner;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -16,51 +15,57 @@ class JwtServiceTest {
 
     private static final String SEGREDO = "segredo-de-teste-com-mais-de-32-caracteres";
     private static final String OUTRO_SEGREDO = "outro-segredo-de-teste-com-32-caracteres";
+    private static final String EMAIL = "ulysses@petfy.com.br";
+    private static final UUID SUBJECT_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     private final JwtService jwtService = new JwtService(SEGREDO, 120);
 
-    private Owner owner() {
-        return Owner.builder()
-                .ownerId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .email("ulysses@petfy.com.br")
-                .build();
+    private String tokenDeTutor() {
+        return jwtService.generateToken(EMAIL, UserRole.OWNER, SUBJECT_ID);
     }
 
     @Test
-    @DisplayName("deve gerar um token que devolve o email do owner")
-    void deveGerarTokenQueDevolveEmail() {
-        var token = jwtService.generateToken(owner());
+    @DisplayName("deve gerar um token que devolve o email e o papel")
+    void deveGerarTokenComEmailEPapel() {
+        var principal = jwtService.extractPrincipal(tokenDeTutor());
 
-        assertThat(jwtService.extractEmail(token)).contains("ulysses@petfy.com.br");
+        assertThat(principal).isPresent();
+        assertThat(principal.get().getEmail()).isEqualTo(EMAIL);
+        assertThat(principal.get().getRole()).isEqualTo(UserRole.OWNER);
     }
 
     @Test
-    @DisplayName("o token nao deve carregar a senha do owner")
+    @DisplayName("deve preservar o papel de veterinario")
+    void devePreservarPapelDeVeterinario() {
+        var token = jwtService.generateToken("vet@clinica.com.br", UserRole.VET, SUBJECT_ID);
+
+        assertThat(jwtService.extractPrincipal(token))
+                .get()
+                .extracting(JwtPrincipal::getRole)
+                .isEqualTo(UserRole.VET);
+    }
+
+    @Test
+    @DisplayName("o token nao deve carregar a senha")
     void tokenNaoDeveCarregarSenha() {
-        var owner = owner();
-        owner.setPassword("$2a$10$hashDaSenha");
-
-        var token = jwtService.generateToken(owner);
-
-        assertThat(token).doesNotContain("hashDaSenha");
+        assertThat(tokenDeTutor()).doesNotContain("hashDaSenha");
     }
 
     @Test
     @DisplayName("deve recusar token assinado com outro segredo")
     void deveRecusarTokenDeOutroSegredo() {
-        var tokenDeOutraChave = new JwtService(OUTRO_SEGREDO, 120).generateToken(owner());
+        var tokenDeOutraChave = new JwtService(OUTRO_SEGREDO, 120)
+                .generateToken(EMAIL, UserRole.OWNER, SUBJECT_ID);
 
-        assertThat(jwtService.extractEmail(tokenDeOutraChave)).isEmpty();
+        assertThat(jwtService.extractPrincipal(tokenDeOutraChave)).isEmpty();
     }
 
     @Test
     @DisplayName("deve recusar token expirado")
     void deveRecusarTokenExpirado() {
-        var jwtExpirado = new JwtService(SEGREDO, -1);
+        var token = new JwtService(SEGREDO, -1).generateToken(EMAIL, UserRole.OWNER, SUBJECT_ID);
 
-        var token = jwtExpirado.generateToken(owner());
-
-        assertThat(jwtService.extractEmail(token)).isEmpty();
+        assertThat(jwtService.extractPrincipal(token)).isEmpty();
     }
 
     @ParameterizedTest
@@ -68,7 +73,32 @@ class JwtServiceTest {
     @ValueSource(strings = {"nao-e-token", "a.b.c", "Bearer xpto"})
     @DisplayName("deve recusar token malformado sem lancar excecao")
     void deveRecusarTokenMalformado(String token) {
-        assertThat(jwtService.extractEmail(token)).isEmpty();
+        assertThat(jwtService.extractPrincipal(token)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("deve recusar token com papel desconhecido, em vez de tratar como sem papel")
+    void deveRecusarPapelDesconhecido() {
+        var comPapelEstranho = io.jsonwebtoken.Jwts.builder()
+                .setSubject(EMAIL)
+                .claim("role", "SUPERUSUARIO")
+                .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(
+                        SEGREDO.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                .compact();
+
+        assertThat(jwtService.extractPrincipal(comPapelEstranho)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("deve recusar token sem o claim de papel")
+    void deveRecusarTokenSemPapel() {
+        var semPapel = io.jsonwebtoken.Jwts.builder()
+                .setSubject(EMAIL)
+                .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(
+                        SEGREDO.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                .compact();
+
+        assertThat(jwtService.extractPrincipal(semPapel)).isEmpty();
     }
 
     @Test
@@ -76,5 +106,12 @@ class JwtServiceTest {
     void deveRecusarSegredoCurto() {
         assertThatThrownBy(() -> new JwtService("curto", 120))
                 .isInstanceOf(io.jsonwebtoken.security.WeakKeyException.class);
+    }
+
+    @Test
+    @DisplayName("o papel deve virar authority com o prefixo que o Spring Security espera")
+    void papelDeveVirarAuthorityComPrefixo() {
+        assertThat(UserRole.OWNER.asAuthority()).isEqualTo("ROLE_OWNER");
+        assertThat(UserRole.VET.asAuthority()).isEqualTo("ROLE_VET");
     }
 }

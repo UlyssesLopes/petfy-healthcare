@@ -5,6 +5,7 @@ import br.com.petfy.healthcare.domain.dto.ClinicResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentVetProvider;
 import br.com.petfy.healthcare.service.ClinicService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,8 @@ import java.util.stream.Collectors;
 public class ClinicServiceImpl implements ClinicService {
 
     private final ClinicRepository clinicRepository;
+
+    private final CurrentVetProvider currentVetProvider;
 
     @Override
     public ClinicResponseDTO createClinic(ClinicRequestDTO request) {
@@ -59,6 +62,8 @@ public class ClinicServiceImpl implements ClinicService {
         Clinic clinic = clinicRepository.findById(clinicId)
                 .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(), ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
 
+        exigirVetDaClinica(clinicId);
+
         clinic.setName(request.getName() != null ? request.getName() : clinic.getName());
         clinic.setOwnerVetName(request.getOwnerVetName() != null ? request.getOwnerVetName() : clinic.getOwnerVetName());
         clinic.setPhone(request.getPhone() != null ? request.getPhone() : clinic.getPhone());
@@ -79,7 +84,30 @@ public class ClinicServiceImpl implements ClinicService {
         if (!clinicRepository.existsById(clinicId)) {
             throw new PetfyHealthcareException(ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(), ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
         }
+
+        exigirVetDaClinica(clinicId);
+
         clinicRepository.deleteById(clinicId);
+    }
+
+    /**
+     * Leitura e criacao seguem abertas a qualquer autenticado - o tutor precisa
+     * consultar clinicas e registrar onde vacinou. Alterar e remover, nao: quem
+     * mantem o cadastro de uma clinica e quem trabalha nela.
+     *
+     * Responde 403 e nao 404 de proposito. Aqui, diferente dos recursos do
+     * tutor, a existencia da clinica nao e segredo: ela ja aparece na listagem
+     * publica, entao esconder o motivo so confundiria.
+     */
+    private void exigirVetDaClinica(UUID clinicId) {
+        UUID clinicaDoVet = currentVetProvider.require().getClinic().getClinicId();
+
+        if (!clinicaDoVet.equals(clinicId)) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.NOT_CLINIC_MEMBER.getMessage(),
+                    ErrorMessageEnum.NOT_CLINIC_MEMBER.getCode(),
+                    HttpStatus.FORBIDDEN);
+        }
     }
 
     private ClinicResponseDTO toResponse(Clinic clinic) {

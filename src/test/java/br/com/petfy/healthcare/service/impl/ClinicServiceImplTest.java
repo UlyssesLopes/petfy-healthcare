@@ -2,8 +2,10 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.ClinicRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentVetProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,10 +34,22 @@ class ClinicServiceImplTest {
     @Mock
     private ClinicRepository clinicRepository;
 
+    @Mock
+    private CurrentVetProvider currentVetProvider;
+
     @InjectMocks
     private ClinicServiceImpl clinicService;
 
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
+    private static final UUID OUTRA_CLINIC_ID = UUID.fromString("aaaaaaaa-5555-5555-5555-555555555555");
+
+    /** Vet cuja clinica e a informada - quem tem permissao de manter o cadastro. */
+    private void autenticadoComoVetDa(UUID clinicId) {
+        when(currentVetProvider.require()).thenReturn(Vet.builder()
+                .vetId(UUID.randomUUID())
+                .clinic(Clinic.builder().clinicId(clinicId).build())
+                .build());
+    }
 
     private Clinic existingClinic() {
         return Clinic.builder()
@@ -57,6 +71,16 @@ class ClinicServiceImplTest {
     @Nested
     @DisplayName("createClinic")
     class CreateClinic {
+
+        @Test
+        @DisplayName("criar clinica nao deve exigir ser veterinario - o tutor precisa registrar onde vacinou")
+        void criarNaoDeveExigirSerVeterinario() {
+            when(clinicRepository.save(any(Clinic.class))).thenReturn(existingClinic());
+
+            clinicService.createClinic(ClinicRequestDTO.builder().name("Clinica Bicho Feliz").build());
+
+            verify(currentVetProvider, never()).require();
+        }
 
         @Test
         @DisplayName("deve persistir a clinica com os dados do request e data de criacao")
@@ -130,6 +154,7 @@ class ClinicServiceImplTest {
         @DisplayName("deve preservar os campos nao enviados no request")
         void devePreservarCamposNaoEnviados() {
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(existingClinic()));
+            autenticadoComoVetDa(CLINIC_ID);
             when(clinicRepository.save(any(Clinic.class))).thenAnswer(i -> i.getArgument(0));
 
             var request = ClinicRequestDTO.builder().phone("1155556666").build();
@@ -139,6 +164,21 @@ class ClinicServiceImplTest {
             assertThat(result.getName()).isEqualTo("Clinica Bicho Feliz");
             assertThat(result.getCnpj()).isEqualTo("12345678000199");
             assertThat(result.getUpdateDate()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("deve responder 403 quando quem altera e vet de outra clinica")
+        void deveResponder403QuandoVetDeOutraClinica() {
+            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(existingClinic()));
+            autenticadoComoVetDa(OUTRA_CLINIC_ID);
+
+            assertThatThrownBy(() -> clinicService.updateClinic(CLINIC_ID,
+                    ClinicRequestDTO.builder().name("Invadida").build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(109, HttpStatus.FORBIDDEN);
+
+            verify(clinicRepository, never()).save(any());
         }
 
         @Test
@@ -159,13 +199,29 @@ class ClinicServiceImplTest {
     class DeleteClinic {
 
         @Test
-        @DisplayName("deve remover a clinica quando existe")
+        @DisplayName("deve remover a clinica quando o vet e dela")
         void deveRemoverQuandoExiste() {
             when(clinicRepository.existsById(CLINIC_ID)).thenReturn(true);
+            autenticadoComoVetDa(CLINIC_ID);
 
             clinicService.deleteClinic(CLINIC_ID);
 
             verify(clinicRepository).deleteById(CLINIC_ID);
+        }
+
+        @Test
+        @DisplayName("deve responder 403 quando o vet e de outra clinica")
+        void deveResponder403QuandoVetDeOutraClinica() {
+            when(clinicRepository.existsById(CLINIC_ID)).thenReturn(true);
+            autenticadoComoVetDa(OUTRA_CLINIC_ID);
+
+            assertThatThrownBy(() -> clinicService.deleteClinic(CLINIC_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Only a vet from this clinic can do that")
+                    .extracting("code", "httpStatus")
+                    .containsExactly(109, HttpStatus.FORBIDDEN);
+
+            verify(clinicRepository, never()).deleteById(any());
         }
 
         @Test

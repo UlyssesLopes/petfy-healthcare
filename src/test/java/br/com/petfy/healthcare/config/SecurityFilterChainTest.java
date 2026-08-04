@@ -6,10 +6,10 @@ import br.com.petfy.healthcare.controller.PetController;
 import br.com.petfy.healthcare.controller.PetShareController;
 import br.com.petfy.healthcare.controller.SharedCardController;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.service.PetShareService;
 import br.com.petfy.healthcare.security.JwtAuthenticationFilter;
 import br.com.petfy.healthcare.security.JwtService;
+import br.com.petfy.healthcare.security.UserRole;
 import br.com.petfy.healthcare.service.AuthService;
 import br.com.petfy.healthcare.service.OwnerService;
 import br.com.petfy.healthcare.service.PetService;
@@ -68,10 +68,7 @@ class SecurityFilterChainTest {
     private PetShareService petShareService;
 
     private String tokenValido() {
-        return jwtService.generateToken(Owner.builder()
-                .ownerId(UUID.randomUUID())
-                .email("ulysses@petfy.com.br")
-                .build());
+        return jwtService.generateToken("ulysses@petfy.com.br", UserRole.OWNER, UUID.randomUUID());
     }
 
     @Test

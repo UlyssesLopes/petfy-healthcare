@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 // cadastro precisa ser publico, senao nao existe primeiro usuario
                 .antMatchers(HttpMethod.POST, "/owners/include").permitAll()
+                .antMatchers(HttpMethod.POST, "/vets/include").permitAll()
                 // carteira compartilhada: quem recebe o link nao tem conta. O
                 // token no path faz o papel da credencial
                 .antMatchers(HttpMethod.GET, "/share/*").permitAll()
