@@ -115,7 +115,7 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 | Recurso | Base | Extras |
 |---|---|---|
 | Autenticação | `/auth` | `POST /auth/login` (público) |
-| Owners | `/owners` | `POST /owners/include` (público) e `GET`/`PUT`/`DELETE /owners/me` |
+| Owners | `/owners` | `POST /owners/include` (público), `GET`/`PUT`/`DELETE /owners/me` e `PUT /owners/me/password` |
 | Pets | `/pets` | escopado ao dono autenticado |
 | Veterinários | `/vets` | `POST /vets/include` (público, exige convite ou clínica nova) e `GET /vets/me` |
 | Convites de clínica | `/vet/clinic-invites` | vet emite, lista e revoga |
@@ -417,8 +417,15 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
 - **Os testes de container não rodam sem Docker.** Localmente eles pulam; quem
   precisa de garantia sobre migrations e consultas por UUID depende do pipeline
   ou de ter Docker no ar.
-- **Troca de senha não existe.** O `PUT /owners/{id}` ignora o campo `password`
-  de propósito; trocar senha merece endpoint próprio, com confirmação da atual.
+- **Trocar a senha não invalida os tokens já emitidos.** `PUT /owners/me/password`
+  exige a senha atual e grava o novo hash, mas a API é stateless: um token
+  emitido antes da troca continua valendo até expirar. Quem troca a senha porque
+  suspeita de acesso indevido não expulsa a outra sessão. Fechar isso exige
+  registrar o instante da troca no owner e recusar, no filtro, token emitido
+  antes dele — vale fazer junto com a recuperação de senha, que tem exatamente a
+  mesma necessidade.
+- **Recuperação de senha ainda não existe.** Quem esquece a senha continua sem
+  caminho de volta: falta o fluxo por e-mail com token de uso único.
 - **O envio por e-mail nunca foi exercitado contra um SMTP real.** O
   `EmailReminderNotifier` é coberto só pela montagem da mensagem; não houve
   entrega de verdade.

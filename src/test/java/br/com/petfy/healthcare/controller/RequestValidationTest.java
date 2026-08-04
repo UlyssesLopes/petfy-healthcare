@@ -114,4 +114,32 @@ class RequestValidationTest {
 
         verify(ownerService).updateCurrentOwner(any());
     }
+
+    /**
+     * A troca de senha e o unico PUT do projeto com @Valid: nos demais o payload
+     * parcial e proposital, aqui os dois campos sao sempre obrigatorios. Se
+     * alguem replicar o padrao dos outros PUT e remover a anotacao, o endpoint
+     * passa a aceitar senha vazia sem reclamar - e este teste e quem avisa.
+     */
+    @Test
+    @DisplayName("a troca de senha deve validar o payload, ao contrario dos demais PUT")
+    void trocaDeSenhaDeveValidarPayload() throws Exception {
+        var body = json(Map.of("currentPassword", "senha-atual", "newPassword", "curta"));
+
+        mockMvc.perform(put("/owners/me/password").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+
+        verify(ownerService, never()).changePassword(any());
+    }
+
+    @Test
+    @DisplayName("a troca de senha deve responder 204 quando o payload esta completo")
+    void trocaDeSenhaDeveResponder204() throws Exception {
+        var body = json(Map.of("currentPassword", "senha-atual", "newPassword", "s3nhaNovaForte"));
+
+        mockMvc.perform(put("/owners/me/password").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isNoContent());
+
+        verify(ownerService).changePassword(any());
+    }
 }

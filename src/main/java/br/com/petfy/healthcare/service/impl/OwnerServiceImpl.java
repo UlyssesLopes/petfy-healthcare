@@ -2,11 +2,15 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
+import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -66,6 +70,33 @@ public class OwnerServiceImpl implements OwnerService {
         existingOwner.setUpdateDate(LocalDateTime.now());
 
         return toResponseDTO(ownerRepository.save(existingOwner));
+    }
+
+    @Override
+    public void changePassword(PasswordChangeRequestDTO request) {
+        Owner owner = currentOwnerProvider.require();
+
+        // exigir a senha atual e o que impede que um token roubado, sozinho,
+        // troque a senha e tome a conta em definitivo
+        if (!passwordEncoder.matches(request.getCurrentPassword(), owner.getPassword())) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.CURRENT_PASSWORD_DOES_NOT_MATCH.getMessage(),
+                    ErrorMessageEnum.CURRENT_PASSWORD_DOES_NOT_MATCH.getCode(),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        // sem isso, quem troca a senha depois de um vazamento acha que rodou a
+        // credencial quando na pratica nao mudou nada
+        if (passwordEncoder.matches(request.getNewPassword(), owner.getPassword())) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.NEW_PASSWORD_MUST_DIFFER.getMessage(),
+                    ErrorMessageEnum.NEW_PASSWORD_MUST_DIFFER.getCode(),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        owner.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        owner.setUpdateDate(LocalDateTime.now());
+        ownerRepository.save(owner);
     }
 
     @Override
