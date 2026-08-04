@@ -47,4 +47,14 @@ public class Owner {
      */
     private LocalDateTime passwordChangedAt;
 
+    /**
+     * Instante em que o tutor confirmou o proprio e-mail. Nulo suspende as
+     * notificacoes, mas nao o login - ver V12__email_verification.sql.
+     */
+    private LocalDateTime emailVerifiedAt;
+
+    public boolean podeReceberNotificacao() {
+        return emailVerifiedAt != null;
+    }
+
 }

@@ -127,7 +127,7 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 
 | Recurso | Base | Extras |
 |---|---|---|
-| Autenticação | `/auth` | `POST /auth/login`, `POST /auth/password-reset` e `POST /auth/password-reset/confirm` (todos públicos) |
+| Autenticação | `/auth` | `POST /auth/login`, `/auth/password-reset`, `/auth/password-reset/confirm`, `/auth/email-verification/resend` e `/auth/email-verification/confirm` (todos públicos) |
 | Owners | `/owners` | `POST /owners/include` (público), `GET`/`PUT`/`DELETE /owners/me` e `PUT /owners/me/password` |
 | Pets | `/pets` | escopado ao dono autenticado |
 | Veterinários | `/vets` | `POST /vets/include` (público, exige convite ou clínica nova) e `GET /vets/me` |
@@ -334,6 +334,40 @@ superar o ganho, é trocar o `hash()` por armazenamento direto no
 
 Token inexistente, expirado e revogado respondem igual, para não confirmar a
 quem tem um link velho que aquele pet existe.
+
+## Confirmação de e-mail
+
+O e-mail é ao mesmo tempo a chave do login e o canal por onde saem lembrete de
+vacina e aviso de vacina registrada. Sem confirmar que o endereço é de quem se
+cadastrou, o sistema pode passar a mandar nome do pet e do tutor para a caixa de
+um estranho.
+
+**E-mail não confirmado não bloqueia o login — suspende a notificação.** Bloquear
+criaria atrito no cadastro para proteger contra outra coisa: o risco não é a
+pessoa entrar, é o aviso sair para o endereço errado. Quem digitou o próprio
+e-mail errado continua conseguindo entrar e corrigir.
+
+```bash
+# reenviar (publico). Responde 202 exista ou nao a conta, e tambem para quem ja confirmou
+curl -X POST localhost:8080/auth/email-verification/resend \
+  -H 'Content-Type: application/json' -d '{"email":"ulysses@exemplo.com"}'
+
+# confirmar (publico)
+curl -X POST localhost:8080/auth/email-verification/confirm \
+  -H 'Content-Type: application/json' -d '{"token":"<token>"}'
+```
+
+O token vale 24 horas — bem mais que os 30 minutos da recuperação de senha,
+porque o que está em jogo é diferente: este confirma um endereço, aquele troca a
+senha da conta.
+
+**Falha de envio no cadastro não desfaz a conta.** É a mesma escolha do aviso de
+vacina registrada: o efeito principal é a conta criada, e perdê-la porque o canal
+caiu seria trocar um problema pequeno — reenviar — por um grande.
+
+**As contas que existiam antes desta regra ficam como não confirmadas**, porque
+não há como afirmar que aqueles endereços foram checados. Na prática elas param
+de receber notificação até verificarem.
 
 ## Notificações
 

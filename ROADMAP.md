@@ -141,12 +141,16 @@ de remover e o que impede qualquer usuário que não seja você.
       inclusive as que não são escopadas por dono e nunca passariam por um
       provider. A recuperação por e-mail vai reusar o mesmo carimbo — quem
       recupera a conta precisa derrubar quem estava dentro.
-- [ ] Verificação de e-mail no cadastro. Decidir explicitamente se e-mail não
-      verificado bloqueia login ou apenas suspende notificação — o e-mail é a
-      chave do login e o canal do lembrete, então a escolha tem consequência.
+- [x] Verificação de e-mail no cadastro. **Decisão: não bloqueia login, suspende
+      notificação.** Bloquear criaria atrito no cadastro para proteger contra
+      outra coisa — o risco não é a pessoa entrar, é o aviso com nome do pet e do
+      tutor sair para o endereço errado. A guarda ficou dentro do `enviar` do
+      `ClinicActivityNotifier`, que passou a receber o tutor: assim um aviso novo
+      não compila sem passar por ela.
 
 **Pronto quando:** você perde a senha, volta sozinho, e o e-mail chega numa caixa
-real.
+real. **Falta só a caixa real** — todo o resto está feito e o canal `log` já
+exercita o fluxo inteiro.
 
 ### 3. Lembrete de vacina ligado
 

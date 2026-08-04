@@ -12,6 +12,7 @@ import br.com.petfy.healthcare.security.JwtService;
 import br.com.petfy.healthcare.security.TokenFreshness;
 import br.com.petfy.healthcare.security.UserRole;
 import br.com.petfy.healthcare.service.AuthService;
+import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.OwnerService;
 import br.com.petfy.healthcare.service.PasswordResetService;
 import br.com.petfy.healthcare.service.PetService;
@@ -71,6 +72,9 @@ class SecurityFilterChainTest {
 
     @MockBean
     private PasswordResetService passwordResetService;
+
+    @MockBean
+    private EmailVerificationService emailVerificationService;
 
     /**
      * Mockado porque a checagem de token anterior a troca de senha consulta o

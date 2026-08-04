@@ -51,7 +51,17 @@ class VaccineReminderServiceTest {
         ReflectionTestUtils.setField(service, "cooldownDays", 7);
     }
 
+    /** Com e-mail confirmado: sem isso o lembrete nao sai, e o assunto do teste e outro. */
     private Owner owner(String nome, String email) {
+        return Owner.builder()
+                .ownerId(UUID.randomUUID())
+                .name(nome)
+                .email(email)
+                .emailVerifiedAt(LocalDateTime.now().minusDays(1))
+                .build();
+    }
+
+    private Owner ownerSemEmailConfirmado(String nome, String email) {
         return Owner.builder().ownerId(UUID.randomUUID()).name(nome).email(email).build();
     }
 
@@ -74,6 +84,54 @@ class VaccineReminderServiceTest {
         var captor = ArgumentCaptor.forClass(Notification.class);
         verify(notifier).send(captor.capture());
         return captor.getValue();
+    }
+
+    @Nested
+    @DisplayName("e-mail nao confirmado")
+    class EmailNaoConfirmado {
+
+        /**
+         * O risco de mandar para endereco nao confirmado nao e spam: e o nome do
+         * pet e do tutor chegando na caixa de um estranho.
+         */
+        @Test
+        @DisplayName("nao deve avisar tutor que ainda nao confirmou o e-mail")
+        void naoDeveAvisarTutorSemEmailConfirmado() {
+            baseTem(vacina(ownerSemEmailConfirmado("Ulysses", "u@petfy.com.br"), "Rex", "V10",
+                    HOJE.minusDays(3), null));
+
+            assertThat(service.enviarLembretes()).isZero();
+            verifyNoInteractions(notifier);
+        }
+
+        /**
+         * A dose nao pode ser marcada como avisada: se fosse, o lembrete se
+         * perderia e o tutor so voltaria a ser avisado no cooldown seguinte,
+         * mesmo tendo confirmado o e-mail no dia seguinte.
+         */
+        @Test
+        @DisplayName("nao deve marcar a dose como avisada quando o tutor nao confirmou o e-mail")
+        void naoDeveMarcarDoseComoAvisada() {
+            baseTem(vacina(ownerSemEmailConfirmado("Ulysses", "u@petfy.com.br"), "Rex", "V10",
+                    HOJE.minusDays(3), null));
+
+            service.enviarLembretes();
+
+            verify(vaccineRepository, org.mockito.Mockito.never()).saveAll(any());
+        }
+
+        @Test
+        @DisplayName("deve avisar apenas o tutor com e-mail confirmado quando ha os dois")
+        void deveAvisarApenasQuemConfirmou() {
+            baseTem(
+                    vacina(ownerSemEmailConfirmado("Sem", "sem@petfy.com.br"), "Rex", "V10",
+                            HOJE.minusDays(3), null),
+                    vacina(owner("Com", "com@petfy.com.br"), "Bidu", "V8",
+                            HOJE.minusDays(2), null));
+
+            assertThat(service.enviarLembretes()).isEqualTo(1);
+            assertThat(capturarEnvio().getToEmail()).isEqualTo("com@petfy.com.br");
+        }
     }
 
     @Nested

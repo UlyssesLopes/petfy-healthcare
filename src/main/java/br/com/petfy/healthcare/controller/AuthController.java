@@ -1,10 +1,13 @@
 package br.com.petfy.healthcare.controller;
 
+import br.com.petfy.healthcare.domain.dto.EmailVerificationConfirmDTO;
+import br.com.petfy.healthcare.domain.dto.EmailVerificationResendDTO;
 import br.com.petfy.healthcare.domain.dto.LoginRequestDTO;
 import br.com.petfy.healthcare.domain.dto.LoginResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordResetConfirmDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordResetRequestDTO;
 import br.com.petfy.healthcare.service.AuthService;
+import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +25,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final EmailVerificationService emailVerificationService;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
@@ -43,6 +47,19 @@ public class AuthController {
     @PostMapping("/password-reset/confirm")
     public ResponseEntity<Void> confirmReset(@Valid @RequestBody PasswordResetConfirmDTO request) {
         passwordResetService.confirmReset(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Como o pedido de recuperacao: 202 sempre, para nao revelar quem tem conta. */
+    @PostMapping("/email-verification/resend")
+    public ResponseEntity<Void> resendVerification(@Valid @RequestBody EmailVerificationResendDTO request) {
+        emailVerificationService.resend(request);
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/email-verification/confirm")
+    public ResponseEntity<Void> confirmVerification(@Valid @RequestBody EmailVerificationConfirmDTO request) {
+        emailVerificationService.confirm(request);
         return ResponseEntity.noContent().build();
     }
 
