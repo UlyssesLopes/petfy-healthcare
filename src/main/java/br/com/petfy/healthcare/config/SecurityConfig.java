@@ -34,6 +34,10 @@ public class SecurityConfig {
                 .and()
                 .authorizeHttpRequests()
                 .antMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                // recuperacao de senha e publica por definicao: quem esqueceu a
+                // senha nao tem como se autenticar para pedir a troca
+                .antMatchers(HttpMethod.POST, "/auth/password-reset").permitAll()
+                .antMatchers(HttpMethod.POST, "/auth/password-reset/confirm").permitAll()
                 // cadastro precisa ser publico, senao nao existe primeiro usuario
                 .antMatchers(HttpMethod.POST, "/owners/include").permitAll()
                 .antMatchers(HttpMethod.POST, "/vets/include").permitAll()

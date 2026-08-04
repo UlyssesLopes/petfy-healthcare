@@ -19,6 +19,8 @@ public enum ErrorMessageEnum {
     CORRECTION_WINDOW_EXPIRED(112, "Correction window for this record has expired"),
     CURRENT_PASSWORD_DOES_NOT_MATCH(113, "Current password does not match"),
     NEW_PASSWORD_MUST_DIFFER(114, "New password must be different from the current one"),
+    // mensagem deliberadamente vaga: nao distingue inexistente, expirado e ja usado
+    RESET_TOKEN_NOT_FOUND(115, "Reset token not found or no longer valid"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

@@ -112,15 +112,20 @@ de remover e o que impede qualquer usuário que não seja você.
       `pom.xml`, mas sem host configurado o canal `email` não funciona.
 - [ ] Escolher provedor de envio e validar entrega real numa caixa de verdade. O
       `README` registra que o envio nunca foi exercitado contra SMTP real.
-- [ ] Migration da tabela de token de recuperação: uso único, expiração curta e
-      **token guardado como hash** — mesmo padrão já adotado em `PetShare`.
-- [ ] `POST /auth/password-reset` (solicita) e `POST /auth/password-reset/confirm`
-      (troca com o token).
-- [ ] Resposta genérica no solicitar, independente de o e-mail existir ou não —
+- [x] Migration da tabela de token de recuperação (`V11`): uso único, expiração
+      curta e **token guardado como hash** — mesmo padrão já adotado em
+      `PetShare`. Só para tutor: uma tabela com duas chaves estrangeiras
+      opcionais só faz sentido quando o vet também trocar senha.
+- [x] `POST /auth/password-reset` (solicita) e `POST /auth/password-reset/confirm`
+      (troca com o token). Concluir carimba `password_changed_at`, derrubando as
+      sessões abertas — aqui isso importa mais que na troca comum: se a conta foi
+      tomada, recuperar precisa expulsar quem entrou.
+- [x] Resposta genérica no solicitar, independente de o e-mail existir ou não —
       coerente com a escolha já feita de responder `404` em vez de `403` para
-      recurso de terceiro, para não permitir varredura da base.
-- [ ] Rate limit no endpoint de solicitação, senão ele vira máquina de enviar
-      e-mail para terceiros.
+      recurso de terceiro, para não permitir varredura da base. Vale também na
+      confirmação: inexistente, expirado e já usado respondem igual.
+- [x] Cooldown entre pedidos, senão o endpoint vira máquina de enviar e-mail para
+      terceiros. Pedido novo também invalida os anteriores em aberto.
 - [x] `PUT /owners/me/password`, exigindo a senha atual. Recusa também nova senha
       igual à atual, senão a troca passa como sucesso sem ter rodado credencial
       nenhuma. É o único `PUT` do projeto com `@Valid`, o que tem teste próprio.

@@ -127,7 +127,7 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 
 | Recurso | Base | Extras |
 |---|---|---|
-| Autenticação | `/auth` | `POST /auth/login` (público) |
+| Autenticação | `/auth` | `POST /auth/login`, `POST /auth/password-reset` e `POST /auth/password-reset/confirm` (todos públicos) |
 | Owners | `/owners` | `POST /owners/include` (público), `GET`/`PUT`/`DELETE /owners/me` e `PUT /owners/me/password` |
 | Pets | `/pets` | escopado ao dono autenticado |
 | Veterinários | `/vets` | `POST /vets/include` (público, exige convite ou clínica nova) e `GET /vets/me` |
@@ -423,6 +423,39 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   subida do contexto; um nome de propriedade errado derruba a aplicação no boot,
   não no teste.
 
+## Recuperação de senha
+
+```bash
+# pedir (publico). Responde 202 exista ou nao a conta
+curl -X POST localhost:8080/auth/password-reset \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"ulysses@exemplo.com"}'
+
+# concluir (publico), com o token que chegou no canal de notificacao
+curl -X POST localhost:8080/auth/password-reset/confirm \
+  -H 'Content-Type: application/json' \
+  -d '{"token":"<token>","newPassword":"s3nhaNovaForte"}'
+```
+
+**O pedido responde igual exista ou não a conta.** Distinguir transformaria um
+endpoint público em verificador de quem tem cadastro aqui — para uma base de
+tutores de pet isso já é exposição e, cruzado com o vazamento de outro serviço,
+vira lista de alvos. Pelo mesmo motivo, token inexistente, expirado e já usado
+respondem igual na confirmação.
+
+**Há cooldown entre pedidos** (`petfy.password-reset.cooldown-minutes`, padrão 5).
+Sem ele, bastaria repetir a chamada com o endereço de alguém para o endpoint
+virar máquina de enviar e-mail a terceiros.
+
+**Pedir de novo invalida o pedido anterior.** Dois links vivos ao mesmo tempo
+dobram a janela de quem interceptou o e-mail antigo, sem ajudar em nada quem
+esqueceu a senha.
+
+**O token é guardado como hash**, como no compartilhamento da carteira, então ele
+só existe uma vez — no envio. E concluir a recuperação carimba
+`password_changed_at`, o que derruba as sessões abertas: se a conta foi tomada,
+quem recupera precisa expulsar quem entrou, não apenas voltar a entrar junto.
+
 ## Limitações conhecidas
 
 - **O OCR em container não foi testado.** O Dockerfile instala o Tesseract e
@@ -430,9 +463,11 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
 - **Os testes de container não rodam sem Docker.** Localmente eles pulam; quem
   precisa de garantia sobre migrations e consultas por UUID depende do pipeline
   ou de ter Docker no ar.
-- **Recuperação de senha ainda não existe.** Quem esquece a senha continua sem
-  caminho de volta: falta o fluxo por e-mail com token de uso único.
-- **O veterinário ainda não troca a própria senha.** A coluna
+- **A recuperação de senha nunca foi exercitada contra um SMTP real.** O fluxo
+  está completo e testado, mas o canal padrão é `log`: o token sai no log da
+  aplicação, o que serve para desenvolver e não serve para um tutor de verdade.
+- **A recuperação vale só para tutor.** O veterinário não recupera nem troca a
+  própria senha. A coluna
   `password_changed_at` já existe em `vets` e o filtro já a consulta, mas não há
   endpoint que a preencha.
 - **O envio por e-mail nunca foi exercitado contra um SMTP real.** O
