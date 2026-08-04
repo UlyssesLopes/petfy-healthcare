@@ -13,6 +13,7 @@ import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,7 +68,7 @@ class PetShareServiceImplTest {
         // calculator real: o valor do teste esta em conferir o status que o link
         // mostra, e nao em repetir a regra num mock
         service = new PetShareServiceImpl(petShareRepository, petRepository, vaccineRepository,
-                currentOwnerProvider, new VaccineStatusCalculator());
+                currentOwnerProvider, new VaccineStatusCalculator(), new OpaqueTokenService());
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 30);
         ReflectionTestUtils.setField(service, "windowDays", 30);
     }

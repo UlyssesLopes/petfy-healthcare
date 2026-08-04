@@ -11,6 +11,7 @@ import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.PetShareService;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -19,13 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -35,15 +31,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PetShareServiceImpl implements PetShareService {
 
-    private static final int TOKEN_BYTES = 32;
-
     private final PetShareRepository petShareRepository;
     private final PetRepository petRepository;
     private final VaccineRepository vaccineRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
     private final VaccineStatusCalculator vaccineStatusCalculator;
-
-    private final SecureRandom secureRandom = new SecureRandom();
+    private final OpaqueTokenService opaqueTokenService;
 
     @Value("${petfy.share.default-expiration-days:30}")
     private int defaultExpirationDays;
@@ -60,11 +53,11 @@ public class PetShareServiceImpl implements PetShareService {
                 ? request.getExpiresInDays()
                 : defaultExpirationDays;
 
-        String token = gerarToken();
+        String token = opaqueTokenService.generate();
 
         PetShare share = petShareRepository.save(PetShare.builder()
                 .pet(pet)
-                .tokenHash(hash(token))
+                .tokenHash(opaqueTokenService.hash(token))
                 .expiresAt(LocalDateTime.now().plusDays(validade))
                 .creationDate(LocalDateTime.now())
                 .build());
@@ -107,7 +100,7 @@ public class PetShareServiceImpl implements PetShareService {
 
         // token invalido, revogado e expirado respondem igual: distinguir diria a
         // quem tem um link velho que aquele pet existe
-        PetShare share = petShareRepository.findByTokenHash(hash(token))
+        PetShare share = petShareRepository.findByTokenHash(opaqueTokenService.hash(token))
                 .filter(s -> s.isActive(agora))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.SHARE_NOT_FOUND.getMessage(),
@@ -144,27 +137,6 @@ public class PetShareServiceImpl implements PetShareService {
                 .status(vaccineStatusCalculator.classify(vaccine.getNextDoseDate(), hoje, windowDays))
                 .clinicName(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null)
                 .build();
-    }
-
-    /** 32 bytes de SecureRandom: o token e a unica barreira do link, entao precisa ser inadivinhavel. */
-    private String gerarToken() {
-        byte[] bytes = new byte[TOKEN_BYTES];
-        secureRandom.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    /**
-     * SHA-256 e nao BCrypt: a busca precisa ser por igualdade, e o token ja tem
-     * 256 bits de entropia - nao ha o que proteger contra forca bruta como numa
-     * senha escolhida por gente.
-     */
-    private String hash(String token) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return Base64.getEncoder().encodeToString(digest.digest(token.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 indisponivel na JVM", e);
-        }
     }
 
     private Pet buscarPetDoOwnerAutenticado(UUID petId) {

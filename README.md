@@ -94,7 +94,8 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 | Autenticação | `/auth` | `POST /auth/login` (público) |
 | Owners | `/owners` | `POST /owners/include` (público) e `GET`/`PUT`/`DELETE /owners/me` |
 | Pets | `/pets` | escopado ao dono autenticado |
-| Veterinários | `/vets` | `POST /vets/include` (público) e `GET /vets/me` |
+| Veterinários | `/vets` | `POST /vets/include` (público, exige convite ou clínica nova) e `GET /vets/me` |
+| Convites de clínica | `/vet/clinic-invites` | vet emite, lista e revoga |
 | Acesso de clínicas | `/pets/{petId}/clinic-access` | tutor concede, lista e revoga |
 | Área do veterinário | `/vet/pets` | pets autorizados; `POST /vet/pets/{petId}/vaccines` |
 | Clínicas | `/clinics` | leitura e criação abertas; **editar e remover exigem ser vet da clínica** |
@@ -142,6 +143,42 @@ aceita, só sem cálculo automático.
 O catálogo é somente leitura na API e mantido por migration: incluir ou corrigir
 vacina é uma migration nova. Isso o mantém versionado sem exigir um papel de
 administrador, que o sistema não tem.
+
+## Entrando numa clínica
+
+Há **duas** portas de entrada para um veterinário, e nenhuma delas é apontar
+para uma clínica existente:
+
+1. **Cadastrar a clínica junto** — vira o primeiro vet dela.
+2. **Apresentar um convite** emitido por quem já está lá.
+
+```bash
+# vet de dentro emite (opcionalmente endereçado a um e-mail)
+curl -X POST localhost:8080/vet/clinic-invites \
+  -H "Authorization: Bearer $TOKEN_VET" -H 'Content-Type: application/json' \
+  -d '{"email":"nova@vet.com.br","expiresInDays":3}'
+
+# a pessoa convidada se cadastra
+curl -X POST localhost:8080/vets/include \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Dra. Marina","email":"nova@vet.com.br","password":"s3nhaForte",
+       "crmv":"SP-12345","inviteToken":"..."}'
+```
+
+**Por que isso importa:** antes bastava saber o `clinicId` — que aparece em
+qualquer listagem — para se cadastrar como vet de qualquer clínica. E quem entra
+numa clínica alcança **todos os pets que ela já foi autorizada a atender**. Era o
+buraco mais sério do modelo.
+
+Isso não substitui validação de CRMV, que dependeria de integrar com registro
+externo. Mas troca *"qualquer um entra"* por *"alguém de dentro respondeu por
+essa pessoa"*.
+
+O convite é de **uso único** (aceitar consome), tem validade curta (7 dias por
+padrão, teto de 30) e pode ser endereçado a um e-mail específico — vale
+preencher, porque um link sem dono encaminhado a terceiros vira porta de entrada.
+Token inexistente, expirado, revogado, já usado e destinado a outro e-mail
+respondem igual, para não dizer a quem tenta adivinhar qual parte errou.
 
 ## Veterinário atendendo um pet
 
@@ -325,11 +362,13 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   URL abre quantas vezes quiser, e não há registro de quem abriu. Para uma
   carteira de vacinação isso é aceitável; se um dia guardar dado mais sensível,
   vale limitar por número de acessos e registrar os acessos.
-- **Não há verificação de identidade profissional.** Qualquer pessoa se cadastra
-  como veterinário informando um CRMV que ninguém confere, e entra numa clínica
-  existente só informando o `clinicId` — sem aprovação de quem já está lá. É o
-  buraco mais sério do modelo de vet, e fecha com validação de CRMV e convite
-  por quem já pertence à clínica.
+- **O CRMV não é verificado.** Entrar numa clínica já exige convite de quem está
+  lá, mas o registro profissional informado no cadastro não é conferido com
+  nenhum órgão. Fechar isso depende de integrar com o CRMV.
+- **Quem cria uma clínica não é verificado.** A porta do convite protege clínicas
+  existentes, mas qualquer pessoa ainda cadastra uma clínica nova e vira o
+  primeiro vet dela. O dano é menor (uma clínica sem pets autorizados não alcança
+  nada), mas permite poluir o diretório.
 - **O veterinário só escreve vacinas.** Não registra histórico de saúde nem
   edita ou remove o que já lançou — corrigir um registro errado hoje depende do
   tutor. Editar histórico alheio é mais delicado que criar, e merece um modelo

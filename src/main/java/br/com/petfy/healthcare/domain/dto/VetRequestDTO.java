@@ -6,7 +6,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -28,10 +27,15 @@ public class VetRequestDTO {
 
     private String crmv;
 
-    /** Para entrar numa clinica ja cadastrada. Exclusivo com clinic. */
-    private UUID clinicId;
+    /**
+     * Para entrar numa clinica ja cadastrada. Exclusivo com clinic.
+     *
+     * E convite, e nao clinicId: o id aparece em qualquer listagem publica, entao
+     * aceitar o id deixaria qualquer pessoa entrar em qualquer clinica.
+     */
+    private String inviteToken;
 
-    /** Para cadastrar a clinica junto. Exclusivo com clinicId. */
+    /** Para cadastrar a clinica junto, sendo o primeiro vet dela. Exclusivo com inviteToken. */
     @Valid
     private ClinicRequestDTO clinic;
 

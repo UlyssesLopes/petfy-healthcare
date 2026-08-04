@@ -15,6 +15,7 @@ public enum ErrorMessageEnum {
     EMAIL_ALREADY_USED(108, "Email already registered"),
     NOT_CLINIC_MEMBER(109, "Only a vet from this clinic can do that"),
     CLINIC_ACCESS_NOT_FOUND(110, "Clinic access not found"),
+    INVITE_NOT_FOUND(111, "Invite not found or no longer valid"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 
