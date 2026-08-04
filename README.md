@@ -380,7 +380,7 @@ Há dois avisos ao tutor, no mesmo canal:
 
 ```properties
 petfy.notifications.channel=log       # log | email
-petfy.notifications.from=nao-responda@petfy.com.br
+petfy.notifications.from=             # default: o proprio MAIL_USERNAME
 
 petfy.reminders.enabled=true          # default false
 petfy.reminders.window-days=30        # antecedência do aviso
@@ -429,7 +429,22 @@ recebeu.
 
 **Canais.** `log` é o padrão e escreve no log da aplicação — não é um stub: a
 rotina roda inteira (varre, agrupa, monta a mensagem, marca o envio) sem
-depender de credencial de SMTP. `email` exige `spring.mail.*` configurado.
+depender de credencial de SMTP. `email` exige SMTP configurado:
+
+| Variável | Para quê |
+|---|---|
+| `NOTIFICATIONS_CHANNEL=email` | troca o canal; sem isso nada é enviado de verdade |
+| `MAIL_USERNAME` | a conta que autentica no SMTP |
+| `MAIL_PASSWORD` | **senha de app**, não a senha da conta — exige 2FA ligado |
+| `MAIL_HOST` / `MAIL_PORT` | default `smtp.gmail.com` / `587`, que serve para Gmail e Google Workspace |
+
+**O remetente é o próprio `MAIL_USERNAME` por default.** Gmail e Workspace
+recusam `From` diferente da conta autenticada, então definir `NOTIFICATIONS_FROM`
+com outro endereço faz o envio ser rejeitado — o default evita esse erro.
+
+Os timeouts de SMTP são explícitos porque o default do JavaMail é esperar para
+sempre: um servidor que aceita a conexão e não responde prenderia uma thread do
+pool de envio até a aplicação reiniciar.
 
 **Por que vem desligada:** com mais de uma instância no ar, todas disparariam a
 rotina e o tutor receberia o lembrete repetido. Ligar exige decidir quem executa
