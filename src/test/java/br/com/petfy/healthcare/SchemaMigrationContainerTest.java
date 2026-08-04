@@ -94,7 +94,9 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
         assertThat(catalogo).hasSize(11);
         assertThat(catalogo).extracting("code").contains("V10", "ANTIRRABICA_C", "V3_FELINA");
         assertThat(catalogo).allSatisfy(entrada ->
-                assertThat(entrada.getSpecies()).isIn("CANINA", "FELINA"));
+                assertThat(entrada.getSpecies())
+                        .isIn(br.com.petfy.healthcare.domain.entity.Species.CANINA,
+                              br.com.petfy.healthcare.domain.entity.Species.FELINA));
     }
 
     @Test
