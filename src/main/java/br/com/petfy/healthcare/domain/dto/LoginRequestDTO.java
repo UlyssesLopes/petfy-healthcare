@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.domain.dto;
 
 import lombok.*;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 @Getter
 @Setter

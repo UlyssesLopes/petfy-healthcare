@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.18</version>
+        <version>3.3.5</version>
         <relativePath/>
     </parent>
 
@@ -60,6 +60,15 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <!-- Do Flyway 10 (que veio junto do Boot 3.2) o suporte a Postgres
+             saiu do core e virou modulo proprio. Sem esta dependencia o
+             Flyway sobe mas recusa o banco com "Unsupported Database:
+             PostgreSQL 14.x". -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
 
         <dependency>
@@ -172,7 +181,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>3.1.0</version> <!-- ou a versão que estiver usando -->
                 <executions>
                     <execution>
                         <goals>

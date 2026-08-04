@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.domain.dto;
 
 import lombok.*;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 @Getter

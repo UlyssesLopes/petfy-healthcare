@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.domain.entity;
 
 import lombok.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.UUID;
 
 /**
