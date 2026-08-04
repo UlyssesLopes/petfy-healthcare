@@ -51,6 +51,11 @@ public class VaccineReminderService {
         List<Vaccine> pendentes = vaccineRepository.findByNextDoseDateLessThanEqual(hoje.plusDays(windowDays))
                 .stream()
                 .filter(vaccine -> deveAvisar(vaccine, agora))
+                // tutor que ainda nao confirmou o e-mail fica de fora. O filtro
+                // vem antes do agrupamento de proposito: assim a dose tambem nao
+                // e marcada como avisada, e o lembrete sai na primeira varredura
+                // depois que ele confirmar, em vez de se perder
+                .filter(vaccine -> vaccine.getPet().getOwner().podeReceberNotificacao())
                 .collect(Collectors.toList());
 
         if (pendentes.isEmpty()) {

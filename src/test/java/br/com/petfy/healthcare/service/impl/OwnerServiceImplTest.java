@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,6 +40,9 @@ class OwnerServiceImplTest {
 
     @Mock
     private CurrentOwnerProvider currentOwnerProvider;
+
+    @Mock
+    private EmailVerificationService emailVerificationService;
 
     @InjectMocks
     private OwnerServiceImpl ownerService;

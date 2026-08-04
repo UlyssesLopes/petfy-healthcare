@@ -21,6 +21,7 @@ public enum ErrorMessageEnum {
     NEW_PASSWORD_MUST_DIFFER(114, "New password must be different from the current one"),
     // mensagem deliberadamente vaga: nao distingue inexistente, expirado e ja usado
     RESET_TOKEN_NOT_FOUND(115, "Reset token not found or no longer valid"),
+    VERIFICATION_TOKEN_NOT_FOUND(116, "Verification token not found or no longer valid"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.OwnerService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class OwnerServiceImpl implements OwnerService {
     private final OwnerRepository ownerRepository;
     private final PasswordEncoder passwordEncoder;
     private final CurrentOwnerProvider currentOwnerProvider;
+    private final EmailVerificationService emailVerificationService;
 
     @Override
     public OwnerResponseDTO createOwner(OwnerRequestDTO request) {
@@ -37,7 +39,14 @@ public class OwnerServiceImpl implements OwnerService {
                 .updateDate(LocalDateTime.now())
                 .build();
 
-        return toResponseDTO(ownerRepository.save(owner));
+        Owner salvo = ownerRepository.save(owner);
+
+        // e-mail comeca sem verificacao: a conta funciona, mas nao recebe aviso
+        // ate o tutor confirmar o endereco. Falha de envio aqui nao desfaz o
+        // cadastro - quem nao receber pede o reenvio
+        emailVerificationService.sendVerification(salvo);
+
+        return toResponseDTO(salvo);
     }
 
     @Override

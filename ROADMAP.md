@@ -3,10 +3,15 @@
 Plano de execução do Petfy HealthCare. Complementa o `README.md`: lá está o que
 existe e por quê, aqui está o que vem depois e em que ordem.
 
-**Objetivo desta rodada:** sair do estado "API que ninguém consegue usar" e
-chegar a tutores reais usando — mesmo que sejam poucos. Toda a ordem abaixo
-deriva disso: o que destrava uso real vem antes, e profundidade de modelo vem
-depois, guiada pelo que doer no uso.
+**Objetivo desta rodada:** levar o **backend** a um produto maduro — completo,
+seguro e operável — e só então construir o frontend em cima do que existir.
+Dentro do backend, a ordem continua sendo a de uso real: o que destrava um tutor
+de verdade vem antes, e profundidade de modelo vem depois.
+
+**A consequência de sequenciar assim, dita em voz alta:** tutor real só chega
+quando o frontend existir, porque ninguém usa `curl`. Até lá, "usuário zero" é
+você, e a validação de cada passo é por API. Foi uma escolha deliberada, não um
+esquecimento — ver a seção Frontend.
 
 ## Status
 
@@ -27,6 +32,7 @@ publicada pelo pipeline como artefato de deploy, mas nada a consome hoje.
 | **Uma instância**, escala vertical | O lembrete de vacina dispensa lock distribuído. Escalar para duas reintroduz o problema — está registrado no passo 3 |
 | Monólito organizado por domínio | Os microserviços com RabbitMQ que o README cita como intenção original ficam fora desta rodada; não servem o objetivo de usuários reais |
 | Três ambientes, criados em ordem: `dev`, depois `stg`, depois `prd` | Nenhum cliente real chega antes de existir um lugar para homologar. Detalhe abaixo |
+| **Backend maduro primeiro, frontend depois** | Nada de frontend está escolhido — nem stack, nem telas, nem mecânicas. A API madura vira a especificação da tela. Ver a Fase 5 |
 
 ## Ambientes
 
@@ -35,8 +41,8 @@ A ordem é deliberada e cada ambiente só nasce quando há o que fazer nele:
 | Ambiente | Para quê | Quando nasce |
 |---|---|---|
 | `dev` | Onde o desenvolvimento de tudo que falta acontece, já hospedado — não na sua máquina | **Agora**, no passo 1. É pré-requisito de todo o resto |
-| `stg` | Homologação: validar o fluxo completo com dado de mentira antes de qualquer pessoa de fora | Ao fim da Fase 2, quando existe cliente e a API está estável o bastante para ser homologada |
-| `prd` | Clientes de verdade | Depois de o fluxo passar por `stg`: conta recuperável, lembrete saindo e cliente funcionando |
+| `stg` | Homologação: validar o fluxo completo com dado de mentira antes de qualquer pessoa de fora | Quando o backend estiver fechado o bastante para ser homologado ponta a ponta por API — não depende do frontend existir |
+| `prd` | Clientes de verdade | Depois de o fluxo passar por `stg` **e** de existir frontend. Sem tela não há cliente real, então `prd` sem frontend seria ambiente parado |
 
 Os três compartilham a mesma estrutura de configuração e diferem por valor, por
 isso o comum mora em `application-hosted.properties` e cada ambiente é um
@@ -135,12 +141,16 @@ de remover e o que impede qualquer usuário que não seja você.
       inclusive as que não são escopadas por dono e nunca passariam por um
       provider. A recuperação por e-mail vai reusar o mesmo carimbo — quem
       recupera a conta precisa derrubar quem estava dentro.
-- [ ] Verificação de e-mail no cadastro. Decidir explicitamente se e-mail não
-      verificado bloqueia login ou apenas suspende notificação — o e-mail é a
-      chave do login e o canal do lembrete, então a escolha tem consequência.
+- [x] Verificação de e-mail no cadastro. **Decisão: não bloqueia login, suspende
+      notificação.** Bloquear criaria atrito no cadastro para proteger contra
+      outra coisa — o risco não é a pessoa entrar, é o aviso com nome do pet e do
+      tutor sair para o endereço errado. A guarda ficou dentro do `enviar` do
+      `ClinicActivityNotifier`, que passou a receber o tutor: assim um aviso novo
+      não compila sem passar por ela.
 
 **Pronto quando:** você perde a senha, volta sozinho, e o e-mail chega numa caixa
-real.
+real. **Falta só a caixa real** — todo o resto está feito e o canal `log` já
+exercita o fluxo inteiro.
 
 ### 3. Lembrete de vacina ligado
 
@@ -167,7 +177,7 @@ original da trava — varredura duplicada — deixa de existir.
 **Pronto quando:** uma dose vencendo gera um e-mail no dia certo, uma vez só, e o
 cooldown impede o reenvio no dia seguinte.
 
-## Fase 2 — dar rosto
+## Fase 2 — fechar o contrato da API
 
 ### 4. Contrato, antes do cliente
 
@@ -183,14 +193,8 @@ cooldown impede o reenvio no dia seguinte.
 **Pronto quando:** o Swagger UI descreve a API inteira e os nomes definitivos
 estão decididos.
 
-### 5. Cliente web enxuto
-
-Três telas, nada além: carteira do pet, agenda do que vence, registrar dose. A
-agenda é a única parte do sistema que produz informação em vez de devolver o que
-foi gravado — é ela que justifica o app existir.
-
-**Pronto quando:** alguém que nunca viu `curl` cadastra um pet e vê a próxima
-dose.
+**O passo 5, o cliente, saiu daqui.** Ele agora abre a Fase 5, depois de o
+backend estar maduro — ver a seção Frontend.
 
 ## Fase 3 — o domínio que o uso real cobra
 
@@ -245,6 +249,35 @@ sem código novo de canal.
   cadastra uma clínica nova e vira o primeiro vet dela.
 
 **Pronto quando:** você atende um pedido de exclusão sem abrir o banco na mão.
+
+## Fase 5 — Frontend
+
+### 5. O cliente, quando o backend estiver maduro
+
+**Nada do frontend está decidido.** Tecnologia, telas, o que aparece em cada uma,
+navegação, mecânicas de interação — tudo será decidido do zero, provavelmente com
+apoio do Claude para a parte de design. Não há stack escolhida, não há protótipo,
+e nenhuma decisão anterior deste roadmap presume uma.
+
+**A ordem é deliberada:** primeiro o backend chega a produto maduro, e só então o
+frontend é desenhado **em cima do que existir de fato**. O motivo é que a API
+madura é a melhor especificação possível para a tela — ela já terá respondido o
+que é um pet, o que é uma dose vencendo, quem enxerga o quê e o que pode ser
+corrigido. Desenhar tela antes disso significaria adivinhar essas respostas e
+depois brigar com elas.
+
+O que já se sabe que a primeira versão precisa mostrar, e mesmo isso está sujeito
+a mudar: a carteira do pet, a agenda do que vence e o registro de uma dose. A
+agenda é a única parte do sistema que **produz** informação em vez de devolver o
+que foi gravado — é ela que justifica um app existir, e provavelmente é o centro
+da primeira tela.
+
+**Consequência prática:** enquanto esta fase não começa, tutor real não usa o
+Petfy, e `prd` não tem por que existir. A validação de tudo que vem antes é por
+API, em `dev` e `stg`.
+
+**Pronto quando:** alguém que nunca viu `curl` cadastra um pet e vê a próxima
+dose.
 
 ## Dívidas com relógio
 

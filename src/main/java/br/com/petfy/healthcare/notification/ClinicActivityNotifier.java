@@ -30,7 +30,7 @@ public class ClinicActivityNotifier {
     private final Notifier notifier;
 
     public void vaccineRecorded(Vaccine vaccine) {
-        enviar(() -> {
+        enviar(vaccine.getPet().getOwner(), () -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s registrou uma vacina no %s:",
                     clinica(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null),
@@ -48,7 +48,7 @@ public class ClinicActivityNotifier {
     }
 
     public void vaccineCorrected(Vaccine vaccine) {
-        enviar(() -> {
+        enviar(vaccine.getPet().getOwner(), () -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s corrigiu um registro de vacina do %s.",
                     clinica(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null),
@@ -66,7 +66,7 @@ public class ClinicActivityNotifier {
     }
 
     public void healthRecordRecorded(HealthRecord record) {
-        enviar(() -> {
+        enviar(record.getPet().getOwner(), () -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s registrou um atendimento do %s:",
                     clinica(record.getClinic() != null ? record.getClinic().getName() : null),
@@ -83,7 +83,7 @@ public class ClinicActivityNotifier {
     }
 
     public void healthRecordCorrected(HealthRecord record) {
-        enviar(() -> {
+        enviar(record.getPet().getOwner(), () -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s corrigiu um atendimento do %s.",
                     clinica(record.getClinic() != null ? record.getClinic().getName() : null),
@@ -104,7 +104,23 @@ public class ClinicActivityNotifier {
      * efeito principal e o registro no historico do pet - perde-lo porque o SMTP
      * caiu seria trocar um problema pequeno por um grande.
      */
-    private void enviar(java.util.function.Supplier<Notification> mensagem, String evento) {
+    /**
+     * Recebe o tutor explicitamente, e nao apenas a mensagem pronta, para que a
+     * checagem de e-mail confirmado valha para todo aviso desta classe - inclusive
+     * um que venha a ser adicionado depois, que nao compila sem passar o tutor.
+     *
+     * Enquanto o e-mail nao for confirmado, nada sai para aquele endereco. O
+     * silencio aqui e aceitavel: o registro no historico do pet continua sendo
+     * feito e o tutor o ve ao abrir a carteira. O que nao pode e o nome do pet e
+     * do tutor irem parar na caixa de um estranho.
+     */
+    private void enviar(Owner owner, java.util.function.Supplier<Notification> mensagem, String evento) {
+        if (!owner.podeReceberNotificacao()) {
+            log.info("Tutor {} ainda nao confirmou o e-mail; aviso de {} suprimido",
+                    owner.getOwnerId(), evento);
+            return;
+        }
+
         try {
             notifier.send(mensagem.get());
         } catch (Exception e) {

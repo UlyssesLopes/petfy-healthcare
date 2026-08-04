@@ -38,6 +38,10 @@ public class SecurityConfig {
                 // senha nao tem como se autenticar para pedir a troca
                 .antMatchers(HttpMethod.POST, "/auth/password-reset").permitAll()
                 .antMatchers(HttpMethod.POST, "/auth/password-reset/confirm").permitAll()
+                // confirmar e-mail tambem: quem clica no link pode nem ter feito
+                // login ainda, e o token do e-mail e a credencial do fluxo
+                .antMatchers(HttpMethod.POST, "/auth/email-verification/resend").permitAll()
+                .antMatchers(HttpMethod.POST, "/auth/email-verification/confirm").permitAll()
                 // cadastro precisa ser publico, senao nao existe primeiro usuario
                 .antMatchers(HttpMethod.POST, "/owners/include").permitAll()
                 .antMatchers(HttpMethod.POST, "/vets/include").permitAll()
