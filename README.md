@@ -219,18 +219,36 @@ superar o ganho, é trocar o `hash()` por armazenamento direto no
 Token inexistente, expirado e revogado respondem igual, para não confirmar a
 quem tem um link velho que aquele pet existe.
 
-## Lembretes de vacina
+## Notificações
 
-Uma rotina diária varre as doses pendentes e avisa o tutor. **Desligada por
-padrão** — ver abaixo o porquê.
+Há dois avisos ao tutor, no mesmo canal:
+
+1. **Lembrete de vacina** — rotina diária, **desligada por padrão** (ver o porquê
+   abaixo).
+2. **Vacina registrada por uma clínica** — sai na hora do registro e **não
+   depende do agendador**, porque não é varredura.
 
 ```properties
+petfy.notifications.channel=log       # log | email
+petfy.notifications.from=nao-responda@petfy.com.br
+
 petfy.reminders.enabled=true          # default false
-petfy.reminders.channel=log           # log | email
 petfy.reminders.window-days=30        # antecedência do aviso
 petfy.reminders.cooldown-days=7       # intervalo mínimo entre avisos da mesma dose
 petfy.reminders.cron=0 0 9 * * *      # 9h, America/Sao_Paulo
 ```
+
+**O canal não conhece o domínio.** Quem monta o texto é quem tem o contexto
+(`VaccineReminderService`, `VaccineRecordedNotifier`); `Notifier` só transporta
+uma `Notification` pronta. Foi o que permitiu somar o segundo aviso sem duplicar
+a infraestrutura de canal — e um push futuro não mexe em nenhum dos dois.
+
+**As duas notificações tratam falha de envio de forma oposta, de propósito:**
+
+| | Lembrete | Vacina registrada |
+|---|---|---|
+| Falha no envio | exceção sobe, rollback | captura e loga |
+| Por quê | o envio é o único efeito; não avisar = não ter feito nada | o efeito principal é a vacina gravada — perdê-la porque o SMTP caiu seria trocar um problema pequeno por um grande |
 
 **Um lembrete por tutor, não um por dose.** Quem tem três pets atrasados recebe
 uma mensagem com três linhas, não três mensagens.
@@ -244,8 +262,7 @@ recebeu.
 
 **Canais.** `log` é o padrão e escreve no log da aplicação — não é um stub: a
 rotina roda inteira (varre, agrupa, monta a mensagem, marca o envio) sem
-depender de credencial de SMTP. `email` exige `spring.mail.*` configurado;
-trocar de canal não mexe na regra de quando avisar.
+depender de credencial de SMTP. `email` exige `spring.mail.*` configurado.
 
 **Por que vem desligada:** com mais de uma instância no ar, todas disparariam a
 rotina e o tutor receberia o lembrete repetido. Ligar exige decidir quem executa
@@ -317,9 +334,10 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   edita ou remove o que já lançou — corrigir um registro errado hoje depende do
   tutor. Editar histórico alheio é mais delicado que criar, e merece um modelo
   próprio (quem pode corrigir o quê, e por quanto tempo).
-- **A concessão não notifica o tutor.** Ele não é avisado quando a clínica
-  registra algo no pet dele; só vê ao abrir o app. O canal de notificação já
-  existe (ver lembretes), então isso é integração, não infraestrutura nova.
+- **A notificação de vacina registrada é síncrona.** Sai dentro da requisição do
+  veterinário, então um SMTP lento adiciona latência ao registro. Falha não
+  quebra nada (é capturada), mas o envio devia sair do caminho da requisição —
+  fila ou `@Async`.
 - **O escopo por dono nas listagens depende de queries não verificadas contra
   banco real** (`findByOwnerOwnerId` e afins) — mesma limitação de UUID no H2
   descrita acima. As checagens de propriedade item a item, essas sim, estão

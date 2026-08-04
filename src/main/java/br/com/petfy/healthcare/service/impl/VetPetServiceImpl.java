@@ -10,6 +10,7 @@ import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.notification.VaccineRecordedNotifier;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VetPetService;
@@ -30,6 +31,7 @@ public class VetPetServiceImpl implements VetPetService {
     private final VaccineRepository vaccineRepository;
     private final CurrentVetProvider currentVetProvider;
     private final VaccineFactory vaccineFactory;
+    private final VaccineRecordedNotifier vaccineRecordedNotifier;
 
     @Override
     public List<VetPetDTO> listAccessiblePets() {
@@ -56,9 +58,12 @@ public class VetPetServiceImpl implements VetPetService {
 
         // a clinica vem do vet autenticado, nunca do payload: aceitar clinicId do
         // cliente deixaria um vet registrar vacina em nome de outra clinica
-        Vaccine vaccine = vaccineFactory.build(pet, vet.getClinic(), request);
+        Vaccine vaccine = vaccineRepository.save(vaccineFactory.build(pet, vet.getClinic(), request));
 
-        return toResponse(vaccineRepository.save(vaccine));
+        // o tutor precisa saber o que a clinica escreveu no pet dele
+        vaccineRecordedNotifier.notifyOwner(vaccine);
+
+        return toResponse(vaccine);
     }
 
     private List<PetClinicAccess> acessosAtivosDaClinica() {

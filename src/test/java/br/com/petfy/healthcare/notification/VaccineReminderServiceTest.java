@@ -37,7 +37,7 @@ class VaccineReminderServiceTest {
     private VaccineRepository vaccineRepository;
 
     @Mock
-    private ReminderNotifier notifier;
+    private Notifier notifier;
 
     @InjectMocks
     private VaccineReminderService service;
@@ -70,6 +70,12 @@ class VaccineReminderServiceTest {
         when(vaccineRepository.findByNextDoseDateLessThanEqual(any())).thenReturn(List.of(vacinas));
     }
 
+    private Notification capturarEnvio() {
+        var captor = ArgumentCaptor.forClass(Notification.class);
+        verify(notifier).send(captor.capture());
+        return captor.getValue();
+    }
+
     @Nested
     @DisplayName("regra de reenvio")
     class RegraDeReenvio {
@@ -80,7 +86,7 @@ class VaccineReminderServiceTest {
             baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null));
 
             assertThat(service.enviarLembretes()).isEqualTo(1);
-            verify(notifier).notify(any());
+            verify(notifier).send(any());
         }
 
         @Test
@@ -100,7 +106,7 @@ class VaccineReminderServiceTest {
                     HOJE.minusDays(30), AGORA.minusDays(8)));
 
             assertThat(service.enviarLembretes()).isEqualTo(1);
-            verify(notifier).notify(any());
+            verify(notifier).send(any());
         }
 
         @Test
@@ -129,7 +135,7 @@ class VaccineReminderServiceTest {
         void naoDeveMarcarQuandoEnvioFalha() {
             var vacina = vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null);
             baseTem(vacina);
-            doThrow(new RuntimeException("SMTP fora do ar")).when(notifier).notify(any());
+            doThrow(new RuntimeException("SMTP fora do ar")).when(notifier).send(any());
 
             assertThatThrownBy(() -> service.enviarLembretes())
                     .isInstanceOf(RuntimeException.class);
@@ -140,8 +146,8 @@ class VaccineReminderServiceTest {
     }
 
     @Nested
-    @DisplayName("agrupamento")
-    class Agrupamento {
+    @DisplayName("mensagem")
+    class Mensagem {
 
         @Test
         @DisplayName("deve mandar um lembrete por tutor, nao um por dose")
@@ -154,9 +160,8 @@ class VaccineReminderServiceTest {
 
             assertThat(service.enviarLembretes()).isEqualTo(1);
 
-            var captor = ArgumentCaptor.forClass(VaccineReminder.class);
-            verify(notifier, times(1)).notify(captor.capture());
-            assertThat(captor.getValue().getItems()).hasSize(3);
+            verify(notifier, times(1)).send(any());
+            assertThat(capturarEnvio().getLines()).hasSize(3);
         }
 
         @Test
@@ -167,11 +172,43 @@ class VaccineReminderServiceTest {
                     vacina(owner("Maria", "m@petfy.com.br"), "Nina", "V8", HOJE.minusDays(1), null));
 
             assertThat(service.enviarLembretes()).isEqualTo(2);
-            verify(notifier, times(2)).notify(any());
+            verify(notifier, times(2)).send(any());
         }
 
         @Test
-        @DisplayName("deve ordenar as doses do lembrete da mais atrasada para a menos urgente")
+        @DisplayName("deve enderecar o lembrete ao tutor das doses")
+        void deveEnderecarAoTutor() {
+            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null));
+
+            service.enviarLembretes();
+
+            var notificacao = capturarEnvio();
+            assertThat(notificacao.getToEmail()).isEqualTo("u@petfy.com.br");
+            assertThat(notificacao.getToName()).isEqualTo("Ulysses");
+        }
+
+        @Test
+        @DisplayName("o assunto deve dizer atraso quando ha dose vencida")
+        void assuntoDeveDizerAtrasoQuandoHaVencida() {
+            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null));
+
+            service.enviarLembretes();
+
+            assertThat(capturarEnvio().getSubject()).isEqualTo("Vacina em atraso no Petfy");
+        }
+
+        @Test
+        @DisplayName("o assunto nao deve falar em atraso quando tudo apenas vence em breve")
+        void assuntoNaoDeveFalarEmAtrasoSemVencida() {
+            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.plusDays(5), null));
+
+            service.enviarLembretes();
+
+            assertThat(capturarEnvio().getSubject()).isEqualTo("Vacina chegando no Petfy");
+        }
+
+        @Test
+        @DisplayName("deve ordenar as doses da mais atrasada para a menos urgente")
         void deveOrdenarDaMaisAtrasada() {
             var ulysses = owner("Ulysses", "u@petfy.com.br");
             baseTem(
@@ -180,16 +217,13 @@ class VaccineReminderServiceTest {
 
             service.enviarLembretes();
 
-            var captor = ArgumentCaptor.forClass(VaccineReminder.class);
-            verify(notifier).notify(captor.capture());
-            assertThat(captor.getValue().getItems())
-                    .extracting(VaccineReminder.Item::getVaccineName)
-                    .containsExactly("Muito atrasada", "Vencendo");
+            assertThat(capturarEnvio().getLines())
+                    .element(0).asString().contains("Muito atrasada");
         }
 
         @Test
-        @DisplayName("o item deve saber se esta vencido e ha quantos dias")
-        void itemDeveSaberSeEstaVencido() {
+        @DisplayName("a linha deve dizer ha quantos dias venceu, ou em quantos vence")
+        void linhaDeveDizerAtrasoOuAntecedencia() {
             var ulysses = owner("Ulysses", "u@petfy.com.br");
             baseTem(
                     vacina(ulysses, "Rex", "Atrasada", HOJE.minusDays(4), null),
@@ -197,13 +231,9 @@ class VaccineReminderServiceTest {
 
             service.enviarLembretes();
 
-            var captor = ArgumentCaptor.forClass(VaccineReminder.class);
-            verify(notifier).notify(captor.capture());
-
-            assertThat(captor.getValue().getItems().get(0).isOverdue()).isTrue();
-            assertThat(captor.getValue().getItems().get(0).getDaysUntilNextDose()).isEqualTo(-4L);
-            assertThat(captor.getValue().getItems().get(1).isOverdue()).isFalse();
-            assertThat(captor.getValue().getItems().get(1).getDaysUntilNextDose()).isEqualTo(6L);
+            assertThat(capturarEnvio().getLines())
+                    .anySatisfy(l -> assertThat(l).contains("Rex", "Atrasada", "venceu ha 4 dia(s)"))
+                    .anySatisfy(l -> assertThat(l).contains("Mia", "Chegando", "vence em 6 dia(s)"));
         }
     }
 

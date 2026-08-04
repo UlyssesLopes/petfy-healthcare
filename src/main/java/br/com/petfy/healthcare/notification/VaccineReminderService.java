@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class VaccineReminderService {
 
     private final VaccineRepository vaccineRepository;
-    private final ReminderNotifier notifier;
+    private final Notifier notifier;
 
     /** Quantos dias de antecedencia entram no lembrete. */
     @Value("${petfy.reminders.window-days:30}")
@@ -64,18 +64,7 @@ public class VaccineReminderService {
                         Collectors.toList()));
 
         porTutor.values().forEach(doTutor -> {
-            Owner owner = doTutor.get(0).getPet().getOwner();
-
-            List<VaccineReminder.Item> itens = doTutor.stream()
-                    .map(vaccine -> new VaccineReminder.Item(
-                            vaccine.getPet().getName(),
-                            vaccine.getVaccineName(),
-                            vaccine.getNextDoseDate(),
-                            ChronoUnit.DAYS.between(hoje, vaccine.getNextDoseDate())))
-                    .sorted(Comparator.comparing(VaccineReminder.Item::getNextDoseDate))
-                    .collect(Collectors.toList());
-
-            notifier.notify(new VaccineReminder(owner, itens));
+            notifier.send(montarLembrete(doTutor, hoje));
 
             // so marca depois do envio: se o canal falhar, a excecao sobe e o
             // rollback deixa a dose elegivel na proxima execucao, em vez de
@@ -88,6 +77,35 @@ public class VaccineReminderService {
                 porTutor.size(), pendentes.size());
 
         return porTutor.size();
+    }
+
+    private Notification montarLembrete(List<Vaccine> doTutor, LocalDate hoje) {
+        Owner owner = doTutor.get(0).getPet().getOwner();
+
+        boolean temVencida = doTutor.stream()
+                .anyMatch(v -> v.getNextDoseDate().isBefore(hoje));
+
+        List<String> linhas = doTutor.stream()
+                .sorted(Comparator.comparing(Vaccine::getNextDoseDate))
+                .map(vaccine -> linhaDaDose(vaccine, hoje))
+                .collect(Collectors.toList());
+
+        return Notification.builder()
+                .toEmail(owner.getEmail())
+                .toName(owner.getName())
+                .subject(temVencida ? "Vacina em atraso no Petfy" : "Vacina chegando no Petfy")
+                .lines(linhas)
+                .build();
+    }
+
+    private String linhaDaDose(Vaccine vaccine, LocalDate hoje) {
+        long dias = ChronoUnit.DAYS.between(hoje, vaccine.getNextDoseDate());
+
+        return String.format("- %s: %s %s (%s)",
+                vaccine.getPet().getName(),
+                vaccine.getVaccineName(),
+                dias < 0 ? "venceu ha " + Math.abs(dias) + " dia(s)" : "vence em " + dias + " dia(s)",
+                vaccine.getNextDoseDate());
     }
 
     /**

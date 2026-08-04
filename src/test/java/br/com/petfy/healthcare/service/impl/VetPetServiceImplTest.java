@@ -12,6 +12,7 @@ import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.notification.VaccineRecordedNotifier;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +53,9 @@ class VetPetServiceImplTest {
     @Mock
     private VaccineCatalogRepository vaccineCatalogRepository;
 
+    @Mock
+    private VaccineRecordedNotifier vaccineRecordedNotifier;
+
     private VetPetServiceImpl service;
 
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
@@ -63,7 +67,8 @@ class VetPetServiceImplTest {
         // factory real: o que interessa aqui e que a vacina saia carimbada com a
         // clinica certa, e nao repetir a regra de montagem num mock
         service = new VetPetServiceImpl(petClinicAccessRepository, vaccineRepository,
-                currentVetProvider, new VaccineFactory(vaccineCatalogRepository));
+                currentVetProvider, new VaccineFactory(vaccineCatalogRepository),
+                vaccineRecordedNotifier);
     }
 
     private Clinic clinic(UUID id) {
@@ -197,6 +202,34 @@ class VetPetServiceImplTest {
             var captor = ArgumentCaptor.forClass(Vaccine.class);
             verify(vaccineRepository).save(captor.capture());
             assertThat(captor.getValue().getPet().getPetId()).isEqualTo(PET_ID);
+        }
+
+        @Test
+        @DisplayName("deve avisar o tutor de que a clinica registrou algo no pet dele")
+        void deveAvisarOTutor() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(acesso(null)));
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            service.registerVaccine(PET_ID, request());
+
+            var captor = ArgumentCaptor.forClass(Vaccine.class);
+            verify(vaccineRecordedNotifier).notifyOwner(captor.capture());
+            assertThat(captor.getValue().getVaccineName()).isEqualTo("V10");
+        }
+
+        @Test
+        @DisplayName("nao deve avisar quando o registro foi recusado")
+        void naoDeveAvisarQuandoRegistroRecusado() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.registerVaccine(PET_ID, request()))
+                    .isInstanceOf(PetfyHealthcareException.class);
+
+            verify(vaccineRecordedNotifier, never()).notifyOwner(any());
         }
 
         @Test
