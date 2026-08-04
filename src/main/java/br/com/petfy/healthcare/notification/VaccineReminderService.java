@@ -59,6 +59,11 @@ public class VaccineReminderService {
                 .collect(Collectors.toList());
 
         if (pendentes.isEmpty()) {
+            // log tambem quando nao ha nada a enviar: sem esta linha, uma rotina
+            // que rodou e nao achou dose fica indistinguivel de uma que nao rodou
+            // ou que morreu no meio - e a diferenca so apareceria como tutor
+            // reclamando de lembrete que nunca chegou
+            log.info("Varredura de lembretes concluida sem doses a avisar (janela de {} dias)", windowDays);
             return 0;
         }
 

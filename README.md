@@ -397,8 +397,25 @@ a infraestrutura de canal — e um push futuro não mexe em nenhum dos dois.
 
 | | Lembrete | Vacina registrada |
 |---|---|---|
+| Quando sai | rotina agendada, fora de requisição | dentro da requisição do vet, mas **o envio vai para outra thread** |
 | Falha no envio | exceção sobe, rollback | captura e loga |
 | Por quê | o envio é o único efeito; não avisar = não ter feito nada | o efeito principal é a vacina gravada — perdê-la porque o SMTP caiu seria trocar um problema pequeno por um grande |
+
+**Só o envio é assíncrono, não a montagem da mensagem.** Montar passa por
+associações lazy — o pet, o tutor — que só existem dentro da transação de quem
+chamou; em outra thread elas estariam fechadas e o aviso morreria com
+`LazyInitializationException`. Então o `ClinicActivityNotifier` monta a
+`Notification` na hora e entrega pronta ao `AsyncNotificationDispatcher`.
+
+O pool é próprio e limitado (`AsyncConfig`), não o executor padrão do Spring, que
+cria uma thread por chamada sem teto: uma clínica registrando vacina em lote não
+pode virar uma thread por registro. Quando a fila enche, o envio volta a rodar na
+thread de quem chamou — devolve latência ao veterinário no pico, o que é ruim,
+mas melhor do que descartar um aviso ao tutor em silêncio.
+
+**A rotina de lembretes continua síncrona de propósito.** Ela já roda fora de
+requisição e depende da exceção subir: é o rollback que desmarca
+`last_reminder_sent_at` e mantém a dose elegível na próxima varredura.
 
 **Um lembrete por tutor, não um por dose.** Quem tem três pets atrasados recebe
 uma mensagem com três linhas, não três mensagens.
