@@ -1,8 +1,10 @@
 package br.com.petfy.healthcare.domain.dto;
 
+import br.com.petfy.healthcare.domain.entity.Species;
 import lombok.*;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 
@@ -24,6 +26,7 @@ public class PetRequestDTO {
     @NotBlank(message = "nome e obrigatorio")
     private String name;
 
+    /** Sub-classificacao livre (raca, cor, etc). Nao substitui species. */
     private String type;
 
     private String breed;
@@ -34,5 +37,12 @@ public class PetRequestDTO {
     private Double weight;
 
     private String gender;
+
+    /**
+     * Especie do pet - obrigatorio no cadastro. Sem isso o catalogo de vacinas
+     * nao filtra corretamente e o protocolo de filhote nao roda.
+     */
+    @NotNull(message = "species e obrigatoria")
+    private Species species;
 
 }

@@ -5,6 +5,7 @@ import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.PetShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -64,8 +65,8 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
                 .name("Maria").email("maria-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash").build());
 
-        rex = petRepository.save(Pet.builder().name("Rex").owner(ulysses).build());
-        nina = petRepository.save(Pet.builder().name("Nina").owner(maria).build());
+        rex = petRepository.save(Pet.builder().name("Rex").owner(ulysses).species(Species.CANINA).build());
+        nina = petRepository.save(Pet.builder().name("Nina").owner(maria).species(Species.CANINA).build());
 
         bichoFeliz = clinicRepository.save(Clinic.builder().name("Clinica Bicho Feliz").build());
 

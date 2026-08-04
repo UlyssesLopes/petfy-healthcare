@@ -232,23 +232,33 @@ backend estar maduro — ver a seção Frontend.
 
 ## Fase 3 — o domínio que o uso real cobra
 
-### 6. Espécie como dado, não texto livre
+### 6. Espécie como dado, não texto livre ✅
 
-`Pet.type` é `String` e a espécie do catálogo é apenas informativa, então nada
-impede registrar vacina de cão num gato. Virar enum ou tabela e filtrar o
-catálogo por espécie. É pré-requisito do passo 7.
+Concluído em 2026-08-04. `Pet.species` virou enum `{CANINA, FELINA}` NOT NULL;
+`Pet.type` continua como sub-classificação livre (raça, cor, o que o tutor
+quiser). O catálogo já tinha `species` como texto — passou também a enum, mesmos
+valores. `GET /vaccine-catalog?petId=<uuid>` devolve só as vacinas da espécie
+daquele pet, e `VaccineFactory` recusa com 409 (`SPECIES_MISMATCH`) se o
+catálogo escolhido não bater com a espécie do pet.
 
-**Pronto quando:** o catálogo devolvido depende da espécie do pet.
+Backfill dos pets existentes: default CANINA, com heurística `type LIKE '%gat%'`
+→ FELINA. Consciente que é imperfeito, mas dev tem pouco dado e o tutor pode
+corrigir.
 
-### 7. Protocolo de filhote
+### 7. Protocolo de filhote ✅
 
-`defaultIntervalDays` do catálogo representa só o reforço (anual, na maioria). O
-esquema inicial — várias doses a cada 21–30 dias — exige modelar protocolo com
-número de doses e intervalos distintos entre elas. É o momento de maior
-necessidade do tutor, e hoje é o que o sistema não sabe fazer.
+Concluído em 2026-08-04. Catálogo ganhou `initial_dose_count`,
+`initial_dose_interval_days` e `mandatory`. Ao cadastrar pet com idade ≤ 120
+dias (`petfy.puppy.max-age-days`), o `PuppyProtocolService` gera doses
+planejadas (`application_date = null`, `next_dose_date` a partir de hoje) para
+cada vacina `mandatory` da espécie. Só vacinas marcadas mandatory disparam o
+schedule — evita duplicar (V3 e V4 felinas cobrem o mesmo pet, só a V4 entra;
+antirrábica sim, obrigatória por lei).
 
-**Pronto quando:** cadastrar um filhote de 45 dias gera o esquema inicial
-completo, não apenas "próxima em um ano".
+Escolha registrada: doses são contadas a partir de HOJE, não da data de
+nascimento. Se o pet já passou de alguma dose recomendada, calcular
+retroativamente criaria vacinas com data passada e sem aplicação — confunde a
+agenda e não ajuda o tutor. Mais útil assumir que a próxima dose começa agora.
 
 ## Fase 4 — quando o usuário não é você
 

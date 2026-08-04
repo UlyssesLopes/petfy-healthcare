@@ -3,9 +3,11 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.PetRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.PuppyProtocolService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,9 @@ class PetServiceImplTest {
     @Mock
     private CurrentOwnerProvider currentOwnerProvider;
 
+    @Mock
+    private PuppyProtocolService puppyProtocolService;
+
     @InjectMocks
     private PetServiceImpl petService;
 
@@ -58,6 +63,7 @@ class PetServiceImplTest {
                 .bornDate(LocalDate.of(2021, 3, 15))
                 .weight(12.5)
                 .gender("Macho")
+                .species(Species.CANINA)
                 .owner(owner(ownerId))
                 .creationDate(LocalDateTime.of(2025, 1, 1, 10, 0))
                 .build();
@@ -71,6 +77,7 @@ class PetServiceImplTest {
                 .bornDate(LocalDate.of(2021, 3, 15))
                 .weight(12.5)
                 .gender("Macho")
+                .species(Species.CANINA)
                 .build();
     }
 

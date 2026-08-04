@@ -80,7 +80,7 @@ class VaccineServiceImplTest {
                 .vaccineCatalogId(CATALOG_ID)
                 .code("V10")
                 .name("V10 (Polivalente canina)")
-                .species("CANINA")
+                .species(br.com.petfy.healthcare.domain.entity.Species.CANINA)
                 .defaultIntervalDays(365)
                 .build();
     }
@@ -96,7 +96,7 @@ class VaccineServiceImplTest {
     }
 
     private Pet petDe(UUID ownerId) {
-        return Pet.builder().petId(PET_ID).name("Rex").owner(owner(ownerId)).build();
+        return Pet.builder().petId(PET_ID).name("Rex").species(br.com.petfy.healthcare.domain.entity.Species.CANINA).owner(owner(ownerId)).build();
     }
 
     private Clinic clinic() {
@@ -235,6 +235,26 @@ class VaccineServiceImplTest {
             assertThat(captor.getValue().getVaccineName()).isEqualTo("Vacina importada");
             assertThat(captor.getValue().getCatalog()).isNull();
             assertThat(captor.getValue().getNextDoseDate()).isNull();
+        }
+
+        @Test
+        @DisplayName("deve recusar com 409 quando o catalogo e de especie diferente do pet")
+        void deveRecusarQuandoEspecieNaoBate() {
+            autenticadoComo(OWNER_ID);
+            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(
+                    Pet.builder().petId(PET_ID).name("Mia")
+                            .species(br.com.petfy.healthcare.domain.entity.Species.FELINA)
+                            .owner(owner(OWNER_ID)).build()));
+            when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));  // CANINA
+
+            assertThatThrownBy(() -> vaccineService.createVaccine(
+                    VaccineRequestDTO.builder().petId(PET_ID).vaccineCatalogId(CATALOG_ID)
+                            .applicationDate(LocalDate.of(2025, 6, 1)).build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("httpStatus")
+                    .isEqualTo(org.springframework.http.HttpStatus.CONFLICT);
+
+            verify(vaccineRepository, never()).save(any(Vaccine.class));
         }
 
         @Test

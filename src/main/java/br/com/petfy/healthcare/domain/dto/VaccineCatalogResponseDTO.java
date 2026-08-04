@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.dto;
 
+import br.com.petfy.healthcare.domain.entity.Species;
 import lombok.*;
 
 import java.util.UUID;
@@ -17,9 +18,15 @@ public class VaccineCatalogResponseDTO {
 
     private String name;
 
-    private String species;
+    private Species species;
 
     private Integer defaultIntervalDays;
+
+    private Integer initialDoseCount;
+
+    private Integer initialDoseIntervalDays;
+
+    private Boolean mandatory;
 
     private String description;
 
