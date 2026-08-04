@@ -10,8 +10,10 @@ depois, guiada pelo que doer no uso.
 
 ## Status
 
-Fase 1 não iniciada. O CI publica a imagem em
-`ghcr.io/ulysseslopes/petfy-healthcare`, mas nada consome ela ainda.
+Passo 1 em andamento: as tarefas de código estão feitas (perfil `prod`, actuator,
+`show-sql`), falta provisionar o PaaS e o Postgres gerenciado e setar as
+variáveis. O CI publica a imagem em `ghcr.io/ulysseslopes/petfy-healthcare`, mas
+nada consome ela ainda.
 
 ## Decisões já tomadas
 
@@ -29,19 +31,23 @@ A configuração já é toda dirigida por variável de ambiente
 (`${VAR:default}` em `application.properties`), então o trabalho aqui é menos
 código e mais provisionar. As duas exceções estão na lista.
 
-- [ ] Criar `application-prod.properties`. O perfil `docker` não serve: o
+- [x] Criar `application-prod.properties`. O perfil `docker` não serve: o
       datasource dele aponta para `host.docker.internal`, que só existe na
       máquina de desenvolvimento.
-- [ ] Desligar `spring.jpa.show-sql` fora de desenvolvimento — hoje está `true`
-      no `application.properties`, o que despeja SQL com dados no log.
-- [ ] Adicionar `spring-boot-starter-actuator` e expor apenas `health` e `info`.
-      Hoje não há health check nenhum, e o PaaS precisa de um para saber se a
-      instância subiu.
+- [x] Desligar `spring.jpa.show-sql` fora de desenvolvimento — despejava SQL com
+      dados no log. Agora `false` no compartilhado e `true` só no `local`.
+- [x] Adicionar `spring-boot-starter-actuator` e expor apenas `health` e `info`.
+      `GET /actuator/health` precisou entrar como rota pública no
+      `SecurityConfig`, senão o provedor lê 401 e reinicia a instância em loop —
+      coberto no `SecurityFilterChainTest`.
 - [ ] Provisionar o Postgres gerenciado e apontar `DB_*`. O Flyway aplica as 9
       migrations no primeiro boot — é o mesmo caminho que o
       `SchemaMigrationContainerTest` já exercita no CI.
 - [ ] Definir `JWT_SECRET` no cofre do provedor (mínimo 32 caracteres). Sem ele
       a aplicação não sobe fora do perfil `local`, de propósito.
+- [ ] Definir `SPRING_PROFILES_ACTIVE=prod` no ambiente. A imagem traz `docker`
+      no Dockerfile; esquecer disso faz a instância tentar
+      `host.docker.internal` e entrar em loop de reinício.
 - [ ] Estender o job `docker` do pipeline com o deploy, ou disparar pelo webhook
       do provedor a partir da tag `:latest` que já é publicada.
 

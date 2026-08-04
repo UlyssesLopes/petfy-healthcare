@@ -158,4 +158,27 @@ class SecurityFilterChainTest {
 
         verify(ownerService, never()).getCurrentOwner();
     }
+
+    /**
+     * O health check e chamado pelo provedor de hospedagem, sem credencial: se a
+     * cadeia exigir token, o deploy e considerado morto e reiniciado em loop.
+     * <p>
+     * O actuator nao entra neste slice de @WebMvcTest, entao o endpoint nao
+     * existe aqui e a resposta e 404. E exatamente essa a distincao que importa:
+     * 404 significa que a cadeia deixou passar e nao havia controller atras,
+     * enquanto 401 significaria que a cadeia barrou antes de chegar la.
+     */
+    @Test
+    @DisplayName("o health check nao deve exigir token - quem chama e o provedor de hospedagem")
+    void healthCheckNaoDeveExigirToken() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("os demais endpoints do actuator devem exigir token - so o health e publico")
+    void demaisEndpointsDoActuatorDevemExigirToken() throws Exception {
+        mockMvc.perform(get("/actuator/info"))
+                .andExpect(status().isUnauthorized());
+    }
 }
