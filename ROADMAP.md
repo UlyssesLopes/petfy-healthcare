@@ -10,10 +10,14 @@ depois, guiada pelo que doer no uso.
 
 ## Status
 
-Passo 1 em andamento, no ambiente de **`dev`**: as tarefas de código estão feitas
-(perfil `hosted` com os grupos `dev`/`stg`/`prd`, actuator, `show-sql`), falta
-provisionar o PaaS e o Postgres gerenciado e setar as variáveis. O CI publica a
-imagem em `ghcr.io/ulysseslopes/petfy-healthcare`, mas nada consome ela ainda.
+**Passo 1 concluído em 2026-08-04.** O ambiente de `dev` está no ar em
+`petfy-healthcare-development.up.railway.app`, com as 9 migrations aplicadas,
+`/actuator/health` respondendo `200` público e as rotas protegidas respondendo
+`401` sem token. Próximo: passo 2, ciclo de vida da conta.
+
+O Railway constrói a partir do repositório, não da imagem do ghcr — o registry
+privado não tem onde receber credencial na UI dele. A imagem continua sendo
+publicada pelo pipeline como artefato de deploy, mas nada a consome hoje.
 
 ## Decisões já tomadas
 
@@ -64,16 +68,19 @@ código e mais provisionar. As duas exceções estão na lista.
       `GET /actuator/health` precisou entrar como rota pública no
       `SecurityConfig`, senão o provedor lê 401 e reinicia a instância em loop —
       coberto no `SecurityFilterChainTest`.
-- [ ] Provisionar o Postgres gerenciado do `dev` e apontar `DB_*`. O Flyway aplica
-      as 9 migrations no primeiro boot — é o mesmo caminho que o
-      `SchemaMigrationContainerTest` já exercita no CI.
-- [ ] Definir `JWT_SECRET` no cofre do provedor (mínimo 32 caracteres), **um por
+- [x] Provisionar o Postgres gerenciado do `dev` e apontar `DB_*`, por referência
+      às variáveis do serviço de banco em vez de cópia de senha. O Flyway aplicou
+      as 9 migrations no primeiro boot.
+- [x] Definir `JWT_SECRET` no cofre do provedor (mínimo 32 caracteres), **um por
       ambiente**. Sem ele a aplicação não sobe fora do perfil `local`, de
       propósito. Segredo compartilhado entre ambientes faria token de `dev` valer
       em `prd`.
-- [ ] Definir `SPRING_PROFILES_ACTIVE=dev` no ambiente. A imagem traz `docker` no
-      Dockerfile; esquecer disso faz a instância tentar `host.docker.internal` e
-      entrar em loop de reinício.
+- [x] Definir `SPRING_PROFILES_ACTIVE=dev` no ambiente — **em minúsculo**. Perfil
+      no Spring é case-sensitive: com `DEV` o grupo não casa, o `hosted` não
+      carrega, e sem `spring.datasource.url` o Spring cai no H2 em memória (o H2
+      está com escopo `runtime` no `pom.xml`, então vai junto no jar). O erro que
+      aparece é o driver do Postgres recusando uma URL de H2, que não parece nem
+      de longe com "faltou ativar o perfil".
 - [ ] Decidir o gatilho do deploy de `dev`. A tag `:latest` só é publicada em push
       na `main`, então ou o `dev` acompanha a `main`, ou o pipeline passa a
       publicar tag por branch. Vale escolher agora: é o que define se `dev` serve
