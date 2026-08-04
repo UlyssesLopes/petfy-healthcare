@@ -45,4 +45,12 @@ public class VetPetController {
         return ResponseEntity.status(HttpStatus.CREATED).body(vetPetService.registerVaccine(petId, request));
     }
 
+    /** Nao ha DELETE: apagar registro de vacina nao e correcao - ver README. */
+    @PutMapping("/{petId}/vaccines/{vaccineId}")
+    public ResponseEntity<VaccineResponseDTO> correctVaccine(@PathVariable UUID petId,
+                                                             @PathVariable UUID vaccineId,
+                                                             @RequestBody VaccineRequestDTO request) {
+        return ResponseEntity.ok(vetPetService.correctVaccine(petId, vaccineId, request));
+    }
+
 }

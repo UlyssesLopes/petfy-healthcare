@@ -219,6 +219,27 @@ As rotas `/vet/**` exigem `ROLE_VET` na cadeia de filtros, além da checagem do
 `CurrentVetProvider` — a autorização não depende só de a busca falhar na tabela
 certa.
 
+### Corrigir um registro
+
+`PUT /vet/pets/{petId}/vaccines/{vaccineId}` — correção, não reescrita:
+
+- **só registro da própria clínica.** Vacina lançada pelo tutor não é da clínica
+  corrigir.
+- **só dentro de uma janela curta** (7 dias, configurável). Depois disso o
+  registro congela: corrigir um lançamento de meses atrás não é conserto de
+  digitação, e o tutor é quem decide o que fica na carteira dele.
+- **o estado anterior fica gravado** em `vaccine_corrections`. Carteira de
+  vacinação é dado de saúde, e dado de saúde não se reescreve em silêncio — quem
+  apresenta a carteira precisa poder confiar que o que está lá não mudou sem
+  deixar marca.
+- **o tutor é notificado** da correção.
+- **não há DELETE.** Apagar um registro de vacina não é correção; se foi lançado
+  no pet errado, isso é outro problema. O tutor pode remover pelo endpoint dele.
+
+O tutor também deixa rastro ao editar, mas **não tem janela** — a carteira é
+dele. Se só o veterinário fosse auditado, o histórico contaria meia verdade, o
+que é pior que não ter histórico: daria impressão de completude.
+
 ## Compartilhar a carteira
 
 O momento de uso de uma carteira de vacinação é apresentá-la: hotelzinho,
@@ -369,10 +390,11 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   existentes, mas qualquer pessoa ainda cadastra uma clínica nova e vira o
   primeiro vet dela. O dano é menor (uma clínica sem pets autorizados não alcança
   nada), mas permite poluir o diretório.
-- **O veterinário só escreve vacinas.** Não registra histórico de saúde nem
-  edita ou remove o que já lançou — corrigir um registro errado hoje depende do
-  tutor. Editar histórico alheio é mais delicado que criar, e merece um modelo
-  próprio (quem pode corrigir o quê, e por quanto tempo).
+- **O veterinário só mexe em vacinas.** Não registra nem corrige histórico de
+  saúde — só a carteira de vacinação.
+- **O rastro de correções não é exposto por nenhum endpoint.** Está gravado e
+  íntegro, mas hoje só se lê no banco. Falta um `GET` que devolva o histórico de
+  alterações de um registro.
 - **A notificação de vacina registrada é síncrona.** Sai dentro da requisição do
   veterinário, então um SMTP lento adiciona latência ao registro. Falha não
   quebra nada (é capturada), mas o envio devia sair do caminho da requisição —

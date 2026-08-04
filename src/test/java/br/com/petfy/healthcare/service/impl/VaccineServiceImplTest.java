@@ -12,6 +12,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.VaccineCorrectionRecorder;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +58,9 @@ class VaccineServiceImplTest {
     @Mock
     private CurrentOwnerProvider currentOwnerProvider;
 
+    @Mock
+    private VaccineCorrectionRecorder vaccineCorrectionRecorder;
+
     private VaccineServiceImpl vaccineService;
 
     @BeforeEach
@@ -66,7 +70,7 @@ class VaccineServiceImplTest {
         // @InjectMocks, porque a factory depende de um mock que so existe agora
         vaccineService = new VaccineServiceImpl(vaccineRepository, petRepository, clinicRepository,
                 currentOwnerProvider, new VaccineStatusCalculator(),
-                new VaccineFactory(vaccineCatalogRepository));
+                new VaccineFactory(vaccineCatalogRepository), vaccineCorrectionRecorder);
     }
 
     private static final UUID CATALOG_ID = UUID.fromString("a1000000-0000-4000-8000-000000000002");

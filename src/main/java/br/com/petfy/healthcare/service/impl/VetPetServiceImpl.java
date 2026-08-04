@@ -12,13 +12,16 @@ import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.VaccineRecordedNotifier;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
+import br.com.petfy.healthcare.service.VaccineCorrectionRecorder;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VetPetService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,6 +35,14 @@ public class VetPetServiceImpl implements VetPetService {
     private final CurrentVetProvider currentVetProvider;
     private final VaccineFactory vaccineFactory;
     private final VaccineRecordedNotifier vaccineRecordedNotifier;
+    private final VaccineCorrectionRecorder vaccineCorrectionRecorder;
+
+    /**
+     * Janela de correcao em dias. Curta de proposito: cobre o erro percebido
+     * logo apos o atendimento, nao a reescrita de historico antigo.
+     */
+    @Value("${petfy.vet.correction-window-days:7}")
+    private int correctionWindowDays;
 
     @Override
     public List<VetPetDTO> listAccessiblePets() {
@@ -64,6 +75,68 @@ public class VetPetServiceImpl implements VetPetService {
         vaccineRecordedNotifier.notifyOwner(vaccine);
 
         return toResponse(vaccine);
+    }
+
+    /**
+     * Correcao, e nao reescrita: o estado anterior fica gravado, so vale para
+     * registro da propria clinica e so dentro de uma janela curta. Depois disso
+     * o registro congela - corrigir um lancamento de meses atras nao e conserto
+     * de digitacao, e o tutor e quem decide o que fica na carteira dele.
+     */
+    @Override
+    public VaccineResponseDTO correctVaccine(UUID petId, UUID vaccineId, VaccineRequestDTO request) {
+        Vet vet = currentVetProvider.require();
+        exigirAcessoAoPet(petId);
+
+        Vaccine vaccine = vaccineRepository.findById(vaccineId)
+                .filter(v -> v.getPet().getPetId().equals(petId))
+                .filter(v -> registradaPelaClinica(v, vet))
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
+                        ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(),
+                        HttpStatus.NOT_FOUND));
+
+        exigirJanelaAberta(vaccine);
+
+        // o snapshot precisa sair antes dos setters, senao grava o estado novo
+        vaccineCorrectionRecorder.recordByVet(vaccine, vet);
+
+        if (request.getVaccineName() != null) vaccine.setVaccineName(request.getVaccineName());
+        if (request.getApplicationDate() != null) vaccine.setApplicationDate(request.getApplicationDate());
+        if (request.getNextDoseDate() != null) vaccine.setNextDoseDate(request.getNextDoseDate());
+        if (request.getDescription() != null) vaccine.setDescription(request.getDescription());
+        vaccine.setUpdateDate(LocalDateTime.now());
+
+        Vaccine salva = vaccineRepository.save(vaccine);
+
+        // o tutor precisa saber que a clinica mexeu no que ja estava la
+        vaccineRecordedNotifier.notifyCorrection(salva);
+
+        return toResponse(salva);
+    }
+
+    /**
+     * Clinica que registrou. Vacina lancada pelo proprio tutor nao e da clinica
+     * corrigir.
+     *
+     * A comparacao parte do id do vet, que sempre existe, e nao do id da vacina:
+     * assim clinica sem id nao vira NullPointerException no meio de uma checagem
+     * de permissao.
+     */
+    private boolean registradaPelaClinica(Vaccine vaccine, Vet vet) {
+        return vaccine.getClinic() != null
+                && vet.getClinic().getClinicId().equals(vaccine.getClinic().getClinicId());
+    }
+
+    private void exigirJanelaAberta(Vaccine vaccine) {
+        LocalDateTime registro = vaccine.getCreationDate();
+
+        if (registro == null || registro.isBefore(LocalDateTime.now().minusDays(correctionWindowDays))) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.CORRECTION_WINDOW_EXPIRED.getMessage(),
+                    ErrorMessageEnum.CORRECTION_WINDOW_EXPIRED.getCode(),
+                    HttpStatus.CONFLICT);
+        }
     }
 
     private List<PetClinicAccess> acessosAtivosDaClinica() {

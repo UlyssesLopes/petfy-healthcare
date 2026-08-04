@@ -15,6 +15,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.VaccineCorrectionRecorder;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VaccineService;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
@@ -49,6 +50,8 @@ public class VaccineServiceImpl implements VaccineService {
 
     private final VaccineFactory vaccineFactory;
 
+    private final VaccineCorrectionRecorder vaccineCorrectionRecorder;
+
     @Override
     public VaccineResponseDTO createVaccine(VaccineRequestDTO request) {
         Pet pet = buscarPetDoOwnerAutenticado(request.getPetId());
@@ -64,6 +67,11 @@ public class VaccineServiceImpl implements VaccineService {
     @Override
     public VaccineResponseDTO updateVaccine(UUID id, VaccineRequestDTO request) {
         Vaccine existing = buscarDoOwnerAutenticado(id);
+
+        // o snapshot sai antes dos setters. O tutor nao tem janela de correcao -
+        // a carteira e dele - mas deixa rastro igual: se so o veterinario
+        // registrasse, o historico contaria meia verdade
+        vaccineCorrectionRecorder.recordByOwner(existing, currentOwnerProvider.require());
 
         if (request.getVaccineName() != null) existing.setVaccineName(request.getVaccineName());
         if (request.getApplicationDate() != null) existing.setApplicationDate(request.getApplicationDate());

@@ -14,6 +14,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.VaccineRecordedNotifier;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
+import br.com.petfy.healthcare.service.VaccineCorrectionRecorder;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.time.LocalDate;
@@ -34,6 +37,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,11 +60,15 @@ class VetPetServiceImplTest {
     @Mock
     private VaccineRecordedNotifier vaccineRecordedNotifier;
 
+    @Mock
+    private VaccineCorrectionRecorder vaccineCorrectionRecorder;
+
     private VetPetServiceImpl service;
 
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OUTRA_CLINIC_ID = UUID.fromString("aaaaaaaa-5555-5555-5555-555555555555");
+    private static final UUID VACCINE_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
 
     @BeforeEach
     void setUp() {
@@ -68,7 +76,8 @@ class VetPetServiceImplTest {
         // clinica certa, e nao repetir a regra de montagem num mock
         service = new VetPetServiceImpl(petClinicAccessRepository, vaccineRepository,
                 currentVetProvider, new VaccineFactory(vaccineCatalogRepository),
-                vaccineRecordedNotifier);
+                vaccineRecordedNotifier, vaccineCorrectionRecorder);
+        ReflectionTestUtils.setField(service, "correctionWindowDays", 7);
     }
 
     private Clinic clinic(UUID id) {
@@ -254,6 +263,145 @@ class VetPetServiceImplTest {
                     .thenReturn(Optional.of(acesso(LocalDateTime.now().minusDays(1))));
 
             assertThatThrownBy(() -> service.registerVaccine(PET_ID, request()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Pet not found");
+
+            verify(vaccineRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("correctVaccine")
+    class CorrectVaccine {
+
+        private Vaccine registrada(UUID clinicId, LocalDateTime registradaEm) {
+            return Vaccine.builder()
+                    .vaccineId(VACCINE_ID)
+                    .vaccineName("V10")
+                    .applicationDate(LocalDate.of(2026, 8, 1))
+                    .description("original")
+                    // clinicId nulo significa vacina lancada pelo tutor, sem clinica
+                    .clinic(clinicId != null ? clinic(clinicId) : null)
+                    .pet(pet())
+                    .creationDate(registradaEm)
+                    .build();
+        }
+
+        private void baseTem(Vaccine vaccine) {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(acesso(null)));
+            when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(vaccine));
+        }
+
+        @Test
+        @DisplayName("deve corrigir registro da propria clinica dentro da janela")
+        void deveCorrigirDentroDaJanela() {
+            baseTem(registrada(CLINIC_ID, LocalDateTime.now().minusDays(1)));
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            var result = service.correctVaccine(PET_ID, VACCINE_ID,
+                    VaccineRequestDTO.builder().vaccineName("V8").build());
+
+            assertThat(result.getVaccineName()).isEqualTo("V8");
+        }
+
+        @Test
+        @DisplayName("deve preservar os campos nao enviados")
+        void devePreservarCamposNaoEnviados() {
+            baseTem(registrada(CLINIC_ID, LocalDateTime.now().minusDays(1)));
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            var result = service.correctVaccine(PET_ID, VACCINE_ID,
+                    VaccineRequestDTO.builder().description("corrigido").build());
+
+            assertThat(result.getDescription()).isEqualTo("corrigido");
+            assertThat(result.getVaccineName()).isEqualTo("V10");
+            assertThat(result.getApplicationDate()).isEqualTo(LocalDate.of(2026, 8, 1));
+        }
+
+        @Test
+        @DisplayName("deve gravar o rastro ANTES de alterar, senao guarda o estado novo")
+        void deveGravarRastroAntesDeAlterar() {
+            var vaccine = registrada(CLINIC_ID, LocalDateTime.now().minusDays(1));
+            baseTem(vaccine);
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            // captura o estado no instante da chamada ao recorder
+            var nomeNoMomentoDoRastro = new String[1];
+            doAnswer(invocation -> {
+                nomeNoMomentoDoRastro[0] = ((Vaccine) invocation.getArgument(0)).getVaccineName();
+                return null;
+            }).when(vaccineCorrectionRecorder).recordByVet(any(), any());
+
+            service.correctVaccine(PET_ID, VACCINE_ID,
+                    VaccineRequestDTO.builder().vaccineName("V8").build());
+
+            assertThat(nomeNoMomentoDoRastro[0]).isEqualTo("V10");
+        }
+
+        @Test
+        @DisplayName("deve avisar o tutor de que a clinica mexeu no registro")
+        void deveAvisarOTutorDaCorrecao() {
+            baseTem(registrada(CLINIC_ID, LocalDateTime.now().minusDays(1)));
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            service.correctVaccine(PET_ID, VACCINE_ID,
+                    VaccineRequestDTO.builder().vaccineName("V8").build());
+
+            verify(vaccineRecordedNotifier).notifyCorrection(any(Vaccine.class));
+        }
+
+        @Test
+        @DisplayName("nao deve corrigir depois de fechada a janela")
+        void naoDeveCorrigirForaDaJanela() {
+            baseTem(registrada(CLINIC_ID, LocalDateTime.now().minusDays(8)));
+
+            assertThatThrownBy(() -> service.correctVaccine(PET_ID, VACCINE_ID,
+                    VaccineRequestDTO.builder().vaccineName("V8").build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(112, HttpStatus.CONFLICT);
+
+            verify(vaccineRepository, never()).save(any());
+            verify(vaccineCorrectionRecorder, never()).recordByVet(any(), any());
+        }
+
+        @Test
+        @DisplayName("nao deve corrigir registro de outra clinica")
+        void naoDeveCorrigirDeOutraClinica() {
+            baseTem(registrada(OUTRA_CLINIC_ID, LocalDateTime.now().minusDays(1)));
+
+            assertThatThrownBy(() -> service.correctVaccine(PET_ID, VACCINE_ID,
+                    VaccineRequestDTO.builder().vaccineName("V8").build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Vaccine not found");
+
+            verify(vaccineRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("nao deve corrigir vacina lancada pelo proprio tutor")
+        void naoDeveCorrigirVacinaDoTutor() {
+            baseTem(registrada(null, LocalDateTime.now().minusDays(1)));
+
+            assertThatThrownBy(() -> service.correctVaccine(PET_ID, VACCINE_ID,
+                    VaccineRequestDTO.builder().vaccineName("V8").build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Vaccine not found");
+
+            verify(vaccineRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("nao deve corrigir vacina de pet sem concessao ativa")
+        void naoDeveCorrigirSemConcessao() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.correctVaccine(PET_ID, VACCINE_ID,
+                    VaccineRequestDTO.builder().vaccineName("V8").build()))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage("Pet not found");
 

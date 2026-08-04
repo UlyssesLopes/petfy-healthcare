@@ -16,4 +16,7 @@ public interface VetPetService {
 
     VaccineResponseDTO registerVaccine(UUID petId, VaccineRequestDTO request);
 
+    /** Corrige um registro da propria clinica, dentro da janela de correcao. */
+    VaccineResponseDTO correctVaccine(UUID petId, UUID vaccineId, VaccineRequestDTO request);
+
 }

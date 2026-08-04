@@ -16,6 +16,7 @@ public enum ErrorMessageEnum {
     NOT_CLINIC_MEMBER(109, "Only a vet from this clinic can do that"),
     CLINIC_ACCESS_NOT_FOUND(110, "Clinic access not found"),
     INVITE_NOT_FOUND(111, "Invite not found or no longer valid"),
+    CORRECTION_WINDOW_EXPIRED(112, "Correction window for this record has expired"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

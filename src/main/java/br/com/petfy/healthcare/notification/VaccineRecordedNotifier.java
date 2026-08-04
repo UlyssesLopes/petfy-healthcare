@@ -40,6 +40,39 @@ public class VaccineRecordedNotifier {
         }
     }
 
+    /** Mesma politica de falha do registro: avisar e desejavel, nao pode desfazer a correcao. */
+    public void notifyCorrection(Vaccine vaccine) {
+        try {
+            notifier.send(montarCorrecao(vaccine));
+        } catch (Exception e) {
+            log.error("Falha ao notificar o tutor sobre a correcao da vacina {}", vaccine.getVaccineId(), e);
+        }
+    }
+
+    private Notification montarCorrecao(Vaccine vaccine) {
+        Owner owner = vaccine.getPet().getOwner();
+        String clinica = vaccine.getClinic() != null ? vaccine.getClinic().getName() : "uma clinica";
+
+        List<String> linhas = new ArrayList<>();
+        linhas.add(String.format("%s corrigiu um registro de vacina do %s.", clinica, vaccine.getPet().getName()));
+        linhas.add(String.format("Como esta agora: %s, aplicada em %s",
+                vaccine.getVaccineName(), vaccine.getApplicationDate()));
+
+        if (vaccine.getNextDoseDate() != null) {
+            linhas.add(String.format("- proxima dose prevista para %s", vaccine.getNextDoseDate()));
+        }
+
+        linhas.add("");
+        linhas.add("Se nao reconhece esta correcao, revogue o acesso da clinica no Petfy.");
+
+        return Notification.builder()
+                .toEmail(owner.getEmail())
+                .toName(owner.getName())
+                .subject("Registro de vacina corrigido em " + vaccine.getPet().getName())
+                .lines(linhas)
+                .build();
+    }
+
     private Notification montar(Vaccine vaccine) {
         Owner owner = vaccine.getPet().getOwner();
         String clinica = vaccine.getClinic() != null ? vaccine.getClinic().getName() : "uma clinica";
