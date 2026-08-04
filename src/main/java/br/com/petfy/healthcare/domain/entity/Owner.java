@@ -41,4 +41,10 @@ public class Owner {
 
     private LocalDateTime updateDate;
 
+    /**
+     * Instante da ultima troca de senha. Nulo em quem nunca trocou, o que
+     * significa que nao ha token a invalidar.
+     */
+    private LocalDateTime passwordChangedAt;
+
 }

@@ -65,12 +65,16 @@ public class JwtService {
 
             String email = claims.getSubject();
             String role = claims.get(CLAIM_ROLE, String.class);
+            Date issuedAt = claims.getIssuedAt();
 
-            if (email == null || role == null) {
+            // sem iat nao ha como saber se o token e anterior a uma troca de
+            // senha, entao ele e tratado como invalido em vez de passar como se
+            // fosse recente. Todo token emitido aqui tem iat
+            if (email == null || role == null || issuedAt == null) {
                 return Optional.empty();
             }
 
-            return Optional.of(new JwtPrincipal(email, UserRole.valueOf(role)));
+            return Optional.of(new JwtPrincipal(email, UserRole.valueOf(role), issuedAt.toInstant()));
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }

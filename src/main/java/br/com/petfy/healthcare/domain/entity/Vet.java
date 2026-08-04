@@ -44,4 +44,11 @@ public class Vet {
 
     private LocalDateTime updateDate;
 
+    /**
+     * Instante da ultima troca de senha. Nulo em quem nunca trocou. Hoje o vet
+     * ainda nao troca a propria senha, mas a coluna existe para o filtro tratar
+     * os dois papeis pelo mesmo caminho.
+     */
+    private LocalDateTime passwordChangedAt;
+
 }

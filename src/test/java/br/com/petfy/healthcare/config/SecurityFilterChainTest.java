@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
 import br.com.petfy.healthcare.service.PetShareService;
 import br.com.petfy.healthcare.security.JwtAuthenticationFilter;
 import br.com.petfy.healthcare.security.JwtService;
+import br.com.petfy.healthcare.security.TokenFreshness;
 import br.com.petfy.healthcare.security.UserRole;
 import br.com.petfy.healthcare.service.AuthService;
 import br.com.petfy.healthcare.service.OwnerService;
@@ -66,6 +67,14 @@ class SecurityFilterChainTest {
 
     @MockBean
     private PetShareService petShareService;
+
+    /**
+     * Mockado porque a checagem de token anterior a troca de senha consulta o
+     * banco, que nao existe neste slice. O default do Mockito - false - e o
+     * comportamento normal: token nao ficou para tras.
+     */
+    @MockBean
+    private TokenFreshness tokenFreshness;
 
     private String tokenValido() {
         return jwtService.generateToken("ulysses@petfy.com.br", UserRole.OWNER, UUID.randomUUID());
@@ -168,6 +177,22 @@ class SecurityFilterChainTest {
      * 404 significa que a cadeia deixou passar e nao havia controller atras,
      * enquanto 401 significaria que a cadeia barrou antes de chegar la.
      */
+    /**
+     * Token intacto - assinado, dentro da validade - mas emitido antes de uma
+     * troca de senha. Se ele continuasse autenticando, trocar a senha nao
+     * expulsaria quem ja estava dentro, que e o principal motivo de trocar.
+     */
+    @Test
+    @DisplayName("deve responder 401 com token anterior a troca de senha")
+    void deveResponder401ComTokenAnteriorATrocaDeSenha() throws Exception {
+        when(tokenFreshness.isStale(any())).thenReturn(true);
+
+        mockMvc.perform(get("/pets/all").header("Authorization", "Bearer " + tokenValido()))
+                .andExpect(status().isUnauthorized());
+
+        verify(petService, never()).listAllPets();
+    }
+
     @Test
     @DisplayName("o health check nao deve exigir token - quem chama e o provedor de hospedagem")
     void healthCheckNaoDeveExigirToken() throws Exception {
