@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.dto;
 
+import br.com.petfy.healthcare.domain.entity.Species;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -34,6 +35,8 @@ public class PetResponseDTO {
     private Double weight;
 
     private String gender;
+
+    private Species species;
 
     private UUID ownerId;
 

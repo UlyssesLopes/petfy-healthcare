@@ -28,6 +28,11 @@ public class Pet {
 
     private String name;
 
+    /**
+     * Sub-classificacao livre (raca, cor, o que o tutor quiser). Nao serve para
+     * casar com o catalogo de vacinas - para isso existe {@link #species}, que
+     * e enum e obrigatorio.
+     */
     private String type;
 
     private String breed;
@@ -37,6 +42,14 @@ public class Pet {
     private Double weight;
 
     private String gender;
+
+    /**
+     * Espécie. Obrigatorio: sem isso o filtro de catalogo por especie e o
+     * protocolo de filhote nao tem como funcionar.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private Species species;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)

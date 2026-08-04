@@ -22,6 +22,7 @@ public enum ErrorMessageEnum {
     // mensagem deliberadamente vaga: nao distingue inexistente, expirado e ja usado
     RESET_TOKEN_NOT_FOUND(115, "Reset token not found or no longer valid"),
     VERIFICATION_TOKEN_NOT_FOUND(116, "Verification token not found or no longer valid"),
+    SPECIES_MISMATCH(117, "Vaccine catalog species does not match the pet species"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

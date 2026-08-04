@@ -8,6 +8,7 @@ import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.PetService;
+import br.com.petfy.healthcare.service.PuppyProtocolService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,7 @@ public class PetServiceImpl implements PetService {
 
     private final PetRepository petRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
+    private final PuppyProtocolService puppyProtocolService;
 
     @Override
     public PetResponseDTO createPet(PetRequestDTO dto) {
@@ -36,11 +38,18 @@ public class PetServiceImpl implements PetService {
                 .bornDate(dto.getBornDate())
                 .weight(dto.getWeight())
                 .gender(dto.getGender())
+                .species(dto.getSpecies())
                 .owner(owner)
                 .creationDate(LocalDateTime.now())
                 .build();
 
-        return toResponse(petRepository.save(pet));
+        Pet salvo = petRepository.save(pet);
+
+        // Filhote ganha as doses planejadas do protocolo inicial. E silencioso
+        // para adulto: continua registrando vacina caso a caso.
+        puppyProtocolService.gerarEsquemaInicialSePuppy(salvo);
+
+        return toResponse(salvo);
     }
 
     @Override
@@ -66,6 +75,10 @@ public class PetServiceImpl implements PetService {
         pet.setBornDate(dto.getBornDate() != null ? dto.getBornDate() : pet.getBornDate());
         pet.setWeight(dto.getWeight() != null ? dto.getWeight() : pet.getWeight());
         pet.setGender(dto.getGender() != null ? dto.getGender() : pet.getGender());
+        // species fica de fora do PUT parcial de proposito: mudar especie de
+        // um pet ja com historico deixaria vacinas cruzadas (aplicada como
+        // canina agora consulta catalogo felino). Se acontecer de valer, vai
+        // pedir endpoint proprio com o rebuild explicito das relacoes
         pet.setUpdateDate(LocalDateTime.now());
 
         return toResponse(petRepository.save(pet));
@@ -101,6 +114,7 @@ public class PetServiceImpl implements PetService {
                 .bornDate(pet.getBornDate())
                 .weight(pet.getWeight())
                 .gender(pet.getGender())
+                .species(pet.getSpecies())
                 .ownerId(pet.getOwner().getOwnerId())
                 .creationDate(pet.getCreationDate())
                 .updateDate(pet.getUpdateDate())

@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.domain.repository;
 
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -50,7 +51,7 @@ class VaccineRepositoryTest {
         Owner owner = ownerRepository.save(Owner.builder()
                 .name("Ulysses").email("ulysses@petfy.com.br").password("hash").build());
 
-        rex = petRepository.save(Pet.builder().name("Rex").owner(owner).build());
+        rex = petRepository.save(Pet.builder().name("Rex").owner(owner).species(Species.CANINA).build());
     }
 
     private void gravarVacina(String nome, LocalDate proximaDose) {

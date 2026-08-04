@@ -3,6 +3,7 @@ package br.com.petfy.healthcare.domain.repository;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Species;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,7 @@ class HealthRecordRepositoryTest {
                 .password("hash")
                 .build());
 
-        Pet rex = petRepository.save(Pet.builder().name("Rex").owner(owner).build());
+        Pet rex = petRepository.save(Pet.builder().name("Rex").owner(owner).species(Species.CANINA).build());
 
         healthRecordRepository.save(HealthRecord.builder()
                 .pet(rex)
@@ -77,7 +78,7 @@ class HealthRecordRepositoryTest {
                 .password("hash")
                 .build());
 
-        Pet pet = petRepository.save(Pet.builder().name("Mia").owner(owner).build());
+        Pet pet = petRepository.save(Pet.builder().name("Mia").owner(owner).species(Species.CANINA).build());
 
         HealthRecord salvo = healthRecordRepository.save(HealthRecord.builder()
                 .pet(pet)

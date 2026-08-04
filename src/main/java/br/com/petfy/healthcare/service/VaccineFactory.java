@@ -34,6 +34,17 @@ public class VaccineFactory {
                 ? buscarNoCatalogo(request.getVaccineCatalogId())
                 : null;
 
+        if (catalog != null && catalog.getSpecies() != pet.getSpecies()) {
+            // Sem essa checagem, o tutor poderia registrar uma vacina canina num
+            // gato e o sistema seguiria como se fosse valido. E o tipo de erro
+            // que so aparece quando alguem for cobrar por que o lembrete errado
+            // saiu.
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.SPECIES_MISMATCH.getMessage(),
+                    ErrorMessageEnum.SPECIES_MISMATCH.getCode(),
+                    HttpStatus.CONFLICT);
+        }
+
         return Vaccine.builder()
                 .pet(pet)
                 .clinic(clinic)
