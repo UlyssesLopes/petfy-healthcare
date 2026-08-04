@@ -17,4 +17,7 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
 
     Optional<EmailVerificationToken> findFirstByOwnerOwnerIdOrderByCreationDateDesc(UUID ownerId);
 
+    /** Ver o equivalente em PasswordResetTokenRepository: sem isto a conta nao pode ser apagada. */
+    void deleteByOwnerOwnerId(UUID ownerId);
+
 }

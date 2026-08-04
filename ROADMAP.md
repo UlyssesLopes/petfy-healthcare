@@ -271,7 +271,11 @@ sem código novo de canal.
 ### 10. LGPD e confiança
 
 - Exportação e exclusão a pedido do titular — é dado pessoal somado a dado de
-  saúde.
+  saúde. **Hoje `DELETE /owners/me` falha para qualquer conta com pet**, porque
+  `pets` aponta para `owners` por chave estrangeira. Decidir o que acontece com o
+  histórico do pet é o cerne deste item: apagar junto, transferir para outro
+  tutor ou anonimizar são decisões diferentes, e nenhuma delas pode ser efeito
+  colateral silencioso de um `ON DELETE CASCADE`.
 - Limite de acesso e rastro nos links públicos de carteira: hoje quem tem a URL
   abre quantas vezes quiser e não há registro de quem abriu.
 - Decidir o que fazer com CRMV não verificado e com criação de clínica não

@@ -4,7 +4,9 @@ import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.EmailVerificationService;
@@ -43,6 +45,12 @@ class OwnerServiceImplTest {
 
     @Mock
     private EmailVerificationService emailVerificationService;
+
+    @Mock
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Mock
+    private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
     @InjectMocks
     private OwnerServiceImpl ownerService;
@@ -255,15 +263,26 @@ class OwnerServiceImplTest {
     @DisplayName("deleteCurrentOwner")
     class DeleteCurrentOwner {
 
+        /**
+         * A ordem importa e nao e detalhe de implementacao: os tokens apontam
+         * para owners por chave estrangeira, entao apagar a conta antes deles faz
+         * o banco recusar. Este teste com mock nao pega isso sozinho - quem pega
+         * e o OwnerDeletionContainerTest, contra Postgres de verdade - mas
+         * garante que a limpeza nao seja removida por engano.
+         */
         @Test
-        @DisplayName("deve remover o owner autenticado")
+        @DisplayName("deve remover os tokens da conta antes de remover o owner")
         void deveRemoverOwnerAutenticado() {
             var autenticado = existingOwner();
             when(currentOwnerProvider.require()).thenReturn(autenticado);
 
             ownerService.deleteCurrentOwner();
 
-            verify(ownerRepository).delete(autenticado);
+            var ordem = org.mockito.Mockito.inOrder(
+                    passwordResetTokenRepository, emailVerificationTokenRepository, ownerRepository);
+            ordem.verify(passwordResetTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
+            ordem.verify(emailVerificationTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
+            ordem.verify(ownerRepository).delete(autenticado);
         }
     }
 }
