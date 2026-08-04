@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
+import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.EmailVerificationService;
@@ -36,6 +37,9 @@ class OwnerServiceImplTest {
 
     @Mock
     private OwnerRepository ownerRepository;
+
+    @Mock
+    private VetRepository vetRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -115,6 +119,39 @@ class OwnerServiceImplTest {
             assertThat(OwnerResponseDTO.class.getDeclaredFields())
                     .extracting(Field::getName)
                     .doesNotContain("password");
+        }
+
+        /**
+         * Sem esta checagem, o cadastro duplicado bate no UNIQUE do banco e sai
+         * como 500 opaco, escondendo do cliente que o problema e o e-mail.
+         */
+        @Test
+        @DisplayName("deve recusar com 409 quando o e-mail ja pertence a outro owner")
+        void deveRecusarQuandoEmailJaUsadoPorOwner() {
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null);
+            when(ownerRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
+
+            assertThatThrownBy(() -> ownerService.createOwner(request))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage(ErrorMessageEnum.EMAIL_ALREADY_USED.getMessage());
+
+            verify(ownerRepository, org.mockito.Mockito.never()).save(any());
+            verify(emailVerificationService, org.mockito.Mockito.never()).sendVerification(any());
+        }
+
+        /** Owner e vet compartilham o mesmo namespace de e-mail. */
+        @Test
+        @DisplayName("deve recusar quando o e-mail ja pertence a um vet")
+        void deveRecusarQuandoEmailJaUsadoPorVet() {
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null);
+            when(ownerRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(false);
+            when(vetRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
+
+            assertThatThrownBy(() -> ownerService.createOwner(request))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage(ErrorMessageEnum.EMAIL_ALREADY_USED.getMessage());
+
+            verify(ownerRepository, org.mockito.Mockito.never()).save(any());
         }
     }
 
