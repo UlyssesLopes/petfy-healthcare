@@ -2,8 +2,8 @@ package br.com.petfy.healthcare.domain.dto;
 
 import lombok.*;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * Usado tanto na criacao quanto na atualizacao. As restricoes so valem onde o

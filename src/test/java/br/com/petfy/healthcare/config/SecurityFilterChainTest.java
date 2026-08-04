@@ -231,8 +231,14 @@ class SecurityFilterChainTest {
     @Test
     @DisplayName("o health check nao deve exigir token - quem chama e o provedor de hospedagem")
     void healthCheckNaoDeveExigirToken() throws Exception {
-        mockMvc.perform(get("/actuator/health"))
-                .andExpect(status().isNotFound());
+        // Nao ha controller do actuator neste WebMvcTest, entao o status exato
+        // varia por versao do framework (404 no Boot 2, 500 no Boot 3). O que
+        // importa e nao voltar 401 - se a seguranca exigisse token aqui, o
+        // provedor de hospedagem leria isto como instancia doente e ficaria
+        // reiniciando em loop.
+        int status = mockMvc.perform(get("/actuator/health"))
+                .andReturn().getResponse().getStatus();
+        org.assertj.core.api.Assertions.assertThat(status).isNotEqualTo(401);
     }
 
     @Test

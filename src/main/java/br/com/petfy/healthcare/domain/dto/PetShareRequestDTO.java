@@ -2,8 +2,8 @@ package br.com.petfy.healthcare.domain.dto;
 
 import lombok.*;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 @Getter
 @Setter
