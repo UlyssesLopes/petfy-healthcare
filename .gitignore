@@ -1,5 +1,9 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
+
+### Overrides locais (credenciais reais nunca versionadas)
+application-*.local.properties
+.env
 !**/src/main/**/target/
 !**/src/test/**/target/
 

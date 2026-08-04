@@ -27,6 +27,8 @@ public class VaccineResponseDTO {
 
     private UUID clinicId;
 
+    private UUID vaccineCatalogId;
+
     private LocalDateTime creationDate;
 
     private LocalDateTime updateDate;

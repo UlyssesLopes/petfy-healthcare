@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.UUID;
+
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/owners")
@@ -17,31 +17,26 @@ public class OwnerController {
 
     private final OwnerService ownerService;
 
+    /** Unica rota publica de owner: sem ela nao existe o primeiro usuario. */
     @PostMapping("/include")
-    public ResponseEntity<OwnerResponseDTO> createOwner(@RequestBody OwnerRequestDTO request) {
+    public ResponseEntity<OwnerResponseDTO> createOwner(@Valid @RequestBody OwnerRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ownerService.createOwner(request));
     }
 
-    @GetMapping("/{ownerId}")
-    public ResponseEntity<OwnerResponseDTO> getOwnerById(@PathVariable("id") UUID ownerId) {
-        return ResponseEntity.ok(ownerService.getOwnerById(ownerId));
+    @GetMapping("/me")
+    public ResponseEntity<OwnerResponseDTO> getCurrentOwner() {
+        return ResponseEntity.ok(ownerService.getCurrentOwner());
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<List<OwnerResponseDTO>> getAllOwners() {
-        return ResponseEntity.ok(ownerService.listAllOwners());
+    @PutMapping("/me")
+    public ResponseEntity<OwnerResponseDTO> updateCurrentOwner(@RequestBody OwnerRequestDTO request) {
+        return ResponseEntity.ok(ownerService.updateCurrentOwner(request));
     }
 
-    @PutMapping("/{ownerId}")
-    public ResponseEntity<OwnerResponseDTO> updateOwner(@PathVariable UUID id, @RequestBody OwnerRequestDTO request) {
-        return ResponseEntity.ok(ownerService.updateOwner(id, request));
-    }
-
-    @DeleteMapping("/{ownerId}")
-    public ResponseEntity<Void> deleteOwner(@PathVariable UUID id) {
-        ownerService.deleteOwner(id);
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteCurrentOwner() {
+        ownerService.deleteCurrentOwner();
         return ResponseEntity.noContent().build();
     }
-
 
 }

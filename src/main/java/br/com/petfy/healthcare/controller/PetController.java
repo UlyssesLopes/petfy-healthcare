@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,13 +20,13 @@ public class PetController {
     private final PetService petService;
 
     @PostMapping("/include")
-    public ResponseEntity<PetResponseDTO> createPet(@RequestBody PetRequestDTO dto) {
+    public ResponseEntity<PetResponseDTO> createPet(@Valid @RequestBody PetRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(petService.createPet(dto));
     }
 
     @GetMapping("/{petId}")
-    public ResponseEntity<PetResponseDTO> getPet(@PathVariable UUID id) {
-        return ResponseEntity.ok(petService.getPetById(id));
+    public ResponseEntity<PetResponseDTO> getPet(@PathVariable UUID petId) {
+        return ResponseEntity.ok(petService.getPetById(petId));
     }
 
     @GetMapping("/all")
@@ -34,13 +35,13 @@ public class PetController {
     }
 
     @PutMapping("/{petId}")
-    public ResponseEntity<PetResponseDTO> updatePet(@PathVariable UUID id, @RequestBody PetRequestDTO dto) {
-        return ResponseEntity.ok(petService.updatePet(id, dto));
+    public ResponseEntity<PetResponseDTO> updatePet(@PathVariable UUID petId, @RequestBody PetRequestDTO dto) {
+        return ResponseEntity.ok(petService.updatePet(petId, dto));
     }
 
     @DeleteMapping("/{petId}")
-    public ResponseEntity<Void> deletePet(@PathVariable UUID id) {
-        petService.deletePet(id);
+    public ResponseEntity<Void> deletePet(@PathVariable UUID petId) {
+        petService.deletePet(petId);
         return ResponseEntity.noContent().build();
     }
 

@@ -42,6 +42,14 @@ public class Pet {
     @JoinColumn(name = "owner_id", nullable = false)
     private Owner owner;
 
+    private String generalRegistry;
+
+    private String color;
+
+    private Boolean microchip;
+
+    private String bornLocal;
+
     private LocalDateTime creationDate;
 
     private LocalDateTime updateDate;

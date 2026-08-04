@@ -10,28 +10,39 @@ public class ImageProcessorService {
 
     public BufferedImage preProcess(BufferedImage originalImage) {
 
+        BufferedImage croppedImage = cropToDataRegion(originalImage);
+
         BufferedImage grayImage = new BufferedImage(
-          originalImage.getWidth(),
-          originalImage.getHeight(),
-          BufferedImage.TYPE_BYTE_GRAY
+                croppedImage.getWidth(),
+                croppedImage.getHeight(),
+                BufferedImage.TYPE_BYTE_GRAY
         );
 
-        Graphics graphics = grayImage.getGraphics();
-        graphics.drawImage(originalImage, 0, 0, null);
-        graphics.dispose();
+        Graphics2D g2dGray = grayImage.createGraphics();
+        g2dGray.drawImage(croppedImage, 0, 0, null);
+        g2dGray.dispose();
 
         BufferedImage binaryImage = new BufferedImage(
-          grayImage.getWidth(),
-          grayImage.getHeight(),
-          BufferedImage.TYPE_BYTE_BINARY
+                grayImage.getWidth(),
+                grayImage.getHeight(),
+                BufferedImage.TYPE_BYTE_BINARY
         );
 
-        Graphics2D graphics2D = binaryImage.createGraphics();
-        graphics2D.drawImage(grayImage, 0, 0, null);
-        graphics.dispose();
+        Graphics2D g2dBinary = binaryImage.createGraphics();
+        g2dBinary.drawImage(grayImage, 0, 0, null);
+        g2dBinary.dispose();
 
         return binaryImage;
     }
 
+    private BufferedImage cropToDataRegion(BufferedImage original) {
+
+        int x = (int) (original.getWidth() * 0.22);
+        int y = (int) (original.getHeight() * 0.20);
+        int width = (int) (original.getWidth() * 0.28);
+        int height = (int) (original.getHeight() * 0.68);
+
+        return original.getSubimage(x, y, width, height);
+    }
 
 }

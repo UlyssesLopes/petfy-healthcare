@@ -4,9 +4,9 @@ import br.com.petfy.healthcare.domain.dto.PetRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PetResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.PetService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +23,11 @@ import java.util.stream.Collectors;
 public class PetServiceImpl implements PetService {
 
     private final PetRepository petRepository;
-    private final OwnerRepository ownerRepository;
+    private final CurrentOwnerProvider currentOwnerProvider;
 
     @Override
     public PetResponseDTO createPet(PetRequestDTO dto) {
-        Owner owner = ownerRepository.findById(dto.getOwnerId())
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.OWNER_NOT_FOUND.getMessage(), ErrorMessageEnum.OWNER_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
+        Owner owner = currentOwnerProvider.require();
 
         Pet pet = Pet.builder()
                 .name(dto.getName())
@@ -41,19 +40,17 @@ public class PetServiceImpl implements PetService {
                 .creationDate(LocalDateTime.now())
                 .build();
 
-        Pet saved = petRepository.save(pet);
-        return toResponse(saved);
+        return toResponse(petRepository.save(pet));
     }
 
     @Override
     public PetResponseDTO getPetById(UUID petId) {
-        return toResponse(petRepository.findById(petId)
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.PET_NOT_FOUND.getMessage(), ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND)));
+        return toResponse(buscarDoOwnerAutenticado(petId));
     }
 
     @Override
     public List<PetResponseDTO> listAllPets() {
-        return petRepository.findAll()
+        return petRepository.findByOwnerOwnerId(currentOwnerProvider.require().getOwnerId())
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -61,8 +58,7 @@ public class PetServiceImpl implements PetService {
 
     @Override
     public PetResponseDTO updatePet(UUID petId, PetRequestDTO dto) {
-        Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.PET_NOT_FOUND.getMessage(), ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
+        Pet pet = buscarDoOwnerAutenticado(petId);
 
         pet.setName(dto.getName() != null ? dto.getName() : pet.getName());
         pet.setType(dto.getType() != null ? dto.getType() : pet.getType());
@@ -70,13 +66,6 @@ public class PetServiceImpl implements PetService {
         pet.setBornDate(dto.getBornDate() != null ? dto.getBornDate() : pet.getBornDate());
         pet.setWeight(dto.getWeight() != null ? dto.getWeight() : pet.getWeight());
         pet.setGender(dto.getGender() != null ? dto.getGender() : pet.getGender());
-
-        if (dto.getOwnerId() != null) {
-            Owner newOwner = ownerRepository.findById(dto.getOwnerId())
-                    .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.OWNER_NOT_FOUND.getMessage(), ErrorMessageEnum.OWNER_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
-            pet.setOwner(newOwner);
-        }
-
         pet.setUpdateDate(LocalDateTime.now());
 
         return toResponse(petRepository.save(pet));
@@ -84,9 +73,23 @@ public class PetServiceImpl implements PetService {
 
     @Override
     public void deletePet(UUID petId) {
-        Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.PET_NOT_FOUND.getMessage(), ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
-        petRepository.delete(pet);
+        petRepository.delete(buscarDoOwnerAutenticado(petId));
+    }
+
+    /**
+     * Pet de outro dono responde PET_NOT_FOUND, e nao 403: um 403 confirmaria
+     * que aquele id existe, o que permitiria varrer ids para descobrir o que ha
+     * na base.
+     */
+    private Pet buscarDoOwnerAutenticado(UUID petId) {
+        UUID ownerId = currentOwnerProvider.require().getOwnerId();
+
+        return petRepository.findById(petId)
+                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
+                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
+                        HttpStatus.NOT_FOUND));
     }
 
     private PetResponseDTO toResponse(Pet pet) {

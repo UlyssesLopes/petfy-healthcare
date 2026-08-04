@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +20,7 @@ public class ClinicController {
     private final ClinicService clinicService;
 
     @PostMapping("/include")
-    public ResponseEntity<ClinicResponseDTO> createClinic(@RequestBody ClinicRequestDTO request) {
+    public ResponseEntity<ClinicResponseDTO> createClinic(@Valid @RequestBody ClinicRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clinicService.createClinic(request));
     }
 
