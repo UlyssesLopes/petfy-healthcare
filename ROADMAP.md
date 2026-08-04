@@ -13,12 +13,30 @@ quando o frontend existir, porque ninguém usa `curl`. Até lá, "usuário zero"
 você, e a validação de cada passo é por API. Foi uma escolha deliberada, não um
 esquecimento — ver a seção Frontend.
 
+## Decisões em aberto
+
+- **Token longo por link, ou OTP de 6 dígitos, na recuperação de senha e na
+  confirmação de e-mail?** Hoje é um token de 32 bytes, pensado para ir dentro de
+  um link — por isso pode valer 30 min ou 24 h sem risco. OTP de 6 dígitos é
+  igualmente padrão de mercado e melhor para digitar no celular, mas exige pacote
+  completo: expiração de ~10 min, **limite de tentativas erradas** (sem ele, 1
+  milhão de combinações caem rápido) e o cooldown que já existe. A escolha
+  depende de onde o fluxo vai viver, o que só se decide junto com o frontend. A
+  mudança é localizada: geração e validação do token, sem tocar tabela nem
+  endpoint.
+- **Domínio próprio.** Sem ele, o Resend só envia de `onboarding@resend.dev` e
+  **só entrega para o e-mail dono da conta Resend**. Basta para `dev`; é bloqueio
+  absoluto para qualquer usuário real. `petfy-healthcare.com` estava livre em
+  2026-08-04.
+
 ## Status
 
-**Passo 1 concluído em 2026-08-04.** O ambiente de `dev` está no ar em
-`petfy-healthcare-development.up.railway.app`, com as 9 migrations aplicadas,
-`/actuator/health` respondendo `200` público e as rotas protegidas respondendo
-`401` sem token. Próximo: passo 2, ciclo de vida da conta.
+**Passos 1 e 2 concluídos em 2026-08-04**, ambos validados contra o `dev` em
+`petfy-healthcare-development.up.railway.app`.
+
+**Próximo: fechar o passo 3.** Restam duas tarefas, e as duas são de operação, não
+de código: exercitar o lembrete com envio real e então ligar
+`REMINDERS_ENABLED=true`. O canal de e-mail já funciona, então nada mais bloqueia.
 
 O Railway constrói a partir do repositório, não da imagem do ghcr — o registry
 privado não tem onde receber credencial na UI dele. A imagem continua sendo
@@ -148,9 +166,16 @@ de remover e o que impede qualquer usuário que não seja você.
       `ClinicActivityNotifier`, que passou a receber o tutor: assim um aviso novo
       não compila sem passar por ela.
 
-**Pronto quando:** você perde a senha, volta sozinho, e o e-mail chega numa caixa
-real. **Falta só a caixa real** — todo o resto está feito e o canal `log` já
-exercita o fluxo inteiro.
+- [x] Provedor de envio escolhido e entrega validada de verdade. **Resend, por
+      API HTTP** — o Railway bloqueia saída em porta de SMTP, então Gmail e
+      qualquer outro SMTP são inviáveis ali. Custou uma classe: o `Notifier` já
+      isolava o transporte do domínio.
+
+**Passo 2 concluído em 2026-08-04**, validado contra o `dev` de ponta a ponta:
+cadastro → e-mail de confirmação recebido → confirmado (`204`) → reuso do mesmo
+token recusado (`400`) → recuperação pedida (`202`, igual para conta existente e
+inexistente) → e-mail recebido → senha trocada → **token de login anterior
+passou a responder `401`** e a senha antiga parou de funcionar.
 
 ### 3. Lembrete de vacina ligado
 

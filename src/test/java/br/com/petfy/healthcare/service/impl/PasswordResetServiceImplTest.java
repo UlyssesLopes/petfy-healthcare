@@ -29,8 +29,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -140,6 +142,25 @@ class PasswordResetServiceImplTest {
 
             assertThat(anterior.getUsedAt()).isNotNull();
             verify(tokenRepository).saveAll(List.of(anterior));
+        }
+
+        /**
+         * O endpoint responde igual exista ou nao a conta. Se uma falha de envio
+         * virasse erro na resposta, a diferenca entre 500 e 202 entregaria
+         * exatamente a informacao que o silencio existe para esconder.
+         */
+        @Test
+        @DisplayName("falha de envio nao pode virar erro na resposta, senao denuncia que a conta existe")
+        void falhaDeEnvioNaoPodeVirarErroNaResposta() {
+            when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner()));
+            when(tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(OWNER_ID)).thenReturn(Optional.empty());
+            when(tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
+            when(opaqueTokenService.generate()).thenReturn("token-em-claro");
+            when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
+            doThrow(new IllegalStateException("Resend fora")).when(notifier).send(any());
+
+            assertThatCode(() -> service.requestReset(new PasswordResetRequestDTO(EMAIL)))
+                    .doesNotThrowAnyException();
         }
 
         /**

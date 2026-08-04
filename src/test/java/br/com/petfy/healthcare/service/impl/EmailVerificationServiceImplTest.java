@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -131,6 +132,24 @@ class EmailVerificationServiceImplTest {
 
             verify(tokenRepository, never()).save(any());
             verify(notifier, never()).send(any());
+        }
+
+        /**
+         * Mesmo motivo do reset: 500 para conta existente contra 202 para e-mail
+         * desconhecido entregaria a informacao que o silencio esconde.
+         */
+        @Test
+        @DisplayName("falha de envio nao pode virar erro na resposta, senao denuncia que a conta existe")
+        void falhaDeEnvioNaoPodeVirarErroNaResposta() {
+            when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner()));
+            when(tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(OWNER_ID)).thenReturn(Optional.empty());
+            when(tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
+            when(opaqueTokenService.generate()).thenReturn("token-em-claro");
+            when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
+            doThrow(new IllegalStateException("Resend fora")).when(notifier).send(any());
+
+            assertThatCode(() -> service.resend(new EmailVerificationResendDTO(EMAIL)))
+                    .doesNotThrowAnyException();
         }
 
         @Test

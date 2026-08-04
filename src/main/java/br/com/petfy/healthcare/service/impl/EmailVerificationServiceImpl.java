@@ -82,7 +82,14 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             return;
         }
 
-        emitirEEnviar(owner, agora);
+        // falha de envio nao pode virar erro na resposta. Este endpoint responde
+        // igual exista ou nao a conta, e um 500 aqui contra um 202 para e-mail
+        // desconhecido entregaria exatamente a informacao que o silencio esconde
+        try {
+            emitirEEnviar(owner, agora);
+        } catch (Exception e) {
+            log.error("Falha ao reenviar a confirmacao de e-mail do owner {}", owner.getOwnerId(), e);
+        }
     }
 
     @Override
