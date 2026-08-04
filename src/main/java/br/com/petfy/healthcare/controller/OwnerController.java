@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
+import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.service.OwnerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,16 @@ public class OwnerController {
     @PutMapping("/me")
     public ResponseEntity<OwnerResponseDTO> updateCurrentOwner(@RequestBody OwnerRequestDTO request) {
         return ResponseEntity.ok(ownerService.updateCurrentOwner(request));
+    }
+
+    /**
+     * Separado do PUT /me porque aqui a validacao vale sempre: o PUT e parcial e
+     * preserva campo ausente, o que nao serve para uma troca de senha.
+     */
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequestDTO request) {
+        ownerService.changePassword(request);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/me")

@@ -2,9 +2,12 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
+import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -160,6 +164,82 @@ class OwnerServiceImplTest {
             when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
             ownerService.updateCurrentOwner(new OwnerRequestDTO("Outro Nome", null, null, null, null));
+
+            var captor = ArgumentCaptor.forClass(Owner.class);
+            verify(ownerRepository).save(captor.capture());
+            assertThat(captor.getValue().getOwnerId()).isEqualTo(OWNER_ID);
+        }
+    }
+
+    @Nested
+    @DisplayName("changePassword")
+    class ChangePassword {
+
+        @Test
+        @DisplayName("deve gravar o hash da nova senha quando a atual confere")
+        void deveGravarHashDaNovaSenha() {
+            var autenticado = existingOwner();
+            when(currentOwnerProvider.require()).thenReturn(autenticado);
+            when(passwordEncoder.matches("senha-atual-em-claro", "senha-atual")).thenReturn(true);
+            when(passwordEncoder.matches("s3nhaNova", "senha-atual")).thenReturn(false);
+            when(passwordEncoder.encode("s3nhaNova")).thenReturn(HASH);
+            when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
+
+            ownerService.changePassword(new PasswordChangeRequestDTO("senha-atual-em-claro", "s3nhaNova"));
+
+            var captor = ArgumentCaptor.forClass(Owner.class);
+            verify(ownerRepository).save(captor.capture());
+            assertThat(captor.getValue().getPassword()).isEqualTo(HASH);
+            assertThat(captor.getValue().getUpdateDate()).isNotNull();
+        }
+
+        /**
+         * Sem exigir a senha atual, um token roubado bastaria para trocar a senha
+         * e tomar a conta em definitivo, sem o dono conseguir voltar.
+         */
+        @Test
+        @DisplayName("deve recusar quando a senha atual nao confere, sem gravar nada")
+        void deveRecusarQuandoSenhaAtualNaoConfere() {
+            when(currentOwnerProvider.require()).thenReturn(existingOwner());
+            when(passwordEncoder.matches("chute", "senha-atual")).thenReturn(false);
+
+            assertThatThrownBy(() -> ownerService.changePassword(
+                    new PasswordChangeRequestDTO("chute", "s3nhaNova")))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage(ErrorMessageEnum.CURRENT_PASSWORD_DOES_NOT_MATCH.getMessage());
+
+            verify(ownerRepository, org.mockito.Mockito.never()).save(any());
+            verify(passwordEncoder, org.mockito.Mockito.never()).encode(any());
+        }
+
+        /**
+         * Trocar a senha por ela mesma passaria como sucesso e daria a quem esta
+         * reagindo a um vazamento a impressao de ter rodado a credencial.
+         */
+        @Test
+        @DisplayName("deve recusar quando a nova senha e igual a atual")
+        void deveRecusarQuandoNovaSenhaEIgualAAtual() {
+            when(currentOwnerProvider.require()).thenReturn(existingOwner());
+            when(passwordEncoder.matches("senha-atual-em-claro", "senha-atual")).thenReturn(true, true);
+
+            assertThatThrownBy(() -> ownerService.changePassword(
+                    new PasswordChangeRequestDTO("senha-atual-em-claro", "senha-atual-em-claro")))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage(ErrorMessageEnum.NEW_PASSWORD_MUST_DIFFER.getMessage());
+
+            verify(ownerRepository, org.mockito.Mockito.never()).save(any());
+        }
+
+        @Test
+        @DisplayName("deve trocar sempre a senha do owner do token")
+        void deveTrocarSempreSenhaDoOwnerDoToken() {
+            when(currentOwnerProvider.require()).thenReturn(existingOwner());
+            when(passwordEncoder.matches("senha-atual-em-claro", "senha-atual")).thenReturn(true);
+            when(passwordEncoder.matches("s3nhaNova", "senha-atual")).thenReturn(false);
+            when(passwordEncoder.encode("s3nhaNova")).thenReturn(HASH);
+            when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
+
+            ownerService.changePassword(new PasswordChangeRequestDTO("senha-atual-em-claro", "s3nhaNova"));
 
             var captor = ArgumentCaptor.forClass(Owner.class);
             verify(ownerRepository).save(captor.capture());

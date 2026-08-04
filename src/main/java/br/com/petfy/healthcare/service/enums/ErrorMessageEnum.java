@@ -17,6 +17,8 @@ public enum ErrorMessageEnum {
     CLINIC_ACCESS_NOT_FOUND(110, "Clinic access not found"),
     INVITE_NOT_FOUND(111, "Invite not found or no longer valid"),
     CORRECTION_WINDOW_EXPIRED(112, "Correction window for this record has expired"),
+    CURRENT_PASSWORD_DOES_NOT_MATCH(113, "Current password does not match"),
+    NEW_PASSWORD_MUST_DIFFER(114, "New password must be different from the current one"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 
