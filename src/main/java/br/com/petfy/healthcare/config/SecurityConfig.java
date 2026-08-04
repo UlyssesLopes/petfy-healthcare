@@ -40,6 +40,10 @@ public class SecurityConfig {
                 // carteira compartilhada: quem recebe o link nao tem conta. O
                 // token no path faz o papel da credencial
                 .antMatchers(HttpMethod.GET, "/share/*").permitAll()
+                // o CurrentVetProvider ja barraria um tutor, mas exigir o papel
+                // aqui responde 403 em vez de 401 e evita que a autorizacao
+                // dependa so da busca falhar na tabela certa
+                .antMatchers("/vet/**").hasRole("VET")
                 .anyRequest().authenticated()
                 .and()
                 // sem entry point explicito o Spring Security devolve 403 para

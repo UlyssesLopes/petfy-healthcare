@@ -95,6 +95,8 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 | Owners | `/owners` | `POST /owners/include` (público) e `GET`/`PUT`/`DELETE /owners/me` |
 | Pets | `/pets` | escopado ao dono autenticado |
 | Veterinários | `/vets` | `POST /vets/include` (público) e `GET /vets/me` |
+| Acesso de clínicas | `/pets/{petId}/clinic-access` | tutor concede, lista e revoga |
+| Área do veterinário | `/vet/pets` | pets autorizados; `POST /vet/pets/{petId}/vaccines` |
 | Clínicas | `/clinics` | leitura e criação abertas; **editar e remover exigem ser vet da clínica** |
 | Vacinas | `/vaccines` | listagem em `GET /vaccines`, escopada pelo dono do pet |
 | Agenda de vacinas | `/vaccines/agenda` | `?windowDays=30` — o que está vencido ou vencendo |
@@ -140,6 +142,45 @@ aceita, só sem cálculo automático.
 O catálogo é somente leitura na API e mantido por migration: incluir ou corrigir
 vacina é uma migration nova. Isso o mantém versionado sem exigir um papel de
 administrador, que o sistema não tem.
+
+## Veterinário atendendo um pet
+
+O tutor autoriza uma **clínica** (não um veterinário específico — quem atende
+hoje pode não ser quem atende no retorno) a acessar o pet. Qualquer vet daquela
+clínica passa então a ver e registrar vacinas ali, carimbadas com a clínica.
+
+```bash
+# tutor concede
+curl -X POST localhost:8080/pets/$PET_ID/clinic-access \
+  -H "Authorization: Bearer $TOKEN_TUTOR" -H 'Content-Type: application/json' \
+  -d "{\"clinicId\":\"$CLINIC_ID\"}"
+
+# vet lista os pets que a clínica dele atende
+curl localhost:8080/vet/pets -H "Authorization: Bearer $TOKEN_VET"
+
+# vet registra a vacina
+curl -X POST localhost:8080/vet/pets/$PET_ID/vaccines \
+  -H "Authorization: Bearer $TOKEN_VET" -H 'Content-Type: application/json' \
+  -d '{"vaccineCatalogId":"...","applicationDate":"2026-08-01"}'
+
+# tutor revoga quando quiser
+curl -X DELETE localhost:8080/pets/$PET_ID/clinic-access/$CLINIC_ID \
+  -H "Authorization: Bearer $TOKEN_TUTOR"
+```
+
+**A concessão do tutor é o portão.** É ela que torna seguro um veterinário
+escrever no histórico de um pet que não é dele — e é o que limita o dano de não
+haver verificação de identidade profissional: quem se cadastra como vet de uma
+clínica só alcança os pets que aquela clínica já foi autorizada a atender.
+
+A clínica da vacina vem **do vet autenticado, nunca do payload** — mesmo
+princípio do `ownerId` no pet. O `petId` vem do path; o que vier no corpo é
+ignorado. Pet sem concessão ativa responde `404`, não `403`: para o veterinário,
+um pet que sua clínica não atende é indistinguível de um pet que não existe.
+
+As rotas `/vet/**` exigem `ROLE_VET` na cadeia de filtros, além da checagem do
+`CurrentVetProvider` — a autorização não depende só de a busca falhar na tabela
+certa.
 
 ## Compartilhar a carteira
 
@@ -272,10 +313,13 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   existente só informando o `clinicId` — sem aprovação de quem já está lá. É o
   buraco mais sério do modelo de vet, e fecha com validação de CRMV e convite
   por quem já pertence à clínica.
-- **O veterinário ainda não alcança pets.** Ele tem conta, clínica e mantém o
-  cadastro dela, mas não registra vacina no pet de um tutor — isso precisa de um
-  modelo de concessão de acesso (o tutor autoriza a clínica a ver o pet), que é
-  o passo seguinte.
+- **O veterinário só escreve vacinas.** Não registra histórico de saúde nem
+  edita ou remove o que já lançou — corrigir um registro errado hoje depende do
+  tutor. Editar histórico alheio é mais delicado que criar, e merece um modelo
+  próprio (quem pode corrigir o quê, e por quanto tempo).
+- **A concessão não notifica o tutor.** Ele não é avisado quando a clínica
+  registra algo no pet dele; só vê ao abrir o app. O canal de notificação já
+  existe (ver lembretes), então isso é integração, não infraestrutura nova.
 - **O escopo por dono nas listagens depende de queries não verificadas contra
   banco real** (`findByOwnerOwnerId` e afins) — mesma limitação de UUID no H2
   descrita acima. As checagens de propriedade item a item, essas sim, estão

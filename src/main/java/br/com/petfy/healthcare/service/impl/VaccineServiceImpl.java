@@ -15,6 +15,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VaccineService;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -42,11 +43,11 @@ public class VaccineServiceImpl implements VaccineService {
 
     private final ClinicRepository clinicRepository;
 
-    private final VaccineCatalogRepository vaccineCatalogRepository;
-
     private final CurrentOwnerProvider currentOwnerProvider;
 
     private final VaccineStatusCalculator vaccineStatusCalculator;
+
+    private final VaccineFactory vaccineFactory;
 
     @Override
     public VaccineResponseDTO createVaccine(VaccineRequestDTO request) {
@@ -57,71 +58,7 @@ public class VaccineServiceImpl implements VaccineService {
                 .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(), ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND))
                 : null;
 
-        VaccineCatalog catalog = request.getVaccineCatalogId() != null
-                ? buscarNoCatalogo(request.getVaccineCatalogId())
-                : null;
-
-        String nome = resolverNome(request, catalog);
-
-        Vaccine vaccine = Vaccine.builder()
-                .pet(pet)
-                .catalog(catalog)
-                .vaccineName(nome)
-                .applicationDate(request.getApplicationDate())
-                .nextDoseDate(resolverProximaDose(request, catalog))
-                .description(request.getDescription())
-                .clinic(clinic)
-                .creationDate(LocalDateTime.now())
-                .updateDate(LocalDateTime.now())
-                .build();
-
-        return toResponse(vaccineRepository.save(vaccine));
-    }
-
-    /**
-     * O nome vem do catalogo quando a vacina e escolhida da lista. Continua
-     * obrigatorio quando o tutor digita em texto livre - por isso a validacao
-     * esta aqui e nao como @NotBlank no DTO, que nao enxerga essa condicao.
-     */
-    private String resolverNome(VaccineRequestDTO request, VaccineCatalog catalog) {
-        if (request.getVaccineName() != null && !request.getVaccineName().isBlank()) {
-            return request.getVaccineName();
-        }
-
-        if (catalog != null) {
-            return catalog.getName();
-        }
-
-        throw new PetfyHealthcareException(
-                "vaccineName e obrigatorio quando vaccineCatalogId nao e informado",
-                ErrorMessageEnum.INVALID_REQUEST.getCode(),
-                HttpStatus.BAD_REQUEST);
-    }
-
-    /**
-     * Calcula a proxima dose somando o intervalo de reforco do catalogo a data de
-     * aplicacao - o ponto do catalogo e o tutor nao ter que estimar isso. Data
-     * enviada explicitamente sempre vence, para o caso de orientacao diferente
-     * do veterinario.
-     */
-    private LocalDate resolverProximaDose(VaccineRequestDTO request, VaccineCatalog catalog) {
-        if (request.getNextDoseDate() != null) {
-            return request.getNextDoseDate();
-        }
-
-        if (catalog == null || catalog.getDefaultIntervalDays() == null || request.getApplicationDate() == null) {
-            return null;
-        }
-
-        return request.getApplicationDate().plusDays(catalog.getDefaultIntervalDays());
-    }
-
-    private VaccineCatalog buscarNoCatalogo(UUID vaccineCatalogId) {
-        return vaccineCatalogRepository.findById(vaccineCatalogId)
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.VACCINE_CATALOG_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.VACCINE_CATALOG_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
+        return toResponse(vaccineRepository.save(vaccineFactory.build(pet, clinic, request)));
     }
 
     @Override

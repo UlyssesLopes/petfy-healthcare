@@ -14,6 +14,7 @@ public enum ErrorMessageEnum {
     SHARE_NOT_FOUND(107, "Share link not found or no longer valid"),
     EMAIL_ALREADY_USED(108, "Email already registered"),
     NOT_CLINIC_MEMBER(109, "Only a vet from this clinic can do that"),
+    CLINIC_ACCESS_NOT_FOUND(110, "Clinic access not found"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

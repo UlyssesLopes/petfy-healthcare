@@ -12,6 +12,9 @@ import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.VaccineFactory;
+import br.com.petfy.healthcare.service.VaccineStatusCalculator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -54,8 +57,17 @@ class VaccineServiceImplTest {
     @Mock
     private CurrentOwnerProvider currentOwnerProvider;
 
-    @InjectMocks
     private VaccineServiceImpl vaccineService;
+
+    @BeforeEach
+    void setUp() {
+        // factory e calculator reais: sao a regra que estes testes verificam,
+        // entao mocka-los esvaziaria o teste. Construido aqui, e nao por
+        // @InjectMocks, porque a factory depende de um mock que so existe agora
+        vaccineService = new VaccineServiceImpl(vaccineRepository, petRepository, clinicRepository,
+                currentOwnerProvider, new VaccineStatusCalculator(),
+                new VaccineFactory(vaccineCatalogRepository));
+    }
 
     private static final UUID CATALOG_ID = UUID.fromString("a1000000-0000-4000-8000-000000000002");
 
