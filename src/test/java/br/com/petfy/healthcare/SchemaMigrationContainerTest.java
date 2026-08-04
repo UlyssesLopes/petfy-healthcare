@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
@@ -33,14 +34,32 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
     @Autowired
     private VaccineCatalogRepository vaccineCatalogRepository;
 
+    /**
+     * O numero esperado vem de contar os arquivos, e nao de uma constante: com
+     * numero fixo o teste quebraria a cada migration nova, o que treina quem
+     * mantem o projeto a atualizar o valor sem olhar - e um dia esconderia uma
+     * migration que realmente falhou.
+     */
     @Test
-    @DisplayName("as migrations devem produzir um schema que o mapeamento aceita")
-    void migrationsDevemProduzirSchemaValido() {
-        // chegar aqui ja significa Flyway aplicado e validate aprovado
+    @DisplayName("todas as migrations do projeto devem ter sido aplicadas com sucesso")
+    void todasAsMigrationsDevemTerSidoAplicadas() throws Exception {
+        int arquivos = new PathMatchingResourcePatternResolver()
+                .getResources("classpath:db/migration/V*.sql").length;
+
         Integer aplicadas = jdbcTemplate.queryForObject(
                 "select count(*) from flyway_schema_history where success = true", Integer.class);
 
-        assertThat(aplicadas).isEqualTo(8);
+        assertThat(arquivos).isPositive();
+        assertThat(aplicadas).isEqualTo(arquivos);
+    }
+
+    @Test
+    @DisplayName("nenhuma migration pode constar como falha")
+    void nenhumaMigrationPodeTerFalhado() {
+        Integer falhas = jdbcTemplate.queryForObject(
+                "select count(*) from flyway_schema_history where success = false", Integer.class);
+
+        assertThat(falhas).isZero();
     }
 
     @Test
