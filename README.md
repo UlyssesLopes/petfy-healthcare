@@ -63,6 +63,14 @@ não deve contar a um desconhecido qual peça caiu. Os demais endpoints do
 actuator exigem token como qualquer outra rota, e só `health` e `info` são
 expostos sobre HTTP.
 
+**O health check de e-mail fica desligado** (`management.health.mail.enabled=false`).
+O actuator registra um sozinho assim que existe `spring.mail.host`, e ele abre
+uma conexão SMTP a cada checagem — o que amarra a saúde da aplicação a um
+serviço de terceiro. Com o SMTP fora, o health vira `DOWN`, o provedor conclui
+que a instância morreu e reinicia em loop, com a API respondendo perfeitamente.
+Falha de envio já é tratada onde importa: o aviso ao tutor captura e loga, e o
+lembrete deixa a dose elegível para a próxima varredura.
+
 ## Autenticação e autorização
 
 Existem **dois tipos de conta**: `OWNER` (tutor) e `VET` (veterinário, vinculado
