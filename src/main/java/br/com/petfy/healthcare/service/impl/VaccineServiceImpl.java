@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.VaccineAgendaItemDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineAgendaResponseDTO;
+import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineStatus;
@@ -15,7 +16,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
-import br.com.petfy.healthcare.service.VaccineCorrectionRecorder;
+import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VaccineService;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
@@ -50,7 +51,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     private final VaccineFactory vaccineFactory;
 
-    private final VaccineCorrectionRecorder vaccineCorrectionRecorder;
+    private final VaccineCorrectionLog vaccineCorrectionLog;
 
     @Override
     public VaccineResponseDTO createVaccine(VaccineRequestDTO request) {
@@ -71,7 +72,7 @@ public class VaccineServiceImpl implements VaccineService {
         // o snapshot sai antes dos setters. O tutor nao tem janela de correcao -
         // a carteira e dele - mas deixa rastro igual: se so o veterinario
         // registrasse, o historico contaria meia verdade
-        vaccineCorrectionRecorder.recordByOwner(existing, currentOwnerProvider.require());
+        vaccineCorrectionLog.recordByOwner(existing, currentOwnerProvider.require());
 
         if (request.getVaccineName() != null) existing.setVaccineName(request.getVaccineName());
         if (request.getApplicationDate() != null) existing.setApplicationDate(request.getApplicationDate());
@@ -91,6 +92,15 @@ public class VaccineServiceImpl implements VaccineService {
         existing.setUpdateDate(LocalDateTime.now());
 
         return toResponse(vaccineRepository.save(existing));
+    }
+
+    @Override
+    public List<VaccineCorrectionResponseDTO> listCorrections(UUID vaccineId) {
+        // passa pela mesma checagem de propriedade da leitura da vacina: o rastro
+        // e tao do tutor quanto o registro
+        buscarDoOwnerAutenticado(vaccineId);
+
+        return vaccineCorrectionLog.list(vaccineId);
     }
 
     @Override

@@ -12,7 +12,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
-import br.com.petfy.healthcare.service.VaccineCorrectionRecorder;
+import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +59,7 @@ class VaccineServiceImplTest {
     private CurrentOwnerProvider currentOwnerProvider;
 
     @Mock
-    private VaccineCorrectionRecorder vaccineCorrectionRecorder;
+    private VaccineCorrectionLog vaccineCorrectionLog;
 
     private VaccineServiceImpl vaccineService;
 
@@ -70,7 +70,7 @@ class VaccineServiceImplTest {
         // @InjectMocks, porque a factory depende de um mock que so existe agora
         vaccineService = new VaccineServiceImpl(vaccineRepository, petRepository, clinicRepository,
                 currentOwnerProvider, new VaccineStatusCalculator(),
-                new VaccineFactory(vaccineCatalogRepository), vaccineCorrectionRecorder);
+                new VaccineFactory(vaccineCatalogRepository), vaccineCorrectionLog);
     }
 
     private static final UUID CATALOG_ID = UUID.fromString("a1000000-0000-4000-8000-000000000002");
@@ -388,6 +388,35 @@ class VaccineServiceImplTest {
             assertThatThrownBy(() -> vaccineService.getVaccineById(VACCINE_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage("Vaccine not found");
+        }
+    }
+
+    @Nested
+    @DisplayName("listCorrections")
+    class ListCorrections {
+
+        @Test
+        @DisplayName("deve devolver o rastro da propria vacina")
+        void deveDevolverRastroDaPropriaVacina() {
+            autenticadoComo(OWNER_ID);
+            when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(vacinaDe(OWNER_ID)));
+            when(vaccineCorrectionLog.list(VACCINE_ID)).thenReturn(List.of());
+
+            assertThat(vaccineService.listCorrections(VACCINE_ID)).isEmpty();
+            verify(vaccineCorrectionLog).list(VACCINE_ID);
+        }
+
+        @Test
+        @DisplayName("nao deve devolver o rastro de vacina de pet de outro dono")
+        void naoDeveDevolverRastroDeOutroDono() {
+            autenticadoComo(OWNER_ID);
+            when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(vacinaDe(OUTRO_OWNER_ID)));
+
+            assertThatThrownBy(() -> vaccineService.listCorrections(VACCINE_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Vaccine not found");
+
+            verify(vaccineCorrectionLog, never()).list(any());
         }
     }
 

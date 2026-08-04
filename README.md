@@ -240,6 +240,23 @@ O tutor também deixa rastro ao editar, mas **não tem janela** — a carteira �
 dele. Se só o veterinário fosse auditado, o histórico contaria meia verdade, o
 que é pior que não ter histórico: daria impressão de completude.
 
+O rastro é legível pelos dois lados:
+
+```bash
+# tutor, sobre uma vacina dele
+curl localhost:8080/vaccines/$VACCINE_ID/corrections -H "Authorization: Bearer $TOKEN_TUTOR"
+
+# vet, sobre uma vacina de um pet que a clínica atende
+curl localhost:8080/vet/pets/$PET_ID/vaccines/$VACCINE_ID/corrections \
+  -H "Authorization: Bearer $TOKEN_VET"
+```
+
+Cada entrada traz **o que a vacina era** antes daquela alteração, mais quem
+mudou (`OWNER`/`VET`, nome, e a clínica quando for vet) e quando. Comparando com
+o registro atual, quem lê reconstrói o que mudou. O vet enxerga o rastro de
+qualquer vacina do pet, não só das que sua clínica registrou — ele já lê a
+carteira inteira, e saber que um registro foi alterado faz parte de lê-lo.
+
 ## Compartilhar a carteira
 
 O momento de uso de uma carteira de vacinação é apresentá-la: hotelzinho,
@@ -392,9 +409,8 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   nada), mas permite poluir o diretório.
 - **O veterinário só mexe em vacinas.** Não registra nem corrige histórico de
   saúde — só a carteira de vacinação.
-- **O rastro de correções não é exposto por nenhum endpoint.** Está gravado e
-  íntegro, mas hoje só se lê no banco. Falta um `GET` que devolva o histórico de
-  alterações de um registro.
+- **O rastro cobre só vacinas.** Histórico de saúde, pet e clínica são editáveis
+  sem deixar registro do que mudou.
 - **A notificação de vacina registrada é síncrona.** Sai dentro da requisição do
   veterinário, então um SMTP lento adiciona latência ao registro. Falha não
   quebra nada (é capturada), mas o envio devia sair do caminho da requisição —

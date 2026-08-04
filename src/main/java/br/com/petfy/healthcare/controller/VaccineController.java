@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.VaccineAgendaResponseDTO;
+import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.service.VaccineService;
@@ -44,6 +45,12 @@ public class VaccineController {
     @GetMapping
     public ResponseEntity<List<VaccineResponseDTO>> listAllVaccines() {
         return ResponseEntity.ok(vaccineService.listAllVaccines());
+    }
+
+    /** Rastro de alteracoes: quem mudou o que, e quando. */
+    @GetMapping("/{vaccineId}/corrections")
+    public ResponseEntity<List<VaccineCorrectionResponseDTO>> listCorrections(@PathVariable UUID vaccineId) {
+        return ResponseEntity.ok(vaccineService.listCorrections(vaccineId));
     }
 
     /**

@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.dto.VaccineAgendaResponseDTO;
+import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 
@@ -21,5 +22,8 @@ public interface VaccineService {
     VaccineResponseDTO getVaccineById(UUID id);
 
     List<VaccineResponseDTO> listAllVaccines();
+
+    /** Rastro de alteracoes de um registro do proprio tutor. */
+    List<VaccineCorrectionResponseDTO> listCorrections(UUID vaccineId);
 
 }

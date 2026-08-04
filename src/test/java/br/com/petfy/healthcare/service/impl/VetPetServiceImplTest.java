@@ -14,7 +14,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.VaccineRecordedNotifier;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
-import br.com.petfy.healthcare.service.VaccineCorrectionRecorder;
+import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -61,7 +61,7 @@ class VetPetServiceImplTest {
     private VaccineRecordedNotifier vaccineRecordedNotifier;
 
     @Mock
-    private VaccineCorrectionRecorder vaccineCorrectionRecorder;
+    private VaccineCorrectionLog vaccineCorrectionLog;
 
     private VetPetServiceImpl service;
 
@@ -76,7 +76,7 @@ class VetPetServiceImplTest {
         // clinica certa, e nao repetir a regra de montagem num mock
         service = new VetPetServiceImpl(petClinicAccessRepository, vaccineRepository,
                 currentVetProvider, new VaccineFactory(vaccineCatalogRepository),
-                vaccineRecordedNotifier, vaccineCorrectionRecorder);
+                vaccineRecordedNotifier, vaccineCorrectionLog);
         ReflectionTestUtils.setField(service, "correctionWindowDays", 7);
     }
 
@@ -332,7 +332,7 @@ class VetPetServiceImplTest {
             doAnswer(invocation -> {
                 nomeNoMomentoDoRastro[0] = ((Vaccine) invocation.getArgument(0)).getVaccineName();
                 return null;
-            }).when(vaccineCorrectionRecorder).recordByVet(any(), any());
+            }).when(vaccineCorrectionLog).recordByVet(any(), any());
 
             service.correctVaccine(PET_ID, VACCINE_ID,
                     VaccineRequestDTO.builder().vaccineName("V8").build());
@@ -364,7 +364,7 @@ class VetPetServiceImplTest {
                     .containsExactly(112, HttpStatus.CONFLICT);
 
             verify(vaccineRepository, never()).save(any());
-            verify(vaccineCorrectionRecorder, never()).recordByVet(any(), any());
+            verify(vaccineCorrectionLog, never()).recordByVet(any(), any());
         }
 
         @Test
@@ -406,6 +406,56 @@ class VetPetServiceImplTest {
                     .hasMessage("Pet not found");
 
             verify(vaccineRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("listCorrections")
+    class ListCorrections {
+
+        @Test
+        @DisplayName("deve devolver o rastro de qualquer vacina do pet autorizado")
+        void deveDevolverRastroDoPetAutorizado() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(acesso(null)));
+            when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(
+                    Vaccine.builder().vaccineId(VACCINE_ID).pet(pet()).build()));
+            when(vaccineCorrectionLog.list(VACCINE_ID)).thenReturn(List.of());
+
+            assertThat(service.listCorrections(PET_ID, VACCINE_ID)).isEmpty();
+            verify(vaccineCorrectionLog).list(VACCINE_ID);
+        }
+
+        @Test
+        @DisplayName("nao deve devolver rastro de pet sem concessao ativa")
+        void naoDeveDevolverSemConcessao() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.listCorrections(PET_ID, VACCINE_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Pet not found");
+
+            verify(vaccineCorrectionLog, never()).list(any());
+        }
+
+        @Test
+        @DisplayName("nao deve devolver rastro de vacina que nao e daquele pet")
+        void naoDeveDevolverDeVacinaDeOutroPet() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(acesso(null)));
+            when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(
+                    Vaccine.builder().vaccineId(VACCINE_ID)
+                            .pet(Pet.builder().petId(UUID.randomUUID()).build()).build()));
+
+            assertThatThrownBy(() -> service.listCorrections(PET_ID, VACCINE_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Vaccine not found");
+
+            verify(vaccineCorrectionLog, never()).list(any());
         }
     }
 

@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service;
 
+import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
@@ -18,5 +19,7 @@ public interface VetPetService {
 
     /** Corrige um registro da propria clinica, dentro da janela de correcao. */
     VaccineResponseDTO correctVaccine(UUID petId, UUID vaccineId, VaccineRequestDTO request);
+
+    List<VaccineCorrectionResponseDTO> listCorrections(UUID petId, UUID vaccineId);
 
 }

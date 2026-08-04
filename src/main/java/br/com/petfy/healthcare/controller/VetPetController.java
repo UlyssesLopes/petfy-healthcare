@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.controller;
 
+import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
@@ -43,6 +44,12 @@ public class VetPetController {
     public ResponseEntity<VaccineResponseDTO> registerVaccine(@PathVariable UUID petId,
                                                               @RequestBody VaccineRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(vetPetService.registerVaccine(petId, request));
+    }
+
+    @GetMapping("/{petId}/vaccines/{vaccineId}/corrections")
+    public ResponseEntity<List<VaccineCorrectionResponseDTO>> listCorrections(@PathVariable UUID petId,
+                                                                              @PathVariable UUID vaccineId) {
+        return ResponseEntity.ok(vetPetService.listCorrections(petId, vaccineId));
     }
 
     /** Nao ha DELETE: apagar registro de vacina nao e correcao - ver README. */

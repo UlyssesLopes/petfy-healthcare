@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
@@ -12,7 +13,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.VaccineRecordedNotifier;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
-import br.com.petfy.healthcare.service.VaccineCorrectionRecorder;
+import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VetPetService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -35,7 +36,7 @@ public class VetPetServiceImpl implements VetPetService {
     private final CurrentVetProvider currentVetProvider;
     private final VaccineFactory vaccineFactory;
     private final VaccineRecordedNotifier vaccineRecordedNotifier;
-    private final VaccineCorrectionRecorder vaccineCorrectionRecorder;
+    private final VaccineCorrectionLog vaccineCorrectionLog;
 
     /**
      * Janela de correcao em dias. Curta de proposito: cobre o erro percebido
@@ -99,7 +100,7 @@ public class VetPetServiceImpl implements VetPetService {
         exigirJanelaAberta(vaccine);
 
         // o snapshot precisa sair antes dos setters, senao grava o estado novo
-        vaccineCorrectionRecorder.recordByVet(vaccine, vet);
+        vaccineCorrectionLog.recordByVet(vaccine, vet);
 
         if (request.getVaccineName() != null) vaccine.setVaccineName(request.getVaccineName());
         if (request.getApplicationDate() != null) vaccine.setApplicationDate(request.getApplicationDate());
@@ -113,6 +114,25 @@ public class VetPetServiceImpl implements VetPetService {
         vaccineRecordedNotifier.notifyCorrection(salva);
 
         return toResponse(salva);
+    }
+
+    /**
+     * Rastro de qualquer vacina do pet, e nao so das registradas pela propria
+     * clinica: o vet ja enxerga a carteira inteira em listVaccines, e saber que
+     * um registro foi alterado faz parte de ler aquele registro.
+     */
+    @Override
+    public List<VaccineCorrectionResponseDTO> listCorrections(UUID petId, UUID vaccineId) {
+        exigirAcessoAoPet(petId);
+
+        vaccineRepository.findById(vaccineId)
+                .filter(v -> v.getPet().getPetId().equals(petId))
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
+                        ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(),
+                        HttpStatus.NOT_FOUND));
+
+        return vaccineCorrectionLog.list(vaccineId);
     }
 
     /**
