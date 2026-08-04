@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
@@ -10,6 +11,7 @@ import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.HealthRecordService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,8 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     private final ClinicRepository clinicRepository;
 
     private final CurrentOwnerProvider currentOwnerProvider;
+
+    private final HealthRecordCorrectionLog healthRecordCorrectionLog;
 
     @Override
     public HealthRecordResponseDTO createHealthRecord(HealthRecordRequestDTO request) {
@@ -81,6 +85,11 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     public HealthRecordResponseDTO updateHealthRecord(UUID healthRecordId, HealthRecordRequestDTO request) {
         HealthRecord existing = buscarDoOwnerAutenticado(healthRecordId);
 
+        // o snapshot sai antes dos setters. O tutor nao tem janela - o historico e
+        // do pet dele - mas deixa rastro igual, senao a auditoria contaria meia
+        // verdade e daria impressao de completude
+        healthRecordCorrectionLog.recordByOwner(existing, currentOwnerProvider.require());
+
         if (request.getEventType() != null) existing.setEventType(request.getEventType());
         if (request.getEventDate() != null) existing.setEventDate(request.getEventDate());
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
@@ -96,6 +105,15 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         existing.setUpdateDate(LocalDateTime.now());
 
         return toResponse(healthRecordRepository.save(existing));
+    }
+
+    @Override
+    public List<HealthRecordCorrectionResponseDTO> listCorrections(UUID healthRecordId) {
+        // mesma checagem de propriedade da leitura do registro: o rastro e tao do
+        // tutor quanto o registro
+        buscarDoOwnerAutenticado(healthRecordId);
+
+        return healthRecordCorrectionLog.list(healthRecordId);
     }
 
     @Override

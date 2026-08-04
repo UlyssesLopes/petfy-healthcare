@@ -10,6 +10,7 @@ import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,9 @@ class HealthRecordServiceImplTest {
 
     @Mock
     private CurrentOwnerProvider currentOwnerProvider;
+
+    @Mock
+    private HealthRecordCorrectionLog healthRecordCorrectionLog;
 
     @InjectMocks
     private HealthRecordServiceImpl healthRecordService;

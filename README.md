@@ -97,7 +97,7 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 | Veterinários | `/vets` | `POST /vets/include` (público, exige convite ou clínica nova) e `GET /vets/me` |
 | Convites de clínica | `/vet/clinic-invites` | vet emite, lista e revoga |
 | Acesso de clínicas | `/pets/{petId}/clinic-access` | tutor concede, lista e revoga |
-| Área do veterinário | `/vet/pets` | pets autorizados; `POST /vet/pets/{petId}/vaccines` |
+| Área do veterinário | `/vet/pets` | pets autorizados, vacinas e atendimentos |
 | Clínicas | `/clinics` | leitura e criação abertas; **editar e remover exigem ser vet da clínica** |
 | Vacinas | `/vaccines` | listagem em `GET /vaccines`, escopada pelo dono do pet |
 | Agenda de vacinas | `/vaccines/agenda` | `?windowDays=30` — o que está vencido ou vencendo |
@@ -218,6 +218,11 @@ um pet que sua clínica não atende é indistinguível de um pet que não existe
 As rotas `/vet/**` exigem `ROLE_VET` na cadeia de filtros, além da checagem do
 `CurrentVetProvider` — a autorização não depende só de a busca falhar na tabela
 certa.
+
+O veterinário registra **vacinas e atendimentos** (consulta, cirurgia, exame) —
+`POST /vet/pets/{petId}/vaccines` e `POST /vet/pets/{petId}/health-records`. Os
+dois seguem a mesma regra: clínica do vet autenticado, `petId` do path, tutor
+notificado.
 
 ### Corrigir um registro
 
@@ -414,10 +419,8 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
   existentes, mas qualquer pessoa ainda cadastra uma clínica nova e vira o
   primeiro vet dela. O dano é menor (uma clínica sem pets autorizados não alcança
   nada), mas permite poluir o diretório.
-- **O veterinário só mexe em vacinas.** Não registra nem corrige histórico de
-  saúde — só a carteira de vacinação.
-- **O rastro cobre só vacinas.** Histórico de saúde, pet e clínica são editáveis
-  sem deixar registro do que mudou.
+- **O rastro cobre vacinas e atendimentos.** Pet e clínica seguem editáveis sem
+  registro do que mudou.
 - **A notificação de vacina registrada é síncrona.** Sai dentro da requisição do
   veterinário, então um SMTP lento adiciona latência ao registro. Falha não
   quebra nada (é capturada), mas o envio devia sair do caminho da requisição —

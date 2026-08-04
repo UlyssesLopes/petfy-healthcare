@@ -1,19 +1,23 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.Vet;
+import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.notification.VaccineRecordedNotifier;
+import br.com.petfy.healthcare.notification.ClinicActivityNotifier;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
+import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,16 +62,23 @@ class VetPetServiceImplTest {
     private VaccineCatalogRepository vaccineCatalogRepository;
 
     @Mock
-    private VaccineRecordedNotifier vaccineRecordedNotifier;
+    private ClinicActivityNotifier clinicActivityNotifier;
 
     @Mock
     private VaccineCorrectionLog vaccineCorrectionLog;
+
+    @Mock
+    private HealthRecordRepository healthRecordRepository;
+
+    @Mock
+    private HealthRecordCorrectionLog healthRecordCorrectionLog;
 
     private VetPetServiceImpl service;
 
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OUTRA_CLINIC_ID = UUID.fromString("aaaaaaaa-5555-5555-5555-555555555555");
+    private static final UUID RECORD_ID = UUID.fromString("88888888-8888-8888-8888-888888888888");
     private static final UUID VACCINE_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
 
     @BeforeEach
@@ -76,7 +87,8 @@ class VetPetServiceImplTest {
         // clinica certa, e nao repetir a regra de montagem num mock
         service = new VetPetServiceImpl(petClinicAccessRepository, vaccineRepository,
                 currentVetProvider, new VaccineFactory(vaccineCatalogRepository),
-                vaccineRecordedNotifier, vaccineCorrectionLog);
+                clinicActivityNotifier, vaccineCorrectionLog,
+                healthRecordRepository, healthRecordCorrectionLog);
         ReflectionTestUtils.setField(service, "correctionWindowDays", 7);
     }
 
@@ -224,7 +236,7 @@ class VetPetServiceImplTest {
             service.registerVaccine(PET_ID, request());
 
             var captor = ArgumentCaptor.forClass(Vaccine.class);
-            verify(vaccineRecordedNotifier).notifyOwner(captor.capture());
+            verify(clinicActivityNotifier).vaccineRecorded(captor.capture());
             assertThat(captor.getValue().getVaccineName()).isEqualTo("V10");
         }
 
@@ -238,7 +250,7 @@ class VetPetServiceImplTest {
             assertThatThrownBy(() -> service.registerVaccine(PET_ID, request()))
                     .isInstanceOf(PetfyHealthcareException.class);
 
-            verify(vaccineRecordedNotifier, never()).notifyOwner(any());
+            verify(clinicActivityNotifier, never()).vaccineRecorded(any());
         }
 
         @Test
@@ -349,7 +361,7 @@ class VetPetServiceImplTest {
             service.correctVaccine(PET_ID, VACCINE_ID,
                     VaccineRequestDTO.builder().vaccineName("V8").build());
 
-            verify(vaccineRecordedNotifier).notifyCorrection(any(Vaccine.class));
+            verify(clinicActivityNotifier).vaccineCorrected(any(Vaccine.class));
         }
 
         @Test
@@ -456,6 +468,193 @@ class VetPetServiceImplTest {
                     .hasMessage("Vaccine not found");
 
             verify(vaccineCorrectionLog, never()).list(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("historico de saude")
+    class HistoricoDeSaude {
+
+        private HealthRecord registro(UUID clinicId, LocalDateTime registradoEm) {
+            return HealthRecord.builder()
+                    .healthRecordId(RECORD_ID)
+                    .pet(pet())
+                    .clinic(clinicId != null ? clinic(clinicId) : null)
+                    .eventType("Consulta")
+                    .eventDate(LocalDate.of(2026, 8, 1))
+                    .description("original")
+                    .creationDate(registradoEm)
+                    .build();
+        }
+
+        private void comAcesso() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(acesso(null)));
+        }
+
+        @Test
+        @DisplayName("deve registrar o atendimento carimbado com a clinica do vet")
+        void deveRegistrarComAClinicaDoVet() {
+            comAcesso();
+            when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
+
+            var comOutraClinicaNoCorpo = HealthRecordRequestDTO.builder()
+                    .clinicId(OUTRA_CLINIC_ID)
+                    .eventType("Cirurgia")
+                    .eventDate(LocalDate.of(2026, 8, 1))
+                    .build();
+
+            var result = service.registerHealthRecord(PET_ID, comOutraClinicaNoCorpo);
+
+            assertThat(result.getEventType()).isEqualTo("Cirurgia");
+            assertThat(result.getClinicId()).isEqualTo(CLINIC_ID);
+        }
+
+        @Test
+        @DisplayName("deve avisar o tutor do atendimento registrado")
+        void deveAvisarOTutorDoAtendimento() {
+            comAcesso();
+            when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
+
+            service.registerHealthRecord(PET_ID,
+                    HealthRecordRequestDTO.builder().eventType("Consulta").build());
+
+            verify(clinicActivityNotifier).healthRecordRecorded(any(HealthRecord.class));
+        }
+
+        @Test
+        @DisplayName("nao deve registrar atendimento em pet sem concessao ativa")
+        void naoDeveRegistrarSemConcessao() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.registerHealthRecord(PET_ID,
+                    HealthRecordRequestDTO.builder().eventType("Consulta").build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Pet not found");
+
+            verify(healthRecordRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("deve corrigir atendimento da propria clinica dentro da janela")
+        void deveCorrigirDentroDaJanela() {
+            comAcesso();
+            when(healthRecordRepository.findById(RECORD_ID))
+                    .thenReturn(Optional.of(registro(CLINIC_ID, LocalDateTime.now().minusDays(1))));
+            when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
+
+            var result = service.correctHealthRecord(PET_ID, RECORD_ID,
+                    HealthRecordRequestDTO.builder().description("corrigido").build());
+
+            assertThat(result.getDescription()).isEqualTo("corrigido");
+            assertThat(result.getEventType()).isEqualTo("Consulta");
+            verify(healthRecordCorrectionLog).recordByVet(any(HealthRecord.class), any());
+            verify(clinicActivityNotifier).healthRecordCorrected(any(HealthRecord.class));
+        }
+
+        @Test
+        @DisplayName("deve gravar o rastro ANTES de alterar, senao guarda o estado novo")
+        void deveGravarRastroAntesDeAlterar() {
+            comAcesso();
+            when(healthRecordRepository.findById(RECORD_ID))
+                    .thenReturn(Optional.of(registro(CLINIC_ID, LocalDateTime.now().minusDays(1))));
+            when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
+
+            var tipoNoMomentoDoRastro = new String[1];
+            doAnswer(invocation -> {
+                tipoNoMomentoDoRastro[0] = ((HealthRecord) invocation.getArgument(0)).getEventType();
+                return null;
+            }).when(healthRecordCorrectionLog).recordByVet(any(), any());
+
+            service.correctHealthRecord(PET_ID, RECORD_ID,
+                    HealthRecordRequestDTO.builder().eventType("Cirurgia").build());
+
+            assertThat(tipoNoMomentoDoRastro[0]).isEqualTo("Consulta");
+        }
+
+        @Test
+        @DisplayName("nao deve corrigir atendimento depois de fechada a janela")
+        void naoDeveCorrigirForaDaJanela() {
+            comAcesso();
+            when(healthRecordRepository.findById(RECORD_ID))
+                    .thenReturn(Optional.of(registro(CLINIC_ID, LocalDateTime.now().minusDays(8))));
+
+            assertThatThrownBy(() -> service.correctHealthRecord(PET_ID, RECORD_ID,
+                    HealthRecordRequestDTO.builder().eventType("Cirurgia").build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(112, HttpStatus.CONFLICT);
+
+            verify(healthRecordRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("nao deve corrigir atendimento lancado pelo proprio tutor")
+        void naoDeveCorrigirAtendimentoDoTutor() {
+            comAcesso();
+            when(healthRecordRepository.findById(RECORD_ID))
+                    .thenReturn(Optional.of(registro(null, LocalDateTime.now().minusDays(1))));
+
+            assertThatThrownBy(() -> service.correctHealthRecord(PET_ID, RECORD_ID,
+                    HealthRecordRequestDTO.builder().eventType("Cirurgia").build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Health record not found");
+
+            verify(healthRecordRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("nao deve corrigir atendimento de outra clinica")
+        void naoDeveCorrigirDeOutraClinica() {
+            comAcesso();
+            when(healthRecordRepository.findById(RECORD_ID))
+                    .thenReturn(Optional.of(registro(OUTRA_CLINIC_ID, LocalDateTime.now().minusDays(1))));
+
+            assertThatThrownBy(() -> service.correctHealthRecord(PET_ID, RECORD_ID,
+                    HealthRecordRequestDTO.builder().eventType("Cirurgia").build()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Health record not found");
+
+            verify(healthRecordRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("deve listar o historico do pet autorizado")
+        void deveListarHistoricoDoPetAutorizado() {
+            comAcesso();
+            when(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(PET_ID))
+                    .thenReturn(List.of(registro(CLINIC_ID, LocalDateTime.now())));
+
+            assertThat(service.listHealthRecords(PET_ID)).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("nao deve expor o historico de pet sem concessao")
+        void naoDeveExporHistoricoSemConcessao() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.listHealthRecords(PET_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasMessage("Pet not found");
+
+            verify(healthRecordRepository, never()).findByPetPetIdOrderByEventDateDesc(any());
+        }
+
+        @Test
+        @DisplayName("deve devolver o rastro do atendimento do pet autorizado")
+        void deveDevolverRastroDoAtendimento() {
+            comAcesso();
+            when(healthRecordRepository.findById(RECORD_ID))
+                    .thenReturn(Optional.of(registro(CLINIC_ID, LocalDateTime.now())));
+            when(healthRecordCorrectionLog.list(RECORD_ID)).thenReturn(List.of());
+
+            assertThat(service.listHealthRecordCorrections(PET_ID, RECORD_ID)).isEmpty();
+            verify(healthRecordCorrectionLog).list(RECORD_ID);
         }
     }
 

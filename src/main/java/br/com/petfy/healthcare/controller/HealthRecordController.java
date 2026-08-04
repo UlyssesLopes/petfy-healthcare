@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.controller;
 
+import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
 import br.com.petfy.healthcare.service.HealthRecordService;
@@ -32,6 +33,12 @@ public class HealthRecordController {
     @GetMapping("/all")
     public ResponseEntity<List<HealthRecordResponseDTO>> listAll() {
         return ResponseEntity.ok(healthRecordService.listAllHealthRecords());
+    }
+
+    /** Rastro de alteracoes: quem mudou o que, e quando. */
+    @GetMapping("/{healthRecordId}/corrections")
+    public ResponseEntity<List<HealthRecordCorrectionResponseDTO>> listCorrections(@PathVariable UUID healthRecordId) {
+        return ResponseEntity.ok(healthRecordService.listCorrections(healthRecordId));
     }
 
     @GetMapping("/pet/{petId}")

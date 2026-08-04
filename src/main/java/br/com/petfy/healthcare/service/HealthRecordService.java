@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service;
 
+import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
 
@@ -19,5 +20,8 @@ public interface HealthRecordService {
     HealthRecordResponseDTO updateHealthRecord(UUID healthRecordId, HealthRecordRequestDTO request);
 
     void deleteHealthRecord(UUID healthRecordId);
+
+    /** Rastro de alteracoes de um registro do proprio tutor. */
+    List<HealthRecordCorrectionResponseDTO> listCorrections(UUID healthRecordId);
 
 }

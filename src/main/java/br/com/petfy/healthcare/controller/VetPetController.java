@@ -1,5 +1,8 @@
 package br.com.petfy.healthcare.controller;
 
+import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
+import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
+import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
@@ -17,6 +20,9 @@ import java.util.UUID;
  * Prefixo /vet separado do /pets do tutor de proposito: sao visoes diferentes do
  * mesmo recurso, com regras de acesso diferentes. Misturar as duas no mesmo path
  * faria a autorizacao depender de quem chamou, que e onde esse tipo de bug mora.
+ *
+ * Nao ha DELETE em nenhum dos dois recursos: apagar registro de saude nao e
+ * correcao - ver README.
  */
 @RestController
 @RequestMapping("/vet/pets")
@@ -46,18 +52,41 @@ public class VetPetController {
         return ResponseEntity.status(HttpStatus.CREATED).body(vetPetService.registerVaccine(petId, request));
     }
 
+    @PutMapping("/{petId}/vaccines/{vaccineId}")
+    public ResponseEntity<VaccineResponseDTO> correctVaccine(@PathVariable UUID petId,
+                                                             @PathVariable UUID vaccineId,
+                                                             @RequestBody VaccineRequestDTO request) {
+        return ResponseEntity.ok(vetPetService.correctVaccine(petId, vaccineId, request));
+    }
+
     @GetMapping("/{petId}/vaccines/{vaccineId}/corrections")
     public ResponseEntity<List<VaccineCorrectionResponseDTO>> listCorrections(@PathVariable UUID petId,
                                                                               @PathVariable UUID vaccineId) {
         return ResponseEntity.ok(vetPetService.listCorrections(petId, vaccineId));
     }
 
-    /** Nao ha DELETE: apagar registro de vacina nao e correcao - ver README. */
-    @PutMapping("/{petId}/vaccines/{vaccineId}")
-    public ResponseEntity<VaccineResponseDTO> correctVaccine(@PathVariable UUID petId,
-                                                             @PathVariable UUID vaccineId,
-                                                             @RequestBody VaccineRequestDTO request) {
-        return ResponseEntity.ok(vetPetService.correctVaccine(petId, vaccineId, request));
+    @GetMapping("/{petId}/health-records")
+    public ResponseEntity<List<HealthRecordResponseDTO>> listHealthRecords(@PathVariable UUID petId) {
+        return ResponseEntity.ok(vetPetService.listHealthRecords(petId));
+    }
+
+    @PostMapping("/{petId}/health-records")
+    public ResponseEntity<HealthRecordResponseDTO> registerHealthRecord(@PathVariable UUID petId,
+                                                                        @RequestBody HealthRecordRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(vetPetService.registerHealthRecord(petId, request));
+    }
+
+    @PutMapping("/{petId}/health-records/{healthRecordId}")
+    public ResponseEntity<HealthRecordResponseDTO> correctHealthRecord(@PathVariable UUID petId,
+                                                                       @PathVariable UUID healthRecordId,
+                                                                       @RequestBody HealthRecordRequestDTO request) {
+        return ResponseEntity.ok(vetPetService.correctHealthRecord(petId, healthRecordId, request));
+    }
+
+    @GetMapping("/{petId}/health-records/{healthRecordId}/corrections")
+    public ResponseEntity<List<HealthRecordCorrectionResponseDTO>> listHealthRecordCorrections(
+            @PathVariable UUID petId, @PathVariable UUID healthRecordId) {
+        return ResponseEntity.ok(vetPetService.listHealthRecordCorrections(petId, healthRecordId));
     }
 
 }
