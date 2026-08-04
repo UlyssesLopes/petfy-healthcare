@@ -557,6 +557,12 @@ quem recupera precisa expulsar quem entrou, não apenas voltar a entrar junto.
 - **Os testes de container não rodam sem Docker.** Localmente eles pulam; quem
   precisa de garantia sobre migrations e consultas por UUID depende do pipeline
   ou de ter Docker no ar.
+- **Apagar a conta só funciona para quem não tem pet.** `DELETE /owners/me` limpa
+  os tokens de recuperação e de confirmação, mas `pets` também aponta para
+  `owners` por chave estrangeira, então uma conta com pet cadastrado é recusada
+  pelo banco. Decidir o que acontece com o histórico do pet nesse caso é parte do
+  item de LGPD no roadmap — apagar junto, transferir ou anonimizar são decisões
+  diferentes, e nenhuma delas deve ser efeito colateral silencioso.
 - **A recuperação de senha nunca foi exercitada contra um SMTP real.** O fluxo
   está completo e testado, mas o canal padrão é `log`: o token sai no log da
   aplicação, o que serve para desenvolver e não serve para um tutor de verdade.

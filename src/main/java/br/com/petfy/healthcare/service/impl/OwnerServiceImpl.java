@@ -4,7 +4,9 @@ import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.EmailVerificationService;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -22,6 +25,8 @@ import java.time.LocalDateTime;
 public class OwnerServiceImpl implements OwnerService {
 
     private final OwnerRepository ownerRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final CurrentOwnerProvider currentOwnerProvider;
     private final EmailVerificationService emailVerificationService;
@@ -113,9 +118,24 @@ public class OwnerServiceImpl implements OwnerService {
         ownerRepository.save(owner);
     }
 
+    /**
+     * Remove antes os tokens da conta.
+     *
+     * Eles apontam para owners por chave estrangeira, e como todo cadastro gera
+     * um token de confirmacao de e-mail, sem isto nenhuma conta consegue mais ser
+     * apagada - o banco recusa. A limpeza e explicita, e nao ON DELETE CASCADE na
+     * migration, para que apagar conta continue sendo uma decisao visivel no
+     * codigo, e nao um efeito colateral escondido no schema.
+     */
     @Override
+    @Transactional
     public void deleteCurrentOwner() {
-        ownerRepository.delete(currentOwnerProvider.require());
+        Owner owner = currentOwnerProvider.require();
+
+        passwordResetTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
+        emailVerificationTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
+
+        ownerRepository.delete(owner);
     }
 
     private OwnerResponseDTO toResponseDTO(Owner owner) {
