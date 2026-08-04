@@ -40,6 +40,10 @@ public class SecurityConfig {
                 // carteira compartilhada: quem recebe o link nao tem conta. O
                 // token no path faz o papel da credencial
                 .antMatchers(HttpMethod.GET, "/share/*").permitAll()
+                // o provedor de hospedagem chama o health check sem credencial
+                // para decidir se a instancia esta viva. So o health: os demais
+                // endpoints do actuator seguem exigindo token
+                .antMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                 // o CurrentVetProvider ja barraria um tutor, mas exigir o papel
                 // aqui responde 403 em vez de 401 e evita que a autorizacao
                 // dependa so da busca falhar na tabela certa

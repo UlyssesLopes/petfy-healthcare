@@ -40,3 +40,5 @@ build/
 
 ### Mac OS ###
 .DS_Store
+### Residuo de crash do shell no Windows
+*.stackdump

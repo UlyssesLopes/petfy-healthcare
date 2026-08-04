@@ -72,6 +72,14 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- health check: o provedor de hospedagem precisa de um endpoint para
+             saber se a instancia subiu, e o /health do actuator ja checa o
+             banco junto -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- o jjwt divide api e implementacao de proposito: so a api aparece
              em tempo de compilacao, o resto entra apenas em runtime -->
         <dependency>

@@ -32,13 +32,36 @@ máquina.
 
 | Variável | Default no perfil `local` | Obrigatória fora dele |
 |---|---|---|
-| `DB_HOST` / `DB_PORT` / `DB_NAME` | `localhost` / `5432` / `petfy` | não |
-| `DB_USER` / `DB_PASSWORD` | `petfy` / `petfy` | não |
+| `DB_HOST` / `DB_NAME` | `localhost` / `petfy` | **sim no `prod`** — sem default, para não subir apontando para o lugar errado |
+| `DB_PORT` / `DB_USER` / `DB_PASSWORD` | `5432` / `petfy` / `petfy` | não |
+| `DB_SSLMODE` | não se aplica | não — default `require` no `prod` |
 | `JWT_SECRET` | valor de desenvolvimento | **sim** — a aplicação não sobe sem ele |
 | `JWT_EXPIRATION_MINUTES` | `120` | não |
 | `TESSDATA_PATH` | caminho do Tesseract no Windows | não (no container vem do `TESSDATA_PREFIX`) |
+| `SPRING_PROFILES_ACTIVE` | `local` | **sim no deploy** — a imagem traz `docker`, que aponta o banco para a própria máquina |
 
-Perfis: `local` (app na máquina) e `docker` (app em container, banco no host).
+Perfis:
+
+| Perfil | Onde |
+|---|---|
+| `local` | app na máquina, banco no container do `docker-local` |
+| `docker` | app em container, banco no host |
+| `dev` / `stg` / `prd` | ambientes hospedados, banco gerenciado e conexão cifrada |
+
+Os três ambientes hospedados compartilham a mesma configuração de
+infraestrutura e se diferenciam por **valor**, não por estrutura. Por isso o que
+é comum mora em `application-hosted.properties`, e `dev`, `stg` e `prd` são
+*profile groups* que o incluem — subir com `SPRING_PROFILES_ACTIVE=dev` ativa
+`dev` e `hosted` juntos. Só o `dev` tem arquivo próprio, para religar o
+`show-sql`; `stg` e `prd` se resolvem por variável de ambiente.
+
+### Health check
+
+`GET /actuator/health` é **público** e responde apenas o status, sem detalhe de
+componente — quem chama é o provedor de hospedagem, sem credencial, e a resposta
+não deve contar a um desconhecido qual peça caiu. Os demais endpoints do
+actuator exigem token como qualquer outra rota, e só `health` e `info` são
+expostos sobre HTTP.
 
 ## Autenticação e autorização
 
