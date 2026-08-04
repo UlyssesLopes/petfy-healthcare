@@ -18,19 +18,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Cobre o modo de falha que os testes com mock nao alcancam: a query derivada
  * findByPetPetIdOrderByEventDateDesc so e traduzida quando o Spring Data cria o
  * repositorio, ou seja, na subida do contexto. Um nome de propriedade errado
- * derrubaria a aplicacao no boot, e nao no teste. Se este contexto sobe e a
- * query executa, a derivacao esta correta.
+ * derrubaria a aplicacao no boot, e nao no teste.
  *
- * O que este teste NAO faz e afirmar quais linhas voltam. O Hibernate 5.6 gera
- * BINARY(255) para UUID no H2, e o H2 2.x trata BINARY como tamanho fixo: o
- * valor gravado e preenchido ate 255 bytes, entao a comparacao com um parametro
- * de 16 bytes nunca casa e qualquer consulta por UUID volta vazia. Comparacao
- * entre colunas funciona (os dois lados tem o mesmo padding), o que confirma que
- * os dados estao la. E artefato do H2 e nao afeta o Postgres, onde o UUID e tipo
- * nativo - mas impede este teste de validar o filtro de verdade.
+ * Roda em H2 e por isso nao afirma quais linhas voltam: o Hibernate 5.6 gera
+ * BINARY(255) para UUID nele, e o H2 2.x trata BINARY como tamanho fixo, entao
+ * consulta por UUID volta sempre vazia. Quem verifica o filtro e a ordenacao de
+ * verdade e o UuidQueriesContainerTest, contra Postgres.
  *
- * Filtro e ordenacao continuam sem verificacao contra banco real. Para fechar
- * isso, o caminho e um teste de integracao com Postgres (Testcontainers).
+ * Vale manter os dois: este e rapido e roda em qualquer maquina; o de container
+ * precisa de Docker e so executa onde ha.
  */
 @DataJpaTest
 @TestPropertySource(properties = {

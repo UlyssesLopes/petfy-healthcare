@@ -17,11 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Diferente das demais queries do projeto, esta filtra por data e nao por UUID -
  * entao escapa da limitacao do H2 com BINARY(255) descrita no
- * HealthRecordRepositoryTest, e aqui da para conferir as linhas que voltam, e
- * nao apenas que a query e traduzida.
+ * HealthRecordRepositoryTest, e aqui da para conferir as linhas que voltam mesmo
+ * sem Docker.
  *
  * Vale a pena porque e a query que alimenta a rotina de lembretes: se ela
- * trouxer de menos, o tutor nao e avisado; se trouxer de mais, vira spam.
+ * trouxer de menos, o tutor nao e avisado; se trouxer de mais, vira spam. O
+ * UuidQueriesContainerTest repete o caso contra Postgres.
  */
 @DataJpaTest
 @TestPropertySource(properties = {

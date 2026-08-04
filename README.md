@@ -356,6 +356,20 @@ banco, mas não altera nada. Toda mudança de schema é uma migration nova.
 mvn verify          # testes + relatório de cobertura em target/site/jacoco
 ```
 
+Os testes terminados em **`ContainerTest`** sobem um Postgres real via
+Testcontainers e **são pulados onde não há Docker** (`disabledWithoutDocker`) —
+quem roda a suíte sem Docker não fica bloqueado, e o pipeline executa de
+verdade. São eles que cobrem o que o H2 não alcança:
+
+- **`SchemaMigrationContainerTest`** — o Flyway aplica as migrations num Postgres
+  limpo e o Hibernate roda `ddl-auto=validate` contra o resultado. Se algum tipo
+  ou nome divergir do mapeamento, o contexto não sobe — a mesma falha que
+  aconteceria na primeira subida em produção.
+- **`UuidQueriesContainerTest`** — as consultas por UUID, que no H2 voltam sempre
+  vazias. São a base do escopo por dono e do acesso do veterinário: se uma
+  trouxer de menos, o tutor deixa de ver os próprios dados; de mais, vê os de
+  outro.
+
 Alguns testes existem por motivos específicos e vale saber antes de mexer:
 
 - **`ControllerPathVariableTest`** — o nome do path variable precisa bater com o
@@ -370,18 +384,11 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
 
 ## Limitações conhecidas
 
-- **Filtro por UUID não verificado contra banco real.** O
-  `HealthRecordRepositoryTest` roda em H2, onde o Hibernate 5.6 gera
-  `BINARY(255)` para UUID. O H2 2.x trata `BINARY` como tamanho fixo, então o
-  valor gravado é preenchido até 255 bytes e nunca casa com um parâmetro de 16
-  bytes — qualquer consulta por UUID volta vazia. Comparação entre colunas casa,
-  o que confirma que os dados estão corretos. É artefato do H2 e não deve afetar
-  o Postgres, onde UUID é tipo nativo. Fechar isso pede Testcontainers.
-- **A migration V1 não foi validada contra um Postgres real.** Os tipos vieram do
-  DDL que o próprio Hibernate gera para o dialeto Postgres, mas o `validate` só
-  será exercitado na primeira subida com banco.
 - **O OCR em container não foi testado.** O Dockerfile instala o Tesseract e
   descobre o `tessdata` no build, mas isso não foi exercitado.
+- **Os testes de container não rodam sem Docker.** Localmente eles pulam; quem
+  precisa de garantia sobre migrations e consultas por UUID depende do pipeline
+  ou de ter Docker no ar.
 - **Troca de senha não existe.** O `PUT /owners/{id}` ignora o campo `password`
   de propósito; trocar senha merece endpoint próprio, com confirmação da atual.
 - **O envio por e-mail nunca foi exercitado contra um SMTP real.** O
