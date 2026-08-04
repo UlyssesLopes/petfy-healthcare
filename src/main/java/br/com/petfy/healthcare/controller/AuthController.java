@@ -2,7 +2,10 @@ package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.LoginRequestDTO;
 import br.com.petfy.healthcare.domain.dto.LoginResponseDTO;
+import br.com.petfy.healthcare.domain.dto.PasswordResetConfirmDTO;
+import br.com.petfy.healthcare.domain.dto.PasswordResetRequestDTO;
 import br.com.petfy.healthcare.service.AuthService;
+import br.com.petfy.healthcare.service.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,10 +21,29 @@ import javax.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /**
+     * Responde 202 sempre, tenha ou nao conta com aquele e-mail. O 202 e honesto
+     * aqui: a requisicao foi aceita, e o que acontece depois nao e assunto de
+     * quem pediu - se fosse, o endpoint publico viraria um verificador de quem
+     * tem conta cadastrada.
+     */
+    @PostMapping("/password-reset")
+    public ResponseEntity<Void> requestReset(@Valid @RequestBody PasswordResetRequestDTO request) {
+        passwordResetService.requestReset(request);
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<Void> confirmReset(@Valid @RequestBody PasswordResetConfirmDTO request) {
+        passwordResetService.confirmReset(request);
+        return ResponseEntity.noContent().build();
     }
 
 }

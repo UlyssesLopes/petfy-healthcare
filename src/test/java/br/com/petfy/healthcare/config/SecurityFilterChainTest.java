@@ -13,6 +13,7 @@ import br.com.petfy.healthcare.security.TokenFreshness;
 import br.com.petfy.healthcare.security.UserRole;
 import br.com.petfy.healthcare.service.AuthService;
 import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.PasswordResetService;
 import br.com.petfy.healthcare.service.PetService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,9 @@ class SecurityFilterChainTest {
 
     @MockBean
     private PetShareService petShareService;
+
+    @MockBean
+    private PasswordResetService passwordResetService;
 
     /**
      * Mockado porque a checagem de token anterior a troca de senha consulta o
@@ -177,6 +181,33 @@ class SecurityFilterChainTest {
      * 404 significa que a cadeia deixou passar e nao havia controller atras,
      * enquanto 401 significaria que a cadeia barrou antes de chegar la.
      */
+    /**
+     * Quem esqueceu a senha nao tem como se autenticar para pedir a troca: se
+     * estas rotas exigissem token, a recuperacao so serviria a quem ja consegue
+     * entrar, ou seja, a quem nao precisa dela.
+     */
+    @Test
+    @DisplayName("pedir recuperacao de senha deve ser publico")
+    void pedirRecuperacaoDeSenhaDeveSerPublico() throws Exception {
+        mockMvc.perform(post("/auth/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"ulysses@petfy.com.br\"}"))
+                .andExpect(status().isAccepted());
+
+        verify(passwordResetService).requestReset(any());
+    }
+
+    @Test
+    @DisplayName("confirmar recuperacao de senha deve ser publico")
+    void confirmarRecuperacaoDeSenhaDeveSerPublico() throws Exception {
+        mockMvc.perform(post("/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"um-token\",\"newPassword\":\"s3nhaNovaForte\"}"))
+                .andExpect(status().isNoContent());
+
+        verify(passwordResetService).confirmReset(any());
+    }
+
     /**
      * Token intacto - assinado, dentro da validade - mas emitido antes de uma
      * troca de senha. Se ele continuasse autenticando, trocar a senha nao
