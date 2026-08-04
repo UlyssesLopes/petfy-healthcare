@@ -95,6 +95,11 @@ public class OwnerServiceImpl implements OwnerService {
         }
 
         owner.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        // e isto que derruba as sessoes abertas: o filtro recusa token emitido
+        // antes deste instante. Sem o carimbo, trocar a senha nao expulsaria
+        // quem ja estava dentro, que e justamente o motivo de trocar
+        owner.setPasswordChangedAt(LocalDateTime.now());
         owner.setUpdateDate(LocalDateTime.now());
         ownerRepository.save(owner);
     }

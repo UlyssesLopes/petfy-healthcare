@@ -22,6 +22,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String PREFIXO = "Bearer ";
 
     private final JwtService jwtService;
+    private final TokenFreshness tokenFreshness;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -37,10 +38,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Quem decide se a rota exige autenticacao e a SecurityFilterChain,
             // entao um token ruim em rota publica continua passando
             jwtService.extractPrincipal(token).ifPresent(principal -> {
+
+                // assinatura e validade nao bastam: um token emitido antes de uma
+                // troca de senha continua intacto, mas nao deve mais autenticar
+                if (tokenFreshness.isStale(principal)) {
+                    return;
+                }
+
                 var authorities = List.of(new SimpleGrantedAuthority(principal.getRole().asAuthority()));
 
+                // o principal e o objeto, e nao a string do email, para o issuedAt
+                // continuar disponivel adiante. Quem le authentication.getName()
+                // nao percebe diferenca: JwtPrincipal e um AuthenticatedPrincipal
+                // e devolve o email nesse metodo
                 var authentication = new UsernamePasswordAuthenticationToken(
-                        principal.getEmail(), null, authorities);
+                        principal, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);

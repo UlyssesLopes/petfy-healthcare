@@ -81,6 +81,19 @@ pelo banco: o cadastro de vet checa os dois lados, senão o login ficaria ambíg
 A API é stateless. Cadastro de owner, cadastro de vet, login e a carteira
 compartilhada são públicos; todo o resto exige `Authorization: Bearer <token>`.
 
+**Trocar a senha derruba as sessões abertas.** Ser stateless significa que não há
+sessão no servidor para encerrar, então o token emitido antes da troca
+continuaria valendo até expirar — e quem troca a senha por suspeita de acesso
+indevido não expulsaria justamente quem quer expulsar. Por isso a troca carimba
+`password_changed_at` na conta, e o filtro recusa token emitido antes desse
+instante. É o único ponto em que uma rota autenticada consulta o banco antes de
+autenticar, e por isso a consulta traz só a coluna, não a entidade inteira.
+
+Token do **mesmo segundo** da troca é recusado junto: o `iat` do JWT tem precisão
+de segundo e a troca é gravada com fração de segundo, então o empate é ambíguo.
+Recusar custa um login novo; aceitar deixaria viva a sessão que a troca deveria
+ter derrubado.
+
 Autenticar não basta: **cada owner só enxerga os próprios dados**. Pets são
 filtrados pelo dono, e vacinas e histórico de saúde pelo dono do pet. Recurso de
 outra pessoa responde `404`, e não `403` — um `403` confirmaria que aquele id
@@ -417,15 +430,11 @@ Alguns testes existem por motivos específicos e vale saber antes de mexer:
 - **Os testes de container não rodam sem Docker.** Localmente eles pulam; quem
   precisa de garantia sobre migrations e consultas por UUID depende do pipeline
   ou de ter Docker no ar.
-- **Trocar a senha não invalida os tokens já emitidos.** `PUT /owners/me/password`
-  exige a senha atual e grava o novo hash, mas a API é stateless: um token
-  emitido antes da troca continua valendo até expirar. Quem troca a senha porque
-  suspeita de acesso indevido não expulsa a outra sessão. Fechar isso exige
-  registrar o instante da troca no owner e recusar, no filtro, token emitido
-  antes dele — vale fazer junto com a recuperação de senha, que tem exatamente a
-  mesma necessidade.
 - **Recuperação de senha ainda não existe.** Quem esquece a senha continua sem
   caminho de volta: falta o fluxo por e-mail com token de uso único.
+- **O veterinário ainda não troca a própria senha.** A coluna
+  `password_changed_at` já existe em `vets` e o filtro já a consulta, mas não há
+  endpoint que a preencha.
 - **O envio por e-mail nunca foi exercitado contra um SMTP real.** O
   `EmailReminderNotifier` é coberto só pela montagem da mensagem; não houve
   entrega de verdade.

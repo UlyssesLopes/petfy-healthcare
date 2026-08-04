@@ -124,13 +124,12 @@ de remover e o que impede qualquer usuário que não seja você.
 - [x] `PUT /owners/me/password`, exigindo a senha atual. Recusa também nova senha
       igual à atual, senão a troca passa como sucesso sem ter rodado credencial
       nenhuma. É o único `PUT` do projeto com `@Valid`, o que tem teste próprio.
-- [ ] Invalidar os tokens já emitidos ao trocar a senha. Hoje a troca não expulsa
-      sessão nenhuma: a API é stateless e o token anterior vale até expirar, então
-      quem trocou a senha por suspeita de acesso indevido não expulsou ninguém.
-      Exige guardar o instante da troca no owner e recusar, no filtro, token
-      emitido antes disso. **Fazer junto com a recuperação por e-mail**, que tem a
-      mesma necessidade — quem recupera a conta precisa justamente derrubar quem
-      estava dentro.
+- [x] Invalidar os tokens já emitidos ao trocar a senha (`V10`,
+      `password_changed_at` em `owners` e `vets`). A checagem ficou no filtro, e
+      não nos providers de owner e vet: assim vale para toda rota autenticada,
+      inclusive as que não são escopadas por dono e nunca passariam por um
+      provider. A recuperação por e-mail vai reusar o mesmo carimbo — quem
+      recupera a conta precisa derrubar quem estava dentro.
 - [ ] Verificação de e-mail no cadastro. Decidir explicitamente se e-mail não
       verificado bloqueia login ou apenas suspende notificação — o e-mail é a
       chave do login e o canal do lembrete, então a escolha tem consequência.
