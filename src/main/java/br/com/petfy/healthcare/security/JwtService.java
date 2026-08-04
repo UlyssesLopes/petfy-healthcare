@@ -37,11 +37,11 @@ public class JwtService {
         Instant agora = Instant.now();
 
         return Jwts.builder()
-                .setSubject(email)
+                .subject(email)
                 .claim(CLAIM_ROLE, role.name())
                 .claim(CLAIM_SUBJECT_ID, subjectId.toString())
-                .setIssuedAt(Date.from(agora))
-                .setExpiration(Date.from(agora.plus(expiration)))
+                .issuedAt(Date.from(agora))
+                .expiration(Date.from(agora.plus(expiration)))
                 .signWith(key)
                 .compact();
     }
@@ -57,11 +57,11 @@ public class JwtService {
      */
     public Optional<JwtPrincipal> extractPrincipal(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(key)
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
                     .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+                    .parseSignedClaims(token)
+                    .getPayload();
 
             String email = claims.getSubject();
             String role = claims.get(CLAIM_ROLE, String.class);
