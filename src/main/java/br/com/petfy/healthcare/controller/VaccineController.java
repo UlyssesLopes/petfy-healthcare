@@ -5,6 +5,7 @@ import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.service.VaccineService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,21 @@ public class VaccineController {
 
     private final VaccineService vaccineService;
 
-    @PostMapping("/include")
+    @PostMapping
     public ResponseEntity<VaccineResponseDTO> createVaccine(@Valid @RequestBody VaccineRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(vaccineService.createVaccine(request));
     }
 
+    /**
+     * Atualizacao parcial: so os campos enviados sao alterados. Campos ausentes ou
+     * nulos no payload sao ignorados e o valor existente e preservado. Por isso
+     * @Valid nao e aplicado aqui - nenhum campo e obrigatorio numa atualizacao
+     * parcial.
+     */
+    @Operation(summary = "Atualiza dados da vacina",
+               description = "Atualizacao parcial: apenas os campos presentes no payload sao alterados. " +
+                             "Campos ausentes ou nulos preservam o valor existente. " +
+                             "Nenhum campo e obrigatorio neste endpoint.")
     @PutMapping("/{vaccineId}")
     public ResponseEntity<VaccineResponseDTO> updateVaccine(@PathVariable UUID vaccineId, @RequestBody VaccineRequestDTO request) {
         return ResponseEntity.ok(vaccineService.updateVaccine(vaccineId, request));

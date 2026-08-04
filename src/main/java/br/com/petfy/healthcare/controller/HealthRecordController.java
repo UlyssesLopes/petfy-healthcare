@@ -4,6 +4,7 @@ import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
 import br.com.petfy.healthcare.service.HealthRecordService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class HealthRecordController {
 
     private final HealthRecordService healthRecordService;
 
-    @PostMapping("/include")
+    @PostMapping
     public ResponseEntity<HealthRecordResponseDTO> createHealthRecord(@Valid @RequestBody HealthRecordRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(healthRecordService.createHealthRecord(request));
     }
@@ -30,7 +31,7 @@ public class HealthRecordController {
         return ResponseEntity.ok(healthRecordService.getHealthRecordById(healthRecordId));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<HealthRecordResponseDTO>> listAll() {
         return ResponseEntity.ok(healthRecordService.listAllHealthRecords());
     }
@@ -46,6 +47,16 @@ public class HealthRecordController {
         return ResponseEntity.ok(healthRecordService.listHealthRecordsByPet(petId));
     }
 
+    /**
+     * Atualizacao parcial: so os campos enviados sao alterados. Campos ausentes ou
+     * nulos no payload sao ignorados e o valor existente e preservado. Por isso
+     * @Valid nao e aplicado aqui - nenhum campo e obrigatorio numa atualizacao
+     * parcial.
+     */
+    @Operation(summary = "Atualiza prontuario de saude",
+               description = "Atualizacao parcial: apenas os campos presentes no payload sao alterados. " +
+                             "Campos ausentes ou nulos preservam o valor existente. " +
+                             "Nenhum campo e obrigatorio neste endpoint.")
     @PutMapping("/{healthRecordId}")
     public ResponseEntity<HealthRecordResponseDTO> updateHealthRecord(@PathVariable UUID healthRecordId,
                                                                       @RequestBody HealthRecordRequestDTO request) {

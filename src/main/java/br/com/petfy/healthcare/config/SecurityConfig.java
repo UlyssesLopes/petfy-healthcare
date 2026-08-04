@@ -42,8 +42,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/email-verification/resend").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/email-verification/confirm").permitAll()
                         // cadastro precisa ser publico, senao nao existe primeiro usuario
-                        .requestMatchers(HttpMethod.POST, "/owners/include").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/vets/include").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/owners").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/vets").permitAll()
+                        // documentacao da API: o Swagger UI e a spec OpenAPI devem
+                        // abrir sem token, senao nao servem para explorar a API
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/swagger-ui.html").permitAll()
                         // carteira compartilhada: quem recebe o link nao tem conta. O
                         // token no path faz o papel da credencial
                         .requestMatchers(HttpMethod.GET, "/share/*").permitAll()
