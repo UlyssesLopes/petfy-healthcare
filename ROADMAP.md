@@ -158,19 +158,24 @@ A proposta de valor do produto está desligada em produção
 (`petfy.reminders.enabled` default `false`). Com uma instância só, o motivo
 original da trava — varredura duplicada — deixa de existir.
 
-- [ ] `@EnableAsync` e `@Async` **apenas** no aviso de vacina registrada, que sai
-      dentro da requisição do veterinário e hoje soma latência de SMTP a ela.
-- [ ] **Não** transformar a rotina de lembretes em assíncrona. Ela já roda fora
+- [x] `@EnableAsync` e `@Async` **apenas** nos avisos do `ClinicActivityNotifier`,
+      que saem dentro da requisição do veterinário e somavam latência de SMTP a
+      ela. O que foi para outra thread é só o **envio**: montar a mensagem passa
+      por associações lazy que só existem na transação de quem chamou. Pool
+      próprio e limitado, com `CallerRunsPolicy` — devolver latência no pico é
+      melhor que descartar aviso em silêncio.
+- [x] **Não** transformar a rotina de lembretes em assíncrona. Ela já roda fora
       de requisição, por ser agendada, e depende da semântica atual de falha: a
       exceção sobe, o rollback desfaz a marcação em `last_reminder_sent_at`, e a
       dose volta a ser elegível na próxima execução. Async quebraria isso.
 - [ ] Exercitar em `dev` e `stg` com caixa de captura, e só então ligar em `prd`:
       `REMINDERS_ENABLED=true` e `NOTIFICATIONS_CHANNEL=email`. Um lembrete errado
       em `prd` chega na caixa de um tutor de verdade e não tem como ser desfeito.
-- [ ] Log do resultado de cada varredura (quantos tutores, quantas doses), senão
-      não há como saber se a rotina rodou e não tinha nada a enviar, ou se
-      falhou silenciosamente.
-- [ ] Registrar no `README` que escalar para duas instâncias reintroduz o
+- [x] Log do resultado de cada varredura, **inclusive quando não há nada a
+      enviar**. Sem essa linha, uma varredura que rodou e não achou dose fica
+      indistinguível de uma que não rodou ou morreu no meio — e a diferença só
+      apareceria como tutor reclamando de lembrete que nunca chegou.
+- [x] Registrar no `README` que escalar para duas instâncias reintroduz o
       lembrete duplicado, e que o caminho nesse dia é lock distribuído ou
       agendador externo chamando a rotina.
 

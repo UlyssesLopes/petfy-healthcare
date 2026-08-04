@@ -27,7 +27,7 @@ public class ClinicActivityNotifier {
 
     private static final String ORIENTACAO = "Se nao reconhece este registro, revogue o acesso da clinica no Petfy.";
 
-    private final Notifier notifier;
+    private final AsyncNotificationDispatcher dispatcher;
 
     public void vaccineRecorded(Vaccine vaccine) {
         enviar(vaccine.getPet().getOwner(), () -> {
@@ -113,6 +113,10 @@ public class ClinicActivityNotifier {
      * silencio aqui e aceitavel: o registro no historico do pet continua sendo
      * feito e o tutor o ve ao abrir a carteira. O que nao pode e o nome do pet e
      * do tutor irem parar na caixa de um estranho.
+     *
+     * A mensagem e montada aqui, ainda na transacao de quem chamou, porque monta-la
+     * passa por associacoes lazy. So o envio sai para outra thread: e ele que
+     * depende de SMTP e que somava latencia a requisicao do veterinario.
      */
     private void enviar(Owner owner, java.util.function.Supplier<Notification> mensagem, String evento) {
         if (!owner.podeReceberNotificacao()) {
@@ -121,10 +125,14 @@ public class ClinicActivityNotifier {
             return;
         }
 
+        // o dispatch entra no try junto com a montagem: ele so enfileira, mas
+        // enfileirar falha se o pool estiver em shutdown, e uma
+        // RejectedExecutionException subindo daqui desfaria o registro que acabou
+        // de ser gravado - o problema que esta classe existe para evitar
         try {
-            notifier.send(mensagem.get());
+            dispatcher.dispatch(mensagem.get(), evento);
         } catch (Exception e) {
-            log.error("Falha ao notificar o tutor sobre {}", evento, e);
+            log.error("Falha ao preparar o aviso de {}", evento, e);
         }
     }
 
