@@ -18,7 +18,7 @@ public class VetController {
     private final VetService vetService;
 
     /** Publico pelo mesmo motivo do cadastro de tutor: sem isso nao existe o primeiro vet. */
-    @PostMapping("/include")
+    @PostMapping
     public ResponseEntity<VetResponseDTO> register(@Valid @RequestBody VetRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(vetService.register(request));
     }

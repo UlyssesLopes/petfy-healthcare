@@ -151,6 +151,15 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- springdoc 2.x exige Boot 3; a 1.6.x era a linha do Boot 2.
+             O BOM do Boot 3.3 nao gerencia esta dependencia, entao a versao
+             vem aqui mesmo. 2.6.0 e a ultima disponivel para Boot 3.3.x. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.6.0</version>
+        </dependency>
     </dependencies>
 
     <build>

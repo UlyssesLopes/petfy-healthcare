@@ -91,7 +91,7 @@ class SecurityFilterChainTest {
     @Test
     @DisplayName("deve responder 401 e nao chamar o service em rota protegida sem token")
     void deveResponder401SemToken() throws Exception {
-        mockMvc.perform(get("/pets/all"))
+        mockMvc.perform(get("/pets"))
                 .andExpect(status().isUnauthorized());
 
         verify(petService, never()).listAllPets();
@@ -100,7 +100,7 @@ class SecurityFilterChainTest {
     @Test
     @DisplayName("deve responder 401 quando o token e invalido")
     void deveResponder401ComTokenInvalido() throws Exception {
-        mockMvc.perform(get("/pets/all").header("Authorization", "Bearer token-falsificado"))
+        mockMvc.perform(get("/pets").header("Authorization", "Bearer token-falsificado"))
                 .andExpect(status().isUnauthorized());
 
         verify(petService, never()).listAllPets();
@@ -109,7 +109,7 @@ class SecurityFilterChainTest {
     @Test
     @DisplayName("deve responder 401 quando o header nao usa o esquema Bearer")
     void deveResponder401SemEsquemaBearer() throws Exception {
-        mockMvc.perform(get("/pets/all").header("Authorization", "Basic dXNlcjpwYXNz"))
+        mockMvc.perform(get("/pets").header("Authorization", "Basic dXNlcjpwYXNz"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -118,7 +118,7 @@ class SecurityFilterChainTest {
     void deveLiberarComTokenValido() throws Exception {
         when(petService.listAllPets()).thenReturn(List.of());
 
-        mockMvc.perform(get("/pets/all").header("Authorization", "Bearer " + tokenValido()))
+        mockMvc.perform(get("/pets").header("Authorization", "Bearer " + tokenValido()))
                 .andExpect(status().isOk());
 
         verify(petService).listAllPets();
@@ -138,7 +138,7 @@ class SecurityFilterChainTest {
     @Test
     @DisplayName("o cadastro de owner deve ser publico, senao nao existe primeiro usuario")
     void cadastroDeOwnerDeveSerPublico() throws Exception {
-        mockMvc.perform(post("/owners/include")
+        mockMvc.perform(post("/owners")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Ulysses\",\"email\":\"ulysses@petfy.com.br\",\"password\":\"s3nhaForte\"}"))
                 .andExpect(status().isCreated());
@@ -222,7 +222,7 @@ class SecurityFilterChainTest {
     void deveResponder401ComTokenAnteriorATrocaDeSenha() throws Exception {
         when(tokenFreshness.isStale(any())).thenReturn(true);
 
-        mockMvc.perform(get("/pets/all").header("Authorization", "Bearer " + tokenValido()))
+        mockMvc.perform(get("/pets").header("Authorization", "Bearer " + tokenValido()))
                 .andExpect(status().isUnauthorized());
 
         verify(petService, never()).listAllPets();

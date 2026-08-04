@@ -56,7 +56,7 @@ class RequestValidationTest {
     void deveResponder400QuandoEmailInvalido() throws Exception {
         var body = json(Map.of("name", "Ulysses", "email", "nao-e-email", "password", "s3nhaForte"));
 
-        mockMvc.perform(post("/owners/include").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("email: email invalido"));
@@ -69,7 +69,7 @@ class RequestValidationTest {
     void deveResponder400QuandoSenhaCurta() throws Exception {
         var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br", "password", "123"));
 
-        mockMvc.perform(post("/owners/include").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("password: senha deve ter entre 8 e 72 caracteres"));
 
@@ -81,7 +81,7 @@ class RequestValidationTest {
     void deveAcumularMensagensDeVariosCampos() throws Exception {
         var body = json(Map.of("email", "nao-e-email"));
 
-        mockMvc.perform(post("/owners/include").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "email: email invalido; name: nome e obrigatorio; password: senha e obrigatoria"));
@@ -95,7 +95,7 @@ class RequestValidationTest {
 
         var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br", "password", "s3nhaForte"));
 
-        mockMvc.perform(post("/owners/include").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());
 
         verify(ownerService).createOwner(any());
