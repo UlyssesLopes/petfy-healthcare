@@ -21,7 +21,6 @@ RUN mvn -B -q clean package -DskipTests
 # responde 404 no Docker Hub). eclipse-temurin e a substituta e e a mesma
 # distribuicao que o build usa no pipeline. jre basta: aqui so roda o jar
 FROM eclipse-temurin:17-jre-jammy
-VOLUME /tmp
 
 # o tess4j e um binding JNA para a libtesseract nativa; sem ela instalada o
 # endpoint de importacao por OCR quebra em runtime dentro do container
