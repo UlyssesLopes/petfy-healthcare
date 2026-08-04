@@ -85,8 +85,17 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 .creationDate(agora)
                 .build());
 
-        // unico momento em que o token existe fora do e-mail
-        notifier.send(mensagem(owner, token));
+        // unico momento em que o token existe fora do e-mail.
+        //
+        // Falha de envio nao pode virar erro na resposta: este endpoint responde
+        // igual exista ou nao a conta, e um 500 aqui contra o 202 de um e-mail
+        // desconhecido entregaria exatamente a informacao que o silencio esconde.
+        // Quem pediu tenta de novo depois do cooldown
+        try {
+            notifier.send(mensagem(owner, token));
+        } catch (Exception e) {
+            log.error("Falha ao enviar a recuperacao de senha do owner {}", owner.getOwnerId(), e);
+        }
     }
 
     /**
