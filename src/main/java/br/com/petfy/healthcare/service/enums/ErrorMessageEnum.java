@@ -42,6 +42,10 @@ public enum ErrorMessageEnum {
     ATTACHMENT_TOO_LARGE(127, "Attachment exceeds the maximum allowed size"),
     ATTACHMENT_STORAGE_FAILURE(128, "Could not store or read the attachment"),
     ATTACHMENT_EMPTY(129, "Attachment file is empty"),
+    CONDITION_NOT_FOUND(130, "Health condition not found"),
+    SEVERITY_ONLY_FOR_ALLERGY(131, "Severity applies to allergies only"),
+    // trocar o tipo nao e corrigir um campo, e dizer que era outra coisa desde o comeco
+    CONDITION_KIND_IS_IMMUTABLE(132, "The condition kind cannot be changed; create a new record instead"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

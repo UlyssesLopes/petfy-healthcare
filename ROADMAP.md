@@ -45,14 +45,53 @@ preferência: mudou quem é titular de um pet, e a exportação LGPD do passo 10
 precisa exportar os dados do titular — escrever o export antes seria escrevê-lo
 assumindo dono único, para reescrever depois.
 
-**Com o 8 fechado, o backend cumpre o que esta rodada prometeu** e a Fase 5 abre.
-O 8 era o último item que muda a *forma* do dado que a tela mostra — é essa a
-linha que separa "falta backend" de "falta frontend".
+**Passo 10 concluído em 2026-08-05**, com consentimento, exportação e log de acesso
+(PRs #29 a #34). Só a decisão de CRMV segue aberta, e ela não é de backend.
 
-**Próximo: o que resta do passo 10** — exportação a pedido do titular (agora com
-o modelo de tutores estável, que era a razão de esperar) e rastro nos links
-públicos de carteira. Nenhum dos dois muda a forma do dado, então não bloqueiam a
-Fase 5.
+### A frase que estava errada, e por que importa
+
+Este documento afirmava, até 2026-08-05:
+
+> *"O 8 era o último item que muda a **forma** do dado que a tela mostra — é essa a
+> linha que separa 'falta backend' de 'falta frontend'."*
+
+**Não era verdade.** Duas coisas ainda mudavam a forma da tela de maneira profunda, e
+as duas foram descobertas ao inventariar o que a aplicação de fato tinha:
+
+- **Não existia campo de arquivo em nenhuma entidade.** O que o tutor possui é papel —
+  carteirinha física, laudo, exame em PDF. Sem upload ele digitava o que estava no
+  papel e o papel seguia sendo a fonte de verdade: o produto era um caderno digital
+  paralelo, não substituto.
+- **O histórico de saúde era uma lista de texto livre.** `eventType` e `description`
+  como String, sem diagnóstico, sem categoria, sem alergia nem condição crônica.
+
+Anexo é um componente novo em cinco telas, e prontuário muda a leitura *e* a escrita
+do histórico. Construir frontend antes deles significaria retrabalhar as telas
+centrais.
+
+O passo 8 tinha fechado o que era **mais arriscado** — privacidade e escopo por dono —,
+não o que era último em forma de dado. A lição fica registrada porque o critério é
+bom: o erro foi aplicá-lo sem inventariar antes.
+
+**Agora a frase vale.** Com anexos e prontuário estruturado, a forma do dado que a tela
+mostra está fechada, e **a Fase 5 abre**.
+
+**Próximo: a Fase 5.** O backend cumpriu o que esta rodada prometeu. O que restou de
+backend está em *Fica para depois do frontend*, mais abaixo, e é deliberado: são itens
+que a tela define melhor do que o modelo.
+
+**Ordem em que a Fase 4 foi fechada, e por quê.** A sequência não foi por facilidade:
+
+| # | Passo | Veio nesta posição porque |
+|---|---|---|
+| 1 | Consentimento (V16) | é pré-requisito de compliance, não feature: sem ele a aplicação tratava dado de saúde sem base legal registrada |
+| 2 | Anexos (V18) | maior alavanca de produto por unidade de trabalho, e o que mais muda a tela — antes do frontend, não depois |
+| 3 | Exportação | **depois** dos anexos, para já incluir os arquivos. Antes, seria reescrita quando eles chegassem |
+| 4 | Prontuário estruturado (V19) | último porque é o que mexe em dado que já existe |
+| 5 | Log de acesso (V17) | fecha a auditoria dos dois lados: havia rastro de escrita, nenhum de leitura |
+
+O consentimento e o log de acesso vieram antes na prática por serem pequenos e
+independentes; a dependência real era só **anexos antes de exportação**.
 
 O Railway constrói a partir do repositório, não da imagem do ghcr — o registry
 privado não tem onde receber credencial na UI dele. A imagem continua sendo
@@ -490,7 +529,7 @@ valor único — virar histórico dá curva de crescimento do filhote.
 pela `V14` aplicada num Postgres real — ver a nota sobre os testes de container
 abaixo, que era pré-requisito silencioso para essa validação existir.
 
-### 10. LGPD e confiança — parcialmente concluído
+### 10. LGPD e confiança — concluído em 2026-08-05
 
 - [x] **Exclusão a pedido do titular.** `DELETE /owners/me` agora apaga em
       cascata todo o rastro do tutor: correções → vacinas/histórico/shares/
@@ -501,22 +540,143 @@ abaixo, que era pré-requisito silencioso para essa validação existir.
       existe. Cascata é o que atende ao pedido sem meio-termo. Cobertura por
       teste de mock (`OwnerServiceImplTest.deveApagarEmCascataNaOrdemCerta`) e
       pelo `OwnerDeletionContainerTest` no CI. Concluído em 2026-08-04.
-- [ ] **Exportação a pedido do titular** — não entrou nesta rodada. Endpoint
-      agregador `GET /owners/me/export` (JSON com owner + pets + vaccines +
-      health records + shares) é o próximo passo natural, mecânico.
-- [ ] **Rastro nos links públicos de carteira.** Não entrou. Precisa de tabela
-      nova `pet_share_access_log` e hook em `SharedCardController` gravando IP
-      e timestamp a cada `GET /share/{token}`. Também vale limite de acessos
-      por link.
+- [x] **Registro de consentimento** (`V16`, PR #29). **Faltava antes dos outros dois e
+      não estava neste roadmap:** havia exclusão e havia export planejado, mas nenhum
+      aceite, nenhuma versão de política, nenhum instante. A LGPD não pede só que o
+      titular possa sair — pede que a base legal seja **registrada e demonstrável**, e
+      não havia como provar que alguém consentiu com nada.
+
+      Guarda a **versão** do documento, não um booleano: política muda, e
+      `aceitou = true` de janeiro não diz com o que a pessoa concordou depois de agosto.
+      Trocar `CONSENT_PRIVACY_VERSION` faz os aceites anteriores virarem pendentes, sem
+      deploy. Sem backfill — nenhuma migration pode inventar consentimento. Sem rota de
+      revogação: revogar sem sair criaria um estado em que a aplicação guarda dado sem
+      poder tratá-lo, então revogar é `DELETE /owners/me`.
+- [x] **Exportação a pedido do titular** (`GET /owners/me/export`, PR #33). Veio
+      **depois dos anexos**, para já incluir os arquivos. Dado de terceiro entra
+      reduzido — co-tutor por nome e papel, sem e-mail —, e o documento **declara as
+      próprias limitações** no campo `limitacoes`, porque quem o abre meses depois não
+      tem o Swagger ao lado. Metade dos testes é sobre o que ele *não* carrega: senha,
+      hash de token de share, chave de storage.
+- [x] **Rastro de acesso a dado de saúde** (`V17`, PR #30) — mais amplo do que este
+      roadmap previa. A previsão era só o link público; o buraco maior era que **havia
+      rastro de escrita e nenhum de leitura**: um veterinário abria o histórico completo
+      e o tutor nunca saberia. `GET /pets/{petId}/access-log` cobre clínica autorizada
+      **e** link público. Leitura de tutor e de co-tutor fica fora de propósito — o log
+      responde "quem *mais* viu isto".
+
+      **Falha ao gravar derruba a leitura**, ao contrário da política de notificação:
+      ali o aviso era acessório, aqui o log *é* a garantia, e log de auditoria que falha
+      em silêncio é pior que log nenhum.
 - [ ] **CRMV/clínica não verificada.** Decisão pendente — mistura produto e
-      compliance (validação de CRMV exige integração externa).
+      compliance (validação de CRMV exige integração externa). **Não é item de
+      backend:** o que falta é a decisão, não a implementação.
+- [ ] **Limite de acessos por link de carteira.** Não entrou. Com o log de acesso
+      existindo, agora é contar linhas por `petShareId` e recusar acima do teto — o
+      trabalho que sobrou é decidir o número.
 
 **Pronto quando:** você atende um pedido de exclusão sem abrir o banco na mão.
-**Exclusão feita; export e rastro ainda em aberto.**
+**Atendido**, e mais: exclusão, exportação, consentimento registrado e rastro de quem
+lê. Só a decisão de CRMV segue aberta.
+
+### 11. Anexos — concluído em 2026-08-05
+
+**Não existia campo de arquivo em nenhuma entidade.** O que o tutor possui é papel, e sem
+upload ele digitava o que estava no papel — o produto era caderno digital paralelo, não
+substituto. O OCR de RG animal é o retrato: lê a imagem e a descarta.
+
+Uma tabela ancorada em `pet_id` **obrigatório**, com `vaccine_id`/`health_record_id`
+opcionais dizendo o que o arquivo documenta. O `pet_id` faz dois trabalhos: é a âncora de
+**autorização** — toda pergunta sobre quem vê o arquivo se reduz a quem vê o pet, que o
+`PetAccessGuard` já responde — e a de **limpeza**, porque o `PetPurger` apaga por `petId`.
+
+**Tipo detectado por magic bytes**, não pelo `Content-Type`: o declarado vem do cliente, e
+um executável renomeado para `.pdf` chega anunciado como PDF. O que fica **gravado** é o
+detectado. SVG fica fora apesar de ser imagem — é XML com script dentro.
+
+**Sem URL assinada, deliberadamente.** É o padrão para arquivo público, mas troca "checar
+autorização a cada download" por "quem tiver o link entra até expirar", e link encaminhado
+por engano é o caso que o passo 8 inteiro tentou evitar. Efeito colateral bom: a interface
+de storage virou armazém de bytes puro, e trocar filesystem por S3/R2 não encosta em regra
+de negócio.
+
+**Storage em filesystem serve `local` e `dev`, não produção com mais de uma instância** —
+disco local não é compartilhado. É coerente com "uma instância, escala vertical" nas
+decisões tomadas; o dia em que deixar de ser, a substituição é uma classe nova.
+
+Na exclusão **os bytes saem junto**: o storage não participa da transação, então as chaves
+são lidas antes de qualquer delete — arquivo órfão com laudo dentro é dado pessoal não
+apagado.
+
+### 12. Prontuário estruturado — concluído em 2026-08-05
+
+O histórico de saúde era `eventType` e `description` como String livre. Não havia como
+perguntar quais pets tiveram dermatite no último ano, nem montar uma tela que um
+veterinário reconheça como prontuário.
+
+- **`category` e `diagnosis`** no atendimento. A categoria **não substitui** `eventType`:
+  trocar String por enum exigiria mapear todo valor gravado, e o que não casasse seria
+  descartado. O rótulo livre continua ao lado da classificação.
+- **Alergias e condições crônicas** viram tabela, não campo de texto — porque precisam
+  aparecer em **destaque**. Alergia a anestésico perdida num texto corrido é o tipo de
+  informação que só se descobre que faltava depois de um procedimento. As duas na mesma
+  tabela: têm a mesma forma e a mesma razão de existir.
+- **Gravidade só em alergia**, por `CHECK` no banco *e* validação no serviço — o banco
+  impede insert direto, o serviço impede que o cliente receba erro de integridade como 500.
+- **Condição é encerrada, não apagada.** `resolvedAt` tira das ativas sem esconder que
+  existiu.
+- **Número do microchip**, e não só o booleano: é o identificador legal do animal e o que
+  liga o Petfy a registro de animal perdido. Índice parcial, porque busca por chip de
+  animal perdido não pode varrer a tabela. Mais **castração com data**.
+
+**Sem backfill inteligente**, e isso foi uma simplificação deliberada depois de a base de
+`dev` ser declarada descartável: classificar o texto antigo por `LIKE` seria adivinhação
+sobre dado que vai ser zerado. A coluna entra `NOT NULL DEFAULT 'OUTRO'` e o default sai
+logo depois — roda em base cheia ou vazia, e `OUTRO` não vira o valor silencioso de quem
+esqueceu.
+
+## Como a suíte deixou de mentir
+
+Vale registrar separado, porque foi o fio condutor de toda a Fase 4 e a lição não é sobre
+nenhum passo em particular.
+
+**Seis bugs de produção foram encontrados nesta rodada, todos da mesma família:** chave
+estrangeira ou índice único que **só o banco recusa**, com o código coberto apenas por
+mock. Dois deles no caminho de exclusão da LGPD, que este roadmap dava como concluído.
+
+| O que quebrava | Como passou |
+|---|---|
+| `DELETE /owners/me` com pet compartilhado | mock não tem índice único parcial |
+| `DELETE /pets/{id}` com qualquer vacina | mock não tem FK |
+| `DELETE /owners/me` com pesagem ou antiparasitário | o passo 9 adicionou tabelas e não atualizou a cascata |
+| FKs novas de convite, log de acesso, anexo e condição | cada tabela nova repetia o problema |
+
+A causa raiz não era falta de `ON DELETE CASCADE` — era **duas listas de deletes
+duplicadas** que divergiram. Virou o `PetPurger`, uma lista só.
+
+E porque uma lista única ainda pode ficar **desatualizada**, o
+`PetPurgerCoverageContainerTest` pergunta ao **próprio schema** quem alcança `pets` —
+transitivamente, para pegar netas — e **quebra o build** se alguma tabela ficar fora. Ele
+já pegou duas tabelas novas em flagrante durante esta rodada. É a proteção que o cascade
+daria, sem perder a exclusão visível em código nem a regra condicional de que um pet com
+outro tutor sobrevive.
+
+**E a rede de segurança já foi desligada em silêncio duas vezes.** As classes de container
+são *puladas* — não falham — quando o Testcontainers conclui que não há Docker, e essa
+conclusão não é confiável: `isDockerAvailable()` engole qualquer `Throwable` e devolve
+`false`. Nos dois casos o resultado foi **build verde com zero migration validada contra
+Postgres**. Duas mitigações pontuais para o mesmo sintoma indicavam que faltava o guarda:
+o `ContainerTestsHabilitadosTest` agora **falha** em vez de deixar passar. Máquina sem
+Docker roda com `-Dpetfy.allow-skipping-container-tests=true` — escolha explícita, que
+aparece no comando em vez de num número que ninguém lê.
+
+**A causa da segunda ocorrência segue não identificada.** Fixar o heap no surefire faz o
+sintoma desaparecer de forma reproduzível, mas isso é evidência, não explicação — e está
+dito assim no `pom`, em vez de uma causa inventada documentada como fato.
 
 ## Fase 5 — Frontend
 
-### 5. O cliente, quando o backend estiver maduro
+### 5. O cliente — **liberado em 2026-08-05**
 
 **Nada do frontend está decidido.** Tecnologia, telas, o que aparece em cada uma,
 navegação, mecânicas de interação — tudo será decidido do zero, provavelmente com
@@ -529,6 +689,22 @@ madura é a melhor especificação possível para a tela — ela já terá respo
 que é um pet, o que é uma dose vencendo, quem enxerga o quê e o que pode ser
 corrigido. Desenhar tela antes disso significaria adivinhar essas respostas e
 depois brigar com elas.
+
+**A condição está cumprida.** A forma do dado que a tela mostra está fechada: multi-tutor
+com papéis, anexo, prontuário com categoria e diagnóstico, alergia em destaque. O que
+sobrou de backend é o que a tela define melhor que o modelo — ver *Fica para depois do
+frontend*.
+
+Três coisas que a API já responde e que a tela vai precisar respeitar, para não serem
+descobertas na metade do caminho:
+
+- **Papel manda no que aparece.** `VIEWER` lê carteira, agenda, histórico, anexo e
+  alergia, e não escreve nada. `EDITOR` escreve. Só o `HOLDER` convida, remove e
+  transfere. A tela não pode oferecer botão que o guard vai recusar.
+- **Download de anexo passa pela API**, não por URL assinada — então a tela precisa
+  autenticar cada download em vez de colar um `src` direto.
+- **Consentimento pendente é estado**, não erro. Quando a política muda de versão,
+  `GET /consents/me` volta com pendências e a tela tem de pedir aceite antes de seguir.
 
 O que já se sabe que a primeira versão precisa mostrar, e mesmo isso está sujeito
 a mudar: a carteira do pet, a agenda do que vence e o registro de uma dose. A
@@ -631,18 +807,38 @@ Vale fatiar: o **rate limit** é a parte que protege recuperação de senha e
 reenvio de confirmação, é aditiva e não mexe em contrato. A paginação é a parte
 cara. Não precisam entrar juntas.
 
-## O que restou em aberto do passo 10
+## Fica para depois do frontend
 
-Nunca esteve nas branches WIP, e continua pendente:
+Não é dívida esquecida: são itens que **a tela define melhor do que o modelo**.
+Especificá-los agora, sem interface, é convite a refazer.
 
-- Export LGPD `GET /owners/me/export` (mecânico).
-- Rastro em `SharedCardController` (nova tabela + hook + endpoint de leitura).
-- Decisão sobre CRMV/clínica não verificada.
+- **Medicação e tratamento contínuo.** Pet com diabetes, cardiopatia ou epilepsia toma
+  remédio em horário, com posologia, por tempo determinado ou indefinido. É justamente a
+  população que mais precisa de lembrete, e o antiparasitário já é um caso particular
+  disso — mas o formato de "quando avisar" e "como marcar como tomado" é decidido pela
+  tela.
+- **Consulta agendada.** A agenda de hoje é derivada de data de próxima dose: é lista de
+  pendências, não calendário. Marcar, confirmar, cancelar e horário de clínica é
+  mecânica de interface.
+- **Notificação além de e-mail.** No Brasil, lembrete de vacina por e-mail tem abertura
+  baixa; WhatsApp e push são o canal real. A arquitetura já ajuda — `Notifier` é
+  interface e não conhece o domínio, então é canal novo e não refatoração. Depende de
+  saber onde o usuário está.
+- **ZIP no export**, com os arquivos dentro em vez de só os links.
+- **Leitura de anexo pelo veterinário.** É o que fecha o ciclo do laudo. O
+  `AccessedResource.ATTACHMENTS` já existe no enum esperando o gancho.
+
+### Ainda não levantado com você
+
+- **Espécie além de cão e gato.** O enum tem dois valores por decisão consciente, e o
+  catálogo depende dele. Ave, roedor e coelho são fatia relevante de clínica.
+- **Veterinário em mais de uma clínica.** `Vet.clinic` é `@ManyToOne` singular, e quem
+  atende em duas precisaria de duas contas — com dois e-mails, o que o namespace único
+  impede.
+- **Raça como dado**, não String livre. Importa para risco por raça e curva de peso
+  esperada.
 
 ## Fora do escopo desta rodada
-
-- **Anexos e storage de documento** (foto da carteirinha, exames, receitas). O
-  OCR fica meio órfão sem isso, mas é dívida, não valor imediato.
 - **Microserviços, API Gateway e RabbitMQ**, a intenção registrada no início do
   projeto. O monólito por domínio aguenta muito mais do que o volume desta
   rodada.

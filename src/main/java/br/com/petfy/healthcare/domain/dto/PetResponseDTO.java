@@ -28,6 +28,13 @@ public class PetResponseDTO {
 
     private Boolean microchip;
 
+    /** O numero, e nao apenas se tem: e o identificador legal do animal. */
+    private String microchipNumber;
+
+    private Boolean castrated;
+
+    private LocalDate castratedAt;
+
     private LocalDate bornDate;
 
     private String bornLocal;

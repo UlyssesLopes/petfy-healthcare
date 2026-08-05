@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.repository;
 
+import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
@@ -110,7 +111,8 @@ class PetDeletionContainerTest extends PostgresContainerTest {
                 .correctedAt(LocalDateTime.now()).build());
 
         HealthRecord atendimento = healthRecordRepository.saveAndFlush(HealthRecord.builder()
-                .pet(rex).clinic(bichoFeliz).eventType("Consulta")
+                .category(HealthEventCategory.CONSULTA)
+                    .pet(rex).clinic(bichoFeliz).eventType("Consulta")
                 .eventDate(LocalDate.now().minusMonths(2))
                 .creationDate(LocalDateTime.now()).build());
 

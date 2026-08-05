@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.repository;
 
+import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
@@ -60,7 +61,8 @@ class HealthRecordRepositoryTest {
         Pet rex = petRepository.save(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
 
         healthRecordRepository.save(HealthRecord.builder()
-                .pet(rex)
+                .category(HealthEventCategory.CONSULTA)
+                    .pet(rex)
                 .eventType("Consulta")
                 .eventDate(LocalDate.of(2025, 1, 10))
                 .build());
@@ -81,7 +83,8 @@ class HealthRecordRepositoryTest {
         Pet pet = petRepository.save(Pet.builder().name("Mia").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
 
         HealthRecord salvo = healthRecordRepository.save(HealthRecord.builder()
-                .pet(pet)
+                .category(HealthEventCategory.CONSULTA)
+                    .pet(pet)
                 .eventType("Cirurgia")
                 .eventDate(LocalDate.of(2025, 8, 20))
                 .description("Castracao")

@@ -49,6 +49,8 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 .pet(pet)
                 .clinic(clinic)
                 .eventType(request.getEventType())
+                .category(request.getCategory())
+                .diagnosis(request.getDiagnosis())
                 .eventDate(request.getEventDate())
                 .description(request.getDescription())
                 .creationDate(LocalDateTime.now())
@@ -96,6 +98,8 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         healthRecordCorrectionLog.recordByOwner(existing, currentOwnerProvider.require());
 
         if (request.getEventType() != null) existing.setEventType(request.getEventType());
+        if (request.getCategory() != null) existing.setCategory(request.getCategory());
+        if (request.getDiagnosis() != null) existing.setDiagnosis(request.getDiagnosis());
         if (request.getEventDate() != null) existing.setEventDate(request.getEventDate());
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
@@ -159,6 +163,8 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         return HealthRecordResponseDTO.builder()
                 .healthRecordId(healthRecord.getHealthRecordId())
                 .eventType(healthRecord.getEventType())
+                .category(healthRecord.getCategory())
+                .diagnosis(healthRecord.getDiagnosis())
                 .eventDate(healthRecord.getEventDate())
                 .description(healthRecord.getDescription())
                 .petId(healthRecord.getPet().getPetId())

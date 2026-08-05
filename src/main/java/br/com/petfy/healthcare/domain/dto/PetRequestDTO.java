@@ -3,6 +3,7 @@ package br.com.petfy.healthcare.domain.dto;
 import br.com.petfy.healthcare.domain.entity.Species;
 import lombok.*;
 
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -44,5 +45,25 @@ public class PetRequestDTO {
      */
     @NotNull(message = "species e obrigatoria")
     private Species species;
+
+    /**
+     * Numero do microchip.
+     *
+     * O request nunca aceitou nem o booleano {@code microchip} - so o OCR o preenchia.
+     * Passa a aceitar o numero, que e o que serve: e o identificador legal do animal e o
+     * que liga o Petfy a registro de animal perdido. O booleano continua na resposta e o
+     * servico o mantem coerente com o numero.
+     */
+    @Size(max = 32, message = "microchipNumber nao pode passar de 32 caracteres")
+    private String microchipNumber;
+
+    /** Afeta protocolo vacinal, peso esperado e risco de doenca. */
+    private Boolean castrated;
+
+    /**
+     * Data da castracao. Aceita sem {@code castrated}: informar a data e afirmar o fato,
+     * e exigir os dois campos juntos seria burocracia sobre o obvio.
+     */
+    private LocalDate castratedAt;
 
 }

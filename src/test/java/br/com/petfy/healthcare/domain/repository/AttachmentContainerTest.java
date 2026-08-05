@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.repository;
 
+import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Attachment;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
@@ -118,6 +119,7 @@ class AttachmentContainerTest extends PostgresContainerTest {
                     .creationDate(LocalDateTime.now()).build());
 
             var atendimento = healthRecordRepository.saveAndFlush(HealthRecord.builder()
+                    .category(HealthEventCategory.CONSULTA)
                     .pet(rex).eventType("Consulta").eventDate(LocalDate.now())
                     .creationDate(LocalDateTime.now()).build());
 
@@ -216,6 +218,7 @@ class AttachmentContainerTest extends PostgresContainerTest {
         @DisplayName("anexo de atendimento nao trava o delete do pet")
         void anexoDeAtendimentoNaoTrava() {
             var atendimento = healthRecordRepository.saveAndFlush(HealthRecord.builder()
+                    .category(HealthEventCategory.CONSULTA)
                     .pet(rex).eventType("Consulta").eventDate(LocalDate.now())
                     .creationDate(LocalDateTime.now()).build());
 

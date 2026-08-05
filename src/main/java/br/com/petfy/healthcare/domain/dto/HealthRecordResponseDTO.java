@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.dto;
 
+import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -14,6 +15,10 @@ import java.util.UUID;
 public class HealthRecordResponseDTO {
 
     private UUID healthRecordId;
+
+    private HealthEventCategory category;
+
+    private String diagnosis;
 
     private String eventType;
 

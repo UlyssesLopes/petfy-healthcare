@@ -47,6 +47,7 @@ public class OwnerExportServiceImpl implements OwnerExportService {
     private final PetShareRepository petShareRepository;
     private final PetClinicAccessRepository petClinicAccessRepository;
     private final SensitiveAccessLogRepository sensitiveAccessLogRepository;
+    private final PetHealthConditionRepository petHealthConditionRepository;
 
     /**
      * Monta o documento a partir dos vinculos de tutor, e nao de uma consulta por dono.
@@ -108,10 +109,14 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .gender(pet.getGender())
                 .color(pet.getColor())
                 .microchip(pet.getMicrochip())
+                .microchipNumber(pet.getMicrochipNumber())
+                .castrated(pet.getCastrated())
+                .castratedAt(pet.getCastratedAt())
                 .generalRegistry(pet.getGeneralRegistry())
                 .weight(pet.getWeight())
                 .creationDate(pet.getCreationDate())
                 .meuPapel(meuVinculo.getRole())
+                .condicoes(condicoes(petId))
                 .coTutores(coTutores(petId, meuVinculo))
                 .vacinas(vacinas(petId))
                 .antiparasitarios(antiparasitarios(petId))
@@ -139,6 +144,28 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                         .name(t.getOwner().getName())
                         .role(t.getRole())
                         .desde(t.getCreationDate())
+                        .build())
+                .toList();
+    }
+
+    /**
+     * Alergias e condicoes cronicas, ativas primeiro.
+     *
+     * Entram no export porque sao o que outro sistema precisa ler <b>antes</b> do
+     * historico: quem importa o prontuario deste animal tem de saber a que ele e alergico
+     * antes de ler o que ja aconteceu com ele.
+     */
+    private List<OwnerExportDTO.CondicaoDTO> condicoes(UUID petId) {
+        return petHealthConditionRepository.findByPetOrdenadasPorRelevancia(petId)
+                .stream()
+                .map(c -> OwnerExportDTO.CondicaoDTO.builder()
+                        .kind(c.getKind())
+                        .description(c.getDescription())
+                        .severity(c.getSeverity())
+                        .notes(c.getNotes())
+                        .since(c.getSince())
+                        .resolvedAt(c.getResolvedAt())
+                        .ativa(c.isAtiva())
                         .build())
                 .toList();
     }
@@ -182,7 +209,9 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .stream()
                 .map(r -> OwnerExportDTO.AtendimentoDTO.builder()
                         .healthRecordId(r.getHealthRecordId())
+                        .category(r.getCategory())
                         .eventType(r.getEventType())
+                        .diagnosis(r.getDiagnosis())
                         .eventDate(r.getEventDate())
                         .description(r.getDescription())
                         .clinicName(r.getClinic() != null ? r.getClinic().getName() : null)
@@ -322,7 +351,10 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                         + "sem e-mail. A portabilidade e dos dados do titular.",
                 "Pet compartilhado com outros tutores esta incluido, com o papel do titular "
                         + "indicado em meuPapel - ele pode nao ser o titular do pet.",
-                "A senha nao aparece, nem como hash.");
+                "A senha nao aparece, nem como hash.",
+                "As alergias e condicoes cronicas vem com as ativas primeiro; condicao "
+                        + "encerrada aparece com resolvedAt preenchido, porque faz parte do "
+                        + "historico do animal.");
     }
 
 }

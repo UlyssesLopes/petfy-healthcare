@@ -53,6 +53,7 @@ class OwnerExportServiceImplTest {
     @Mock private PetShareRepository petShareRepository;
     @Mock private PetClinicAccessRepository petClinicAccessRepository;
     @Mock private SensitiveAccessLogRepository sensitiveAccessLogRepository;
+    @Mock private PetHealthConditionRepository petHealthConditionRepository;
 
     @InjectMocks
     private OwnerExportServiceImpl exportService;
@@ -105,6 +106,9 @@ class OwnerExportServiceImplTest {
         when(petClinicAccessRepository.findByPetPetIdOrderByGrantedAtDesc(PET_ID)).thenReturn(List.of());
         when(sensitiveAccessLogRepository.findByPetPetIdOrderByAccessedAtDesc(eq(PET_ID), any()))
                 .thenReturn(Page.empty());
+        when(petHealthConditionRepository
+                .findByPetOrdenadasPorRelevancia(PET_ID))
+                .thenReturn(List.of());
     }
 
     @Nested
