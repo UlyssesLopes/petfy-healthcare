@@ -19,21 +19,14 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <!-- o parent do Spring Boot 2.7 nao gerencia estes artefatos, entao a
-                 versao vem do BOM do proprio Testcontainers -->
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>1.19.8</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+        <!-- acima do que o Boot 3.3.5 gerencia (1.19.8): o docker-java daquela
+             versao negocia a API do Docker em 1.32, e daemon moderno recusa
+             abaixo de 1.41. O sintoma era silencioso - os testes de container
+             eram pulados em vez de falhar, entao migration nenhuma era validada
+             contra Postgres de verdade -->
+        <testcontainers.version>1.20.4</testcontainers.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -164,6 +157,21 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <!-- o docker-java assume 1.32 quando a negociacao pelo
+                             named pipe do Windows falha, e daemon moderno recusa
+                             abaixo de 1.41. Sem isto os testes de container sao
+                             pulados em silencio: build verde sem nenhuma migration
+                             validada contra Postgres de verdade -->
+                        <api.version>1.44</api.version>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

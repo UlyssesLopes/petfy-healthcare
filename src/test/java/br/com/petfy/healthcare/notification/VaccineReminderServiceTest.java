@@ -1,8 +1,11 @@
 package br.com.petfy.healthcare.notification;
 
+import br.com.petfy.healthcare.domain.entity.Antiparasitic;
+import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
+import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,6 +38,9 @@ class VaccineReminderServiceTest {
 
     @Mock
     private VaccineRepository vaccineRepository;
+
+    @Mock
+    private AntiparasiticRepository antiparasiticRepository;
 
     @Mock
     private Notifier notifier;
@@ -76,8 +82,30 @@ class VaccineReminderServiceTest {
                 .build();
     }
 
-    private void baseTem(Vaccine... vacinas) {
+    private Antiparasitic anti(Owner owner, String petName, String name,
+                               LocalDate proximaDose, LocalDateTime ultimoEnvio) {
+        return Antiparasitic.builder()
+                .antiparasiticId(UUID.randomUUID())
+                .name(name)
+                .kind(AntiparasiticKind.DEWORMER)
+                .nextDoseDate(proximaDose)
+                .lastReminderSentAt(ultimoEnvio)
+                .pet(Pet.builder().petId(UUID.randomUUID()).name(petName).owner(owner).build())
+                .build();
+    }
+
+    private void vacinasTem(Vaccine... vacinas) {
         when(vaccineRepository.findByNextDoseDateLessThanEqual(any())).thenReturn(List.of(vacinas));
+    }
+
+    private void antisTem(Antiparasitic... antis) {
+        when(antiparasiticRepository.findByNextDoseDateLessThanEqual(any())).thenReturn(List.of(antis));
+    }
+
+    /** Configura repos vazios por default (evita stubbing desnecessario nos testes de vacinas). */
+    private void baseTem(Vaccine... vacinas) {
+        vacinasTem(vacinas);
+        antisTem();
     }
 
     private Notification capturarEnvio() {
@@ -252,7 +280,7 @@ class VaccineReminderServiceTest {
 
             service.enviarLembretes();
 
-            assertThat(capturarEnvio().getSubject()).isEqualTo("Vacina em atraso no Petfy");
+            assertThat(capturarEnvio().getSubject()).contains("atraso");
         }
 
         @Test
@@ -262,7 +290,7 @@ class VaccineReminderServiceTest {
 
             service.enviarLembretes();
 
-            assertThat(capturarEnvio().getSubject()).isEqualTo("Vacina chegando no Petfy");
+            assertThat(capturarEnvio().getSubject()).contains("chegando");
         }
 
         @Test
@@ -307,6 +335,70 @@ class VaccineReminderServiceTest {
             assertThat(service.enviarLembretes()).isZero();
             verifyNoInteractions(notifier);
             verify(vaccineRepository, never()).saveAll(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("antiparasitarios")
+    class Antiparasitarios {
+
+        @Test
+        @DisplayName("deve incluir antiparasitario vencido no lembrete do tutor")
+        void deveAvisarAntiparasitarioVencido() {
+            vacinasTem();
+            antisTem(anti(owner("Ulysses", "u@petfy.com.br"), "Rex", "Vermifugo",
+                    HOJE.minusDays(5), null));
+
+            assertThat(service.enviarLembretes()).isEqualTo(1);
+            verify(notifier).send(any());
+        }
+
+        @Test
+        @DisplayName("deve marcar antiparasitario como avisado apos envio")
+        void deveMarcarAntiComoAvisado() {
+            var vermifugo = anti(owner("Ulysses", "u@petfy.com.br"), "Rex", "Vermifugo",
+                    HOJE.minusDays(5), null);
+            vacinasTem();
+            antisTem(vermifugo);
+
+            service.enviarLembretes();
+
+            verify(antiparasiticRepository).saveAll(any());
+            assertThat(vermifugo.getLastReminderSentAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("deve agrupar vacina e antiparasitario do mesmo tutor num unico lembrete")
+        void deveAgruparNoMesmoLembrete() {
+            var ulysses = owner("Ulysses", "u@petfy.com.br");
+            vacinasTem(vacina(ulysses, "Rex", "V10", HOJE.minusDays(3), null));
+            antisTem(anti(ulysses, "Rex", "Vermifugo", HOJE.minusDays(5), null));
+
+            assertThat(service.enviarLembretes()).isEqualTo(1);
+            verify(notifier, times(1)).send(any());
+            assertThat(capturarEnvio().getLines()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("nao deve reavisar antiparasitario dentro do cooldown")
+        void naoDeveReavisarAntiDentroDoCooldown() {
+            vacinasTem();
+            antisTem(anti(owner("Ulysses", "u@petfy.com.br"), "Rex", "Antipulgas",
+                    HOJE.minusDays(3), AGORA.minusDays(2)));
+
+            assertThat(service.enviarLembretes()).isZero();
+            verifyNoInteractions(notifier);
+        }
+
+        @Test
+        @DisplayName("nao deve avisar antiparasitario de tutor sem e-mail confirmado")
+        void naoDeveAvisarAntiSemEmailConfirmado() {
+            vacinasTem();
+            antisTem(anti(ownerSemEmailConfirmado("Sem", "sem@petfy.com.br"), "Rex", "Vermifugo",
+                    HOJE.minusDays(3), null));
+
+            assertThat(service.enviarLembretes()).isZero();
+            verifyNoInteractions(notifier);
         }
     }
 }

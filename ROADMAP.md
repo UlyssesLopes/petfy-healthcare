@@ -273,14 +273,32 @@ apoiar a mudança.
 **Pronto quando:** dois logins distintos editam o mesmo pet e nenhum dos dois
 alcança pet de terceiro.
 
-### 9. Além da vacina: antiparasitário e peso como série
+### 9. Além da vacina: antiparasitário e peso como série — concluído
 
 Vermífugo e antipulgas são o recorrente que o tutor de fato esquece, e
 reaproveitam agenda e lembrete já construídos. `weight` hoje é um `Double`, um
 valor único — virar histórico dá curva de crescimento do filhote.
 
-**Pronto quando:** um lembrete de vermífugo sai pelo mesmo caminho do de vacina,
-sem código novo de canal.
+- [x] `Antiparasitic` e `AntiparasiticCatalog`, entidades paralelas a `Vaccine`.
+      Separadas em vez de um campo em `Vaccine`: evita breaking change na tabela
+      e no contrato, e o scheduler varre as duas sem canal novo.
+- [x] `pet_weight_history` guarda cada medição. `Pet.weight` continua existindo
+      como espelho da mais recente, para os endpoints que já devolvem o pet não
+      ganharem um join. **O espelho não regride** quando o tutor lança uma
+      pesagem antiga esquecida — quem define o espelho é a maior `measured_at`,
+      não a última inserção.
+- [x] `kind` e `species` do antiparasitário são enums (`AntiparasiticKind`,
+      `Species`), não texto livre. Escrito antes do passo 6 entrar, o código
+      nascia com `String` nos dois e reintroduzia exatamente o furo que o passo 6
+      tinha acabado de fechar: dava para registrar vermífugo canino num gato.
+      Agora recusa com o mesmo `409` do `VaccineFactory`, na criação e também ao
+      mover o registro para um pet de outra espécie.
+- [x] `GET /antiparasitics/catalog?petId=` filtra pela espécie do pet, mesmo
+      contrato do `/vaccine-catalog`.
+
+**Passo 9 concluído em 2026-08-05.** Validado por 26 testes novos de serviço e
+pela `V14` aplicada num Postgres real — ver a nota sobre os testes de container
+abaixo, que era pré-requisito silencioso para essa validação existir.
 
 ### 10. LGPD e confiança — parcialmente concluído
 
@@ -345,31 +363,24 @@ dose.
   descobre o `tessdata`, mas ninguém chamou o endpoint de importação de dentro do
   container. A base mudou de Debian slim para Ubuntu 22.04 na correção da imagem,
   então a versão do Tesseract também mudou.
+- ~~**Os testes de container não rodavam, e o build não dizia.**~~ Corrigido em
+  2026-08-05, junto com o passo 9. O `docker-java` assume a API do Docker na
+  versão 1.32 quando a negociação pelo named pipe do Windows falha, e daemon
+  moderno recusa abaixo de 1.41. O Testcontainers trata isso como "sem Docker" e
+  **pula** os testes em vez de falhar: 14 testes verdes que nunca executaram,
+  entre eles os que validam as migrations contra Postgres de verdade. Ou seja, as
+  `V10` a `V13` foram mergeadas sem nunca terem sido aplicadas num Postgres real.
+  A correção é `api.version` no surefire, com a versão do Testcontainers acima da
+  que o Boot gerencia. **O que fica de lição:** teste que pula em silêncio é pior
+  que teste que falha, porque some do radar exatamente quando mais se confia nele.
 
-## Trabalho em curso — branches vivas em 2026-08-04
+## Trabalho em curso — branches vivas
 
-Três subagentes foram lançados em paralelo. Dois deles morreram por cota antes
-de commitar, mas deixaram o worktree com código escrito. Retomar amanhã.
+Três subagentes foram lançados em paralelo em 2026-08-04. Dois morreram por cota
+antes de commitar, mas deixaram o worktree com código escrito, subido como WIP.
 
-### Passo 9 — antiparasitário + peso série (branch `feat/passo-9-antiparasitario-peso-wip`)
-
-Subagent escreveu a estrutura completa mas não testou nem commitou. Código no
-disco (subido como WIP para não perder):
-
-- Entidades: `Antiparasitic`, `AntiparasiticCatalog`, `PetWeightHistory`
-- DTOs: `AntiparasiticRequestDTO`, `AntiparasiticResponseDTO`,
-  `AntiparasiticCatalogResponseDTO`, `PetWeightRequestDTO`,
-  `PetWeightResponseDTO`
-- Repositórios: `AntiparasiticRepository`, `AntiparasiticCatalogRepository`,
-  `PetWeightHistoryRepository`
-- Services: `AntiparasiticService` + impl, `PetWeightService` + impl
-- Controllers: `AntiparasiticController`, `PetWeightController`
-- Migration: `V14__antiparasitario_e_peso_historico.sql`
-- Alteração em `VaccineReminderService` (varre antiparasitário também)
-
-**O que falta:** rodar `mvn test`, corrigir o que quebrar, escrever teste do
-serviço novo, verificar se o scheduler integra sem regressão, ajustar
-`VaccineReminderServiceTest`. Estimativa: 1-2h.
+**O passo 9 saiu daqui em 2026-08-05** — fechado, testado e registrado na seção
+própria acima. Restou uma branch.
 
 ### Dívidas operacionais (branch `chore/dividas-operacionais-wip`)
 
@@ -390,6 +401,18 @@ serialização de `Page<T>` na resposta está no formato esperado, decidir se
 `RateLimitFilter` roda antes ou depois do `JwtAuthenticationFilter`,
 documentar breaking changes de contrato (endpoints agora devolvem `Page`
 em vez de `List`). Estimativa: 2-3h.
+
+**Atenção antes de mergear, descoberto em 2026-08-05:** esta branch saiu do PR
+#18 e colide com o passo 4, que entrou no mesmo dia. O OpenAPI recém-publicado
+descreve as listagens como `List`, e a paginação muda isso para `Page` — o
+contrato mudaria no dia seguinte ao de ser publicado. Ou a paginação entra antes
+de alguém consumir o contrato, ou vira versionamento de endpoint. **Rebasear na
+`main` antes de qualquer coisa:** foi o que o passo 9 exigiu, e é o que revela o
+conflito de verdade — os testes rodados sobre a base velha não provam nada.
+
+Vale fatiar: o **rate limit** é a parte que protege recuperação de senha e
+reenvio de confirmação, é aditiva e não mexe em contrato. A paginação é a parte
+cara. Não precisam entrar juntas.
 
 ### Fora dos WIPs — pendências do passo 10
 

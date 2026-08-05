@@ -92,7 +92,7 @@ public class PuppyProtocolService {
         }
 
         vaccineRepository.saveAll(planejadas);
-        log.info("Esquema inicial de {} vacinas gerado para o pet {} ({} anos, especie {})",
+        log.info("Esquema inicial de {} vacinas gerado para o pet {} ({} dias, especie {})",
                 planejadas.size(), pet.getPetId(), idadeEmDias(pet), pet.getSpecies());
     }
 

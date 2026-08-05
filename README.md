@@ -145,7 +145,10 @@ Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
 | Clínicas | `/clinics` | leitura e criação abertas; **editar e remover exigem ser vet da clínica** |
 | Vacinas | `/vaccines` | listagem em `GET /vaccines`, escopada pelo dono do pet |
 | Agenda de vacinas | `/vaccines/agenda` | `?windowDays=30` — o que está vencido ou vencendo |
-| Catálogo de vacinas | `/vaccine-catalog` | somente leitura, mantido por migration |
+| Catálogo de vacinas | `/vaccine-catalog` | somente leitura, mantido por migration; `?petId=` filtra pela espécie do pet |
+| Antiparasitários | `/antiparasitics` | `GET /antiparasitics?petId=` (obrigatório), escopado pelo dono do pet |
+| Catálogo de antiparasitários | `/antiparasitics/catalog` | somente leitura; `?petId=` filtra pela espécie do pet |
+| Histórico de peso | `/pets/{petId}/weights` | série de medições; `Pet.weight` é o espelho da mais recente |
 | Histórico de saúde | `/health-records` | `GET /health-records/pet/{petId}` |
 | Importação por OCR | `/pet-id` | `POST /pet-id/import-pet-id-card` (multipart) |
 | Compartilhamento | `/pets/{petId}/shares` | criar e listar links; `DELETE /shares/{id}` revoga |
@@ -504,6 +507,17 @@ verdade. São eles que cobrem o que o H2 não alcança:
   vazias. São a base do escopo por dono e do acesso do veterinário: se uma
   trouxer de menos, o tutor deixa de ver os próprios dados; de mais, vê os de
   outro.
+- **`OwnerDeletionContainerTest`** — apagar conta só falha onde existe chave
+  estrangeira, e chave estrangeira só existe no banco. Com repositório mockado o
+  teste passa e o `DELETE` quebra em produção.
+
+**`api.version` no surefire não é decoração.** O `docker-java` assume a API do
+Docker na versão 1.32 quando a negociação pelo named pipe do Windows falha, e
+daemon moderno recusa abaixo de 1.41. O Testcontainers lê isso como "não há
+Docker" e **pula** os testes — build verde, nenhuma migration validada. Foi o que
+aconteceu de fato: as migrations `V10` a `V13` entraram na `main` sem nunca terem
+rodado num Postgres. Se um dia os `ContainerTest` voltarem a aparecer como
+`Skipped` numa máquina que tem Docker, é aqui que se olha primeiro.
 
 Alguns testes existem por motivos específicos e vale saber antes de mexer:
 
