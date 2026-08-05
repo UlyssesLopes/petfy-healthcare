@@ -1,8 +1,10 @@
 package br.com.petfy.healthcare.controller;
 
+import br.com.petfy.healthcare.domain.dto.OwnerExportDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
+import br.com.petfy.healthcare.service.OwnerExportService;
 import br.com.petfy.healthcare.service.OwnerService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import jakarta.validation.Valid;
 public class OwnerController {
 
     private final OwnerService ownerService;
+    private final OwnerExportService ownerExportService;
 
     /** Unica rota publica de owner: sem ela nao existe o primeiro usuario. */
     @PostMapping
@@ -53,6 +56,23 @@ public class OwnerController {
     public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequestDTO request) {
         ownerService.changePassword(request);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Portabilidade, irma da exclusao logo abaixo.
+     *
+     * Fica no {@code /owners/me} e nao numa rota propria porque e um dado do titular como
+     * qualquer outro - a diferenca e a completude, nao a natureza.
+     */
+    @Operation(summary = "Exporta todos os dados do tutor autenticado",
+               description = "Documento JSON com o tutor, os consentimentos e todos os pets em que ele "
+                             + "e tutor - vacinas, antiparasitarios, pesagens, atendimentos, correcoes, "
+                             + "anexos, links de compartilhamento, acessos de clinica e o log de acessos "
+                             + "de terceiros. Dado pessoal de terceiro vem reduzido, e o proprio "
+                             + "documento declara o que nao carrega no campo limitacoes.")
+    @GetMapping("/me/export")
+    public ResponseEntity<OwnerExportDTO> exportCurrentOwner() {
+        return ResponseEntity.ok(ownerExportService.exportarDoAutenticado());
     }
 
     @DeleteMapping("/me")

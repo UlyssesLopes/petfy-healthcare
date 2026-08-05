@@ -25,8 +25,10 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * <ul>
  *   <li>Primeira vez: o docker-java assumia API 1.32 no named pipe do Windows e o
  *       daemon recusava. Mitigado com {@code api.version} no surefire.</li>
- *   <li>Segunda vez: heap default insuficiente com 630 testes. Mitigado com
- *       {@code -Xmx2g} no surefire.</li>
+ *   <li>Segunda vez: <b>causa nao identificada.</b> Na suite completa toda classe de
+ *       container era pulada; isoladas, passavam. Fixar o heap no surefire fez o
+ *       sintoma desaparecer de forma reproduzivel, mas isso e evidencia e nao
+ *       explicacao - ver o comentario no pom.</li>
  * </ul>
  *
  * Duas mitigacoes pontuais para o mesmo sintoma sao sinal de que faltava o guarda. Este

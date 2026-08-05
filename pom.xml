@@ -178,14 +178,25 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- Heap explicito, e nao o default da JVM.
-                         O default e uma fracao da RAM da maquina, entao a suite passa
-                         ou nao dependendo de quem a roda. Sob pressao de memoria o
-                         DockerClientFactory.isDockerAvailable() do Testcontainers
-                         engole o Throwable e devolve false: os testes de container
-                         viram "pulados por falta de Docker" e o build fica VERDE sem
-                         nenhuma migration validada contra Postgres. Aconteceu com 630
-                         testes numa maquina de 16 GB.
+                    <!-- Heap explicito, para a suite nao depender do ergonomico da JVM,
+                         que e fracao da RAM e varia por maquina.
+
+                         O sintoma que levou a isto: na suite completa, TODA classe
+                         *ContainerTest era pulada com "Docker is not available" e o build
+                         fechava VERDE - sem uma migration validada contra Postgres. Em
+                         execucao isolada as mesmas classes passavam.
+
+                         A causa raiz nao esta comprovada. O isDockerAvailable() do
+                         Testcontainers engole qualquer Throwable e devolve false, entao o
+                         motivo real nao aparece em log nenhum. Fixar o heap fez o sintoma
+                         desaparecer de forma reproduzivel (tres execucoes completas), mas
+                         isso e evidencia, nao explicacao - e o valor de 2g e menor que o
+                         default desta maquina, o que enfraquece a hipotese de memoria.
+
+                         Quem garante que o problema nao volta em silencio nao e esta
+                         linha: e o ContainerTestsHabilitadosTest, que FALHA quando o
+                         Testcontainers nao acha Docker.
+
                          @{argLine} preserva o agente do JaCoCo, que injeta o proprio
                          argumento nessa mesma propriedade. -->
                     <argLine>@{argLine} -Xmx2g</argLine>

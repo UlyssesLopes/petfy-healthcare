@@ -6,6 +6,7 @@ import br.com.petfy.healthcare.domain.dto.PetResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PetTutorResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.service.ClinicService;
+import br.com.petfy.healthcare.service.OwnerExportService;
 import br.com.petfy.healthcare.service.OwnerService;
 import br.com.petfy.healthcare.service.PetService;
 import br.com.petfy.healthcare.service.PetTutorService;
@@ -87,11 +88,14 @@ class ControllerPathVariableTest {
         @Mock
         private OwnerService ownerService;
 
+        @Mock
+        private OwnerExportService ownerExportService;
+
         private MockMvc mockMvc;
 
         private MockMvc mockMvc() {
             if (mockMvc == null) {
-                mockMvc = MockMvcBuilders.standaloneSetup(new OwnerController(ownerService)).build();
+                mockMvc = MockMvcBuilders.standaloneSetup(new OwnerController(ownerService, ownerExportService)).build();
             }
             return mockMvc;
         }

@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.exception.GlobalExceptionHandler;
+import br.com.petfy.healthcare.service.OwnerExportService;
 import br.com.petfy.healthcare.service.OwnerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,12 +38,15 @@ class RequestValidationTest {
     @Mock
     private OwnerService ownerService;
 
+    @Mock
+    private OwnerExportService ownerExportService;
+
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new OwnerController(ownerService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new OwnerController(ownerService, ownerExportService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
