@@ -13,6 +13,7 @@ import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.PetShareService;
+import br.com.petfy.healthcare.service.SensitiveAccessLogger;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class PetShareServiceImpl implements PetShareService {
     private final PetAccessGuard petAccessGuard;
     private final VaccineStatusCalculator vaccineStatusCalculator;
     private final OpaqueTokenService opaqueTokenService;
+    private final SensitiveAccessLogger sensitiveAccessLogger;
 
     @Value("${petfy.share.default-expiration-days:30}")
     private int defaultExpirationDays;
@@ -108,6 +110,11 @@ public class PetShareServiceImpl implements PetShareService {
 
         Pet pet = share.getPet();
         LocalDate hoje = LocalDate.now();
+
+        // Registra depois de o link ser validado, e nao antes: token invalido nao e
+        // acesso ao pet, e logar tentativa de token inexistente enche a tabela de um
+        // pet que ninguem conseguiu abrir - ou, pior, de um petId que nao existe.
+        sensitiveAccessLogger.linkPublicoAberto(pet);
 
         List<SharedVaccineCardDTO.SharedVaccineDTO> vacinas =
                 vaccineRepository.findByPetPetIdOrderByApplicationDateDesc(pet.getPetId())

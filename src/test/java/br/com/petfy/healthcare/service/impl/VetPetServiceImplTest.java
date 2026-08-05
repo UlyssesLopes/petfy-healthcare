@@ -4,6 +4,7 @@ import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
@@ -19,6 +20,7 @@ import br.com.petfy.healthcare.notification.ClinicActivityNotifier;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
+import br.com.petfy.healthcare.service.SensitiveAccessLogger;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,9 +43,11 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,6 +77,9 @@ class VetPetServiceImplTest {
     @Mock
     private HealthRecordCorrectionLog healthRecordCorrectionLog;
 
+    @Mock
+    private SensitiveAccessLogger sensitiveAccessLogger;
+
     private VetPetServiceImpl service;
 
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
@@ -88,7 +95,7 @@ class VetPetServiceImplTest {
         service = new VetPetServiceImpl(petClinicAccessRepository, vaccineRepository,
                 currentVetProvider, new VaccineFactory(vaccineCatalogRepository),
                 clinicActivityNotifier, vaccineCorrectionLog,
-                healthRecordRepository, healthRecordCorrectionLog);
+                healthRecordRepository, healthRecordCorrectionLog, sensitiveAccessLogger);
         ReflectionTestUtils.setField(service, "correctionWindowDays", 7);
     }
 
@@ -686,6 +693,84 @@ class VetPetServiceImplTest {
                     .hasMessage("Pet not found");
 
             verify(vaccineRepository, never()).findByPetPetIdOrderByApplicationDateDesc(any());
+        }
+    }
+
+    /**
+     * Toda leitura do veterinario deixa rastro.
+     *
+     * Ate aqui havia rastro de escrita - correcao grava quem alterou - e nenhum de
+     * leitura: o vet podia abrir o historico completo e o tutor nunca saberia. Estes
+     * casos existem para que uma rota de leitura nova nao entre sem gancho, o que
+     * seria invisivel em revisao.
+     */
+    @Nested
+    @DisplayName("registro de leitura")
+    class RegistroDeLeitura {
+
+        @Test
+        @DisplayName("listar vacinas registra o acesso")
+        void listarVacinasRegistra() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(acesso(null)));
+            when(vaccineRepository.findByPetPetIdOrderByApplicationDateDesc(PET_ID)).thenReturn(List.of());
+
+            service.listVaccines(PET_ID);
+
+            verify(sensitiveAccessLogger).vetLeu(any(Vet.class), any(Pet.class),
+                    eq(AccessedResource.VACCINES));
+        }
+
+        @Test
+        @DisplayName("listar o historico de saude registra o acesso")
+        void listarHistoricoRegistra() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(acesso(null)));
+            when(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(PET_ID)).thenReturn(List.of());
+
+            service.listHealthRecords(PET_ID);
+
+            verify(sensitiveAccessLogger).vetLeu(any(Vet.class), any(Pet.class),
+                    eq(AccessedResource.HEALTH_RECORDS));
+        }
+
+        /**
+         * O acesso recusado nao entra no log: nao houve leitura de dado nenhum, e
+         * registrar tentativa barrada encheria o log de um pet que a clinica nem
+         * alcanca - inclusive de petId que ela usou para adivinhar.
+         */
+        @Test
+        @DisplayName("acesso recusado nao gera registro de leitura")
+        void acessoRecusadoNaoRegistra() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.listVaccines(PET_ID))
+                    .isInstanceOf(PetfyHealthcareException.class);
+
+            verifyNoInteractions(sensitiveAccessLogger);
+        }
+
+        /**
+         * Escrita nao passa por aqui: registrar e corrigir ja deixam rastro proprio em
+         * vaccine_corrections e avisam o tutor por e-mail na hora. Duplicar no log de
+         * leitura contaria o mesmo fato duas vezes.
+         */
+        @Test
+        @DisplayName("registrar vacina nao entra no log de leitura")
+        void escritaNaoEntraNoLogDeLeitura() {
+            vetDaClinica(CLINIC_ID);
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(acesso(null)));
+            when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
+
+            service.registerVaccine(PET_ID, VaccineRequestDTO.builder()
+                    .vaccineName("Antirrabica").applicationDate(LocalDate.now()).build());
+
+            verifyNoInteractions(sensitiveAccessLogger);
         }
     }
 }

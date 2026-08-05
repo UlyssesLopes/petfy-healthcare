@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -21,6 +22,7 @@ import br.com.petfy.healthcare.notification.ClinicActivityNotifier;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
+import br.com.petfy.healthcare.service.SensitiveAccessLogger;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VetPetService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -46,6 +48,7 @@ public class VetPetServiceImpl implements VetPetService {
     private final VaccineCorrectionLog vaccineCorrectionLog;
     private final HealthRecordRepository healthRecordRepository;
     private final HealthRecordCorrectionLog healthRecordCorrectionLog;
+    private final SensitiveAccessLogger sensitiveAccessLogger;
 
     /**
      * Janela de correcao em dias. Curta de proposito: cobre o erro percebido
@@ -64,7 +67,7 @@ public class VetPetServiceImpl implements VetPetService {
 
     @Override
     public List<VaccineResponseDTO> listVaccines(UUID petId) {
-        exigirAcessoAoPet(petId);
+        registrarLeitura(exigirAcessoAoPet(petId).getPet(), AccessedResource.VACCINES);
 
         return vaccineRepository.findByPetPetIdOrderByApplicationDateDesc(petId)
                 .stream()
@@ -132,7 +135,7 @@ public class VetPetServiceImpl implements VetPetService {
      */
     @Override
     public List<VaccineCorrectionResponseDTO> listCorrections(UUID petId, UUID vaccineId) {
-        exigirAcessoAoPet(petId);
+        registrarLeitura(exigirAcessoAoPet(petId).getPet(), AccessedResource.VACCINE_CORRECTIONS);
 
         vaccineRepository.findById(vaccineId)
                 .filter(v -> v.getPet().getPetId().equals(petId))
@@ -146,7 +149,7 @@ public class VetPetServiceImpl implements VetPetService {
 
     @Override
     public List<HealthRecordResponseDTO> listHealthRecords(UUID petId) {
-        exigirAcessoAoPet(petId);
+        registrarLeitura(exigirAcessoAoPet(petId).getPet(), AccessedResource.HEALTH_RECORDS);
 
         return healthRecordRepository.findByPetPetIdOrderByEventDateDesc(petId)
                 .stream()
@@ -207,7 +210,7 @@ public class VetPetServiceImpl implements VetPetService {
 
     @Override
     public List<HealthRecordCorrectionResponseDTO> listHealthRecordCorrections(UUID petId, UUID healthRecordId) {
-        exigirAcessoAoPet(petId);
+        registrarLeitura(exigirAcessoAoPet(petId).getPet(), AccessedResource.HEALTH_RECORD_CORRECTIONS);
 
         healthRecordRepository.findById(healthRecordId)
                 .filter(r -> r.getPet().getPetId().equals(petId))
@@ -268,6 +271,17 @@ public class VetPetServiceImpl implements VetPetService {
      * 403: para o veterinario, um pet que a clinica dele nao atende e
      * indistinguivel de um pet que nao existe.
      */
+    /**
+     * Registra que este veterinario leu o recurso.
+     *
+     * Vale so para leitura. Escrita - registrar e corrigir - ja deixa rastro proprio
+     * em {@code vaccine_corrections} e {@code health_record_corrections}, e avisa o
+     * tutor por e-mail na hora. Era a leitura que passava invisivel.
+     */
+    private void registrarLeitura(Pet pet, AccessedResource recurso) {
+        sensitiveAccessLogger.vetLeu(currentVetProvider.require(), pet, recurso);
+    }
+
     private PetClinicAccess exigirAcessoAoPet(UUID petId) {
         UUID clinicId = currentVetProvider.require().getClinic().getClinicId();
 

@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.repository.PetWeightHistoryRepository;
+import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,7 @@ public class PetPurger {
     private final AntiparasiticRepository antiparasiticRepository;
     private final PetShareRepository petShareRepository;
     private final PetClinicAccessRepository petClinicAccessRepository;
+    private final SensitiveAccessLogRepository sensitiveAccessLogRepository;
 
     /**
      * Apaga os pets informados e todo o rastro deles, o proprio pet incluido.
@@ -96,6 +98,7 @@ public class PetPurger {
         antiparasiticRepository.deleteByPetPetIdIn(petIds);
         petShareRepository.deleteByPetPetIdIn(petIds);
         petClinicAccessRepository.deleteByPetPetIdIn(petIds);
+        sensitiveAccessLogRepository.deleteByPetPetIdIn(petIds);
 
         // o convite sai antes do vinculo por clareza, nao por dependencia: um
         // aponta para o pet, o outro tambem, e nenhum dos dois aponta para o outro
