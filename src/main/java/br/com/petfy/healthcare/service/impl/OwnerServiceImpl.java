@@ -184,11 +184,15 @@ public class OwnerServiceImpl implements OwnerService {
         List<PetTutor> vinculos = petTutorRepository.findByOwnerOwnerId(ownerId);
 
         List<UUID> petsQueMorrem = new ArrayList<>();
+        List<UUID> petsQuePrecisamDeSucessor = new ArrayList<>();
+
         for (PetTutor vinculo : vinculos) {
             UUID petId = vinculo.getPet().getPetId();
 
             if (petTutorRepository.countByPetPetId(petId) > 1) {
-                promoverSucessorSePreciso(vinculo, petId);
+                if (vinculo.isHolder()) {
+                    petsQuePrecisamDeSucessor.add(petId);
+                }
             } else {
                 petsQueMorrem.add(petId);
             }
@@ -197,6 +201,14 @@ public class OwnerServiceImpl implements OwnerService {
         // Os vinculos saem primeiro: sao filhos de pet e de owner ao mesmo tempo,
         // entao segurariam os dois deletes seguintes
         petTutorRepository.deleteByOwnerOwnerId(ownerId);
+
+        // E saem tambem antes de promover o sucessor, nao depois. O indice unico
+        // parcial da V15 exige exatamente um HOLDER por pet: promover com o
+        // vinculo de quem sai ainda na tabela deixa dois, e o Postgres recusa o
+        // update - derrubando a exclusao de conta inteira. Nao aparecia em teste
+        // de mock, que nao tem indice.
+        petTutorRepository.flush();
+        petsQuePrecisamDeSucessor.forEach(this::promoverSucessor);
 
         if (!petsQueMorrem.isEmpty()) {
             // Ordem obrigatoria, netas antes das filhas, filhas antes dos pais
@@ -224,14 +236,13 @@ public class OwnerServiceImpl implements OwnerService {
      * O criterio e o vinculo mais antigo entre os que ficam - quem acompanha o
      * pet ha mais tempo. Nao ha escolha do usuario aqui de proposito: apagar a
      * conta nao pode ficar bloqueado esperando uma decisao.
+     *
+     * Chamado <b>depois</b> de o vinculo de quem sai ter sido apagado e descarregado
+     * no banco, entao os candidatos aqui sao apenas quem fica - nao ha mais o que
+     * filtrar, e nao ha um segundo HOLDER competindo pelo indice unico.
      */
-    private void promoverSucessorSePreciso(PetTutor queSai, UUID petId) {
-        if (!queSai.isHolder()) {
-            return;
-        }
-
+    private void promoverSucessor(UUID petId) {
         petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId).stream()
-                .filter(candidato -> !candidato.getPetTutorId().equals(queSai.getPetTutorId()))
                 .min(Comparator.comparing(PetTutor::getCreationDate))
                 .ifPresent(sucessor -> {
                     sucessor.setRole(PetTutorRole.HOLDER);
