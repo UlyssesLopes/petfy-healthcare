@@ -21,4 +21,7 @@ public interface AntiparasiticRepository extends JpaRepository<Antiparasitic, UU
      */
     List<Antiparasitic> findByNextDoseDateLessThanEqual(LocalDate limite);
 
+    /** Usado ao apagar o pet - ver {@code PetPurger}. Faltava, junto com o peso. */
+    void deleteByPetPetIdIn(List<UUID> petIds);
+
 }
