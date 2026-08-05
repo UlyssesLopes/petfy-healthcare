@@ -6,6 +6,7 @@ import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
@@ -14,6 +15,7 @@ import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.OwnerService;
 import br.com.petfy.healthcare.service.PetPurger;
@@ -44,6 +46,8 @@ public class OwnerServiceImpl implements OwnerService {
     private final CurrentOwnerProvider currentOwnerProvider;
     private final EmailVerificationService emailVerificationService;
     private final PetPurger petPurger;
+    private final ConsentService consentService;
+    private final ConsentRecordRepository consentRecordRepository;
 
     @Override
     public OwnerResponseDTO createOwner(OwnerRequestDTO request) {
@@ -61,6 +65,13 @@ public class OwnerServiceImpl implements OwnerService {
                 .build();
 
         Owner salvo = ownerRepository.save(owner);
+
+        // O consentimento e gravado na mesma transacao do cadastro, e antes do
+        // envio de e-mail: conta que existisse sem aceite registrado seria
+        // exatamente a lacuna que a V16 fecha, e um erro no envio nao pode ser o
+        // que decide se a base legal ficou registrada. O @AssertTrue no request
+        // garante que houve aceite; aqui ele ganha data, versao e evidencia.
+        consentService.registrarAceiteNoCadastro(salvo);
 
         // e-mail comeca sem verificacao: a conta funciona, mas nao recebe aviso
         // ate o tutor confirmar o endereco. Falha de envio aqui nao desfaz o
@@ -218,6 +229,12 @@ public class OwnerServiceImpl implements OwnerService {
         // Tokens da conta
         passwordResetTokenRepository.deleteByOwnerOwnerId(ownerId);
         emailVerificationTokenRepository.deleteByOwnerOwnerId(ownerId);
+
+        // O registro de consentimento sai junto. A evidencia do aceite - IP, user
+        // agent, data - e dado pessoal do titular, e guardar prova de consentimento
+        // de quem pediu para ser esquecido inverteria o proposito da prova. Nao ha o
+        // que demonstrar sobre um titular que nao existe mais.
+        consentRecordRepository.deleteByOwnerOwnerId(ownerId);
 
         // Finalmente o owner
         ownerRepository.delete(owner);

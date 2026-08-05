@@ -54,7 +54,7 @@ class RequestValidationTest {
     @Test
     @DisplayName("deve responder 400 e nao chamar o service quando o email e invalido")
     void deveResponder400QuandoEmailInvalido() throws Exception {
-        var body = json(Map.of("name", "Ulysses", "email", "nao-e-email", "password", "s3nhaForte"));
+        var body = json(Map.of("name", "Ulysses", "email", "nao-e-email", "password", "s3nhaForte", "acceptedTerms", true));
 
         mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
@@ -67,7 +67,7 @@ class RequestValidationTest {
     @Test
     @DisplayName("deve responder 400 quando a senha e curta demais para o BCrypt")
     void deveResponder400QuandoSenhaCurta() throws Exception {
-        var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br", "password", "123"));
+        var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br", "password", "123", "acceptedTerms", true));
 
         mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
@@ -79,7 +79,7 @@ class RequestValidationTest {
     @Test
     @DisplayName("deve acumular as mensagens quando varios campos estao invalidos")
     void deveAcumularMensagensDeVariosCampos() throws Exception {
-        var body = json(Map.of("email", "nao-e-email"));
+        var body = json(Map.of("email", "nao-e-email", "acceptedTerms", true));
 
         mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
@@ -93,12 +93,50 @@ class RequestValidationTest {
         var id = UUID.randomUUID();
         when(ownerService.createOwner(any())).thenReturn(OwnerResponseDTO.builder().ownerId(id).build());
 
-        var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br", "password", "s3nhaForte"));
+        var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br", "password", "s3nhaForte", "acceptedTerms", true));
 
         mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());
 
         verify(ownerService).createOwner(any());
+    }
+
+    /**
+     * Sem aceite nao ha base legal para tratar dado de saude, entao a conta nao pode
+     * nascer. A checagem esta no request, e nao no service, para o 400 sair antes de
+     * qualquer escrita.
+     */
+    @Test
+    @DisplayName("cadastro sem aceite dos termos responde 400 e nao chama o service")
+    void cadastroSemAceiteResponde400() throws Exception {
+        var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br",
+                "password", "s3nhaForte"));
+
+        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "acceptedTerms: e obrigatorio aceitar os termos e a politica de privacidade"));
+
+        verify(ownerService, never()).createOwner(any());
+    }
+
+    /**
+     * Recusar explicitamente e diferente de omitir, e as duas respondem igual: o
+     * {@code @AssertTrue} sozinho consideraria nulo valido, entao ha {@code @NotNull}
+     * junto - sem ele o campo ausente passaria e a conta nasceria sem consentimento.
+     */
+    @Test
+    @DisplayName("cadastro recusando os termos tambem responde 400")
+    void cadastroRecusandoTermosResponde400() throws Exception {
+        var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br",
+                "password", "s3nhaForte", "acceptedTerms", false));
+
+        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "acceptedTerms: e obrigatorio aceitar os termos e a politica de privacidade"));
+
+        verify(ownerService, never()).createOwner(any());
     }
 
     @Test
