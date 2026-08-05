@@ -13,6 +13,7 @@ import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.notification.PetTutorActivityNotifier;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.security.PetAccessGuard;
@@ -39,6 +40,7 @@ public class PetTutorServiceImpl implements PetTutorService {
     private final CurrentOwnerProvider currentOwnerProvider;
     private final PetAccessGuard petAccessGuard;
     private final OpaqueTokenService opaqueTokenService;
+    private final PetTutorActivityNotifier petTutorActivityNotifier;
 
     @Value("${petfy.pet-tutor-invite.default-expiration-days:7}")
     private int defaultExpirationDays;
@@ -109,9 +111,7 @@ public class PetTutorServiceImpl implements PetTutorService {
         // A transferencia rebaixa o titular atual ANTES de o novo vinculo entrar.
         // O indice unico parcial da V15 admite um HOLDER por pet: inserir primeiro
         // deixaria dois na tabela e o Postgres recusaria o insert.
-        if (invite.transfereTitularidade()) {
-            rebaixarTitular(petId);
-        }
+        Owner titularAnterior = invite.transfereTitularidade() ? rebaixarTitular(petId) : null;
 
         PetTutor vinculo = petTutorRepository.save(PetTutor.builder()
                 .pet(invite.getPet())
@@ -124,6 +124,17 @@ public class PetTutorServiceImpl implements PetTutorService {
         invite.setAcceptedAt(LocalDateTime.now());
         invite.setAcceptedBy(aceitante);
         petTutorInviteRepository.save(invite);
+
+        // Um aviso so, e nao dois: aceitar convite de HOLDER e entrar no pet e virar
+        // titular ao mesmo tempo, e a mudanca de titularidade e a informacao que
+        // importa - ela ja diz que ha gente nova cuidando do animal.
+        if (titularAnterior != null) {
+            petTutorActivityNotifier.titularidadeMudou(invite.getPet(), tutoresDoPet(petId),
+                    titularAnterior, aceitante, aceitante);
+        } else {
+            petTutorActivityNotifier.tutorEntrou(invite.getPet(), tutoresDoPet(petId),
+                    aceitante, invite.getRole());
+        }
 
         return toResponse(vinculo);
     }
@@ -190,15 +201,13 @@ public class PetTutorServiceImpl implements PetTutorService {
     @Override
     @Transactional
     public void removeTutor(UUID petId, UUID ownerId) {
-        UUID autenticadoId = currentOwnerProvider.require().getOwnerId();
-        boolean saindoSozinho = autenticadoId.equals(ownerId);
+        Owner quemAgiu = currentOwnerProvider.require();
+        boolean saindoSozinho = quemAgiu.getOwnerId().equals(ownerId);
 
-        if (saindoSozinho) {
-            // provar que e tutor basta: sair nao exige nivel nenhum
-            petAccessGuard.requireLeitura(petId);
-        } else {
-            petAccessGuard.requireTitular(petId);
-        }
+        Pet pet = saindoSozinho
+                // provar que e tutor basta: sair nao exige nivel nenhum
+                ? petAccessGuard.requireLeitura(petId)
+                : petAccessGuard.requireTitular(petId);
 
         PetTutor vinculo = buscarVinculo(petId, ownerId);
 
@@ -209,7 +218,15 @@ public class PetTutorServiceImpl implements PetTutorService {
                     HttpStatus.CONFLICT);
         }
 
+        Owner queSaiu = vinculo.getOwner();
+
         petTutorRepository.delete(vinculo);
+        // o flush e o que faz tutoresDoPet devolver a lista sem quem saiu: sem ele o
+        // delete fica pendente e o aviso iria tambem para quem acabou de perder o
+        // acesso, contando-lhe que ele mesmo saiu
+        petTutorRepository.flush();
+
+        petTutorActivityNotifier.tutorSaiu(pet, tutoresDoPet(petId), queSaiu, quemAgiu);
     }
 
     /**
@@ -253,24 +270,30 @@ public class PetTutorServiceImpl implements PetTutorService {
     @Override
     @Transactional
     public PetTutorResponseDTO transferHolder(UUID petId, UUID toOwnerId) {
-        petAccessGuard.requireTitular(petId);
+        Pet pet = petAccessGuard.requireTitular(petId);
+        Owner quemAgiu = currentOwnerProvider.require();
 
         PetTutor destino = buscarVinculo(petId, toOwnerId);
 
         // transferir para quem ja e o titular e no-op, e nao erro: o estado final
-        // pedido e o estado atual
+        // pedido e o estado atual. Nao avisa ninguem, porque nada mudou
         if (destino.isHolder()) {
             return toResponse(destino);
         }
 
         // mesma ordem da aceitacao: rebaixa antes de promover, senao os dois
         // HOLDER coexistem e o indice unico parcial recusa
-        rebaixarTitular(petId);
+        Owner titularAnterior = rebaixarTitular(petId);
 
         destino.setRole(PetTutorRole.HOLDER);
         destino.setUpdateDate(LocalDateTime.now());
 
-        return toResponse(petTutorRepository.save(destino));
+        PetTutorResponseDTO resposta = toResponse(petTutorRepository.save(destino));
+
+        petTutorActivityNotifier.titularidadeMudou(pet, tutoresDoPet(petId),
+                titularAnterior, destino.getOwner(), quemAgiu);
+
+        return resposta;
     }
 
     /**
@@ -281,15 +304,34 @@ public class PetTutorServiceImpl implements PetTutorService {
      * dois HOLDER no mesmo pet. Foi exatamente assim que a exclusao de conta
      * quebrou - ver OwnerServiceImpl.
      */
-    private void rebaixarTitular(UUID petId) {
-        petTutorRepository.findByPetPetIdAndRole(petId, PetTutorRole.HOLDER)
-                .ifPresent(titular -> {
+    private Owner rebaixarTitular(UUID petId) {
+        Owner anterior = petTutorRepository.findByPetPetIdAndRole(petId, PetTutorRole.HOLDER)
+                .map(titular -> {
                     titular.setRole(PetTutorRole.EDITOR);
                     titular.setUpdateDate(LocalDateTime.now());
                     petTutorRepository.save(titular);
-                });
+                    return titular.getOwner();
+                })
+                .orElse(null);
 
         petTutorRepository.flush();
+
+        return anterior;
+    }
+
+    /**
+     * Quem cuida do pet agora, por consulta e nao pela colecao de {@code Pet}.
+     *
+     * A colecao e lazy e acabou de ser mexida - vinculo inserido, papel alterado -,
+     * entao ler dela daria uma lista que pode nao refletir o que foi gravado. O
+     * aviso iria para o conjunto errado de pessoas, que e o unico jeito de este
+     * recurso piorar a privacidade em vez de melhorar.
+     */
+    private List<Owner> tutoresDoPet(UUID petId) {
+        return petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId)
+                .stream()
+                .map(PetTutor::getOwner)
+                .collect(Collectors.toList());
     }
 
     /**

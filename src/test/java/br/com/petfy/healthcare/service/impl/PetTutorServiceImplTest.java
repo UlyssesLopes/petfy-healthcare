@@ -13,6 +13,7 @@ import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.notification.PetTutorActivityNotifier;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.security.PetAccessGuard;
@@ -60,6 +61,9 @@ class PetTutorServiceImplTest {
     @Mock
     private PetAccessGuard petAccessGuard;
 
+    @Mock
+    private PetTutorActivityNotifier petTutorActivityNotifier;
+
     private PetTutorServiceImpl petTutorService;
 
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
@@ -72,7 +76,8 @@ class PetTutorServiceImplTest {
         // OpaqueTokenService real: o valor do teste esta em o token gerado nao ser
         // o que fica guardado, e um mock devolveria o que mandassem
         petTutorService = new PetTutorServiceImpl(petTutorRepository, petTutorInviteRepository,
-                ownerRepository, currentOwnerProvider, petAccessGuard, new OpaqueTokenService());
+                ownerRepository, currentOwnerProvider, petAccessGuard, new OpaqueTokenService(),
+                petTutorActivityNotifier);
         ReflectionTestUtils.setField(petTutorService, "defaultExpirationDays", 7);
     }
 
@@ -788,6 +793,18 @@ class PetTutorServiceImplTest {
             verify(petAccessGuard, never()).requireEscrita(any());
         }
 
+        /** Consultar quem cuida do pet nao avisa ninguem. */
+        @Test
+        @DisplayName("listar tutores nao gera aviso")
+        void listarTutoresNaoGeraAviso() {
+            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet());
+            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID)).thenReturn(List.of());
+
+            petTutorService.listTutors(PET_ID);
+
+            verifyNoInteractions(petTutorActivityNotifier);
+        }
+
         /** Ver quem alcanca o pet e leitura: o VIEWER tambem precisa saber. */
         @Test
         @DisplayName("listar tutores exige so leitura")
@@ -800,6 +817,198 @@ class PetTutorServiceImplTest {
             verify(petAccessGuard).requireLeitura(PET_ID);
             verify(petAccessGuard, never()).requireTitular(any());
             verify(petAccessGuard, never()).requireEscrita(any());
+        }
+    }
+
+    /**
+     * Quem e avisado de cada mudanca.
+     *
+     * O que o notificador <b>diz</b> esta no PetTutorActivityNotifierTest; o que este
+     * nested guarda e a lista de destinatarios, que e a parte que o servico decide -
+     * e a unica forma de este recurso piorar a privacidade em vez de melhorar seria
+     * mandar o aviso para o conjunto errado de pessoas.
+     */
+    @Nested
+    @DisplayName("aviso aos tutores")
+    class AvisoAosTutores {
+
+        private final OpaqueTokenService tokens = new OpaqueTokenService();
+
+        private PetTutorInvite convite(PetTutorRole papel, String token) {
+            return PetTutorInvite.builder()
+                    .petTutorInviteId(INVITE_ID)
+                    .pet(pet())
+                    .createdBy(ulysses())
+                    .tokenHash(tokens.hash(token))
+                    .email("maria@petfy.com.br")
+                    .role(papel)
+                    .expiresAt(LocalDateTime.now().plusDays(5))
+                    .creationDate(LocalDateTime.now())
+                    .build();
+        }
+
+        /**
+         * Os destinatarios vem da consulta, e nao de {@code Pet.getTutorOwners()}: a
+         * colecao e lazy e acabou de ser mexida, entao ler dela daria uma lista que
+         * pode nao refletir o vinculo que acabou de ser gravado.
+         */
+        @Test
+        @DisplayName("aceitar convite avisa os tutores da consulta, nao a colecao do pet")
+        void aceitarAvisaOsTutoresDaConsulta() {
+            var joao = Owner.builder().ownerId(UUID.fromString("55555555-5555-5555-5555-555555555555"))
+                    .name("Joao").email("joao@petfy.com.br").build();
+
+            autenticado(maria());
+            when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
+                    .thenReturn(Optional.of(convite(PetTutorRole.EDITOR, "t")));
+            when(petTutorRepository.existsByPetPetIdAndOwnerOwnerId(PET_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
+            // a consulta traz os tres, incluindo o vinculo recem-criado
+            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+                    .thenReturn(List.of(vinculoDe(ulysses(), PetTutorRole.HOLDER),
+                            vinculoDe(joao, PetTutorRole.VIEWER),
+                            vinculoDe(maria(), PetTutorRole.EDITOR)));
+
+            petTutorService.accept("t");
+
+            var destinatarios = ArgumentCaptor.forClass(List.class);
+            verify(petTutorActivityNotifier).tutorEntrou(any(Pet.class), destinatarios.capture(),
+                    any(Owner.class), any(PetTutorRole.class));
+
+            assertThat(destinatarios.getValue()).extracting("ownerId")
+                    .containsExactly(OWNER_ID, joao.getOwnerId(), MARIA_ID);
+        }
+
+        /**
+         * Um aviso so: aceitar convite de HOLDER e entrar no pet e virar titular ao
+         * mesmo tempo, e a mudanca de titularidade ja diz que ha gente nova cuidando
+         * do animal. Dois e-mails para o mesmo fato viram ruido.
+         */
+        @Test
+        @DisplayName("aceitar convite de HOLDER avisa a titularidade, e nao a entrada")
+        void aceitarHolderAvisaSoATitularidade() {
+            var titularAtual = vinculoDe(ulysses(), PetTutorRole.HOLDER);
+
+            autenticado(maria());
+            when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
+                    .thenReturn(Optional.of(convite(PetTutorRole.HOLDER, "t")));
+            when(petTutorRepository.existsByPetPetIdAndOwnerOwnerId(PET_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.findByPetPetIdAndRole(PET_ID, PetTutorRole.HOLDER))
+                    .thenReturn(Optional.of(titularAtual));
+            when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
+            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+                    .thenReturn(List.of(vinculoDe(maria(), PetTutorRole.HOLDER),
+                            vinculoDe(ulysses(), PetTutorRole.EDITOR)));
+
+            petTutorService.accept("t");
+
+            var anterior = ArgumentCaptor.forClass(Owner.class);
+            var novo = ArgumentCaptor.forClass(Owner.class);
+            verify(petTutorActivityNotifier).titularidadeMudou(any(Pet.class), any(List.class),
+                    anterior.capture(), novo.capture(), any(Owner.class));
+
+            assertThat(anterior.getValue().getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(novo.getValue().getOwnerId()).isEqualTo(MARIA_ID);
+
+            verify(petTutorActivityNotifier, never())
+                    .tutorEntrou(any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("transferir avisa a titularidade, com quem agiu para ser excluido")
+        void transferirAvisaATitularidade() {
+            var titularAtual = vinculoDe(ulysses(), PetTutorRole.HOLDER);
+            var destino = vinculoDe(maria(), PetTutorRole.VIEWER);
+
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(pet());
+            autenticado(ulysses());
+            when(petTutorRepository.findByPetPetIdAndOwnerOwnerId(PET_ID, MARIA_ID))
+                    .thenReturn(Optional.of(destino));
+            when(petTutorRepository.findByPetPetIdAndRole(PET_ID, PetTutorRole.HOLDER))
+                    .thenReturn(Optional.of(titularAtual));
+            when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
+            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+                    .thenReturn(List.of(destino, titularAtual));
+
+            petTutorService.transferHolder(PET_ID, MARIA_ID);
+
+            var quemAgiu = ArgumentCaptor.forClass(Owner.class);
+            verify(petTutorActivityNotifier).titularidadeMudou(any(Pet.class), any(List.class),
+                    any(Owner.class), any(Owner.class), quemAgiu.capture());
+
+            assertThat(quemAgiu.getValue().getOwnerId()).isEqualTo(OWNER_ID);
+        }
+
+        /** Transferir para quem ja e titular nao muda nada, entao nao avisa nada. */
+        @Test
+        @DisplayName("transferencia que e no-op nao avisa ninguem")
+        void transferenciaNoOpNaoAvisa() {
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(pet());
+            autenticado(ulysses());
+            when(petTutorRepository.findByPetPetIdAndOwnerOwnerId(PET_ID, OWNER_ID))
+                    .thenReturn(Optional.of(vinculoDe(ulysses(), PetTutorRole.HOLDER)));
+
+            petTutorService.transferHolder(PET_ID, OWNER_ID);
+
+            verifyNoInteractions(petTutorActivityNotifier);
+        }
+
+        /**
+         * O flush entre o delete e a consulta e o que faz a lista chegar sem quem
+         * saiu. Sem ele o delete fica pendente, a consulta ainda o traz, e o aviso
+         * iria tambem para quem acabou de perder o acesso - contando-lhe que ele
+         * mesmo saiu.
+         */
+        @Test
+        @DisplayName("remover tutor descarrega o delete antes de montar a lista de avisos")
+        void removerDescarregaAntesDeAvisar() {
+            var destino = vinculoDe(maria(), PetTutorRole.EDITOR);
+
+            autenticado(ulysses());
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(pet());
+            when(petTutorRepository.findByPetPetIdAndOwnerOwnerId(PET_ID, MARIA_ID))
+                    .thenReturn(Optional.of(destino));
+            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+                    .thenReturn(List.of(vinculoDe(ulysses(), PetTutorRole.HOLDER)));
+
+            petTutorService.removeTutor(PET_ID, MARIA_ID);
+
+            var ordem = inOrder(petTutorRepository, petTutorActivityNotifier);
+            ordem.verify(petTutorRepository).delete(destino);
+            ordem.verify(petTutorRepository).flush();
+            ordem.verify(petTutorRepository).findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID);
+            ordem.verify(petTutorActivityNotifier).tutorSaiu(any(Pet.class), any(List.class),
+                    any(Owner.class), any(Owner.class));
+        }
+
+        /** Convidar nao avisa: ninguem entrou no pet ainda. */
+        @Test
+        @DisplayName("convidar nao avisa os tutores - ainda nao ha mudanca")
+        void convidarNaoAvisa() {
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(pet());
+            autenticado(ulysses());
+            when(ownerRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
+            when(petTutorInviteRepository.save(any(PetTutorInvite.class))).thenAnswer(i -> i.getArgument(0));
+
+            petTutorService.invite(PET_ID, PetTutorInviteRequestDTO.builder()
+                    .email("maria@petfy.com.br").role(PetTutorRole.EDITOR).build());
+
+            verifyNoInteractions(petTutorActivityNotifier);
+        }
+
+        /** Trocar EDITOR por VIEWER nao muda quem alcanca o pet, so o que pode fazer. */
+        @Test
+        @DisplayName("trocar papel entre EDITOR e VIEWER nao avisa")
+        void trocarPapelNaoAvisa() {
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(pet());
+            when(petTutorRepository.findByPetPetIdAndOwnerOwnerId(PET_ID, MARIA_ID))
+                    .thenReturn(Optional.of(vinculoDe(maria(), PetTutorRole.VIEWER)));
+            when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
+
+            petTutorService.changeRole(PET_ID, MARIA_ID,
+                    PetTutorRoleUpdateRequestDTO.builder().role(PetTutorRole.EDITOR).build());
+
+            verifyNoInteractions(petTutorActivityNotifier);
         }
     }
 
