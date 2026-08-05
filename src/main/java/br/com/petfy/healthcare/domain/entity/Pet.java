@@ -88,6 +88,21 @@ public class Pet {
 
     private Boolean microchip;
 
+    /**
+     * O numero, e nao apenas se tem. E o identificador legal do animal e o que liga o
+     * Petfy a registro de animal perdido - o booleano acima ficou por compatibilidade do
+     * contrato ja publicado, e o servico mantem os dois coerentes.
+     */
+    @Column(name = "microchip_number", length = 32)
+    private String microchipNumber;
+
+    /** Afeta protocolo vacinal, peso esperado e risco de doenca. */
+    private Boolean castrated;
+
+    /** A data importa tanto quanto o fato: muda o que se espera do peso e do humor. */
+    @Column(name = "castrated_at")
+    private LocalDate castratedAt;
+
     private String bornLocal;
 
     private LocalDateTime creationDate;

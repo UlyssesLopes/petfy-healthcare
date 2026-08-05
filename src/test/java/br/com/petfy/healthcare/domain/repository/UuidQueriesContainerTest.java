@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.repository;
 
+import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
@@ -173,10 +174,13 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @DisplayName("historico deve ser filtrado pelo dono do pet, do mais recente ao mais antigo")
         void historicoFiltradoEOrdenado() {
             healthRecordRepository.save(HealthRecord.builder()
+                    .category(HealthEventCategory.CONSULTA)
                     .pet(rex).eventType("Antiga").eventDate(LocalDate.now().minusDays(30)).build());
             healthRecordRepository.save(HealthRecord.builder()
+                    .category(HealthEventCategory.CONSULTA)
                     .pet(rex).eventType("Recente").eventDate(LocalDate.now().minusDays(1)).build());
             healthRecordRepository.save(HealthRecord.builder()
+                    .category(HealthEventCategory.CONSULTA)
                     .pet(nina).eventType("De outro dono").eventDate(LocalDate.now()).build());
 
             assertThat(healthRecordRepository.findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(ulysses.getOwnerId()))
@@ -188,8 +192,10 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @DisplayName("historico por pet deve trazer so o daquele pet")
         void historicoPorPet() {
             healthRecordRepository.save(HealthRecord.builder()
+                    .category(HealthEventCategory.CONSULTA)
                     .pet(rex).eventType("Consulta").eventDate(LocalDate.now()).build());
             healthRecordRepository.save(HealthRecord.builder()
+                    .category(HealthEventCategory.CONSULTA)
                     .pet(nina).eventType("Cirurgia").eventDate(LocalDate.now()).build());
 
             assertThat(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(rex.getPetId()))

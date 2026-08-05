@@ -4,6 +4,9 @@ import br.com.petfy.healthcare.domain.entity.AccessActorType;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
 import br.com.petfy.healthcare.domain.entity.ConsentDocument;
+import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
+import br.com.petfy.healthcare.domain.entity.PetHealthConditionKind;
+import br.com.petfy.healthcare.domain.entity.PetHealthConditionSeverity;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Species;
 import lombok.Builder;
@@ -94,12 +97,22 @@ public record OwnerExportDTO(
             String gender,
             String color,
             Boolean microchip,
+            /** O numero, que e o identificador legal do animal. */
+            String microchipNumber,
+            Boolean castrated,
+            LocalDate castratedAt,
             String generalRegistry,
             Double weight,
             LocalDateTime creationDate,
 
             /** O papel do titular <b>neste</b> pet, que pode nao ser o de titular. */
             PetTutorRole meuPapel,
+
+            /**
+             * Alergias e condicoes cronicas. Vem logo depois dos tutores de proposito: e a
+             * informacao que precisa aparecer antes do historico, nao depois dele.
+             */
+            List<CondicaoDTO> condicoes,
 
             List<CoTutorDTO> coTutores,
             List<VacinaDTO> vacinas,
@@ -110,6 +123,25 @@ public record OwnerExportDTO(
             List<LinkCompartilhadoDTO> linksCompartilhados,
             List<AcessoDeClinicaDTO> acessosDeClinica,
             List<AcessoRegistradoDTO> acessosDeTerceiros
+    ) {
+    }
+
+    /**
+     * Alergia ou condicao cronica.
+     *
+     * Entra no export porque e a informacao que outro sistema precisa ler primeiro: quem
+     * importa o prontuario deste animal tem de saber a que ele e alergico antes de ler o
+     * que ja aconteceu com ele.
+     */
+    @Builder
+    public record CondicaoDTO(
+            PetHealthConditionKind kind,
+            String description,
+            PetHealthConditionSeverity severity,
+            String notes,
+            LocalDate since,
+            LocalDate resolvedAt,
+            boolean ativa
     ) {
     }
 
@@ -157,7 +189,10 @@ public record OwnerExportDTO(
     @Builder
     public record AtendimentoDTO(
             UUID healthRecordId,
+            /** Classificacao. O rotulo livre continua em {@code eventType}, ao lado. */
+            HealthEventCategory category,
             String eventType,
+            String diagnosis,
             LocalDate eventDate,
             String description,
             String clinicName,
