@@ -56,7 +56,8 @@ class PetPurgerCoverageContainerTest extends PostgresContainerTest {
             "pet_shares",
             "pet_clinic_access",
             "pet_tutors",
-            "pet_tutor_invites");
+            "pet_tutor_invites",
+            "sensitive_access_log");
 
     /**
      * Quem chega a {@code pets}, direta ou indiretamente.

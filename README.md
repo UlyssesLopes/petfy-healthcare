@@ -1,17 +1,22 @@
 # Petfy HealthCare
 
-Sistema para gestão de vacinação digital de pets, clínicas veterinárias, donos e
-histórico de saúde animal. Java 17 + Spring Boot 2.7 + PostgreSQL, com uma
+Sistema para gestão de vacinação digital de pets, clínicas veterinárias, tutores e
+histórico de saúde animal. Java 21 + Spring Boot 3.3.5 + PostgreSQL, com uma
 feature de importação de RG animal por OCR.
+
+Um pet tem **vários tutores** com papéis distintos, e quem alcança o pet de quem é
+decidido por uma peça única (`PetAccessGuard`). Toda escrita de clínica deixa rastro
+e avisa o tutor; toda **leitura** de terceiro fica registrada.
 
 ## Stack
 
-- Java 17, Spring Boot 2.7.18
+- Java 21, Spring Boot 3.3.5
 - PostgreSQL, Hibernate/JPA, Flyway
 - Spring Security + JWT (HS256, via jjwt)
 - Tesseract OCR (tess4j)
 - Docker Compose para o banco local
 - JUnit 5 + Mockito + AssertJ, cobertura por JaCoCo
+- Testcontainers para o que só o Postgres recusa — chave estrangeira e índice único
 - UUIDs como identificadores
 
 ## Subindo o projeto
@@ -102,21 +107,27 @@ de segundo e a troca é gravada com fração de segundo, então o empate é amb�
 Recusar custa um login novo; aceitar deixaria viva a sessão que a troca deveria
 ter derrubado.
 
-Autenticar não basta: **cada owner só enxerga os próprios dados**. Pets são
-filtrados pelo dono, e vacinas e histórico de saúde pelo dono do pet. Recurso de
-outra pessoa responde `404`, e não `403` — um `403` confirmaria que aquele id
-existe, o que permitiria varrer ids para descobrir o que há na base.
+Autenticar não basta: **cada pessoa só enxerga os pets de que é tutora**. Desde a
+V15 um pet tem vários tutores, com três papéis — `HOLDER` (titular), `EDITOR` e
+`VIEWER` —, e quem alcança o pet de quem é decidido num lugar só, o
+`PetAccessGuard`. Vacinas, histórico, peso e antiparasitário herdam esse alcance.
 
-Onde o dono é obrigatório, ele vem sempre do token, nunca do payload: por isso
-`PetRequestDTO` não tem `ownerId` e a importação por OCR não recebe o dono como
-parâmetro. E como um owner só acessa a si mesmo, não existem `GET /owners/{id}`
-nem `GET /owners/all` — só `/owners/me`.
+Pet que a pessoa não alcança responde **`404`**, e não `403` — um `403` confirmaria
+que aquele id existe, o que permitiria varrer ids para descobrir o que há na base. O
+`403` aparece só quando ela **já é tutora** e falta nível, quando não revela nada que
+ela ainda não soubesse.
+
+Quem manda no pet vem sempre do token, nunca do payload: por isso `PetRequestDTO` não
+tem `ownerId` e a importação por OCR não recebe o tutor como parâmetro. E como uma
+conta só acessa a si mesma, não existem `GET /owners/{id}` nem `GET /owners` — só
+`/owners/me`.
 
 ```bash
-# cadastro
-curl -X POST localhost:8080/owners/include \
+# cadastro (acceptedTerms e obrigatorio: sem aceite nao ha base legal para tratar
+# dado de saude - ver a secao de consentimento)
+curl -X POST localhost:8080/owners \
   -H 'Content-Type: application/json' \
-  -d '{"name":"Ulysses","email":"ulysses@exemplo.com","password":"s3nhaForte"}'
+  -d '{"name":"Ulysses","email":"ulysses@exemplo.com","password":"s3nhaForte","acceptedTerms":true}'
 
 # login
 curl -X POST localhost:8080/auth/login \
@@ -124,21 +135,25 @@ curl -X POST localhost:8080/auth/login \
   -d '{"email":"ulysses@exemplo.com","password":"s3nhaForte"}'
 
 # rota protegida
-curl localhost:8080/pets/all -H "Authorization: Bearer $TOKEN"
+curl localhost:8080/pets -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Endpoints
 
-Todos os domínios seguem o mesmo formato: `POST /{recurso}/include`,
-`GET /{recurso}/{id}`, `GET /{recurso}/all`, `PUT /{recurso}/{id}`,
+Todos os domínios seguem o mesmo formato REST: `POST /{recurso}`,
+`GET /{recurso}/{id}`, `GET /{recurso}`, `PUT /{recurso}/{id}`,
 `DELETE /{recurso}/{id}`.
 
 | Recurso | Base | Extras |
 |---|---|---|
 | Autenticação | `/auth` | `POST /auth/login`, `/auth/password-reset`, `/auth/password-reset/confirm`, `/auth/email-verification/resend` e `/auth/email-verification/confirm` (todos públicos) |
-| Owners | `/owners` | `POST /owners/include` (público), `GET`/`PUT`/`DELETE /owners/me` e `PUT /owners/me/password` |
-| Pets | `/pets` | escopado ao dono autenticado |
-| Veterinários | `/vets` | `POST /vets/include` (público, exige convite ou clínica nova) e `GET /vets/me` |
+| Owners | `/owners` | `POST /owners` (público, **exige `acceptedTerms: true`**), `GET`/`PUT`/`DELETE /owners/me` e `PUT /owners/me/password` |
+| Consentimento | `/consents` | `GET /consents/me` e `POST /consents/accept` — aceites registrados e o que falta aceitar |
+| Pets | `/pets` | escopado a quem é tutor, em qualquer papel |
+| Tutores do pet | `/pets/{petId}/tutors` | listar, convidar, trocar papel, remover e `POST .../{ownerId}/transfer-holder` |
+| Aceite de convite | `/pet-tutor-invites/{token}/accept` | autenticado; o e-mail da conta tem de ser o do convite |
+| Log de acesso | `/pets/{petId}/access-log` | quem **de fora** leu o dado de saúde do pet |
+| Veterinários | `/vets` | `POST /vets` (público, exige convite ou clínica nova) e `GET /vets/me` |
 | Convites de clínica | `/vet/clinic-invites` | vet emite, lista e revoga |
 | Acesso de clínicas | `/pets/{petId}/clinic-access` | tutor concede, lista e revoga |
 | Área do veterinário | `/vet/pets` | pets autorizados, vacinas e atendimentos |
@@ -235,7 +250,7 @@ curl -X POST localhost:8080/vet/clinic-invites \
   -d '{"email":"nova@vet.com.br","expiresInDays":3}'
 
 # a pessoa convidada se cadastra
-curl -X POST localhost:8080/vets/include \
+curl -X POST localhost:8080/vets \
   -H 'Content-Type: application/json' \
   -d '{"name":"Dra. Marina","email":"nova@vet.com.br","password":"s3nhaForte",
        "crmv":"SP-12345","inviteToken":"..."}'
@@ -630,6 +645,73 @@ esqueceu a senha.
 só existe uma vez — no envio. E concluir a recuperação carimba
 `password_changed_at`, o que derruba as sessões abertas: se a conta foi tomada,
 quem recupera precisa expulsar quem entrou, não apenas voltar a entrar junto.
+
+## Consentimento
+
+A LGPD não pede apenas que o titular possa **sair** — pede que a base legal do
+tratamento seja **registrada e demonstrável**. `consent_records` guarda, por titular e
+por documento, **qual versão** foi aceita, quando, e a evidência de rede do aceite.
+
+Guarda a versão e não um booleano porque política de privacidade muda: um
+`aceitou = true` de janeiro não diz com o que a pessoa concordou depois da mudança de
+agosto, e é exatamente isso que uma auditoria pergunta.
+
+```bash
+# o que aceitei, e o que falta aceitar
+curl localhost:8080/consents/me -H "Authorization: Bearer $TOKEN"
+
+# aceitar a versao vigente (idempotente)
+curl -X POST localhost:8080/consents/accept -H "Authorization: Bearer $TOKEN"
+```
+
+Trocar `CONSENT_PRIVACY_VERSION` faz todos os aceites anteriores aparecerem como
+**pendentes**, sem deploy de código — mudança de texto jurídico não pode depender de
+quem compila. A resposta diz qual versão a pessoa aceitou antes, para o cliente poder
+mostrar o que mudou.
+
+**Contas anteriores a esta tabela aparecem como pendentes**, e isso é deliberado:
+nenhuma migration pode inventar consentimento que nunca foi dado.
+
+**Não há rota para revogar.** Sem consentimento não há base legal para tratar dado de
+saúde, então revogar é sair — `DELETE /owners/me`. Uma rota que deixasse a conta de pé
+criaria um estado em que a aplicação guarda dado sem poder tratá-lo. O registro sai com
+a conta: guardar prova de consentimento de quem pediu para ser esquecido inverteria o
+propósito da prova.
+
+## Log de acesso a dado de saúde
+
+Havia rastro de **escrita** — `vaccine_corrections` e `health_record_corrections`
+registram quem alterou o quê, e o tutor é avisado por e-mail na hora. Não havia rastro
+de **leitura**: um veterinário podia abrir o histórico completo de um pet e o tutor
+nunca saberia.
+
+```bash
+# quem, de fora, leu o dado de saude deste pet
+curl "localhost:8080/pets/$PET_ID/access-log?page=0&size=20" -H "Authorization: Bearer $TOKEN"
+```
+
+Registra acesso de **terceiro**: veterinário de clínica autorizada e abertura do link
+público de carteira. Leitura do próprio tutor e dos co-tutores **não entra**, e a
+omissão é deliberada — o log responde "quem *mais* viu isto", e a resposta não inclui
+quem pergunta; e o co-tutor não é terceiro, responde pelo animal junto, então registrar
+cada leitura dele transformaria cuidado compartilhado em vigilância mútua.
+
+O IP volta na resposta, ao contrário do que acontece no consentimento: ali era o IP do
+próprio titular consultando o próprio aceite e não acrescentava nada; aqui é a evidência
+de um terceiro que abriu a carteira, e sem ela dois acessos pelo mesmo link são
+indistinguíveis — é o que permite decidir se revoga.
+
+**Falha ao gravar o log derruba a leitura, de propósito.** É o oposto da política de
+notificação, e a diferença não é descuido: no aviso o efeito principal era o registro e
+o aviso era acessório; aqui o log **é** a garantia. Servir histórico de saúde sem
+conseguir registrar quem o leu entrega o dado e perde a única prova de que alguém o viu,
+e log de auditoria que falha em silêncio é pior que log nenhum, porque cria a impressão
+de cobertura. A consequência está assumida: se a tabela ficar indisponível, a leitura do
+veterinário e o link público param.
+
+O ator é guardado como tipo + id + **nome no momento do acesso**, e não por chave
+estrangeira para `vets`: o veterinário pode fechar a conta depois, e o registro de que
+ele leu o histórico não pode virar linha sem nome.
 
 ## Limitações conhecidas
 

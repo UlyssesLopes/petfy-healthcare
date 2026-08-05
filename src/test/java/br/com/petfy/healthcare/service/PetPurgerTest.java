@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.repository.PetWeightHistoryRepository;
+import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -52,6 +53,7 @@ class PetPurgerTest {
     @Mock private AntiparasiticRepository antiparasiticRepository;
     @Mock private PetShareRepository petShareRepository;
     @Mock private PetClinicAccessRepository petClinicAccessRepository;
+    @Mock private SensitiveAccessLogRepository sensitiveAccessLogRepository;
 
     @InjectMocks
     private PetPurger petPurger;
@@ -64,7 +66,7 @@ class PetPurgerTest {
                 vaccineCorrectionRepository, healthRecordCorrectionRepository,
                 vaccineRepository, healthRecordRepository,
                 petWeightHistoryRepository, antiparasiticRepository,
-                petShareRepository, petClinicAccessRepository,
+                petShareRepository, petClinicAccessRepository, sensitiveAccessLogRepository,
                 petTutorInviteRepository, petTutorRepository,
                 petRepository);
     }
@@ -96,6 +98,7 @@ class PetPurgerTest {
             ordem.verify(antiparasiticRepository).deleteByPetPetIdIn(UM_PET);
             ordem.verify(petShareRepository).deleteByPetPetIdIn(UM_PET);
             ordem.verify(petClinicAccessRepository).deleteByPetPetIdIn(UM_PET);
+            ordem.verify(sensitiveAccessLogRepository).deleteByPetPetIdIn(UM_PET);
             ordem.verify(petTutorInviteRepository).deleteByPetPetIdIn(UM_PET);
             ordem.verify(petTutorRepository).deleteByPetPetIdIn(UM_PET);
 
@@ -147,7 +150,7 @@ class PetPurgerTest {
                     vaccineCorrectionRepository, healthRecordCorrectionRepository,
                     vaccineRepository, healthRecordRepository,
                     petWeightHistoryRepository, antiparasiticRepository,
-                    petShareRepository, petClinicAccessRepository,
+                    petShareRepository, petClinicAccessRepository, sensitiveAccessLogRepository,
                     petTutorInviteRepository, petTutorRepository,
                     petRepository);
         }

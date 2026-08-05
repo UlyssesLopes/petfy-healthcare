@@ -14,6 +14,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
+import br.com.petfy.healthcare.service.SensitiveAccessLogger;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,9 @@ class PetShareServiceImplTest {
     @Mock
     private PetAccessGuard petAccessGuard;
 
+    @Mock
+    private SensitiveAccessLogger sensitiveAccessLogger;
+
     private PetShareServiceImpl service;
 
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
@@ -66,7 +70,8 @@ class PetShareServiceImplTest {
         // calculator real: o valor do teste esta em conferir o status que o link
         // mostra, e nao em repetir a regra num mock
         service = new PetShareServiceImpl(petShareRepository, vaccineRepository,
-                petAccessGuard, new VaccineStatusCalculator(), new OpaqueTokenService());
+                petAccessGuard, new VaccineStatusCalculator(), new OpaqueTokenService(),
+                sensitiveAccessLogger);
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 30);
         ReflectionTestUtils.setField(service, "windowDays", 30);
     }

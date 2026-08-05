@@ -79,7 +79,7 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 "owners", "clinics", "pets", "vaccines", "health_records",
                 "vaccine_catalog", "pet_shares", "vets", "pet_clinic_access",
                 "clinic_invites", "vaccine_corrections",
-                "pet_tutors", "pet_tutor_invites", "consent_records");
+                "pet_tutors", "pet_tutor_invites", "consent_records", "sensitive_access_log");
     }
 
     @Test
@@ -119,7 +119,7 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 "fk_vets_clinic", "fk_pet_clinic_access_pet", "fk_clinic_invites_clinic",
                 "fk_vaccine_corrections_vaccine",
                 "fk_pet_tutors_pet", "fk_pet_tutors_owner", "fk_pet_tutor_invites_pet",
-                "fk_consent_records_owner");
+                "fk_consent_records_owner", "fk_sensitive_access_log_pet");
     }
 
     /**
