@@ -13,6 +13,7 @@ import br.com.petfy.healthcare.security.TokenFreshness;
 import br.com.petfy.healthcare.security.UserRole;
 import br.com.petfy.healthcare.service.AuthService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
+import br.com.petfy.healthcare.service.OwnerExportService;
 import br.com.petfy.healthcare.service.OwnerService;
 import br.com.petfy.healthcare.service.PasswordResetService;
 import br.com.petfy.healthcare.service.PetService;
@@ -67,6 +68,9 @@ class SecurityFilterChainTest {
 
     @MockBean
     private OwnerService ownerService;
+
+    @MockBean
+    private OwnerExportService ownerExportService;
 
     @MockBean
     private PetShareService petShareService;
