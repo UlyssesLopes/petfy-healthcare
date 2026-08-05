@@ -8,7 +8,6 @@ import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.security.PetAccessGuard;
@@ -32,8 +31,6 @@ import java.util.stream.Collectors;
 public class HealthRecordServiceImpl implements HealthRecordService {
 
     private final HealthRecordRepository healthRecordRepository;
-
-    private final PetRepository petRepository;
 
     private final ClinicRepository clinicRepository;
 
@@ -62,7 +59,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
     @Override
     public HealthRecordResponseDTO getHealthRecordById(UUID healthRecordId) {
-        return toResponse(buscarDoOwnerAutenticado(healthRecordId));
+        return toResponse(buscarAlcancavel(healthRecordId));
     }
 
     @Override
@@ -72,11 +69,16 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 .map(this::toResponse);
     }
 
+    /**
+     * Ler o historico e leitura: o tutor VIEWER acompanha o que aconteceu com o
+     * pet sem poder lancar atendimento. Exigir EDITOR aqui deixaria de fora
+     * justamente quem so olha.
+     */
     @Override
     public List<HealthRecordResponseDTO> listHealthRecordsByPet(UUID petId) {
         // valida o pet primeiro para diferenciar "pet nao existe" de
         // "pet existe e ainda nao tem historico"
-        findPet(petId);
+        petAccessGuard.requireLeitura(petId);
 
         return healthRecordRepository.findByPetPetIdOrderByEventDateDesc(petId)
                 .stream()
@@ -86,7 +88,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
     @Override
     public HealthRecordResponseDTO updateHealthRecord(UUID healthRecordId, HealthRecordRequestDTO request) {
-        HealthRecord existing = buscarDoOwnerAutenticado(healthRecordId);
+        HealthRecord existing = buscarAlcancavel(healthRecordId);
 
         // o snapshot sai antes dos setters. O tutor nao tem janela - o historico e
         // do pet dele - mas deixa rastro igual, senao a auditoria contaria meia
@@ -114,23 +116,23 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     public List<HealthRecordCorrectionResponseDTO> listCorrections(UUID healthRecordId) {
         // mesma checagem de propriedade da leitura do registro: o rastro e tao do
         // tutor quanto o registro
-        buscarDoOwnerAutenticado(healthRecordId);
+        buscarAlcancavel(healthRecordId);
 
         return healthRecordCorrectionLog.list(healthRecordId);
     }
 
     @Override
     public void deleteHealthRecord(UUID healthRecordId) {
-        healthRecordRepository.delete(buscarDoOwnerAutenticado(healthRecordId));
+        healthRecordRepository.delete(buscarAlcancavel(healthRecordId));
     }
 
     /**
-     * Registro de pet de outro dono responde HEALTH_RECORD_NOT_FOUND, e nao 403:
-     * um 403 confirmaria que aquele id existe.
+     * Registro de pet fora do alcance responde HEALTH_RECORD_NOT_FOUND, e nao
+     * 403: um 403 confirmaria que aquele id existe.
+     *
+     * Basta alcancar o pet em qualquer papel - ler o proprio registro e leitura.
      */
-    private HealthRecord buscarDoOwnerAutenticado(UUID healthRecordId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
+    private HealthRecord buscarAlcancavel(UUID healthRecordId) {
         return healthRecordRepository.findById(healthRecordId)
                 .filter(registro -> petAccessGuard.alcanca(registro.getPet().getPetId()))
                 .orElseThrow(this::notFound);

@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.ClinicAccessRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.Owner;
@@ -8,14 +8,13 @@ import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -41,16 +40,10 @@ class PetClinicAccessServiceImplTest {
     private PetClinicAccessRepository petClinicAccessRepository;
 
     @Mock
-    private PetRepository petRepository;
-
-    @Mock
     private PetAccessGuard petAccessGuard;
 
     @Mock
     private ClinicRepository clinicRepository;
-
-    @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
 
     @InjectMocks
     private PetClinicAccessServiceImpl service;
@@ -58,32 +51,34 @@ class PetClinicAccessServiceImplTest {
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    private static final UUID OUTRO_OWNER_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
 
     private Owner owner(UUID id) {
         return Owner.builder().ownerId(id).name("Ulysses").build();
     }
 
-    private Pet petDe(UUID ownerId) {
-        return Pet.builder().petId(PET_ID).name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner(ownerId))).build();
+    private Pet pet() {
+        return Pet.builder().petId(PET_ID).name("Rex").tutors(PetTutores.titular(owner(OWNER_ID))).build();
     }
 
     private Clinic clinic() {
         return Clinic.builder().clinicId(CLINIC_ID).name("Clinica Bicho Feliz").build();
     }
 
-    private void autenticadoComo(UUID ownerId) {
-        when(currentOwnerProvider.require()).thenReturn(owner(ownerId));
-    }
-
     private PetClinicAccess acesso(LocalDateTime revokedAt) {
         return PetClinicAccess.builder()
                 .petClinicAccessId(UUID.randomUUID())
-                .pet(petDe(OWNER_ID))
+                .pet(pet())
                 .clinic(clinic())
                 .grantedAt(LocalDateTime.now().minusDays(5))
                 .revokedAt(revokedAt)
                 .build();
+    }
+
+    private PetfyHealthcareException petNaoEncontrado() {
+        return new PetfyHealthcareException(
+                ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
+                ErrorMessageEnum.PET_NOT_FOUND.getCode(),
+                HttpStatus.NOT_FOUND);
     }
 
     @Nested
@@ -93,8 +88,7 @@ class PetClinicAccessServiceImplTest {
         @Test
         @DisplayName("deve conceder acesso da clinica ao pet")
         void deveConcederAcesso() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.empty());
@@ -113,8 +107,7 @@ class PetClinicAccessServiceImplTest {
         void reconcederDeveReativar() {
             var revogado = acesso(LocalDateTime.now().minusDays(1));
 
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.of(revogado));
@@ -127,24 +120,23 @@ class PetClinicAccessServiceImplTest {
             assertThat(result.getPetClinicAccessId()).isEqualTo(revogado.getPetClinicAccessId());
         }
 
+        /** A recusa do guard tem de vir antes de qualquer escrita na concessao. */
         @Test
-        @DisplayName("nao deve permitir conceder acesso a pet de outro dono")
-        void naoDevePermitirConcederPetDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
+        @DisplayName("recusa do guard impede a concessao")
+        void recusaDoGuardNaoConcede() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenThrow(petNaoEncontrado());
 
             assertThatThrownBy(() -> service.grant(PET_ID, ClinicAccessRequestDTO.builder().clinicId(CLINIC_ID).build()))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage("Pet not found");
 
-            verifyNoInteractions(petClinicAccessRepository);
+            verifyNoInteractions(petClinicAccessRepository, clinicRepository);
         }
 
         @Test
         @DisplayName("deve lancar CLINIC_NOT_FOUND quando a clinica nao existe")
         void deveLancarQuandoClinicaNaoExiste() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.grant(PET_ID, ClinicAccessRequestDTO.builder().clinicId(CLINIC_ID).build()))
@@ -162,8 +154,7 @@ class PetClinicAccessServiceImplTest {
         @Test
         @DisplayName("deve listar as concessoes do pet, ativas e revogadas")
         void deveListarConcessoes() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petClinicAccessRepository.findByPetPetIdOrderByGrantedAtDesc(PET_ID))
                     .thenReturn(List.of(acesso(null), acesso(LocalDateTime.now())));
 
@@ -174,10 +165,9 @@ class PetClinicAccessServiceImplTest {
         }
 
         @Test
-        @DisplayName("nao deve listar concessoes de pet de outro dono")
-        void naoDeveListarDePetDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
+        @DisplayName("recusa do guard impede a listagem")
+        void recusaDoGuardNaoLista() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenThrow(petNaoEncontrado());
 
             assertThatThrownBy(() -> service.list(PET_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -196,8 +186,7 @@ class PetClinicAccessServiceImplTest {
         void deveMarcarDataDeRevogacao() {
             var ativo = acesso(null);
 
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.of(ativo));
 
@@ -214,8 +203,7 @@ class PetClinicAccessServiceImplTest {
             var original = LocalDateTime.now().minusDays(2);
             var jaRevogado = acesso(original);
 
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.of(jaRevogado));
 
@@ -228,8 +216,7 @@ class PetClinicAccessServiceImplTest {
         @Test
         @DisplayName("deve lancar CLINIC_ACCESS_NOT_FOUND quando nao ha concessao")
         void deveLancarQuandoNaoHaConcessao() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.empty());
 
@@ -240,16 +227,65 @@ class PetClinicAccessServiceImplTest {
         }
 
         @Test
-        @DisplayName("nao deve permitir revogar concessao de pet de outro dono")
-        void naoDevePermitirRevogarDePetDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
+        @DisplayName("recusa do guard impede a revogacao")
+        void recusaDoGuardNaoRevoga() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenThrow(petNaoEncontrado());
 
             assertThatThrownBy(() -> service.revoke(PET_ID, CLINIC_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage("Pet not found");
 
             verifyNoInteractions(petClinicAccessRepository);
+        }
+    }
+
+    /**
+     * Decidir que clinica ve o pet e escrita nos tres casos, inclusive na
+     * listagem: a lista de quem tem acesso e informacao de gestao, e nao parte da
+     * carteira que o tutor VIEWER acompanha.
+     */
+    @Nested
+    @DisplayName("nivel exigido do guard")
+    class NivelExigido {
+
+        @Test
+        @DisplayName("conceder acesso exige escrita")
+        void concederExigeEscrita() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.empty());
+            when(petClinicAccessRepository.save(any(PetClinicAccess.class))).thenAnswer(i -> i.getArgument(0));
+
+            service.grant(PET_ID, ClinicAccessRequestDTO.builder().clinicId(CLINIC_ID).build());
+
+            verify(petAccessGuard).requireEscrita(PET_ID);
+            verify(petAccessGuard, never()).requireLeitura(any());
+        }
+
+        @Test
+        @DisplayName("listar as concessoes exige escrita")
+        void listarExigeEscrita() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(petClinicAccessRepository.findByPetPetIdOrderByGrantedAtDesc(PET_ID)).thenReturn(List.of());
+
+            service.list(PET_ID);
+
+            verify(petAccessGuard).requireEscrita(PET_ID);
+            verify(petAccessGuard, never()).requireLeitura(any());
+        }
+
+        @Test
+        @DisplayName("revogar acesso exige escrita")
+        void revogarExigeEscrita() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(acesso(null)));
+
+            service.revoke(PET_ID, CLINIC_ID);
+
+            verify(petAccessGuard).requireEscrita(PET_ID);
+            verify(petAccessGuard, never()).requireLeitura(any());
         }
     }
 }

@@ -11,7 +11,6 @@ import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
@@ -45,8 +44,6 @@ public class VaccineServiceImpl implements VaccineService {
 
     private final VaccineRepository vaccineRepository;
 
-    private final PetRepository petRepository;
-
     private final ClinicRepository clinicRepository;
 
     private final CurrentOwnerProvider currentOwnerProvider;
@@ -72,7 +69,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public VaccineResponseDTO updateVaccine(UUID id, VaccineRequestDTO request) {
-        Vaccine existing = buscarDoOwnerAutenticado(id);
+        Vaccine existing = buscarAlcancavel(id);
 
         // o snapshot sai antes dos setters. O tutor nao tem janela de correcao -
         // a carteira e dele - mas deixa rastro igual: se so o veterinario
@@ -103,19 +100,19 @@ public class VaccineServiceImpl implements VaccineService {
     public List<VaccineCorrectionResponseDTO> listCorrections(UUID vaccineId) {
         // passa pela mesma checagem de propriedade da leitura da vacina: o rastro
         // e tao do tutor quanto o registro
-        buscarDoOwnerAutenticado(vaccineId);
+        buscarAlcancavel(vaccineId);
 
         return vaccineCorrectionLog.list(vaccineId);
     }
 
     @Override
     public void deleteVaccine(UUID id) {
-        vaccineRepository.delete(buscarDoOwnerAutenticado(id));
+        vaccineRepository.delete(buscarAlcancavel(id));
     }
 
     @Override
     public VaccineResponseDTO getVaccineById(UUID id) {
-        return toResponse(buscarDoOwnerAutenticado(id));
+        return toResponse(buscarAlcancavel(id));
     }
 
     @Override
@@ -172,12 +169,10 @@ public class VaccineServiceImpl implements VaccineService {
     }
 
     /**
-     * Vacina de pet de outro dono responde VACCINE_NOT_FOUND, e nao 403: um 403
+     * Vacina de pet fora do alcance responde VACCINE_NOT_FOUND, e nao 403: um 403
      * confirmaria que aquele id existe.
      */
-    private Vaccine buscarDoOwnerAutenticado(UUID vaccineId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
+    private Vaccine buscarAlcancavel(UUID vaccineId) {
         return vaccineRepository.findById(vaccineId)
                 .filter(vaccine -> petAccessGuard.alcanca(vaccine.getPet().getPetId()))
                 .orElseThrow(() -> new PetfyHealthcareException(
@@ -200,6 +195,5 @@ public class VaccineServiceImpl implements VaccineService {
                 .updateDate(vaccine.getUpdateDate())
                 .build();
     }
-
 
 }

@@ -2,20 +2,26 @@ package br.com.petfy.healthcare;
 
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * O teste que valida as migrations.
  *
- * Subir este contexto ja e a verificacao principal: o Flyway aplica as oito
+ * Subir este contexto ja e a verificacao principal: o Flyway aplica todas as
  * migrations num Postgres limpo e o Hibernate roda ddl-auto=validate contra o
  * resultado. Se algum tipo, nome de coluna ou tabela divergir do mapeamento, o
  * contexto nao sobe - que e exatamente a falha que aconteceria na primeira
@@ -72,7 +78,8 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
         assertThat(tabelas).contains(
                 "owners", "clinics", "pets", "vaccines", "health_records",
                 "vaccine_catalog", "pet_shares", "vets", "pet_clinic_access",
-                "clinic_invites", "vaccine_corrections");
+                "clinic_invites", "vaccine_corrections",
+                "pet_tutors", "pet_tutor_invites");
     }
 
     @Test
@@ -108,8 +115,153 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 String.class);
 
         assertThat(constraints).contains(
-                "fk_pets_owner", "fk_vaccines_pet", "fk_health_records_pet",
+                "fk_vaccines_pet", "fk_health_records_pet",
                 "fk_vets_clinic", "fk_pet_clinic_access_pet", "fk_clinic_invites_clinic",
-                "fk_vaccine_corrections_vaccine");
+                "fk_vaccine_corrections_vaccine",
+                "fk_pet_tutors_pet", "fk_pet_tutors_owner", "fk_pet_tutor_invites_pet");
+    }
+
+    /**
+     * O que a V15 promete, conferido contra o banco e nao contra o mapeamento.
+     *
+     * A parte perigosa dessa migration nao e criar tabela: e trocar a fonte de
+     * verdade sobre quem manda no pet. Se {@code pets.owner_id} sobrevivesse, ou
+     * se o banco aceitasse dois titulares, a regra de acesso passaria a ter duas
+     * respostas possiveis para a mesma pergunta.
+     */
+    @Nested
+    @DisplayName("V15 - multi-tutor")
+    class MultiTutor {
+
+        /**
+         * A coluna antiga tem de ter saido. Mantida ao lado de pet_tutors, "quem e
+         * o dono" teria duas respostas, e o dia em que divergissem seria alguem
+         * enxergando pet que nao e seu.
+         */
+        @Test
+        @DisplayName("pets.owner_id nao pode mais existir")
+        void ownerIdDeveTerSaidoDePets() {
+            List<String> colunas = jdbcTemplate.queryForList(
+                    "select column_name from information_schema.columns "
+                            + "where table_schema = 'public' and table_name = 'pets'",
+                    String.class);
+
+            assertThat(colunas).isNotEmpty().doesNotContain("owner_id");
+        }
+
+        @Test
+        @DisplayName("o vinculo de tutor deve existir com papel obrigatorio")
+        void petTutorsDeveTerPapelObrigatorio() {
+            List<String> obrigatorias = jdbcTemplate.queryForList(
+                    "select column_name from information_schema.columns "
+                            + "where table_schema = 'public' and table_name = 'pet_tutors' "
+                            + "and is_nullable = 'NO'",
+                    String.class);
+
+            assertThat(obrigatorias).contains("pet_tutor_id", "pet_id", "owner_id", "role", "creation_date");
+        }
+
+        /**
+         * O convite nasce com o vinculo do titular ausente, entao invited_by e o
+         * unico campo de relacao que pode ser nulo: os vinculos que a migration
+         * criou no backfill nao tem convite atras deles.
+         */
+        @Test
+        @DisplayName("invited_by_owner_id deve aceitar nulo, para os vinculos do backfill")
+        void invitedByDeveAceitarNulo() {
+            String nullable = jdbcTemplate.queryForObject(
+                    "select is_nullable from information_schema.columns "
+                            + "where table_schema = 'public' and table_name = 'pet_tutors' "
+                            + "and column_name = 'invited_by_owner_id'",
+                    String.class);
+
+            assertThat(nullable).isEqualTo("YES");
+        }
+
+        @Test
+        @DisplayName("o indice parcial de um titular por pet deve existir")
+        void indiceDeUmTitularPorPetDeveExistir() {
+            List<String> indices = jdbcTemplate.queryForList(
+                    "select indexname from pg_indexes "
+                            + "where schemaname = 'public' and tablename = 'pet_tutors'",
+                    String.class);
+
+            assertThat(indices).contains("uk_pet_tutors_um_holder_por_pet",
+                    "idx_pet_tutors_pet", "idx_pet_tutors_owner");
+        }
+
+        /**
+         * O indice parcial em acao. Um pet sem titular ficaria sem ninguem que
+         * pudesse convidar ou apagar; com dois, os dois se removeriam mutuamente.
+         * Por isso a garantia e do banco, e nao so do servico.
+         */
+        @Test
+        @DisplayName("o banco recusa um segundo titular no mesmo pet")
+        void bancoRecusaSegundoTitular() {
+            UUID donoA = inserirOwner("titular-a");
+            UUID donoB = inserirOwner("titular-b");
+            UUID petId = inserirPet();
+
+            inserirTutor(petId, donoA, "HOLDER");
+
+            assertThatThrownBy(() -> inserirTutor(petId, donoB, "HOLDER"))
+                    .isInstanceOf(DuplicateKeyException.class);
+
+            // o mesmo pet aceita quantos co-tutores quiser: a restricao e so sobre
+            // HOLDER, e e por isso que ela e um indice parcial
+            inserirTutor(petId, donoB, "EDITOR");
+
+            assertThat(contarTutores(petId)).isEqualTo(2);
+
+            limpar(petId);
+        }
+
+        @Test
+        @DisplayName("o banco recusa a mesma pessoa duas vezes no mesmo pet")
+        void bancoRecusaTutorDuplicado() {
+            UUID dono = inserirOwner("tutor-repetido");
+            UUID petId = inserirPet();
+
+            inserirTutor(petId, dono, "HOLDER");
+
+            assertThatThrownBy(() -> inserirTutor(petId, dono, "VIEWER"))
+                    .isInstanceOf(DuplicateKeyException.class);
+
+            limpar(petId);
+        }
+
+        private UUID inserirOwner(String prefixo) {
+            UUID id = UUID.randomUUID();
+            jdbcTemplate.update(
+                    "insert into owners (owner_id, name, email, password) values (?, ?, ?, ?)",
+                    id, "Teste", prefixo + "-" + id + "@petfy.com.br", "hash");
+            return id;
+        }
+
+        private UUID inserirPet() {
+            UUID id = UUID.randomUUID();
+            jdbcTemplate.update(
+                    "insert into pets (pet_id, name, species, creation_date) values (?, ?, ?, ?)",
+                    id, "Rex", "CANINA", Timestamp.valueOf(LocalDateTime.now()));
+            return id;
+        }
+
+        private void inserirTutor(UUID petId, UUID ownerId, String role) {
+            jdbcTemplate.update(
+                    "insert into pet_tutors (pet_tutor_id, pet_id, owner_id, role, creation_date) "
+                            + "values (?, ?, ?, ?, ?)",
+                    UUID.randomUUID(), petId, ownerId, role, Timestamp.valueOf(LocalDateTime.now()));
+        }
+
+        private Integer contarTutores(UUID petId) {
+            return jdbcTemplate.queryForObject(
+                    "select count(*) from pet_tutors where pet_id = ?", Integer.class, petId);
+        }
+
+        /** O container e compartilhado entre as classes: o pet e os vinculos saem daqui. */
+        private void limpar(UUID petId) {
+            jdbcTemplate.update("delete from pet_tutors where pet_id = ?", petId);
+            jdbcTemplate.update("delete from pets where pet_id = ?", petId);
+        }
     }
 }

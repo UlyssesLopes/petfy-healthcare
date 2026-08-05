@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
@@ -8,10 +8,11 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
+import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,9 +46,6 @@ class HealthRecordServiceImplTest {
     private HealthRecordRepository healthRecordRepository;
 
     @Mock
-    private PetRepository petRepository;
-
-    @Mock
     private PetAccessGuard petAccessGuard;
 
     @Mock
@@ -66,24 +64,23 @@ class HealthRecordServiceImplTest {
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    private static final UUID OUTRO_OWNER_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
 
     private Owner owner(UUID id) {
         return Owner.builder().ownerId(id).email("ulysses@petfy.com.br").build();
     }
 
-    private Pet petDe(UUID ownerId) {
-        return Pet.builder().petId(PET_ID).name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner(ownerId))).build();
+    private Pet pet() {
+        return Pet.builder().petId(PET_ID).name("Rex").tutors(PetTutores.titular(owner(OWNER_ID))).build();
     }
 
     private Clinic clinic() {
         return Clinic.builder().clinicId(CLINIC_ID).name("Clinica Bicho Feliz").build();
     }
 
-    private HealthRecord registroDe(UUID ownerId) {
+    private HealthRecord registro() {
         return HealthRecord.builder()
                 .healthRecordId(RECORD_ID)
-                .pet(petDe(ownerId))
+                .pet(pet())
                 .clinic(clinic())
                 .eventType("Consulta")
                 .eventDate(LocalDate.of(2025, 6, 1))
@@ -96,6 +93,18 @@ class HealthRecordServiceImplTest {
         when(currentOwnerProvider.require()).thenReturn(owner(ownerId));
     }
 
+    /** Se a pessoa autenticada chega ao pet do registro - decisao do guard. */
+    private void alcancaOPet(boolean alcanca) {
+        when(petAccessGuard.alcanca(PET_ID)).thenReturn(alcanca);
+    }
+
+    private PetfyHealthcareException petNaoEncontrado() {
+        return new PetfyHealthcareException(
+                ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
+                ErrorMessageEnum.PET_NOT_FOUND.getCode(),
+                HttpStatus.NOT_FOUND);
+    }
+
     @Nested
     @DisplayName("createHealthRecord")
     class CreateHealthRecord {
@@ -103,10 +112,9 @@ class HealthRecordServiceImplTest {
         @Test
         @DisplayName("deve vincular o registro ao pet e a clinica informados")
         void deveVincularAoPetEClinica() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
-            when(healthRecordRepository.save(any(HealthRecord.class))).thenReturn(registroDe(OWNER_ID));
+            when(healthRecordRepository.save(any(HealthRecord.class))).thenReturn(registro());
 
             var request = HealthRecordRequestDTO.builder()
                     .petId(PET_ID).clinicId(CLINIC_ID).eventType("Consulta")
@@ -127,10 +135,9 @@ class HealthRecordServiceImplTest {
         @DisplayName("deve criar o registro sem clinica quando clinicId nao e informado")
         void deveCriarSemClinica() {
             var semClinica = HealthRecord.builder()
-                    .healthRecordId(RECORD_ID).pet(petDe(OWNER_ID)).eventType("Consulta").build();
+                    .healthRecordId(RECORD_ID).pet(pet()).eventType("Consulta").build();
 
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(healthRecordRepository.save(any(HealthRecord.class))).thenReturn(semClinica);
 
             var result = healthRecordService.createHealthRecord(
@@ -140,32 +147,20 @@ class HealthRecordServiceImplTest {
             verifyNoInteractions(clinicRepository);
         }
 
+        /**
+         * Pet inalcancavel e pet inexistente sao a mesma resposta - quem decide e
+         * o guard. O que cabe ao servico e nao gravar nada quando ele recusa.
+         */
         @Test
-        @DisplayName("nao deve permitir criar registro em pet de outro dono")
-        void naoDevePermitirRegistroEmPetDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
+        @DisplayName("recusa do guard sobe intacta e nada e salvo")
+        void recusaDoGuardNaoSalva() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenThrow(petNaoEncontrado());
 
             assertThatThrownBy(() -> healthRecordService.createHealthRecord(
                     HealthRecordRequestDTO.builder().petId(PET_ID).eventType("Consulta").build()))
                     .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Pet not found");
-
-            verify(healthRecordRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("deve lancar PET_NOT_FOUND sem salvar quando o pet nao existe")
-        void deveLancarQuandoPetNaoExiste() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> healthRecordService.createHealthRecord(
-                    HealthRecordRequestDTO.builder().petId(PET_ID).eventType("Consulta").build()))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Pet not found")
                     .extracting("code", "httpStatus")
-                    .containsExactly(102, HttpStatus.NOT_FOUND);
+                    .containsExactly(ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
 
             verify(healthRecordRepository, never()).save(any());
         }
@@ -173,8 +168,7 @@ class HealthRecordServiceImplTest {
         @Test
         @DisplayName("deve lancar CLINIC_NOT_FOUND sem salvar quando a clinica informada nao existe")
         void deveLancarQuandoClinicaNaoExiste() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> healthRecordService.createHealthRecord(
@@ -191,10 +185,10 @@ class HealthRecordServiceImplTest {
     class GetHealthRecordById {
 
         @Test
-        @DisplayName("deve retornar o registro quando o pet e do owner autenticado")
-        void deveRetornarQuandoDoProprioOwner() {
-            autenticadoComo(OWNER_ID);
-            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registroDe(OWNER_ID)));
+        @DisplayName("deve retornar o registro quando o pet e alcancavel")
+        void deveRetornarQuandoAlcancavel() {
+            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registro()));
+            alcancaOPet(true);
 
             var result = healthRecordService.getHealthRecordById(RECORD_ID);
 
@@ -202,21 +196,27 @@ class HealthRecordServiceImplTest {
             assertThat(result.getDescription()).isEqualTo("Retorno de rotina");
         }
 
+        /**
+         * O registro existe, mas o pet dele esta fora do alcance: a resposta e a
+         * mesma de registro inexistente, senao o status vira confirmacao de que
+         * aquele id existe.
+         */
         @Test
-        @DisplayName("deve responder HEALTH_RECORD_NOT_FOUND para registro de pet de outro dono")
-        void deveResponderNotFoundParaRegistroDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registroDe(OUTRO_OWNER_ID)));
+        @DisplayName("registro de pet fora do alcance responde HEALTH_RECORD_NOT_FOUND")
+        void registroForaDoAlcanceResponde404() {
+            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registro()));
+            alcancaOPet(false);
 
             assertThatThrownBy(() -> healthRecordService.getHealthRecordById(RECORD_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Health record not found");
+                    .hasMessage("Health record not found")
+                    .extracting("code", "httpStatus")
+                    .containsExactly(105, HttpStatus.NOT_FOUND);
         }
 
         @Test
         @DisplayName("deve lancar HEALTH_RECORD_NOT_FOUND com 404 quando nao existe")
         void deveLancarQuandoNaoExiste() {
-            autenticadoComo(OWNER_ID);
             when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> healthRecordService.getHealthRecordById(RECORD_ID))
@@ -224,6 +224,8 @@ class HealthRecordServiceImplTest {
                     .hasMessage("Health record not found")
                     .extracting("code", "httpStatus")
                     .containsExactly(105, HttpStatus.NOT_FOUND);
+
+            verify(petAccessGuard, never()).alcanca(any());
         }
     }
 
@@ -234,10 +236,9 @@ class HealthRecordServiceImplTest {
         @Test
         @DisplayName("deve retornar o historico do pet")
         void deveRetornarHistoricoDoPet() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet());
             when(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(PET_ID))
-                    .thenReturn(List.of(registroDe(OWNER_ID)));
+                    .thenReturn(List.of(registro()));
 
             var result = healthRecordService.listHealthRecordsByPet(PET_ID);
 
@@ -248,31 +249,21 @@ class HealthRecordServiceImplTest {
         @Test
         @DisplayName("deve retornar lista vazia quando o pet existe e ainda nao tem historico")
         void deveRetornarListaVaziaQuandoPetSemHistorico() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet());
             when(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(PET_ID)).thenReturn(List.of());
 
             assertThat(healthRecordService.listHealthRecordsByPet(PET_ID)).isEmpty();
         }
 
+        /**
+         * A checagem vem antes da consulta: pet fora do alcance nao pode virar
+         * lista vazia, que seria indistinguivel de pet sem historico e ja diria
+         * que o pet existe.
+         */
         @Test
-        @DisplayName("nao deve expor o historico de pet de outro dono")
-        void naoDeveExporHistoricoDePetDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
-
-            assertThatThrownBy(() -> healthRecordService.listHealthRecordsByPet(PET_ID))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Pet not found");
-
-            verifyNoInteractions(healthRecordRepository);
-        }
-
-        @Test
-        @DisplayName("deve lancar PET_NOT_FOUND quando o pet nao existe, em vez de devolver lista vazia")
-        void deveLancarQuandoPetNaoExiste() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.empty());
+        @DisplayName("recusa do guard impede a consulta ao historico")
+        void recusaDoGuardNaoConsulta() {
+            when(petAccessGuard.requireLeitura(PET_ID)).thenThrow(petNaoEncontrado());
 
             assertThatThrownBy(() -> healthRecordService.listHealthRecordsByPet(PET_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -287,12 +278,12 @@ class HealthRecordServiceImplTest {
     class ListAllHealthRecords {
 
         @Test
-        @DisplayName("deve listar apenas os registros dos pets do owner autenticado")
-        void deveListarApenasDoOwnerAutenticado() {
+        @DisplayName("deve listar apenas os registros dos pets em que a pessoa e tutora")
+        void deveListarApenasDosPetsEmQueETutora() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
             when(healthRecordRepository.findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(OWNER_ID, pageable))
-                    .thenReturn(new PageImpl<>(List.of(registroDe(OWNER_ID))));
+                    .thenReturn(new PageImpl<>(List.of(registro())));
 
             assertThat(healthRecordService.listAllHealthRecords(pageable).getContent()).hasSize(1);
             verify(healthRecordRepository, never()).findAll();
@@ -307,7 +298,8 @@ class HealthRecordServiceImplTest {
         @DisplayName("deve preservar os campos nao enviados no request")
         void devePreservarCamposNaoEnviados() {
             autenticadoComo(OWNER_ID);
-            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registroDe(OWNER_ID)));
+            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registro()));
+            alcancaOPet(true);
             when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = healthRecordService.updateHealthRecord(RECORD_ID,
@@ -320,10 +312,10 @@ class HealthRecordServiceImplTest {
         }
 
         @Test
-        @DisplayName("nao deve permitir alterar registro de pet de outro dono")
-        void naoDevePermitirAlterarDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registroDe(OUTRO_OWNER_ID)));
+        @DisplayName("registro de pet fora do alcance nao e alterado")
+        void registroForaDoAlcanceNaoEAlterado() {
+            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registro()));
+            alcancaOPet(false);
 
             assertThatThrownBy(() -> healthRecordService.updateHealthRecord(RECORD_ID,
                     HealthRecordRequestDTO.builder().description("Invadido").build()))
@@ -331,12 +323,12 @@ class HealthRecordServiceImplTest {
                     .hasMessage("Health record not found");
 
             verify(healthRecordRepository, never()).save(any());
+            verifyNoInteractions(healthRecordCorrectionLog);
         }
 
         @Test
         @DisplayName("deve lancar HEALTH_RECORD_NOT_FOUND sem salvar quando nao existe")
         void deveLancarSemSalvarQuandoNaoExiste() {
-            autenticadoComo(OWNER_ID);
             when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> healthRecordService.updateHealthRecord(RECORD_ID,
@@ -353,11 +345,11 @@ class HealthRecordServiceImplTest {
     class DeleteHealthRecord {
 
         @Test
-        @DisplayName("deve remover o registro do proprio owner")
-        void deveRemoverDoProprioOwner() {
-            var registro = registroDe(OWNER_ID);
-            autenticadoComo(OWNER_ID);
+        @DisplayName("deve remover o registro alcancavel")
+        void deveRemoverOAlcancavel() {
+            var registro = registro();
             when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registro));
+            alcancaOPet(true);
 
             healthRecordService.deleteHealthRecord(RECORD_ID);
 
@@ -365,10 +357,10 @@ class HealthRecordServiceImplTest {
         }
 
         @Test
-        @DisplayName("nao deve permitir remover registro de pet de outro dono")
-        void naoDevePermitirRemoverDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registroDe(OUTRO_OWNER_ID)));
+        @DisplayName("registro de pet fora do alcance nao e removido")
+        void registroForaDoAlcanceNaoERemovido() {
+            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registro()));
+            alcancaOPet(false);
 
             assertThatThrownBy(() -> healthRecordService.deleteHealthRecord(RECORD_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -380,7 +372,6 @@ class HealthRecordServiceImplTest {
         @Test
         @DisplayName("deve lancar HEALTH_RECORD_NOT_FOUND sem remover quando nao existe")
         void deveLancarSemRemoverQuandoNaoExiste() {
-            autenticadoComo(OWNER_ID);
             when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> healthRecordService.deleteHealthRecord(RECORD_ID))
@@ -388,6 +379,65 @@ class HealthRecordServiceImplTest {
                     .hasMessage("Health record not found");
 
             verify(healthRecordRepository, never()).delete(any());
+        }
+    }
+
+    /**
+     * O nivel que cada operacao exige do guard. Antes da V15 cada metodo comparava
+     * o dono aqui dentro; o que sobrou ao servico e pedir o nivel certo.
+     */
+    @Nested
+    @DisplayName("nivel exigido do guard")
+    class NivelExigido {
+
+        @Test
+        @DisplayName("registrar atendimento exige escrita")
+        void registrarExigeEscrita() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
+
+            healthRecordService.createHealthRecord(
+                    HealthRecordRequestDTO.builder().petId(PET_ID).eventType("Consulta").build());
+
+            verify(petAccessGuard).requireEscrita(PET_ID);
+            verify(petAccessGuard, never()).requireLeitura(any());
+        }
+
+        /**
+         * Ler o historico e leitura. Exigir escrita aqui esconderia o historico de
+         * quem acompanha o pet sem editar - o VIEWER existe exatamente para isso.
+         */
+        @Test
+        @DisplayName("ler o historico do pet exige so leitura")
+        void lerHistoricoExigeSoLeitura() {
+            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet());
+            when(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(PET_ID)).thenReturn(List.of());
+
+            healthRecordService.listHealthRecordsByPet(PET_ID);
+
+            verify(petAccessGuard).requireLeitura(PET_ID);
+            verify(petAccessGuard, never()).requireEscrita(any());
+        }
+
+        /**
+         * Ler, corrigir e apagar o registro passam por {@code alcanca}: quem chega
+         * ao pet chega ao historico dele. O nivel fino fica nos endpoints de pet.
+         */
+        @Test
+        @DisplayName("mover o registro para outro pet exige escrita no destino")
+        void moverExigeEscritaNoDestino() {
+            var destinoId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+            autenticadoComo(OWNER_ID);
+            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registro()));
+            alcancaOPet(true);
+            when(petAccessGuard.requireEscrita(destinoId)).thenReturn(
+                    Pet.builder().petId(destinoId).name("Bob").tutors(PetTutores.titular(owner(OWNER_ID))).build());
+            when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
+
+            healthRecordService.updateHealthRecord(RECORD_ID,
+                    HealthRecordRequestDTO.builder().petId(destinoId).build());
+
+            verify(petAccessGuard).requireEscrita(destinoId);
         }
     }
 }

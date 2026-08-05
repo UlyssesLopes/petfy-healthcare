@@ -333,17 +333,42 @@ privacidade:
   exatamente um `HOLDER`, e um pet sem titular ficaria sem ninguem que pudesse
   convida-lo ou apaga-lo.
 
-**O que falta, e por que nao foi remendado as pressas:** `mvn test` fecha em
-**392 testes com 78 falhando**. As falhas nao sao regressao — sao testes que
-verificavam o escopo por dono **dentro de cada servico**, e essa regra mudou de
-lugar. Adapta-los mecanicamente para continuarem passando seria mentir sobre o
-que eles cobrem. O certo e:
+**Os testes, fechados depois:** a suite passou de **392 com 78 falhando** para
+**436 verdes**, com os container tests executando. As falhas nao eram regressao —
+eram testes que verificavam o escopo por dono **dentro de cada servico**, e essa
+regra mudou de lugar. Adapta-los mecanicamente para voltarem a passar seria
+mentir sobre o que eles cobrem, entao:
 
-1. Remover dos testes de servico o que virou responsabilidade do guard, deixando
-   neles a verificacao de que delegam com o nivel certo (escrita x leitura).
-2. Escrever o **`PetAccessGuardTest`**, que ainda nao existe e e a peca que
-   decide quem enxerga o pet de quem — a cobertura mais importante do passo.
-3. Ensinar a `V15` ao `SchemaMigrationContainerTest`.
+1. **`PetAccessGuardTest`** (19 casos) — os tres niveis contra os tres papeis, e
+   as duas fronteiras que importam: quem nao e tutor recebe **404**, nunca 403; o
+   403 so aparece para quem ja e tutor e falta nivel. Cobre tambem o pet apagado
+   entre o vinculo e a leitura, que responde igual a quem nunca alcancou.
+2. **Os testes de servico perderam a comparacao de dono** e ganharam um nested
+   `nivel exigido do guard` por servico: e a tabela "operacao → nivel", a unica
+   coisa que sobrou sob responsabilidade do servico. Pedir leitura onde precisa de
+   escrita nao quebra nenhum teste de comportamento, mas deixa um leitor editar o
+   pet — esses casos existem para pegar exatamente isso.
+3. **`SchemaMigrationContainerTest` aprendeu a V15**, incluindo o que ela promete
+   e nao dava para afirmar pelo mapeamento: `pets.owner_id` sumiu, e o **banco**
+   recusa um segundo `HOLDER` e a mesma pessoa duas vezes no mesmo pet.
+4. **`UuidQueriesContainerTest`** passou a gravar o vinculo de verdade. Ele
+   montava `Pet.tutors` so em memoria, e como a relacao e `mappedBy` sem cascade,
+   toda consulta por tutor voltava vazia — o teste acusava o escopo por dono
+   quando o que faltava era a linha no banco. Ganhou tambem o caso que so existe
+   depois da V15: pet com dois tutores aparece para os dois, e para mais ninguem.
+
+**Dois achados fora do combinado, corrigidos no caminho:**
+
+- **Listar o historico de saude exigia EDITOR.** Passava por `findPet`, que pede
+  escrita. O tutor VIEWER — a avo que so acompanha — nao conseguiria *ler* o
+  historico, que e a razao de o papel existir. Virou `requireLeitura`.
+- **Sobrou dependencia morta do refactor.** Cinco servicos ainda resolviam
+  `currentOwnerProvider.require().getOwnerId()` numa variavel que ninguem lia, e
+  carregavam `PetRepository` sem usar. Saiu, junto com o nome `buscarDoOwner-
+  Autenticado`, que mentia depois que o dono unico deixou de existir
+  (`buscarAlcancavel`). Concessao de clinica e link de compartilhamento ficaram
+  como estavam, exigindo escrita: nao sao "a carteira e a agenda" que o VIEWER
+  acompanha, e mexer nisso seria decisao de produto, nao limpeza.
 
 ### 9. Além da vacina: antiparasitário e peso como série — concluído
 

@@ -7,11 +7,9 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.PetShareService;
@@ -34,9 +32,7 @@ import java.util.stream.Collectors;
 public class PetShareServiceImpl implements PetShareService {
 
     private final PetShareRepository petShareRepository;
-    private final PetRepository petRepository;
     private final VaccineRepository vaccineRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
     private final PetAccessGuard petAccessGuard;
     private final VaccineStatusCalculator vaccineStatusCalculator;
     private final OpaqueTokenService opaqueTokenService;
@@ -81,8 +77,8 @@ public class PetShareServiceImpl implements PetShareService {
 
     @Override
     public void revokeShare(UUID petShareId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
+        // basta alcancar o pet: quem cuida do pet pode cortar um link que corre
+        // por fora, sem depender de quem o criou
         PetShare share = petShareRepository.findById(petShareId)
                 .filter(s -> petAccessGuard.alcanca(s.getPet().getPetId()))
                 .orElseThrow(() -> new PetfyHealthcareException(

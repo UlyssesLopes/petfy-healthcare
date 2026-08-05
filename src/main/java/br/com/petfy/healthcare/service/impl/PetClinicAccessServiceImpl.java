@@ -7,9 +7,7 @@ import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.PetClinicAccessService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -27,9 +25,7 @@ import java.util.stream.Collectors;
 public class PetClinicAccessServiceImpl implements PetClinicAccessService {
 
     private final PetClinicAccessRepository petClinicAccessRepository;
-    private final PetRepository petRepository;
     private final ClinicRepository clinicRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
     private final PetAccessGuard petAccessGuard;
 
     @Override
