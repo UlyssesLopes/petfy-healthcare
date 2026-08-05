@@ -30,4 +30,7 @@ public interface PetTutorRepository extends JpaRepository<PetTutor, UUID> {
 
     void deleteByOwnerOwnerId(UUID ownerId);
 
+    /** Usado ao apagar o pet - ver {@code PetPurger}. */
+    void deleteByPetPetIdIn(List<UUID> petIds);
+
 }

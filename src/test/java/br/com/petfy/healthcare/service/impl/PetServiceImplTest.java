@@ -4,7 +4,6 @@ import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.PetRequestDTO;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
-import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.domain.entity.Owner;
@@ -12,6 +11,7 @@ import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.PetPurger;
 import br.com.petfy.healthcare.service.PuppyProtocolService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,6 +31,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,9 +46,6 @@ class PetServiceImplTest {
     private PetTutorRepository petTutorRepository;
 
     @Mock
-    private PetTutorInviteRepository petTutorInviteRepository;
-
-    @Mock
     private CurrentOwnerProvider currentOwnerProvider;
 
     @Mock
@@ -55,6 +53,9 @@ class PetServiceImplTest {
 
     @Mock
     private PuppyProtocolService puppyProtocolService;
+
+    @Mock
+    private PetPurger petPurger;
 
     @InjectMocks
     private PetServiceImpl petService;
@@ -238,35 +239,28 @@ class PetServiceImplTest {
             verify(petRepository).delete(pet);
         }
 
-        @Test
-        @DisplayName("leva os vinculos junto: pet apagado nao pode deixar tutor orfao")
-        void apagaOsVinculosJunto() {
-            var pet = petDe(OWNER_ID);
-            var vinculos = List.of(
-                    PetTutores.vinculo(owner(OWNER_ID), PetTutorRole.HOLDER),
-                    PetTutores.vinculo(owner(OUTRO_OWNER_ID), PetTutorRole.EDITOR));
-            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(pet);
-            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID)).thenReturn(vinculos);
-
-            petService.deletePet(PET_ID);
-
-            verify(petTutorRepository).deleteAll(vinculos);
-        }
-
         /**
-         * Convite pendente aponta para o pet, e o schema nao tem ON DELETE CASCADE
-         * em lugar nenhum: sem esta limpeza a FK segura o delete e apagar o pet
-         * responde 500. Quem recusa e o banco, entao o caso de verdade esta no
-         * PetTutorFlowContainerTest - aqui fica travada apenas a chamada.
+         * Vacina, historico, peso, antiparasitario, share, acesso de clinica,
+         * vinculo e convite apontam para o pet, e o schema nao tem ON DELETE CASCADE
+         * em lugar nenhum: sem a limpeza a FK segura o delete e apagar o pet
+         * responde 500 - o que aconteceu de verdade para qualquer pet com vacina.
+         *
+         * A sequencia mora no PetPurger, compartilhada com a exclusao de conta, e o
+         * que este teste guarda e a <b>ordem</b>: limpar antes de apagar o pet. A
+         * ordem interna esta no PetPurgerTest e a recusa do banco no
+         * PetDeletionContainerTest.
          */
         @Test
-        @DisplayName("leva os convites pendentes junto, senao a FK segura o delete")
-        void apagaOsConvitesPendentesJunto() {
-            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(petDe(OWNER_ID));
+        @DisplayName("limpa o que pende do pet antes de apaga-lo")
+        void limpaAntesDeApagar() {
+            var pet = petDe(OWNER_ID);
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(pet);
 
             petService.deletePet(PET_ID);
 
-            verify(petTutorInviteRepository).deleteByPetPetIdIn(List.of(PET_ID));
+            var ordem = inOrder(petPurger, petRepository);
+            ordem.verify(petPurger).purgeConteudo(List.of(PET_ID));
+            ordem.verify(petRepository).delete(pet);
         }
     }
 

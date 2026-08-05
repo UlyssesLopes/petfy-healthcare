@@ -24,6 +24,7 @@ import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.EmailVerificationService;
+import br.com.petfy.healthcare.service.PetPurger;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -73,31 +74,13 @@ class OwnerServiceImplTest {
     private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
     @Mock
-    private PetRepository petRepository;
-
-    @Mock
     private PetTutorRepository petTutorRepository;
 
     @Mock
+    private PetPurger petPurger;
+
+    @Mock
     private PetTutorInviteRepository petTutorInviteRepository;
-
-    @Mock
-    private VaccineRepository vaccineRepository;
-
-    @Mock
-    private HealthRecordRepository healthRecordRepository;
-
-    @Mock
-    private PetShareRepository petShareRepository;
-
-    @Mock
-    private PetClinicAccessRepository petClinicAccessRepository;
-
-    @Mock
-    private VaccineCorrectionRepository vaccineCorrectionRepository;
-
-    @Mock
-    private HealthRecordCorrectionRepository healthRecordCorrectionRepository;
 
     @InjectMocks
     private OwnerServiceImpl ownerService;
@@ -368,25 +351,17 @@ class OwnerServiceImplTest {
 
             ownerService.deleteCurrentOwner();
 
-            var somenteEstePet = List.of(PET_ID);
-            var ordem = org.mockito.Mockito.inOrder(
-                    petTutorRepository,
-                    vaccineCorrectionRepository, healthRecordCorrectionRepository,
-                    vaccineRepository, healthRecordRepository,
-                    petShareRepository, petClinicAccessRepository,
-                    petRepository,
-                    passwordResetTokenRepository, emailVerificationTokenRepository,
-                    ownerRepository);
+            // A sequencia de deletes do pet saiu daqui para o PetPurger, porque ela
+            // era identica a do DELETE /pets/{id} e as duas divergiram. O que este
+            // teste guarda e a posicao do purge no fluxo da conta; a ordem interna
+            // dele esta no PetPurgerTest, e a recusa do banco no
+            // PetDeletionContainerTest.
+            var ordem = inOrder(petTutorRepository, petPurger,
+                    passwordResetTokenRepository, emailVerificationTokenRepository, ownerRepository);
 
             // os vinculos saem primeiro: seguram pet e owner ao mesmo tempo
             ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
-            ordem.verify(vaccineCorrectionRepository).deleteByVaccinePetPetIdIn(somenteEstePet);
-            ordem.verify(healthRecordCorrectionRepository).deleteByHealthRecordPetPetIdIn(somenteEstePet);
-            ordem.verify(vaccineRepository).deleteByPetPetIdIn(somenteEstePet);
-            ordem.verify(healthRecordRepository).deleteByPetPetIdIn(somenteEstePet);
-            ordem.verify(petShareRepository).deleteByPetPetIdIn(somenteEstePet);
-            ordem.verify(petClinicAccessRepository).deleteByPetPetIdIn(somenteEstePet);
-            ordem.verify(petRepository).deleteByPetIdIn(somenteEstePet);
+            ordem.verify(petPurger).purge(List.of(PET_ID));
             ordem.verify(passwordResetTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(emailVerificationTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(ownerRepository).delete(autenticado);
@@ -412,12 +387,9 @@ class OwnerServiceImplTest {
             ownerService.deleteCurrentOwner();
 
             verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
-            verify(petRepository, never()).deleteByPetIdIn(any());
-            verify(vaccineRepository, never()).deleteByPetPetIdIn(any());
-            verify(healthRecordRepository, never()).deleteByPetPetIdIn(any());
-            // o convite de terceiro para este pet nao e desta conta e nao morre com
-            // ela: o pet continua de pe, e o convite segue valendo para quem ficou
-            verify(petTutorInviteRepository, never()).deleteByPetPetIdIn(any());
+            // o purge roda com lista vazia: nenhum pet morre, e o convite de
+            // terceiro para este pet nao e desta conta - segue valendo para quem ficou
+            verify(petPurger).purge(List.of());
             verify(ownerRepository).delete(autenticado);
         }
 
@@ -443,12 +415,11 @@ class OwnerServiceImplTest {
 
             ownerService.deleteCurrentOwner();
 
-            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, petRepository, ownerRepository);
+            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, petPurger, ownerRepository);
             ordem.verify(petTutorInviteRepository).deleteByCreatedByOwnerId(OWNER_ID);
             ordem.verify(petTutorInviteRepository).deleteByAcceptedByOwnerId(OWNER_ID);
             ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
-            ordem.verify(petTutorInviteRepository).deleteByPetPetIdIn(List.of(PET_ID));
-            ordem.verify(petRepository).deleteByPetIdIn(List.of(PET_ID));
+            ordem.verify(petPurger).purge(List.of(PET_ID));
             ordem.verify(ownerRepository).delete(autenticado);
         }
 
