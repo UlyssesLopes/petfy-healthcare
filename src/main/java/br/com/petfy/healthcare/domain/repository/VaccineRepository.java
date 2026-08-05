@@ -23,4 +23,6 @@ public interface VaccineRepository extends JpaRepository<Vaccine, UUID> {
 
     List<Vaccine> findByPetPetIdOrderByApplicationDateDesc(UUID petId);
 
+    void deleteByPetOwnerOwnerId(UUID ownerId);
+
 }

@@ -12,4 +12,6 @@ public interface PetRepository extends JpaRepository<Pet, UUID> {
 
     List<Pet> findByOwnerOwnerId(UUID ownerId);
 
+    void deleteByOwnerOwnerId(UUID ownerId);
+
 }

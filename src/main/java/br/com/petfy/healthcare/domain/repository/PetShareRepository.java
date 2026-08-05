@@ -17,4 +17,8 @@ public interface PetShareRepository extends JpaRepository<PetShare, UUID> {
 
     List<PetShare> findByPetOrderByCreationDateDesc(Pet pet);
 
+    List<PetShare> findByPetOwnerOwnerId(UUID ownerId);
+
+    void deleteByPetOwnerOwnerId(UUID ownerId);
+
 }
