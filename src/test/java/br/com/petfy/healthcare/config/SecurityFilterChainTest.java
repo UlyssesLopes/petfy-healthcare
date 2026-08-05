@@ -141,7 +141,7 @@ class SecurityFilterChainTest {
     void cadastroDeOwnerDeveSerPublico() throws Exception {
         mockMvc.perform(post("/owners")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Ulysses\",\"email\":\"ulysses@petfy.com.br\",\"password\":\"s3nhaForte\"}"))
+                        .content("{\"name\":\"Ulysses\",\"email\":\"ulysses@petfy.com.br\",\"password\":\"s3nhaForte\",\"acceptedTerms\":true}"))
                 .andExpect(status().isCreated());
 
         verify(ownerService).createOwner(any());

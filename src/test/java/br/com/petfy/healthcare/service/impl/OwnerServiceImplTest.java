@@ -10,6 +10,7 @@ import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
@@ -23,6 +24,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.PetPurger;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -80,6 +82,12 @@ class OwnerServiceImplTest {
     private PetPurger petPurger;
 
     @Mock
+    private ConsentService consentService;
+
+    @Mock
+    private ConsentRecordRepository consentRecordRepository;
+
+    @Mock
     private PetTutorInviteRepository petTutorInviteRepository;
 
     @InjectMocks
@@ -109,7 +117,7 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve persistir o owner com os dados do request e data de criacao")
         void devePersistirOwnerComDadosDoRequest() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", "11999999999", "Rua A, 100");
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", "11999999999", "Rua A, 100", true);
             when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
             when(ownerRepository.save(any(Owner.class))).thenReturn(existingOwner());
 
@@ -127,7 +135,7 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("nao deve persistir a senha em texto puro")
         void naoDevePersistirSenhaEmTextoPuro() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null);
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
             when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
             when(ownerRepository.save(any(Owner.class))).thenReturn(existingOwner());
 
@@ -156,7 +164,7 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve recusar com 409 quando o e-mail ja pertence a outro owner")
         void deveRecusarQuandoEmailJaUsadoPorOwner() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null);
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
             when(ownerRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
 
             assertThatThrownBy(() -> ownerService.createOwner(request))
@@ -171,7 +179,7 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve recusar quando o e-mail ja pertence a um vet")
         void deveRecusarQuandoEmailJaUsadoPorVet() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null);
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
             when(ownerRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(false);
             when(vetRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
 
@@ -209,7 +217,7 @@ class OwnerServiceImplTest {
             when(currentOwnerProvider.require()).thenReturn(existingOwner());
             when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
-            var request = new OwnerRequestDTO(null, null, null, "11888888888", null);
+            var request = new OwnerRequestDTO(null, null, null, "11888888888", null, true);
             var result = ownerService.updateCurrentOwner(request);
 
             assertThat(result.getPhone()).isEqualTo("11888888888");
@@ -225,7 +233,7 @@ class OwnerServiceImplTest {
             when(currentOwnerProvider.require()).thenReturn(existingOwner());
             when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
-            ownerService.updateCurrentOwner(new OwnerRequestDTO(null, null, "nova-senha", null, null));
+            ownerService.updateCurrentOwner(new OwnerRequestDTO(null, null, "nova-senha", null, null, true));
 
             var captor = ArgumentCaptor.forClass(Owner.class);
             verify(ownerRepository).save(captor.capture());
@@ -240,7 +248,7 @@ class OwnerServiceImplTest {
             when(currentOwnerProvider.require()).thenReturn(autenticado);
             when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
-            ownerService.updateCurrentOwner(new OwnerRequestDTO("Outro Nome", null, null, null, null));
+            ownerService.updateCurrentOwner(new OwnerRequestDTO("Outro Nome", null, null, null, null, true));
 
             var captor = ArgumentCaptor.forClass(Owner.class);
             verify(ownerRepository).save(captor.capture());
