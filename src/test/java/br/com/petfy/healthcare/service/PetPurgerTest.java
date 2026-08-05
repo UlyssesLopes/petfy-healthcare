@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
+import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
@@ -12,6 +13,7 @@ import br.com.petfy.healthcare.domain.repository.PetWeightHistoryRepository;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
+import br.com.petfy.healthcare.storage.AttachmentStorage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -43,6 +46,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class PetPurgerTest {
 
     @Mock private PetRepository petRepository;
+    @Mock private AttachmentRepository attachmentRepository;
+    @Mock private AttachmentStorage attachmentStorage;
     @Mock private PetTutorRepository petTutorRepository;
     @Mock private PetTutorInviteRepository petTutorInviteRepository;
     @Mock private VaccineRepository vaccineRepository;
@@ -63,12 +68,12 @@ class PetPurgerTest {
 
     private InOrder ordemDeTudo() {
         return inOrder(
-                vaccineCorrectionRepository, healthRecordCorrectionRepository,
+                attachmentRepository, vaccineCorrectionRepository, healthRecordCorrectionRepository,
                 vaccineRepository, healthRecordRepository,
                 petWeightHistoryRepository, antiparasiticRepository,
                 petShareRepository, petClinicAccessRepository, sensitiveAccessLogRepository,
                 petTutorInviteRepository, petTutorRepository,
-                petRepository);
+                petRepository, attachmentStorage);
     }
 
     @Nested
@@ -86,6 +91,13 @@ class PetPurgerTest {
             petPurger.purge(UM_PET);
 
             InOrder ordem = ordemDeTudo();
+
+            // O anexo sai primeiro: a linha aponta para vacina e para historico, entao e
+            // neta e filha ao mesmo tempo. E as chaves de storage sao lidas ANTES de
+            // qualquer delete, senao se perde a referencia ao que ficou no disco.
+            ordem.verify(attachmentRepository).findStorageKeysByPetIdIn(UM_PET);
+            ordem.verify(attachmentStorage).delete(anyCollection());
+            ordem.verify(attachmentRepository).deleteByPetPetIdIn(UM_PET);
 
             // netas
             ordem.verify(vaccineCorrectionRepository).deleteByVaccinePetPetIdIn(UM_PET);
@@ -147,12 +159,12 @@ class PetPurgerTest {
             petPurger.purge(List.of());
 
             verifyNoInteractions(
-                    vaccineCorrectionRepository, healthRecordCorrectionRepository,
+                    attachmentRepository, vaccineCorrectionRepository, healthRecordCorrectionRepository,
                     vaccineRepository, healthRecordRepository,
                     petWeightHistoryRepository, antiparasiticRepository,
                     petShareRepository, petClinicAccessRepository, sensitiveAccessLogRepository,
                     petTutorInviteRepository, petTutorRepository,
-                    petRepository);
+                    petRepository, attachmentStorage);
         }
     }
 

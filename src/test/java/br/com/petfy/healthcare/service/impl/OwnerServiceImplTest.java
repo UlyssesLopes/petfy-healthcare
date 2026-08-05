@@ -11,6 +11,7 @@ import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
+import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
@@ -86,6 +87,9 @@ class OwnerServiceImplTest {
 
     @Mock
     private ConsentRecordRepository consentRecordRepository;
+
+    @Mock
+    private AttachmentRepository attachmentRepository;
 
     @Mock
     private PetTutorInviteRepository petTutorInviteRepository;

@@ -36,6 +36,12 @@ public enum ErrorMessageEnum {
     // de papel: e a transferencia, que tem endpoint proprio
     TRANSFER_REQUIRED_FOR_HOLDER(123, "Use the ownership transfer endpoint to change the holder"),
     TUTOR_NOT_FOUND(124, "This person is not a tutor of this pet"),
+    ATTACHMENT_NOT_FOUND(125, "Attachment not found"),
+    // 415: o formato foi recusado pelo CONTEUDO, e nao pelo Content-Type declarado
+    ATTACHMENT_TYPE_NOT_ALLOWED(126, "Attachment must be a JPEG, PNG, WEBP or PDF file"),
+    ATTACHMENT_TOO_LARGE(127, "Attachment exceeds the maximum allowed size"),
+    ATTACHMENT_STORAGE_FAILURE(128, "Could not store or read the attachment"),
+    ATTACHMENT_EMPTY(129, "Attachment file is empty"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

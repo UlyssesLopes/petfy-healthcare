@@ -47,6 +47,7 @@ class PetPurgerCoverageContainerTest extends PostgresContainerTest {
      * faz o que o purger faz.
      */
     private static final Set<String> COBERTAS_PELO_PURGER = Set.of(
+            "attachments",
             "vaccines",
             "vaccine_corrections",
             "health_records",

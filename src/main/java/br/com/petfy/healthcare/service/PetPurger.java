@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
+import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
@@ -12,6 +13,7 @@ import br.com.petfy.healthcare.domain.repository.PetWeightHistoryRepository;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
+import br.com.petfy.healthcare.storage.AttachmentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +47,8 @@ import java.util.UUID;
 public class PetPurger {
 
     private final PetRepository petRepository;
+    private final AttachmentRepository attachmentRepository;
+    private final AttachmentStorage attachmentStorage;
     private final PetTutorRepository petTutorRepository;
     private final PetTutorInviteRepository petTutorInviteRepository;
     private final VaccineRepository vaccineRepository;
@@ -86,6 +90,23 @@ public class PetPurger {
         if (petIds.isEmpty()) {
             return;
         }
+
+        // Os anexos saem primeiro, e por dois motivos.
+        //
+        // Ordem no banco: a linha aponta para vacina e para historico, entao seguraria
+        // os deletes seguintes - ela e neta e filha ao mesmo tempo.
+        //
+        // E os BYTES tem de sair junto. O storage nao participa da transacao, entao as
+        // chaves sao lidas antes de qualquer delete: apagar as linhas primeiro perderia
+        // a unica referencia ao que ficou no disco, e arquivo orfao com laudo dentro e
+        // dado pessoal nao apagado - o oposto do que um pedido de exclusao pede.
+        //
+        // Se o storage falhar, a excecao sobe e nada e apagado: estado consistente e
+        // repetivel, em vez de banco limpo com arquivo sobrando. Mesma postura do log de
+        // acesso - falhar fechado onde o dado e sensivel.
+        List<String> chavesDeAnexo = attachmentRepository.findStorageKeysByPetIdIn(petIds);
+        attachmentStorage.delete(chavesDeAnexo);
+        attachmentRepository.deleteByPetPetIdIn(petIds);
 
         // netas: apontam para vacina e para historico
         vaccineCorrectionRepository.deleteByVaccinePetPetIdIn(petIds);
