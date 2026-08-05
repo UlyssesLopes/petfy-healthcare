@@ -8,6 +8,11 @@ Um pet tem **vários tutores** com papéis distintos, e quem alcança o pet de q
 decidido por uma peça única (`PetAccessGuard`). Toda escrita de clínica deixa rastro
 e avisa o tutor; toda **leitura** de terceiro fica registrada.
 
+O histórico de saúde é prontuário e não lista de texto: atendimento com categoria e
+diagnóstico, alergia e condição crônica em destaque, e **anexo** para o papel que o tutor
+tem na mão. O titular pode **exportar tudo** e **apagar tudo**, com o consentimento
+registrado por versão.
+
 ## Stack
 
 - Java 21, Spring Boot 3.3.5
@@ -164,7 +169,10 @@ Todos os domínios seguem o mesmo formato REST: `POST /{recurso}`,
 | Antiparasitários | `/antiparasitics` | `GET /antiparasitics?petId=` (obrigatório), escopado pelo dono do pet |
 | Catálogo de antiparasitários | `/antiparasitics/catalog` | somente leitura; `?petId=` filtra pela espécie do pet |
 | Histórico de peso | `/pets/{petId}/weights` | série de medições; `Pet.weight` é o espelho da mais recente |
-| Histórico de saúde | `/health-records` | `GET /health-records/pet/{petId}` |
+| Histórico de saúde | `/health-records` | `GET /health-records/pet/{petId}`; `category` é **obrigatória** na criação |
+| Alergias e condições | `/pets/{petId}/conditions` | ativas primeiro; encerra-se com `resolvedAt`, não com `DELETE` |
+| Anexos | `/pets/{petId}/attachments` | multipart; `GET /attachments/{id}/content` baixa, `DELETE /attachments/{id}` remove |
+| Exportação LGPD | `/owners/me/export` | tudo que o Petfy guarda sobre o titular, num documento |
 | Importação por OCR | `/pet-id` | `POST /pet-id/import-pet-id-card` (multipart) |
 | Compartilhamento | `/pets/{petId}/shares` | criar e listar links; `DELETE /shares/{id}` revoga |
 | Carteira compartilhada | `/share/{token}` | **público** — não exige autenticação |
@@ -712,6 +720,97 @@ veterinário e o link público param.
 O ator é guardado como tipo + id + **nome no momento do acesso**, e não por chave
 estrangeira para `vets`: o veterinário pode fechar a conta depois, e o registro de que
 ele leu o histórico não pode virar linha sem nome.
+
+## Anexos
+
+O que o tutor de fato possui é papel: carteirinha física, laudo, exame em PDF. Sem upload
+ele digitava o que estava no papel, e o papel seguia sendo a fonte de verdade.
+
+```bash
+# anexar (multipart). vaccineId e healthRecordId sao opcionais e exclusivos entre si:
+# dizem o que o arquivo documenta. Sem nenhum dos dois, o anexo e do pet em si
+curl -X POST "localhost:8080/pets/$PET_ID/attachments" -H "Authorization: Bearer $TOKEN" \
+  -F "file=@laudo.pdf" -F "description=hemograma"
+
+# baixar
+curl -OJ "localhost:8080/attachments/$ATTACHMENT_ID/content" -H "Authorization: Bearer $TOKEN"
+```
+
+**O tipo é reconhecido pelo conteúdo, não pelo `Content-Type`.** O declarado vem do
+cliente, e um executável renomeado para `.pdf` chega anunciado como PDF — a validação lê os
+primeiros bytes, e o que fica **gravado** é o tipo detectado. Aceita JPEG, PNG, WEBP e PDF.
+SVG fica fora apesar de ser imagem: é XML com script dentro.
+
+**Não há URL assinada.** É o padrão para arquivo público, mas para dado de saúde troca
+"checar autorização a cada download" por "quem tiver o link entra até expirar" — e link
+encaminhado por engano é o que o multi-tutor passou o passo 8 inteiro evitando. O download
+passa pela API, pelo `PetAccessGuard`, e sempre como `Content-Disposition: attachment`:
+PDF renderizado no domínio da API vira vetor de XSS com conteúdo que outra pessoa subiu.
+
+A chave de storage é **gerada pelo servidor** — nada do nome enviado pelo cliente entra
+nela. Ao apagar o pet, os **bytes** saem junto: arquivo órfão com laudo dentro é dado
+pessoal não apagado.
+
+**O storage em filesystem serve `local` e `dev`, não produção com mais de uma instância** —
+disco local não é compartilhado. `AttachmentStorage` é interface; S3/R2 é uma classe nova,
+sem tocar em regra de negócio.
+
+| Variável | Default |
+|---|---|
+| `ATTACHMENTS_ROOT` | `./data/attachments` |
+| `ATTACHMENTS_MAX_SIZE_BYTES` | `10485760` (10 MB) |
+
+## Prontuário
+
+O histórico de saúde não é uma lista de texto. Cada atendimento tem **categoria**
+(`CONSULTA`, `RETORNO`, `EXAME`, `CIRURGIA`, `INTERNACAO`, `EMERGENCIA`, `PROCEDIMENTO`,
+`OUTRO`) e **diagnóstico** como campo próprio. A categoria não substitui `eventType`, que
+continua sendo o rótulo livre ao lado dela — trocar String por enum exigiria descartar todo
+valor que não casasse.
+
+**Alergias e condições crônicas são tabela, não campo de texto**, porque precisam aparecer
+em destaque: alergia a anestésico perdida num texto corrido é o tipo de informação que só
+se descobre que faltava depois de um procedimento.
+
+```bash
+# alergia, com gravidade
+curl -X POST "localhost:8080/pets/$PET_ID/conditions" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"kind":"ALERGIA","description":"Anestesico local","severity":"GRAVE"}'
+
+# encerrar uma condicao: preenche resolvedAt, nao apaga
+curl -X PUT "localhost:8080/pets/$PET_ID/conditions/$ID" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"resolvedAt":"2026-08-05"}'
+```
+
+`severity` vale **apenas** para `ALERGIA` — em condição crônica responde 400, e o banco
+recusa por `CHECK`. As duas checagens não são redundantes: o banco impede insert direto, o
+serviço impede que o cliente receba erro de integridade como 500.
+
+**Condição é encerrada, não apagada:** `resolvedAt` tira das ativas sem esconder que
+existiu. O `DELETE` continua existindo, para o registro criado por engano. E o `kind` é
+imutável — trocar o tipo não é corrigir um campo, é dizer que era outra coisa desde o
+começo.
+
+O pet também tem **número de microchip** (o identificador legal do animal, com índice
+parcial para busca de animal perdido) e **castração com data**.
+
+## Exportação
+
+```bash
+curl localhost:8080/owners/me/export -H "Authorization: Bearer $TOKEN"
+```
+
+Portabilidade pela LGPD, irmã da exclusão: sair do sistema sem poder levar o histórico de
+saúde do próprio animal deixa o tutor preso ao produto por refém.
+
+Traz o tutor, os consentimentos e todos os pets em que ele é tutor — com o papel dele
+indicado em `meuPapel`, que pode não ser o de titular. **Dado de terceiro entra reduzido:**
+co-tutor por nome e papel, sem e-mail, porque um arquivo de export circula e fica guardado.
+
+Não entram: a senha nem como hash, o hash do token de compartilhamento, a chave de storage
+do anexo. **O documento declara as próprias limitações** no campo `limitacoes` — quem o
+abre meses depois não tem esta documentação ao lado.
 
 ## Limitações conhecidas
 
