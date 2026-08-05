@@ -36,9 +36,17 @@ esquecimento — ver a seção Frontend.
 a virada em `prd` só faz sentido depois que `prd` existir, o que só acontece
 depois da Fase 5.
 
-**Próximo: passo 4 (contrato da API).** Antes de qualquer cliente fossilizar
-`/include` e `/all` como nome, expor OpenAPI e decidir a semântica do `PUT`
-parcial.
+**Passos 4, 6, 7 e 10-parcial concluídos em 2026-08-04**, e **9 mais as dívidas
+operacionais em 2026-08-05**. As Fases 1, 2 e 3 estão fechadas.
+
+**Próximo: passo 8 (multi-tutor), e o passo 10 logo atrás.** O 8 vem primeiro por
+dependência real, e não por preferência: ele muda quem é titular de um pet, e a
+exportação LGPD do passo 10 precisa exportar os dados do titular. Escrever o
+export antes seria escrevê-lo assumindo dono único, para reescrever depois.
+
+**Depois do 8, o backend cumpre o que esta rodada prometeu** e a Fase 5 abre. O 8
+é o último item que muda a *forma* do dado que a tela mostra — é essa a linha que
+separa "falta backend" de "falta frontend".
 
 O Railway constrói a partir do repositório, não da imagem do ghcr — o registry
 privado não tem onde receber credencial na UI dele. A imagem continua sendo
@@ -122,7 +130,19 @@ Não são passos separados de trabalho: com o `hosted` pronto, subir cada um é
 repetir o provisionamento com outros valores. Ficam registrados aqui só para não
 virarem surpresa.
 
-- [ ] `stg` ao fim da Fase 2, com dado de mentira e caixa de captura de e-mail.
+**Decisão de 2026-08-05: `stg` não sobe agora.** A versão anterior deste
+documento o previa "ao fim da Fase 2", o que já teria vencido. Fica adiado de
+propósito: todo o desenvolvimento continua no `dev` até existir um **MVP maduro,
+já com frontend**, e é esse MVP que estreia o `stg` como ambiente de
+homologação. Homologar antes de haver o que homologar ponta a ponta seria manter
+um ambiente parado — e o `dev` hoje cumpre o papel de validar cada passo por API.
+
+Consequência a não esquecer: enquanto isso, `dev` acumula os dois papéis, então
+**nenhum dado real entra nele** e o envio de e-mail continua limitado ao endereço
+dono da conta Resend.
+
+- [ ] `stg` quando o MVP com frontend estiver pronto para ser homologado, com
+      dado de mentira e caixa de captura de e-mail.
 - [ ] `prd` depois que o fluxo completo passar por `stg`. É aqui que
       `REMINDERS_ENABLED=true` e `NOTIFICATIONS_CHANNEL=email` apontam para envio
       de verdade.
@@ -133,11 +153,9 @@ Hoje quem perde a senha perde o histórico do pet: `PUT /owners/{id}` ignora o
 campo `password` de propósito e não existe recuperação. É o bloqueio mais barato
 de remover e o que impede qualquer usuário que não seja você.
 
-- [ ] Configurar `spring.mail.*` — **não existe em nenhum arquivo hoje**, só é
-      citado num comentário. A dependência `spring-boot-starter-mail` já está no
-      `pom.xml`, mas sem host configurado o canal `email` não funciona.
-- [ ] Escolher provedor de envio e validar entrega real numa caixa de verdade. O
-      `README` registra que o envio nunca foi exercitado contra SMTP real.
+- [x] Configurar o canal de e-mail. Terminou **sem `spring.mail.*`**: o Railway
+      bloqueia saída em porta de SMTP, então o envio é por API HTTP do Resend.
+- [x] Escolher provedor de envio e validar entrega real numa caixa de verdade.
 - [x] Migration da tabela de token de recuperação (`V11`): uso único, expiração
       curta e **token guardado como hash** — mesmo padrão já adotado em
       `PetShare`. Só para tutor: uma tabela com duas chaves estrangeiras
@@ -215,17 +233,21 @@ cooldown impede o reenvio no dia seguinte.
 
 ### 4. Contrato, antes do cliente
 
-- [ ] Expor OpenAPI. Atenção à versão: **springdoc 1.6.x** para Spring Boot 2.7 —
-      a linha 2.x exige Boot 3. Ver a dívida do Boot no fim deste arquivo, porque
-      as duas decisões se cruzam.
-- [ ] Revisar os nomes antes de um cliente fossilizar o contrato:
-      `POST /{recurso}/include` e `GET /{recurso}/all` são difíceis de defender.
-- [ ] Decidir o que fazer com o `PUT` parcial. Hoje campo ausente é preservado e
-      `@Valid` vale só no `POST`, porque os dois compartilham DTO — funciona, mas
-      é surpreendente para quem consome de fora.
+- [x] Expor OpenAPI. Entrou o **springdoc 2.6.0**, e não a linha 1.6.x que este
+      documento previa: a migração para o Boot 3 foi feita antes, no mesmo dia,
+      justamente para não entrar na linha velha e trocar depois.
+- [x] Revisar os nomes antes de um cliente fossilizar o contrato.
+      `POST /{recurso}/include` virou `POST /{recurso}` e `GET /{recurso}/all`
+      virou `GET /{recurso}` — os dois indefensáveis foram embora.
+- [x] Decidir o que fazer com o `PUT` parcial. **Fica parcial**, e passa a ser
+      documentado como tal em vez de ser surpresa: campo ausente preserva o valor,
+      e `@Valid` vale só no `POST` porque os dois compartilham DTO.
 
-**Pronto quando:** o Swagger UI descreve a API inteira e os nomes definitivos
-estão decididos.
+**Passo 4 concluído em 2026-08-04.** Uma consequência que só apareceu depois:
+as listagens deixaram de devolver array e passaram a devolver `Page` no dia
+seguinte, com as dívidas operacionais. O contrato mudou um dia após ser
+publicado — sem custo porque não há cliente, e é exatamente esse o motivo de a
+Fase 5 vir por último.
 
 **O passo 5, o cliente, saiu daqui.** Ele agora abre a Fase 5, depois de o
 backend estar maduro — ver a seção Frontend.
