@@ -8,6 +8,7 @@ import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
+import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -289,7 +290,7 @@ public class VetPetServiceImpl implements VetPetService {
                 .bornDate(pet.getBornDate())
                 .gender(pet.getGender())
                 .weight(pet.getWeight())
-                .ownerName(pet.getOwner().getName())
+                .ownerName(pet.getHolder().map(Owner::getName).orElse(null))
                 .accessGrantedAt(access.getGrantedAt())
                 .build();
     }

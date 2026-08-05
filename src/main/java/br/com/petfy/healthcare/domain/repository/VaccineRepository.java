@@ -14,10 +14,10 @@ import java.util.UUID;
 public interface VaccineRepository extends JpaRepository<Vaccine, UUID> {
 
     /** Usado pela agenda e lembretes, onde paginacao nao se aplica. */
-    List<Vaccine> findByPetOwnerOwnerId(UUID ownerId);
+    List<Vaccine> findByPetTutorsOwnerOwnerId(UUID ownerId);
 
     /** Usado pela listagem paginada do controller. */
-    Page<Vaccine> findByPetOwnerOwnerId(UUID ownerId, Pageable pageable);
+    Page<Vaccine> findByPetTutorsOwnerOwnerId(UUID ownerId, Pageable pageable);
 
     /**
      * Usado pela rotina de lembretes, que varre a base inteira e nao um tutor.
@@ -29,6 +29,6 @@ public interface VaccineRepository extends JpaRepository<Vaccine, UUID> {
 
     List<Vaccine> findByPetPetIdOrderByApplicationDateDesc(UUID petId);
 
-    void deleteByPetOwnerOwnerId(UUID ownerId);
+    void deleteByPetPetIdIn(List<UUID> petIds);
 
 }

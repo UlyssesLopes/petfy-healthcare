@@ -11,11 +11,11 @@ import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VaccineService;
@@ -44,11 +44,10 @@ public class VaccineServiceImpl implements VaccineService {
 
     private final VaccineRepository vaccineRepository;
 
-    private final PetRepository petRepository;
-
     private final ClinicRepository clinicRepository;
 
     private final CurrentOwnerProvider currentOwnerProvider;
+    private final PetAccessGuard petAccessGuard;
 
     private final VaccineStatusCalculator vaccineStatusCalculator;
 
@@ -58,7 +57,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public VaccineResponseDTO createVaccine(VaccineRequestDTO request) {
-        Pet pet = buscarPetDoOwnerAutenticado(request.getPetId());
+        Pet pet = petAccessGuard.requireEscrita(request.getPetId());
 
         Clinic clinic = request.getClinicId() != null
                 ? clinicRepository.findById(request.getClinicId())
@@ -70,7 +69,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public VaccineResponseDTO updateVaccine(UUID id, VaccineRequestDTO request) {
-        Vaccine existing = buscarDoOwnerAutenticado(id);
+        Vaccine existing = buscarAlcancavel(id);
 
         // o snapshot sai antes dos setters. O tutor nao tem janela de correcao -
         // a carteira e dele - mas deixa rastro igual: se so o veterinario
@@ -83,7 +82,7 @@ public class VaccineServiceImpl implements VaccineService {
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
         if (request.getPetId() != null) {
-            existing.setPet(buscarPetDoOwnerAutenticado(request.getPetId()));
+            existing.setPet(petAccessGuard.requireEscrita(request.getPetId()));
         }
 
         if (request.getClinicId() != null) {
@@ -101,24 +100,24 @@ public class VaccineServiceImpl implements VaccineService {
     public List<VaccineCorrectionResponseDTO> listCorrections(UUID vaccineId) {
         // passa pela mesma checagem de propriedade da leitura da vacina: o rastro
         // e tao do tutor quanto o registro
-        buscarDoOwnerAutenticado(vaccineId);
+        buscarAlcancavel(vaccineId);
 
         return vaccineCorrectionLog.list(vaccineId);
     }
 
     @Override
     public void deleteVaccine(UUID id) {
-        vaccineRepository.delete(buscarDoOwnerAutenticado(id));
+        vaccineRepository.delete(buscarAlcancavel(id));
     }
 
     @Override
     public VaccineResponseDTO getVaccineById(UUID id) {
-        return toResponse(buscarDoOwnerAutenticado(id));
+        return toResponse(buscarAlcancavel(id));
     }
 
     @Override
     public Page<VaccineResponseDTO> listAllVaccines(Pageable pageable) {
-        return vaccineRepository.findByPetOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
+        return vaccineRepository.findByPetTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
                 .map(this::toResponse);
     }
 
@@ -128,7 +127,7 @@ public class VaccineServiceImpl implements VaccineService {
 
         // filtra em memoria de proposito: a agenda cobre as vacinas de um tutor,
         // que sao poucas, e assim a classificacao inteira fica testavel sem banco
-        List<Vaccine> doTutor = vaccineRepository.findByPetOwnerOwnerId(currentOwnerProvider.require().getOwnerId());
+        List<Vaccine> doTutor = vaccineRepository.findByPetTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId());
 
         Map<VaccineStatus, List<VaccineAgendaItemDTO>> porStatus = doTutor.stream()
                 .map(vaccine -> toAgendaItem(vaccine, hoje, windowDays))
@@ -170,28 +169,15 @@ public class VaccineServiceImpl implements VaccineService {
     }
 
     /**
-     * Vacina de pet de outro dono responde VACCINE_NOT_FOUND, e nao 403: um 403
+     * Vacina de pet fora do alcance responde VACCINE_NOT_FOUND, e nao 403: um 403
      * confirmaria que aquele id existe.
      */
-    private Vaccine buscarDoOwnerAutenticado(UUID vaccineId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
+    private Vaccine buscarAlcancavel(UUID vaccineId) {
         return vaccineRepository.findById(vaccineId)
-                .filter(vaccine -> vaccine.getPet().getOwner().getOwnerId().equals(ownerId))
+                .filter(vaccine -> petAccessGuard.alcanca(vaccine.getPet().getPetId()))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
-    }
-
-    private Pet buscarPetDoOwnerAutenticado(UUID petId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
-        return petRepository.findById(petId)
-                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
                         HttpStatus.NOT_FOUND));
     }
 
@@ -209,6 +195,5 @@ public class VaccineServiceImpl implements VaccineService {
                 .updateDate(vaccine.getUpdateDate())
                 .build();
     }
-
 
 }

@@ -4,15 +4,17 @@ import br.com.petfy.healthcare.domain.dto.PetRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PetResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.PetTutor;
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
-import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.PetService;
 import br.com.petfy.healthcare.service.PuppyProtocolService;
-import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,10 +27,19 @@ import java.util.UUID;
 public class PetServiceImpl implements PetService {
 
     private final PetRepository petRepository;
+    private final PetTutorRepository petTutorRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
+    private final PetAccessGuard petAccessGuard;
     private final PuppyProtocolService puppyProtocolService;
 
+    /**
+     * Quem cadastra o pet nasce titular dele. O vinculo e criado aqui, e nao por
+     * cascade a partir de Pet: a partir da V15 nao existe mais "o dono" como
+     * campo, e deixar o vinculo implicito esconderia a unica linha que decide
+     * quem manda no pet.
+     */
     @Override
+    @Transactional
     public PetResponseDTO createPet(PetRequestDTO dto) {
         Owner owner = currentOwnerProvider.require();
 
@@ -40,33 +51,44 @@ public class PetServiceImpl implements PetService {
                 .weight(dto.getWeight())
                 .gender(dto.getGender())
                 .species(dto.getSpecies())
-                .owner(owner)
                 .creationDate(LocalDateTime.now())
                 .build();
 
         Pet salvo = petRepository.save(pet);
 
+        petTutorRepository.save(PetTutor.builder()
+                .pet(salvo)
+                .owner(owner)
+                .role(PetTutorRole.HOLDER)
+                .creationDate(LocalDateTime.now())
+                .build());
+
         // Filhote ganha as doses planejadas do protocolo inicial. E silencioso
         // para adulto: continua registrando vacina caso a caso.
         puppyProtocolService.gerarEsquemaInicialSePuppy(salvo);
 
-        return toResponse(salvo);
+        return toResponse(salvo, owner.getOwnerId());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PetResponseDTO getPetById(UUID petId) {
-        return toResponse(buscarDoOwnerAutenticado(petId));
+        return toResponse(petAccessGuard.requireLeitura(petId));
     }
 
+    /** Lista todos os pets em que a pessoa e tutora, em qualquer papel. */
     @Override
+    @Transactional(readOnly = true)
     public Page<PetResponseDTO> listAllPets(Pageable pageable) {
-        return petRepository.findByOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
+        return petRepository.findByTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
                 .map(this::toResponse);
     }
 
+    /** Editar o cadastro do pet exige EDITOR - leitor acompanha, nao altera. */
     @Override
+    @Transactional
     public PetResponseDTO updatePet(UUID petId, PetRequestDTO dto) {
-        Pet pet = buscarDoOwnerAutenticado(petId);
+        Pet pet = petAccessGuard.requireEscrita(petId);
 
         pet.setName(dto.getName() != null ? dto.getName() : pet.getName());
         pet.setType(dto.getType() != null ? dto.getType() : pet.getType());
@@ -83,28 +105,30 @@ public class PetServiceImpl implements PetService {
         return toResponse(petRepository.save(pet));
     }
 
-    @Override
-    public void deletePet(UUID petId) {
-        petRepository.delete(buscarDoOwnerAutenticado(petId));
-    }
-
     /**
-     * Pet de outro dono responde PET_NOT_FOUND, e nao 403: um 403 confirmaria
-     * que aquele id existe, o que permitiria varrer ids para descobrir o que ha
-     * na base.
+     * Apagar o pet e do titular. Um co-tutor que nao quer mais acompanhar sai do
+     * pet - ver o endpoint de tutores -, e isso nao apaga o historico de saude
+     * de um animal que continua tendo dono.
      */
-    private Pet buscarDoOwnerAutenticado(UUID petId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
+    @Override
+    @Transactional
+    public void deletePet(UUID petId) {
+        Pet pet = petAccessGuard.requireTitular(petId);
 
-        return petRepository.findById(petId)
-                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
+        petTutorRepository.deleteAll(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId));
+        petRepository.delete(pet);
     }
 
     private PetResponseDTO toResponse(Pet pet) {
+        return toResponse(pet, pet.getHolder().map(Owner::getOwnerId).orElse(null));
+    }
+
+    /**
+     * {@code ownerId} na resposta passou a significar **o titular**, e nao "o
+     * dono", que deixou de existir como conceito unico. O nome ficou por
+     * compatibilidade do contrato ja publicado.
+     */
+    private PetResponseDTO toResponse(Pet pet, UUID holderId) {
         return PetResponseDTO.builder()
                 .petId(pet.getPetId())
                 .name(pet.getName())
@@ -114,7 +138,7 @@ public class PetServiceImpl implements PetService {
                 .weight(pet.getWeight())
                 .gender(pet.getGender())
                 .species(pet.getSpecies())
-                .ownerId(pet.getOwner().getOwnerId())
+                .ownerId(holderId)
                 .creationDate(pet.getCreationDate())
                 .updateDate(pet.getUpdateDate())
                 .build();

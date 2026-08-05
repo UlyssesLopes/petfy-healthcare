@@ -61,7 +61,7 @@ class VaccineAgendaTest {
 
     private void tutorTem(Vaccine... vacinas) {
         when(currentOwnerProvider.require()).thenReturn(Owner.builder().ownerId(OWNER_ID).build());
-        when(vaccineRepository.findByPetOwnerOwnerId(OWNER_ID)).thenReturn(List.of(vacinas));
+        when(vaccineRepository.findByPetTutorsOwnerOwnerId(OWNER_ID)).thenReturn(List.of(vacinas));
     }
 
     @Nested

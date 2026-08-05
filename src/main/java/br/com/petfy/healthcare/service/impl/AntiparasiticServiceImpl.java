@@ -9,9 +9,8 @@ import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.AntiparasiticService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +29,11 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
 
     private final AntiparasiticRepository antiparasiticRepository;
     private final AntiparasiticCatalogRepository catalogRepository;
-    private final PetRepository petRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final PetAccessGuard petAccessGuard;
 
     @Override
     public AntiparasiticResponseDTO create(AntiparasiticRequestDTO request) {
-        Pet pet = buscarPetDoOwnerAutenticado(request.getPetId());
+        Pet pet = petAccessGuard.requireEscrita(request.getPetId());
 
         AntiparasiticCatalog catalog = request.getAntiparasiticCatalogId() != null
                 ? buscarNoCatalogo(request.getAntiparasiticCatalogId())
@@ -63,7 +61,7 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
 
     @Override
     public AntiparasiticResponseDTO update(UUID id, AntiparasiticRequestDTO request) {
-        Antiparasitic existing = buscarDoOwnerAutenticado(id);
+        Antiparasitic existing = buscarAlcancavel(id);
 
         if (request.getName() != null) existing.setName(request.getName());
         if (request.getKind() != null) existing.setKind(request.getKind());
@@ -72,7 +70,7 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
         if (request.getPetId() != null) {
-            Pet novoPet = buscarPetDoOwnerAutenticado(request.getPetId());
+            Pet novoPet = petAccessGuard.requireEscrita(request.getPetId());
             // mover o registro para um pet de outra especie tornaria o catalogo
             // associado invalido - mesma recusa que na criacao
             recusarEspecieDivergente(existing.getCatalog(), novoPet);
@@ -86,18 +84,18 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
 
     @Override
     public void delete(UUID id) {
-        antiparasiticRepository.delete(buscarDoOwnerAutenticado(id));
+        antiparasiticRepository.delete(buscarAlcancavel(id));
     }
 
     @Override
     public AntiparasiticResponseDTO getById(UUID id) {
-        return toResponse(buscarDoOwnerAutenticado(id));
+        return toResponse(buscarAlcancavel(id));
     }
 
     @Override
     public List<AntiparasiticResponseDTO> listByPet(UUID petId) {
         // verifica ownership do pet antes de listar
-        buscarPetDoOwnerAutenticado(petId);
+        petAccessGuard.requireLeitura(petId);
 
         return antiparasiticRepository.findByPetPetIdOrderByApplicationDateDesc(petId)
                 .stream()
@@ -115,7 +113,7 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
         List<AntiparasiticCatalog> catalogo = petId == null
                 ? catalogRepository.findAllByOrderBySpeciesAscNameAsc()
                 : catalogRepository.findBySpeciesOrderByNameAsc(
-                        buscarPetDoOwnerAutenticado(petId).getSpecies());
+                        petAccessGuard.requireLeitura(petId).getSpecies());
 
         return catalogo.stream()
                 .map(this::toCatalogResponse)
@@ -172,25 +170,12 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
     }
 
     /**
-     * Antiparasitario de pet de outro dono responde NOT_FOUND, nao 403:
+     * Registro de pet que a pessoa nao alcanca responde NOT_FOUND, nao 403:
      * um 403 confirmaria que aquele id existe.
      */
-    private Antiparasitic buscarDoOwnerAutenticado(UUID id) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
+    private Antiparasitic buscarAlcancavel(UUID id) {
         return antiparasiticRepository.findById(id)
-                .filter(a -> a.getPet().getOwner().getOwnerId().equals(ownerId))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
-    }
-
-    private Pet buscarPetDoOwnerAutenticado(UUID petId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
-        return petRepository.findById(petId)
-                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
+                .filter(a -> petAccessGuard.alcanca(a.getPet().getPetId()))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.PET_NOT_FOUND.getCode(),

@@ -78,7 +78,7 @@ class VaccineReminderServiceTest {
                 .vaccineName(vaccineName)
                 .nextDoseDate(proximaDose)
                 .lastReminderSentAt(ultimoEnvio)
-                .pet(Pet.builder().petId(UUID.randomUUID()).name(petName).owner(owner).build())
+                .pet(Pet.builder().petId(UUID.randomUUID()).name(petName).tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).build())
                 .build();
     }
 
@@ -90,7 +90,7 @@ class VaccineReminderServiceTest {
                 .kind(AntiparasiticKind.DEWORMER)
                 .nextDoseDate(proximaDose)
                 .lastReminderSentAt(ultimoEnvio)
-                .pet(Pet.builder().petId(UUID.randomUUID()).name(petName).owner(owner).build())
+                .pet(Pet.builder().petId(UUID.randomUUID()).name(petName).tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).build())
                 .build();
     }
 

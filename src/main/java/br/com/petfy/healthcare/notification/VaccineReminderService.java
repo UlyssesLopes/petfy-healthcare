@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.notification;
 
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
@@ -60,7 +61,7 @@ public class VaccineReminderService {
         List<Vaccine> vacinasPendentes = vaccineRepository.findByNextDoseDateLessThanEqual(limite)
                 .stream()
                 .filter(v -> deveAvisarVacina(v, agora))
-                .filter(v -> v.getPet().getOwner().podeReceberNotificacao())
+                .filter(v -> temTutorNotificavel(v.getPet()))
                 .collect(Collectors.toList());
 
         // --- antiparasitarios ---
@@ -71,7 +72,7 @@ public class VaccineReminderService {
                 // vem antes do agrupamento de proposito: assim a dose tambem nao
                 // e marcada como avisada, e o lembrete sai na primeira varredura
                 // depois que ele confirmar, em vez de se perder
-                .filter(a -> a.getPet().getOwner().podeReceberNotificacao())
+                .filter(a -> temTutorNotificavel(a.getPet()))
                 .collect(Collectors.toList());
 
         if (vacinasPendentes.isEmpty() && antisPendentes.isEmpty()) {
@@ -83,44 +84,61 @@ public class VaccineReminderService {
             return 0;
         }
 
-        // agrupa vacinas e antiparasitarios pelo mesmo tutor para gerar um
-        // unico e-mail por tutor, independente do tipo da dose
-        Map<UUID, List<Vaccine>> vacinasPorTutor = vacinasPendentes.stream()
-                .collect(Collectors.groupingBy(
-                        v -> v.getPet().getOwner().getOwnerId(),
-                        LinkedHashMap::new,
-                        Collectors.toList()));
+        // Agrupa por tutor para gerar um unico e-mail por pessoa, qualquer que
+        // seja o tipo da dose.
+        //
+        // A partir da V15 um pet tem varios tutores, entao a mesma dose entra no
+        // lembrete de cada um deles - quem divide o cuidado do animal precisa
+        // saber da vacina vencendo, e nao so quem cadastrou o pet. Por isso o
+        // agrupamento **explode** cada dose pelos tutores do pet, em vez de
+        // indexar por um dono unico que nao existe mais.
+        Map<Owner, List<Vaccine>> vacinasPorTutor = new LinkedHashMap<>();
+        for (Vaccine v : vacinasPendentes) {
+            for (Owner tutor : v.getPet().getTutorOwners()) {
+                if (tutor.podeReceberNotificacao()) {
+                    vacinasPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(v);
+                }
+            }
+        }
 
-        Map<UUID, List<Antiparasitic>> antisPorTutor = antisPendentes.stream()
-                .collect(Collectors.groupingBy(
-                        a -> a.getPet().getOwner().getOwnerId(),
-                        LinkedHashMap::new,
-                        Collectors.toList()));
+        Map<Owner, List<Antiparasitic>> antisPorTutor = new LinkedHashMap<>();
+        for (Antiparasitic a : antisPendentes) {
+            for (Owner tutor : a.getPet().getTutorOwners()) {
+                if (tutor.podeReceberNotificacao()) {
+                    antisPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(a);
+                }
+            }
+        }
 
         // uniao dos tutores que tem ao menos um item (vacina ou antiparasitario)
-        java.util.Set<UUID> tutores = new java.util.LinkedHashSet<>();
+        java.util.Set<Owner> tutores = new java.util.LinkedHashSet<>();
         tutores.addAll(vacinasPorTutor.keySet());
         tutores.addAll(antisPorTutor.keySet());
 
         int notificados = 0;
 
-        for (UUID ownerId : tutores) {
-            List<Vaccine> vacinas = vacinasPorTutor.getOrDefault(ownerId, List.of());
-            List<Antiparasitic> antis = antisPorTutor.getOrDefault(ownerId, List.of());
-
-            notifier.send(montarLembrete(vacinas, antis, hoje));
-
-            // so marca depois do envio: se o canal falhar, a excecao sobe e o
-            // rollback deixa a dose elegivel na proxima execucao, em vez de
-            // registrar como avisada uma dose que ninguem recebeu
-            vacinas.forEach(v -> v.setLastReminderSentAt(agora));
-            if (!vacinas.isEmpty()) vaccineRepository.saveAll(vacinas);
-
-            antis.forEach(a -> a.setLastReminderSentAt(agora));
-            if (!antis.isEmpty()) antiparasiticRepository.saveAll(antis);
-
+        for (Owner tutor : tutores) {
+            notifier.send(montarLembrete(
+                    tutor,
+                    vacinasPorTutor.getOrDefault(tutor, List.of()),
+                    antisPorTutor.getOrDefault(tutor, List.of()),
+                    hoje));
             notificados++;
         }
+
+        // A marcacao vem depois de TODOS os envios, e nao dentro do laco, porque
+        // uma dose de pet compartilhado aparece no lembrete de mais de um tutor -
+        // marcada por tutor, ela seria escrita duas vezes.
+        //
+        // Continua valendo o que valia antes: marcar so depois de enviar. Se o
+        // canal falhar, a excecao sobe, o rollback desfaz a marcacao e a dose
+        // volta a ser elegivel na proxima varredura, em vez de constar como
+        // avisada sem que ninguem tenha recebido.
+        vacinasPendentes.forEach(v -> v.setLastReminderSentAt(agora));
+        if (!vacinasPendentes.isEmpty()) vaccineRepository.saveAll(vacinasPendentes);
+
+        antisPendentes.forEach(a -> a.setLastReminderSentAt(agora));
+        if (!antisPendentes.isEmpty()) antiparasiticRepository.saveAll(antisPendentes);
 
         log.info("Lembretes enviados para {} tutor(es): {} vacina(s), {} antiparasitario(s)",
                 notificados, vacinasPendentes.size(), antisPendentes.size());
@@ -128,11 +146,17 @@ public class VaccineReminderService {
         return notificados;
     }
 
-    private Notification montarLembrete(List<Vaccine> vacinas, List<Antiparasitic> antis, LocalDate hoje) {
-        Owner owner = vacinas.isEmpty()
-                ? antis.get(0).getPet().getOwner()
-                : vacinas.get(0).getPet().getOwner();
+    /**
+     * Basta um tutor apto para a dose entrar na varredura. O filtro fica antes
+     * do agrupamento de proposito, como antes da V15: um pet cujos tutores nao
+     * confirmaram o e-mail nao tem a dose marcada como avisada, e o lembrete sai
+     * na primeira varredura depois da confirmacao em vez de se perder.
+     */
+    private boolean temTutorNotificavel(Pet pet) {
+        return pet.getTutorOwners().stream().anyMatch(Owner::podeReceberNotificacao);
+    }
 
+    private Notification montarLembrete(Owner owner, List<Vaccine> vacinas, List<Antiparasitic> antis, LocalDate hoje) {
         List<String> linhas = new ArrayList<>();
 
         vacinas.stream()

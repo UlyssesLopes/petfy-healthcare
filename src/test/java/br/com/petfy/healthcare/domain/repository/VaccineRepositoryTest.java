@@ -51,7 +51,7 @@ class VaccineRepositoryTest {
         Owner owner = ownerRepository.save(Owner.builder()
                 .name("Ulysses").email("ulysses@petfy.com.br").password("hash").build());
 
-        rex = petRepository.save(Pet.builder().name("Rex").owner(owner).species(Species.CANINA).build());
+        rex = petRepository.save(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
     }
 
     private void gravarVacina(String nome, LocalDate proximaDose) {
@@ -98,7 +98,7 @@ class VaccineRepositoryTest {
 
         assertThat(result).singleElement().satisfies(vaccine -> {
             assertThat(vaccine.getPet().getName()).isEqualTo("Rex");
-            assertThat(vaccine.getPet().getOwner().getEmail()).isEqualTo("ulysses@petfy.com.br");
+            assertThat(vaccine.getPet().getHolder().orElseThrow().getEmail()).isEqualTo("ulysses@petfy.com.br");
         });
     }
 }

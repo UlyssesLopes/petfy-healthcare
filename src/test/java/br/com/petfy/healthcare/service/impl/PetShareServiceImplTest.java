@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.PetShareRequestDTO;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineStatus;
@@ -8,13 +9,13 @@ import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
+import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,28 +49,24 @@ class PetShareServiceImplTest {
     private PetShareRepository petShareRepository;
 
     @Mock
-    private PetRepository petRepository;
-
-    @Mock
     private VaccineRepository vaccineRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private PetAccessGuard petAccessGuard;
 
     private PetShareServiceImpl service;
 
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID SHARE_ID = UUID.fromString("99999999-9999-9999-9999-999999999999");
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    private static final UUID OUTRO_OWNER_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
     private static final LocalDate HOJE = LocalDate.now();
 
     @BeforeEach
     void setUp() {
         // calculator real: o valor do teste esta em conferir o status que o link
         // mostra, e nao em repetir a regra num mock
-        service = new PetShareServiceImpl(petShareRepository, petRepository, vaccineRepository,
-                currentOwnerProvider, new VaccineStatusCalculator(), new OpaqueTokenService());
+        service = new PetShareServiceImpl(petShareRepository, vaccineRepository,
+                petAccessGuard, new VaccineStatusCalculator(), new OpaqueTokenService());
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 30);
         ReflectionTestUtils.setField(service, "windowDays", 30);
     }
@@ -78,19 +76,22 @@ class PetShareServiceImplTest {
                 .phone("11999999999").address("Rua A, 100").password("hash").build();
     }
 
-    private Pet petDe(UUID ownerId) {
+    private Pet pet() {
         return Pet.builder().petId(PET_ID).name("Rex").type("Cachorro").breed("Vira-lata")
-                .bornDate(LocalDate.of(2021, 3, 15)).gender("Macho").owner(owner(ownerId)).build();
+                .bornDate(LocalDate.of(2021, 3, 15)).gender("Macho").tutors(PetTutores.titular(owner(OWNER_ID))).build();
     }
 
-    private void autenticadoComo(UUID ownerId) {
-        when(currentOwnerProvider.require()).thenReturn(owner(ownerId));
+    private PetfyHealthcareException petNaoEncontrado() {
+        return new PetfyHealthcareException(
+                ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
+                ErrorMessageEnum.PET_NOT_FOUND.getCode(),
+                HttpStatus.NOT_FOUND);
     }
 
     private PetShare shareAtivo() {
         return PetShare.builder()
                 .petShareId(SHARE_ID)
-                .pet(petDe(OWNER_ID))
+                .pet(pet())
                 .tokenHash("hash-qualquer")
                 .expiresAt(LocalDateTime.now().plusDays(10))
                 .creationDate(LocalDateTime.now().minusDays(1))
@@ -104,8 +105,7 @@ class PetShareServiceImplTest {
         @Test
         @DisplayName("deve devolver o token apenas na criacao")
         void deveDevolverTokenApenasNaCriacao() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(PET_ID, null);
@@ -117,8 +117,7 @@ class PetShareServiceImplTest {
         @Test
         @DisplayName("nao deve guardar o token, apenas o hash")
         void naoDeveGuardarOToken() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(PET_ID, null);
@@ -142,8 +141,7 @@ class PetShareServiceImplTest {
         @Test
         @DisplayName("dois links do mesmo pet devem ter tokens diferentes")
         void doisLinksDevemTerTokensDiferentes() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             assertThat(service.createShare(PET_ID, null).getToken())
@@ -153,8 +151,7 @@ class PetShareServiceImplTest {
         @Test
         @DisplayName("deve usar a validade padrao quando o request nao informa")
         void deveUsarValidadePadrao() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(PET_ID, null);
@@ -166,8 +163,7 @@ class PetShareServiceImplTest {
         @Test
         @DisplayName("deve respeitar a validade informada no request")
         void deveRespeitarValidadeInformada() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(PET_ID, PetShareRequestDTO.builder().expiresInDays(3).build());
@@ -176,10 +172,9 @@ class PetShareServiceImplTest {
         }
 
         @Test
-        @DisplayName("nao deve permitir compartilhar pet de outro dono")
-        void naoDevePermitirCompartilharPetDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+        @DisplayName("recusa do guard impede a criacao do link")
+        void recusaDoGuardNaoCriaLink() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenThrow(petNaoEncontrado());
 
             assertThatThrownBy(() -> service.createShare(PET_ID, null))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -196,8 +191,7 @@ class PetShareServiceImplTest {
         @Test
         @DisplayName("nao deve devolver o token nas listagens")
         void naoDeveDevolverTokenNasListagens() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
             when(petShareRepository.findByPetOrderByCreationDateDesc(any())).thenReturn(List.of(shareAtivo()));
 
             assertThat(service.listShares(PET_ID)).singleElement()
@@ -216,8 +210,8 @@ class PetShareServiceImplTest {
         @DisplayName("deve marcar a data de revogacao")
         void deveMarcarDataDeRevogacao() {
             var share = shareAtivo();
-            autenticadoComo(OWNER_ID);
             when(petShareRepository.findById(SHARE_ID)).thenReturn(Optional.of(share));
+            when(petAccessGuard.alcanca(PET_ID)).thenReturn(true);
 
             service.revokeShare(SHARE_ID);
 
@@ -233,8 +227,8 @@ class PetShareServiceImplTest {
             var original = LocalDateTime.now().minusDays(3);
             jaRevogado.setRevokedAt(original);
 
-            autenticadoComo(OWNER_ID);
             when(petShareRepository.findById(SHARE_ID)).thenReturn(Optional.of(jaRevogado));
+            when(petAccessGuard.alcanca(PET_ID)).thenReturn(true);
 
             service.revokeShare(SHARE_ID);
 
@@ -242,14 +236,27 @@ class PetShareServiceImplTest {
             verify(petShareRepository, never()).save(any());
         }
 
+        /**
+         * Qualquer tutor do pet corta o link, inclusive quem nao o criou: o link
+         * expoe a carteira do pet, e nao um recurso de quem o gerou.
+         */
         @Test
-        @DisplayName("nao deve permitir revogar link de pet de outro dono")
-        void naoDevePermitirRevogarDeOutroDono() {
-            var deOutro = shareAtivo();
-            deOutro.setPet(petDe(OUTRO_OWNER_ID));
+        @DisplayName("basta alcancar o pet para revogar, em qualquer papel")
+        void bastaAlcancarOPet() {
+            when(petShareRepository.findById(SHARE_ID)).thenReturn(Optional.of(shareAtivo()));
+            when(petAccessGuard.alcanca(PET_ID)).thenReturn(true);
 
-            autenticadoComo(OWNER_ID);
-            when(petShareRepository.findById(SHARE_ID)).thenReturn(Optional.of(deOutro));
+            service.revokeShare(SHARE_ID);
+
+            verify(petAccessGuard, never()).requireEscrita(any());
+            verify(petAccessGuard, never()).requireTitular(any());
+        }
+
+        @Test
+        @DisplayName("link de pet fora do alcance responde SHARE_NOT_FOUND e nao e revogado")
+        void linkForaDoAlcanceNaoERevogado() {
+            when(petShareRepository.findById(SHARE_ID)).thenReturn(Optional.of(shareAtivo()));
+            when(petAccessGuard.alcanca(PET_ID)).thenReturn(false);
 
             assertThatThrownBy(() -> service.revokeShare(SHARE_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -257,6 +264,19 @@ class PetShareServiceImplTest {
                     .containsExactly(107, HttpStatus.NOT_FOUND);
 
             verify(petShareRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("link inexistente responde SHARE_NOT_FOUND sem perguntar ao guard")
+        void linkInexistenteResponde404() {
+            when(petShareRepository.findById(SHARE_ID)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.revokeShare(SHARE_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(107, HttpStatus.NOT_FOUND);
+
+            verify(petAccessGuard, never()).alcanca(any());
         }
     }
 
@@ -276,7 +296,7 @@ class PetShareServiceImplTest {
                     .applicationDate(HOJE.minusYears(1))
                     .nextDoseDate(proximaDose)
                     .clinic(Clinic.builder().clinicId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
-                    .pet(petDe(OWNER_ID))
+                    .pet(pet())
                     .build();
         }
 
@@ -290,8 +310,9 @@ class PetShareServiceImplTest {
             assertThat(card.getPetName()).isEqualTo("Rex");
             assertThat(card.getOwnerName()).isEqualTo("Ulysses");
             assertThat(card.getVaccines()).hasSize(1);
-            // o link nao passa pelo CurrentOwnerProvider
-            verify(currentOwnerProvider, never()).require();
+            // o link vale por si: nao ha pessoa autenticada sobre quem perguntar,
+            // entao o guard nao pode entrar nesse caminho
+            verifyNoInteractions(petAccessGuard);
         }
 
         @Test
@@ -389,6 +410,40 @@ class PetShareServiceImplTest {
             } catch (PetfyHealthcareException e) {
                 return e.getMessage();
             }
+        }
+    }
+
+    /**
+     * O nivel que cada operacao exige do guard. Criar e listar link e escrita:
+     * expor a carteira do pet para fora e decisao de quem cuida dele, e nao de
+     * quem so acompanha.
+     */
+    @Nested
+    @DisplayName("nivel exigido do guard")
+    class NivelExigido {
+
+        @Test
+        @DisplayName("criar o link exige escrita")
+        void criarExigeEscrita() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
+
+            service.createShare(PET_ID, null);
+
+            verify(petAccessGuard).requireEscrita(PET_ID);
+            verify(petAccessGuard, never()).requireLeitura(any());
+        }
+
+        @Test
+        @DisplayName("listar os links exige escrita")
+        void listarExigeEscrita() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(petShareRepository.findByPetOrderByCreationDateDesc(any())).thenReturn(List.of());
+
+            service.listShares(PET_ID);
+
+            verify(petAccessGuard).requireEscrita(PET_ID);
+            verify(petAccessGuard, never()).requireLeitura(any());
         }
     }
 }

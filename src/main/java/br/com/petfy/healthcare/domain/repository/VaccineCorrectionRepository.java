@@ -12,6 +12,6 @@ public interface VaccineCorrectionRepository extends JpaRepository<VaccineCorrec
 
     List<VaccineCorrection> findByVaccineVaccineIdOrderByCorrectedAtDesc(UUID vaccineId);
 
-    void deleteByVaccinePetOwnerOwnerId(UUID ownerId);
+    void deleteByVaccinePetPetIdIn(List<UUID> petIds);
 
 }

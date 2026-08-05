@@ -51,7 +51,7 @@ class ClinicActivityNotifierTest {
                 .applicationDate(LocalDate.of(2026, 8, 1))
                 .nextDoseDate(LocalDate.of(2027, 8, 1))
                 .clinic(Clinic.builder().name("Clinica Pet Feliz").build())
-                .pet(Pet.builder().name("Rex").owner(dono).build())
+                .pet(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(dono)).build())
                 .build();
     }
 
@@ -61,7 +61,7 @@ class ClinicActivityNotifierTest {
                 .eventDate(LocalDate.of(2026, 8, 1))
                 .description("Checkup anual")
                 .clinic(Clinic.builder().name("Clinica Pet Feliz").build())
-                .pet(Pet.builder().name("Rex").owner(dono).build())
+                .pet(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(dono)).build())
                 .build();
     }
 

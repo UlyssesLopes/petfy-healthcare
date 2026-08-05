@@ -295,6 +295,81 @@ apoiar a mudança.
 **Pronto quando:** dois logins distintos editam o mesmo pet e nenhum dos dois
 alcança pet de terceiro.
 
+#### O passo foi fatiado em 8a e 8b
+
+Ao executar, ficou claro que sao duas mudancas com riscos diferentes dentro de um
+numero so, e junta-las num PR dificultaria revisar justamente a parte que mexe em
+privacidade:
+
+- **8a — estrutural.** O pet passa a ter tutores e a autorizacao vira uma peca
+  unica. O comportamento externo muda pouco: quem cadastra o pet continua sendo o
+  unico tutor dele.
+- **8b — comportamental.** Convite de co-tutor, transferencia de titularidade e
+  os endpoints de gestao. E o que entrega o valor visivel do passo.
+
+#### Estado do 8a em 2026-08-05 (branch `feat/passo-8-multi-tutor`, sem PR)
+
+**Pronto e compilando:**
+
+- `PetTutor` e `PetTutorRole` (HOLDER, EDITOR, VIEWER — hierarquia pela ordem da
+  declaracao). Tres papeis, e nao dois: quem cuida junto precisa registrar
+  vacina, quem so acompanha nao precisa alterar nada.
+- `PetTutorInvite`, no molde do `ClinicInvite`, ja modelado — usado no 8b.
+- `V15`: cria `pet_tutors`, faz o backfill de todo dono atual como `HOLDER`,
+  garante **um titular por pet** com indice unico parcial, e **remove
+  `pets.owner_id`**. A coluna nao foi mantida ao lado da tabela de proposito: com
+  as duas, "quem e o dono" teria duas respostas, e o dia em que divergissem seria
+  um vazamento.
+- `PetAccessGuard`: as seis copias de
+  `pet.getOwner().getOwnerId().equals(...)` viraram uma regra so, com tres
+  niveis. Pet inalcancavel responde 404; falta de nivel responde 403, que so
+  acontece com quem ja e tutor e por isso nao revela nada novo.
+- **Lembrete e aviso de clinica vao para todos os tutores** com e-mail
+  confirmado. A dose e marcada como avisada **uma vez so**, fora do laco: um pet
+  compartilhado aparece no lembrete de mais de uma pessoa.
+- **Exclusao de conta deixou de ser cascata cega.** Pet sem outro tutor morre
+  junto; pet com outro tutor sobrevive e so perde o vinculo. Se quem sai era o
+  titular, a titularidade passa ao vinculo mais antigo — o indice do banco exige
+  exatamente um `HOLDER`, e um pet sem titular ficaria sem ninguem que pudesse
+  convida-lo ou apaga-lo.
+
+**Os testes, fechados depois:** a suite passou de **392 com 78 falhando** para
+**436 verdes**, com os container tests executando. As falhas nao eram regressao —
+eram testes que verificavam o escopo por dono **dentro de cada servico**, e essa
+regra mudou de lugar. Adapta-los mecanicamente para voltarem a passar seria
+mentir sobre o que eles cobrem, entao:
+
+1. **`PetAccessGuardTest`** (19 casos) — os tres niveis contra os tres papeis, e
+   as duas fronteiras que importam: quem nao e tutor recebe **404**, nunca 403; o
+   403 so aparece para quem ja e tutor e falta nivel. Cobre tambem o pet apagado
+   entre o vinculo e a leitura, que responde igual a quem nunca alcancou.
+2. **Os testes de servico perderam a comparacao de dono** e ganharam um nested
+   `nivel exigido do guard` por servico: e a tabela "operacao → nivel", a unica
+   coisa que sobrou sob responsabilidade do servico. Pedir leitura onde precisa de
+   escrita nao quebra nenhum teste de comportamento, mas deixa um leitor editar o
+   pet — esses casos existem para pegar exatamente isso.
+3. **`SchemaMigrationContainerTest` aprendeu a V15**, incluindo o que ela promete
+   e nao dava para afirmar pelo mapeamento: `pets.owner_id` sumiu, e o **banco**
+   recusa um segundo `HOLDER` e a mesma pessoa duas vezes no mesmo pet.
+4. **`UuidQueriesContainerTest`** passou a gravar o vinculo de verdade. Ele
+   montava `Pet.tutors` so em memoria, e como a relacao e `mappedBy` sem cascade,
+   toda consulta por tutor voltava vazia — o teste acusava o escopo por dono
+   quando o que faltava era a linha no banco. Ganhou tambem o caso que so existe
+   depois da V15: pet com dois tutores aparece para os dois, e para mais ninguem.
+
+**Dois achados fora do combinado, corrigidos no caminho:**
+
+- **Listar o historico de saude exigia EDITOR.** Passava por `findPet`, que pede
+  escrita. O tutor VIEWER — a avo que so acompanha — nao conseguiria *ler* o
+  historico, que e a razao de o papel existir. Virou `requireLeitura`.
+- **Sobrou dependencia morta do refactor.** Cinco servicos ainda resolviam
+  `currentOwnerProvider.require().getOwnerId()` numa variavel que ninguem lia, e
+  carregavam `PetRepository` sem usar. Saiu, junto com o nome `buscarDoOwner-
+  Autenticado`, que mentia depois que o dono unico deixou de existir
+  (`buscarAlcancavel`). Concessao de clinica e link de compartilhamento ficaram
+  como estavam, exigindo escrita: nao sao "a carteira e a agenda" que o VIEWER
+  acompanha, e mexer nisso seria decisao de produto, nao limpeza.
+
 ### 9. Além da vacina: antiparasitário e peso como série — concluído
 
 Vermífugo e antipulgas são o recorrente que o tutor de fato esquece, e

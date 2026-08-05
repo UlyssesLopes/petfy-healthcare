@@ -1,11 +1,15 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.PetRequestDTO;
+import br.com.petfy.healthcare.domain.entity.PetTutor;
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
-import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.PuppyProtocolService;
 import org.junit.jupiter.api.DisplayName;
@@ -18,16 +22,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,7 +41,13 @@ class PetServiceImplTest {
     private PetRepository petRepository;
 
     @Mock
+    private PetTutorRepository petTutorRepository;
+
+    @Mock
     private CurrentOwnerProvider currentOwnerProvider;
+
+    @Mock
+    private PetAccessGuard petAccessGuard;
 
     @Mock
     private PuppyProtocolService puppyProtocolService;
@@ -66,7 +73,7 @@ class PetServiceImplTest {
                 .weight(12.5)
                 .gender("Macho")
                 .species(Species.CANINA)
-                .owner(owner(ownerId))
+                .tutors(PetTutores.titular(owner(ownerId)))
                 .creationDate(LocalDateTime.of(2025, 1, 1, 10, 0))
                 .build();
     }
@@ -103,8 +110,14 @@ class PetServiceImplTest {
 
             var captor = ArgumentCaptor.forClass(Pet.class);
             verify(petRepository).save(captor.capture());
-            assertThat(captor.getValue().getOwner().getOwnerId()).isEqualTo(OWNER_ID);
             assertThat(captor.getValue().getCreationDate()).isNotNull();
+
+            // o vinculo e o que diz quem manda no pet, e nasce como HOLDER: a
+            // partir da V15 nao ha campo owner no pet para conferir
+            var vinculo = ArgumentCaptor.forClass(PetTutor.class);
+            verify(petTutorRepository).save(vinculo.capture());
+            assertThat(vinculo.getValue().getOwner().getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(vinculo.getValue().getRole()).isEqualTo(PetTutorRole.HOLDER);
         }
 
         @Test
@@ -121,10 +134,9 @@ class PetServiceImplTest {
     class GetPetById {
 
         @Test
-        @DisplayName("deve retornar o pet quando pertence ao owner autenticado")
-        void deveRetornarPetDoProprioOwner() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+        @DisplayName("devolve o pet que o guard liberou")
+        void devolveOPetQueOGuardLiberou() {
+            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(petDe(OWNER_ID));
 
             var result = petService.getPetById(PET_ID);
 
@@ -133,27 +145,13 @@ class PetServiceImplTest {
         }
 
         @Test
-        @DisplayName("deve responder PET_NOT_FOUND para pet de outro dono, sem revelar que existe")
-        void deveResponderNotFoundParaPetDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+        @DisplayName("ownerId na resposta e o titular, e nao quem esta lendo")
+        void ownerIdNaRespostaEOTitular() {
+            var pet = petDe(OWNER_ID);
+            pet.getTutors().add(PetTutores.vinculo(owner(OUTRO_OWNER_ID), PetTutorRole.EDITOR));
+            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet);
 
-            assertThatThrownBy(() -> petService.getPetById(PET_ID))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Pet not found")
-                    .extracting("code", "httpStatus")
-                    .containsExactly(102, HttpStatus.NOT_FOUND);
-        }
-
-        @Test
-        @DisplayName("deve lancar PET_NOT_FOUND quando o pet nao existe")
-        void deveLancarQuandoNaoExiste() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> petService.getPetById(PET_ID))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Pet not found");
+            assertThat(petService.getPetById(PET_ID).getOwnerId()).isEqualTo(OWNER_ID);
         }
     }
 
@@ -166,7 +164,7 @@ class PetServiceImplTest {
         void deveListarApenasPetsDoOwnerAutenticado() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(petRepository.findByOwnerOwnerId(OWNER_ID, pageable))
+            when(petRepository.findByTutorsOwnerOwnerId(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of(petDe(OWNER_ID))));
 
             var result = petService.listAllPets(pageable);
@@ -181,7 +179,7 @@ class PetServiceImplTest {
         void listagemPaginadaNaoUsaFindAll() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(3, 50);
-            when(petRepository.findByOwnerOwnerId(OWNER_ID, pageable))
+            when(petRepository.findByTutorsOwnerOwnerId(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of()));
 
             petService.listAllPets(pageable);
@@ -197,8 +195,7 @@ class PetServiceImplTest {
         @Test
         @DisplayName("deve preservar os campos nao enviados no request")
         void devePreservarCamposNaoEnviados() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petRepository.save(any(Pet.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = petService.updatePet(PET_ID, PetRequestDTO.builder().weight(14.0).build());
@@ -210,16 +207,15 @@ class PetServiceImplTest {
         }
 
         @Test
-        @DisplayName("nao deve permitir alterar pet de outro dono")
-        void naoDevePermitirAlterarPetDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+        @DisplayName("especie fica de fora do PUT parcial")
+        void especieNaoMudaNoPutParcial() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petRepository.save(any(Pet.class))).thenAnswer(i -> i.getArgument(0));
 
-            assertThatThrownBy(() -> petService.updatePet(PET_ID, PetRequestDTO.builder().name("Invadido").build()))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Pet not found");
+            var result = petService.updatePet(PET_ID,
+                    PetRequestDTO.builder().species(Species.FELINA).build());
 
-            verify(petRepository, never()).save(any());
+            assertThat(result.getSpecies()).isEqualTo(Species.CANINA);
         }
     }
 
@@ -228,11 +224,10 @@ class PetServiceImplTest {
     class DeletePet {
 
         @Test
-        @DisplayName("deve remover o pet do proprio owner")
-        void deveRemoverPetDoProprioOwner() {
+        @DisplayName("apaga o pet que o guard liberou")
+        void apagaOPetQueOGuardLiberou() {
             var pet = petDe(OWNER_ID);
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(pet));
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(pet);
 
             petService.deletePet(PET_ID);
 
@@ -240,16 +235,65 @@ class PetServiceImplTest {
         }
 
         @Test
-        @DisplayName("nao deve permitir remover pet de outro dono")
-        void naoDevePermitirRemoverPetDeOutroDono() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+        @DisplayName("leva os vinculos junto: pet apagado nao pode deixar tutor orfao")
+        void apagaOsVinculosJunto() {
+            var pet = petDe(OWNER_ID);
+            var vinculos = List.of(
+                    PetTutores.vinculo(owner(OWNER_ID), PetTutorRole.HOLDER),
+                    PetTutores.vinculo(owner(OUTRO_OWNER_ID), PetTutorRole.EDITOR));
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(pet);
+            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID)).thenReturn(vinculos);
 
-            assertThatThrownBy(() -> petService.deletePet(PET_ID))
-                    .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Pet not found");
+            petService.deletePet(PET_ID);
 
-            verify(petRepository, never()).delete(any());
+            verify(petTutorRepository).deleteAll(vinculos);
+        }
+    }
+
+    /**
+     * O nivel que cada operacao exige do guard.
+     *
+     * Antes da V15 cada metodo comparava o dono na propria implementacao, e o
+     * teste de servico verificava isso. A comparacao virou {@link PetAccessGuard};
+     * o que sobra aqui - e e o que estes casos protegem - e o servico pedir o
+     * <b>nivel certo</b>. Pedir leitura onde precisa de escrita nao quebra nenhum
+     * teste de comportamento, mas deixa um leitor editar o pet.
+     */
+    @Nested
+    @DisplayName("nivel exigido do guard")
+    class NivelExigido {
+
+        @Test
+        @DisplayName("ler o pet exige leitura")
+        void lerExigeLeitura() {
+            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(petDe(OWNER_ID));
+
+            petService.getPetById(PET_ID);
+
+            verify(petAccessGuard).requireLeitura(PET_ID);
+        }
+
+        @Test
+        @DisplayName("editar o cadastro exige escrita, nao leitura")
+        void editarExigeEscrita() {
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
+            when(petRepository.save(any(Pet.class))).thenAnswer(i -> i.getArgument(0));
+
+            petService.updatePet(PET_ID, PetRequestDTO.builder().name("Rex II").build());
+
+            verify(petAccessGuard).requireEscrita(PET_ID);
+            verify(petAccessGuard, never()).requireLeitura(any());
+        }
+
+        @Test
+        @DisplayName("apagar o pet exige titular: nem editor apaga o pet dos outros")
+        void apagarExigeTitular() {
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(petDe(OWNER_ID));
+
+            petService.deletePet(PET_ID);
+
+            verify(petAccessGuard).requireTitular(PET_ID);
+            verify(petAccessGuard, never()).requireEscrita(any());
         }
     }
 }

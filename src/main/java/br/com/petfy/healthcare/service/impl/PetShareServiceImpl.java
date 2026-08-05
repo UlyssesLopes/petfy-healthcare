@@ -3,14 +3,14 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.PetShareRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PetShareResponseDTO;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
+import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.PetShareService;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
@@ -32,9 +32,8 @@ import java.util.stream.Collectors;
 public class PetShareServiceImpl implements PetShareService {
 
     private final PetShareRepository petShareRepository;
-    private final PetRepository petRepository;
     private final VaccineRepository vaccineRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final PetAccessGuard petAccessGuard;
     private final VaccineStatusCalculator vaccineStatusCalculator;
     private final OpaqueTokenService opaqueTokenService;
 
@@ -47,7 +46,7 @@ public class PetShareServiceImpl implements PetShareService {
 
     @Override
     public PetShareResponseDTO createShare(UUID petId, PetShareRequestDTO request) {
-        Pet pet = buscarPetDoOwnerAutenticado(petId);
+        Pet pet = petAccessGuard.requireEscrita(petId);
 
         int validade = request != null && request.getExpiresInDays() != null
                 ? request.getExpiresInDays()
@@ -68,7 +67,7 @@ public class PetShareServiceImpl implements PetShareService {
 
     @Override
     public List<PetShareResponseDTO> listShares(UUID petId) {
-        Pet pet = buscarPetDoOwnerAutenticado(petId);
+        Pet pet = petAccessGuard.requireEscrita(petId);
 
         return petShareRepository.findByPetOrderByCreationDateDesc(pet)
                 .stream()
@@ -78,10 +77,10 @@ public class PetShareServiceImpl implements PetShareService {
 
     @Override
     public void revokeShare(UUID petShareId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
+        // basta alcancar o pet: quem cuida do pet pode cortar um link que corre
+        // por fora, sem depender de quem o criou
         PetShare share = petShareRepository.findById(petShareId)
-                .filter(s -> s.getPet().getOwner().getOwnerId().equals(ownerId))
+                .filter(s -> petAccessGuard.alcanca(s.getPet().getPetId()))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.SHARE_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.SHARE_NOT_FOUND.getCode(),
@@ -122,7 +121,7 @@ public class PetShareServiceImpl implements PetShareService {
                 .petBreed(pet.getBreed())
                 .petBornDate(pet.getBornDate())
                 .petGender(pet.getGender())
-                .ownerName(pet.getOwner().getName())
+                .ownerName(pet.getHolder().map(Owner::getName).orElse(null))
                 .referenceDate(hoje)
                 .expiresAt(share.getExpiresAt())
                 .vaccines(vacinas)
@@ -137,17 +136,6 @@ public class PetShareServiceImpl implements PetShareService {
                 .status(vaccineStatusCalculator.classify(vaccine.getNextDoseDate(), hoje, windowDays))
                 .clinicName(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null)
                 .build();
-    }
-
-    private Pet buscarPetDoOwnerAutenticado(UUID petId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
-        return petRepository.findById(petId)
-                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
     }
 
     private PetShareResponseDTO toResponse(PetShare share, String token) {

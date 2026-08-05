@@ -13,11 +13,11 @@ import java.util.UUID;
 public interface PetRepository extends JpaRepository<Pet, UUID> {
 
     /** Usado internamente (agenda, lembretes) onde paginacao nao se aplica. */
-    List<Pet> findByOwnerOwnerId(UUID ownerId);
+    List<Pet> findByTutorsOwnerOwnerId(UUID ownerId);
 
     /** Usado pela listagem paginada do controller. */
-    Page<Pet> findByOwnerOwnerId(UUID ownerId, Pageable pageable);
+    Page<Pet> findByTutorsOwnerOwnerId(UUID ownerId, Pageable pageable);
 
-    void deleteByOwnerOwnerId(UUID ownerId);
+    void deleteByPetIdIn(List<UUID> petIds);
 
 }

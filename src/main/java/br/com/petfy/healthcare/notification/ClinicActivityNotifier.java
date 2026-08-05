@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.notification;
 
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,7 @@ public class ClinicActivityNotifier {
     private final AsyncNotificationDispatcher dispatcher;
 
     public void vaccineRecorded(Vaccine vaccine) {
-        enviar(vaccine.getPet().getOwner(), () -> {
+        enviar(vaccine.getPet(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s registrou uma vacina no %s:",
                     clinica(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null),
@@ -42,13 +43,13 @@ public class ClinicActivityNotifier {
                 linhas.add(String.format("- proxima dose prevista para %s", vaccine.getNextDoseDate()));
             }
 
-            return montar(vaccine.getPet().getOwner(),
+            return montar(destinatario,
                     "Nova vacina registrada em " + vaccine.getPet().getName(), linhas);
         }, "vacina registrada");
     }
 
     public void vaccineCorrected(Vaccine vaccine) {
-        enviar(vaccine.getPet().getOwner(), () -> {
+        enviar(vaccine.getPet(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s corrigiu um registro de vacina do %s.",
                     clinica(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null),
@@ -60,13 +61,13 @@ public class ClinicActivityNotifier {
                 linhas.add(String.format("- proxima dose prevista para %s", vaccine.getNextDoseDate()));
             }
 
-            return montar(vaccine.getPet().getOwner(),
+            return montar(destinatario,
                     "Registro de vacina corrigido em " + vaccine.getPet().getName(), linhas);
         }, "vacina corrigida");
     }
 
     public void healthRecordRecorded(HealthRecord record) {
-        enviar(record.getPet().getOwner(), () -> {
+        enviar(record.getPet(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s registrou um atendimento do %s:",
                     clinica(record.getClinic() != null ? record.getClinic().getName() : null),
@@ -77,13 +78,13 @@ public class ClinicActivityNotifier {
                 linhas.add("- " + record.getDescription());
             }
 
-            return montar(record.getPet().getOwner(),
+            return montar(destinatario,
                     "Novo atendimento registrado em " + record.getPet().getName(), linhas);
         }, "atendimento registrado");
     }
 
     public void healthRecordCorrected(HealthRecord record) {
-        enviar(record.getPet().getOwner(), () -> {
+        enviar(record.getPet(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s corrigiu um atendimento do %s.",
                     clinica(record.getClinic() != null ? record.getClinic().getName() : null),
@@ -91,7 +92,7 @@ public class ClinicActivityNotifier {
             linhas.add(String.format("Como esta agora: %s em %s",
                     record.getEventType(), record.getEventDate()));
 
-            return montar(record.getPet().getOwner(),
+            return montar(destinatario,
                     "Atendimento corrigido em " + record.getPet().getName(), linhas);
         }, "atendimento corrigido");
     }
@@ -118,21 +119,30 @@ public class ClinicActivityNotifier {
      * passa por associacoes lazy. So o envio sai para outra thread: e ele que
      * depende de SMTP e que somava latencia a requisicao do veterinario.
      */
-    private void enviar(Owner owner, java.util.function.Supplier<Notification> mensagem, String evento) {
-        if (!owner.podeReceberNotificacao()) {
-            log.info("Tutor {} ainda nao confirmou o e-mail; aviso de {} suprimido",
-                    owner.getOwnerId(), evento);
-            return;
-        }
+    private void enviar(Pet pet, java.util.function.Function<Owner, Notification> mensagem, String evento) {
+        // A partir da V15 um pet tem varios tutores, e o aviso vai para todos:
+        // quem divide o cuidado do animal precisa saber que a clinica registrou
+        // algo nele. O papel nao filtra - quem so le tambem quer saber que
+        // apareceu vacina que ninguem da casa reconhece, que e justamente o caso
+        // que a orientacao no rodape trata.
+        for (Owner destinatario : pet.getTutorOwners()) {
+            if (!destinatario.podeReceberNotificacao()) {
+                log.info("Tutor {} ainda nao confirmou o e-mail; aviso de {} suprimido",
+                        destinatario.getOwnerId(), evento);
+                continue;
+            }
 
-        // o dispatch entra no try junto com a montagem: ele so enfileira, mas
-        // enfileirar falha se o pool estiver em shutdown, e uma
-        // RejectedExecutionException subindo daqui desfaria o registro que acabou
-        // de ser gravado - o problema que esta classe existe para evitar
-        try {
-            dispatcher.dispatch(mensagem.get(), evento);
-        } catch (Exception e) {
-            log.error("Falha ao preparar o aviso de {}", evento, e);
+            // o dispatch entra no try junto com a montagem: ele so enfileira, mas
+            // enfileirar falha se o pool estiver em shutdown, e uma
+            // RejectedExecutionException subindo daqui desfaria o registro que acabou
+            // de ser gravado - o problema que esta classe existe para evitar.
+            // O try e por destinatario: falhar para um tutor nao pode calar os outros
+            try {
+                dispatcher.dispatch(mensagem.apply(destinatario), evento);
+            } catch (Exception e) {
+                log.error("Falha ao preparar o aviso de {} para o tutor {}",
+                        evento, destinatario.getOwnerId(), e);
+            }
         }
     }
 

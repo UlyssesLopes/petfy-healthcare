@@ -14,11 +14,11 @@ public interface HealthRecordRepository extends JpaRepository<HealthRecord, UUID
 
     List<HealthRecord> findByPetPetIdOrderByEventDateDesc(UUID petId);
 
-    List<HealthRecord> findByPetOwnerOwnerIdOrderByEventDateDesc(UUID ownerId);
+    List<HealthRecord> findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(UUID ownerId);
 
     /** Listagem paginada de todos os registros do tutor autenticado. */
-    Page<HealthRecord> findByPetOwnerOwnerIdOrderByEventDateDesc(UUID ownerId, Pageable pageable);
+    Page<HealthRecord> findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(UUID ownerId, Pageable pageable);
 
-    void deleteByPetOwnerOwnerId(UUID ownerId);
+    void deleteByPetPetIdIn(List<UUID> petIds);
 
 }

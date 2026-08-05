@@ -2,9 +2,12 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.PetResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.PetTutor;
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.PetIdService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -33,6 +36,7 @@ public class PetIdServiceImpl implements PetIdService {
     private final TesseractOcrServiceImpl tesseractOcrService;
     private final ImageProcessorService imageProcessorService;
     private final PetRepository petRepository;
+    private final PetTutorRepository petTutorRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -59,7 +63,6 @@ public class PetIdServiceImpl implements PetIdService {
 
         Pet pet = Pet.builder()
                 .name(petResponseDTO.getName())
-                .owner(ownerById)
                 .type(petResponseDTO.getType())
                 .breed(petResponseDTO.getBreed())
                 .bornDate(petResponseDTO.getBornDate())
@@ -72,6 +75,16 @@ public class PetIdServiceImpl implements PetIdService {
                 .build();
 
         Pet saved = petRepository.save(pet);
+
+        // quem importou a carteirinha nasce titular do pet, igual a quem cadastra
+        // pela API - a partir da V15 o vinculo e explicito, nao um campo no pet
+        petTutorRepository.save(PetTutor.builder()
+                .pet(saved)
+                .owner(ownerById)
+                .role(PetTutorRole.HOLDER)
+                .creationDate(LocalDateTime.now())
+                .build());
+
         return toResponse(saved);
     }
 
@@ -195,7 +208,7 @@ public class PetIdServiceImpl implements PetIdService {
                 .bornDate(pet.getBornDate())
                 .weight(pet.getWeight())
                 .gender(pet.getGender())
-                .ownerId(pet.getOwner().getOwnerId())
+                .ownerId(pet.getHolder().map(Owner::getOwnerId).orElse(null))
                 .creationDate(pet.getCreationDate())
                 .updateDate(pet.getUpdateDate())
                 .build();
