@@ -13,6 +13,7 @@ import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
@@ -43,6 +44,7 @@ public class OwnerServiceImpl implements OwnerService {
     private final VetRepository vetRepository;
     private final PetRepository petRepository;
     private final PetTutorRepository petTutorRepository;
+    private final PetTutorInviteRepository petTutorInviteRepository;
     private final VaccineRepository vaccineRepository;
     private final HealthRecordRepository healthRecordRepository;
     private final PetShareRepository petShareRepository;
@@ -198,6 +200,14 @@ public class OwnerServiceImpl implements OwnerService {
             }
         }
 
+        // Os convites saem antes dos vinculos e dos pets: cada linha aponta para o
+        // pet, para quem convidou e para quem aceitou, entao seguraria os tres
+        // deletes seguintes. Convite e credencial de uso unico com validade curta,
+        // nao historico de saude - apagar segue a mesma politica que o passo 10
+        // escolheu para o resto da conta.
+        petTutorInviteRepository.deleteByCreatedByOwnerId(ownerId);
+        petTutorInviteRepository.deleteByAcceptedByOwnerId(ownerId);
+
         // Os vinculos saem primeiro: sao filhos de pet e de owner ao mesmo tempo,
         // entao segurariam os dois deletes seguintes
         petTutorRepository.deleteByOwnerOwnerId(ownerId);
@@ -211,6 +221,10 @@ public class OwnerServiceImpl implements OwnerService {
         petsQuePrecisamDeSucessor.forEach(this::promoverSucessor);
 
         if (!petsQueMorrem.isEmpty()) {
+            // Convite de terceiro para um pet que morre: nao pertence a esta conta,
+            // mas aponta para o pet, entao sai junto com ele
+            petTutorInviteRepository.deleteByPetPetIdIn(petsQueMorrem);
+
             // Ordem obrigatoria, netas antes das filhas, filhas antes dos pais
             vaccineCorrectionRepository.deleteByVaccinePetPetIdIn(petsQueMorrem);
             healthRecordCorrectionRepository.deleteByHealthRecordPetPetIdIn(petsQueMorrem);

@@ -39,14 +39,20 @@ depois da Fase 5.
 **Passos 4, 6, 7 e 10-parcial concluídos em 2026-08-04**, e **9 mais as dívidas
 operacionais em 2026-08-05**. As Fases 1, 2 e 3 estão fechadas.
 
-**Próximo: passo 8 (multi-tutor), e o passo 10 logo atrás.** O 8 vem primeiro por
-dependência real, e não por preferência: ele muda quem é titular de um pet, e a
-exportação LGPD do passo 10 precisa exportar os dados do titular. Escrever o
-export antes seria escrevê-lo assumindo dono único, para reescrever depois.
+**Passo 8 concluído em 2026-08-05**, fatiado em 8a (estrutural, PRs #23 e #24) e
+8b (comportamental). Ele vinha primeiro por dependência real, e não por
+preferência: mudou quem é titular de um pet, e a exportação LGPD do passo 10
+precisa exportar os dados do titular — escrever o export antes seria escrevê-lo
+assumindo dono único, para reescrever depois.
 
-**Depois do 8, o backend cumpre o que esta rodada prometeu** e a Fase 5 abre. O 8
-é o último item que muda a *forma* do dado que a tela mostra — é essa a linha que
-separa "falta backend" de "falta frontend".
+**Com o 8 fechado, o backend cumpre o que esta rodada prometeu** e a Fase 5 abre.
+O 8 era o último item que muda a *forma* do dado que a tela mostra — é essa a
+linha que separa "falta backend" de "falta frontend".
+
+**Próximo: o que resta do passo 10** — exportação a pedido do titular (agora com
+o modelo de tutores estável, que era a razão de esperar) e rastro nos links
+públicos de carteira. Nenhum dos dois muda a forma do dado, então não bloqueiam a
+Fase 5.
 
 O Railway constrói a partir do repositório, não da imagem do ghcr — o registry
 privado não tem onde receber credencial na UI dele. A imagem continua sendo
@@ -284,10 +290,10 @@ agenda e não ajuda o tutor. Mais útil assumir que a próxima dose começa agor
 
 ## Fase 4 — quando o usuário não é você
 
-### 8. Multi-tutor e transferência de titularidade
+### 8. Multi-tutor e transferência de titularidade — concluído
 
-`Pet` tem um `owner` só (`@ManyToOne`). Casal e família dividem o mesmo pet, e
-hoje o segundo tutor só consegue um link de leitura; adoção e venda não têm
+`Pet` tinha um `owner` só (`@ManyToOne`). Casal e família dividem o mesmo pet, e
+o segundo tutor só conseguia um link de leitura; adoção e venda não tinham
 caminho. Mexe no escopo por dono, a parte mais sensível do sistema — as consultas
 por UUID já têm cobertura contra Postgres real (`UuidQueriesContainerTest`) para
 apoiar a mudança.
@@ -307,7 +313,7 @@ privacidade:
 - **8b — comportamental.** Convite de co-tutor, transferencia de titularidade e
   os endpoints de gestao. E o que entrega o valor visivel do passo.
 
-#### Estado do 8a em 2026-08-05 (branch `feat/passo-8-multi-tutor`, sem PR)
+#### 8a — concluido em 2026-08-05 (PR #23 e #24)
 
 **Pronto e compilando:**
 
@@ -369,6 +375,62 @@ mentir sobre o que eles cobrem, entao:
   (`buscarAlcancavel`). Concessao de clinica e link de compartilhamento ficaram
   como estavam, exigindo escrita: nao sao "a carteira e a agenda" que o VIEWER
   acompanha, e mexer nisso seria decisao de produto, nao limpeza.
+
+#### 8b — concluído em 2026-08-05
+
+A tabela de tutores que o 8a criou finalmente ganha um segundo tutor. **O passo 8
+fecha aqui:** dois logins distintos editam o mesmo pet, e nenhum dos dois alcança
+pet de terceiro — verificado contra Postgres real, não contra mock.
+
+**Convite, e não vínculo direto.** O caso comum é o cônjuge que **ainda não tem
+conta**: exigir cadastro prévio mataria o fluxo onde ele começa. E vincular
+alguém sem que aceite faria a pessoa passar a receber lembrete que não pediu.
+
+- `POST /pets/{petId}/tutors/invites` — só o titular. Um EDITOR que pudesse
+  convidar contornaria a regra: bastaria convidar um comparsa como HOLDER para
+  tomar o pet de quem o cadastrou.
+- `POST /pet-tutor-invites/{token}/accept` — fora de `/pets/{petId}` de propósito:
+  quem aceita ainda não alcança o pet, e pedir o petId na URL daria de graça um
+  jeito de testar se um id existe.
+- `GET`/`DELETE` dos convites, `GET` dos tutores, `PATCH` do papel, `DELETE` do
+  tutor e `POST .../transfer-holder`.
+
+**O e-mail do convite é obrigatório, ao contrário do de clínica.** Ele trava quem
+aceita. Sem isso o link viraria portador, e quem o recebesse encaminhado entraria
+no histórico de saúde de um animal alheio. O sistema **não envia** o convite: o
+token volta uma vez na resposta e quem convidou entrega, igual ao `ClinicInvite`.
+
+**Duas saídas pela mesma porta.** O titular remove um co-tutor; um co-tutor remove
+a si mesmo, sem depender de ninguém — exigir autorização para sair prenderia a
+pessoa a notificações de um pet que não é dela. O titular nunca sai por aqui, nem
+por vontade própria: transfere primeiro, ou apaga o pet.
+
+**Transferência preserva o antigo titular como EDITOR**, em vez de removê-lo: quem
+cuidou do animal até ontem continua enxergando a carteira, e o novo titular decide
+se remove. `HOLDER` não passa pelo `PATCH` de papel — promover alguém rebaixa o
+titular atual, então não é editar um tutor, é a transferência.
+
+**O risco do 8b não era regra, era ordem de comandos.** Toda troca de titularidade
+passa por um instante com dois candidatos a HOLDER, contra um índice único parcial.
+Rebaixar vem antes de promover, com `flush` explícito, nos dois caminhos (aceite de
+convite HOLDER e `transfer-holder`). Mock não tem índice — por isso o
+`PetTutorFlowContainerTest` exercita o serviço contra Postgres.
+
+**O convite trouxe três FKs novas** (`pet_id`, `created_by`, `accepted_by`), e o
+schema não tem `ON DELETE CASCADE` em lugar nenhum: apagar o pet e apagar a conta
+passaram a limpar convites antes, senão a FK segura o delete. Mesma família do bug
+corrigido no PR #25.
+
+**Cobertura:** 500 testes verdes. `PetTutorServiceImplTest` (36) para as regras e a
+tabela operação → nível; `PetTutorFlowContainerTest` (19) para o que só o banco
+recusa; `ControllerPathVariableTest` ganhou as rotas de tutor, as únicas com duas
+path variables do mesmo tipo — trocar `petId` por `ownerId` compila e passa por
+revisão sem chamar atenção.
+
+**Fica para depois, deliberadamente:** avisar os tutores quando alguém entra no pet
+ou a titularidade muda. É evento relevante de privacidade e o `ClinicActivityNotifier`
+já tem o molde, mas é uma feature separável — juntá-la aqui inflaria justamente o PR
+que precisa ser revisado com cuidado.
 
 ### 9. Além da vacina: antiparasitário e peso como série — concluído
 

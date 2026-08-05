@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
@@ -76,6 +77,9 @@ class OwnerServiceImplTest {
 
     @Mock
     private PetTutorRepository petTutorRepository;
+
+    @Mock
+    private PetTutorInviteRepository petTutorInviteRepository;
 
     @Mock
     private VaccineRepository vaccineRepository;
@@ -411,7 +415,41 @@ class OwnerServiceImplTest {
             verify(petRepository, never()).deleteByPetIdIn(any());
             verify(vaccineRepository, never()).deleteByPetPetIdIn(any());
             verify(healthRecordRepository, never()).deleteByPetPetIdIn(any());
+            // o convite de terceiro para este pet nao e desta conta e nao morre com
+            // ela: o pet continua de pe, e o convite segue valendo para quem ficou
+            verify(petTutorInviteRepository, never()).deleteByPetPetIdIn(any());
             verify(ownerRepository).delete(autenticado);
+        }
+
+        /**
+         * Convite aponta para o pet, para quem convidou e para quem aceitou. Como o
+         * schema nao tem ON DELETE CASCADE, cada uma dessas tres FKs segura um dos
+         * deletes seguintes - e nenhuma delas aparece em teste de mock por si. O que
+         * este caso trava e a ordem; a recusa de verdade esta no
+         * OwnerDeletionContainerTest.
+         */
+        @Test
+        @DisplayName("os convites da conta saem antes dos vinculos e dos pets")
+        void convitesSaemAntesDosVinculosEDosPets() {
+            var autenticado = existingOwner();
+            when(currentOwnerProvider.require()).thenReturn(autenticado);
+
+            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
+            meuVinculo.setPet(pet);
+
+            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(1L);
+
+            ownerService.deleteCurrentOwner();
+
+            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, petRepository, ownerRepository);
+            ordem.verify(petTutorInviteRepository).deleteByCreatedByOwnerId(OWNER_ID);
+            ordem.verify(petTutorInviteRepository).deleteByAcceptedByOwnerId(OWNER_ID);
+            ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            ordem.verify(petTutorInviteRepository).deleteByPetPetIdIn(List.of(PET_ID));
+            ordem.verify(petRepository).deleteByPetIdIn(List.of(PET_ID));
+            ordem.verify(ownerRepository).delete(autenticado);
         }
 
         /**
