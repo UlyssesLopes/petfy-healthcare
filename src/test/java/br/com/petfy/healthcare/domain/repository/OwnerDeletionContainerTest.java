@@ -1,12 +1,18 @@
 package br.com.petfy.healthcare.domain.repository;
 
 import br.com.petfy.healthcare.PostgresContainerTest;
+import br.com.petfy.healthcare.domain.entity.Antiparasitic;
+import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
+import br.com.petfy.healthcare.domain.entity.ConsentDocument;
+import br.com.petfy.healthcare.domain.entity.ConsentRecord;
 import br.com.petfy.healthcare.domain.entity.EmailVerificationToken;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.PetWeightHistory;
 import br.com.petfy.healthcare.domain.entity.Species;
+import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.PasswordResetToken;
 import br.com.petfy.healthcare.service.OwnerService;
 import org.junit.jupiter.api.AfterEach;
@@ -20,6 +26,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -167,6 +174,10 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
         @Autowired private OwnerService ownerService;
         @Autowired private PetRepository petRepository;
         @Autowired private PetTutorRepository petTutorRepository;
+        @Autowired private VaccineRepository vaccineRepository;
+        @Autowired private PetWeightHistoryRepository petWeightHistoryRepository;
+        @Autowired private AntiparasiticRepository antiparasiticRepository;
+        @Autowired private ConsentRecordRepository consentRecordRepository;
 
         private Owner maria;
         private Pet rex;
@@ -220,6 +231,76 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
                         assertThat(restante.getOwner().getOwnerId()).isEqualTo(maria.getOwnerId());
                         assertThat(restante.getRole()).isEqualTo(PetTutorRole.HOLDER);
                     });
+        }
+
+        /**
+         * O pet unico da conta morre com ela, e leva a carteira inteira.
+         *
+         * Peso e antiparasitario chegaram no passo 9 e nao entraram na cascata da
+         * exclusao: a partir dali, apagar a conta de quem tinha registrado uma
+         * pesagem respondia 500 e o pedido de exclusao ficava sem atendimento. Nao
+         * aparecia em mock nem nos casos acima, que criavam pet sem historico.
+         */
+        @Test
+        @DisplayName("pet unico da conta morre com a carteira inteira, peso e antiparasitario incluidos")
+        void petUnicoMorreComACarteiraInteira() {
+            Pet nina = petRepository.saveAndFlush(Pet.builder()
+                    .name("Nina").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
+            petTutorRepository.saveAndFlush(PetTutor.builder()
+                    .pet(nina).owner(owner).role(PetTutorRole.HOLDER)
+                    .creationDate(LocalDateTime.now()).build());
+
+            vaccineRepository.saveAndFlush(Vaccine.builder()
+                    .pet(nina).vaccineName("V10").applicationDate(LocalDate.now().minusMonths(2))
+                    .creationDate(LocalDateTime.now()).build());
+            petWeightHistoryRepository.saveAndFlush(PetWeightHistory.builder()
+                    .pet(nina).weight(8.0).measuredAt(LocalDate.now().minusMonths(1))
+                    .creationDate(LocalDateTime.now()).build());
+            antiparasiticRepository.saveAndFlush(Antiparasitic.builder()
+                    .pet(nina).name("Vermifugo").kind(AntiparasiticKind.DEWORMER)
+                    .applicationDate(LocalDate.now().minusMonths(1))
+                    .creationDate(LocalDateTime.now()).updateDate(LocalDateTime.now()).build());
+
+            autenticar(owner);
+
+            ownerService.deleteCurrentOwner();
+
+            assertThat(ownerRepository.findById(owner.getOwnerId())).isEmpty();
+            assertThat(petRepository.findById(nina.getPetId())).isEmpty();
+            assertThat(petWeightHistoryRepository.findByPetPetIdOrderByMeasuredAtDesc(nina.getPetId())).isEmpty();
+            assertThat(antiparasiticRepository.findByPetPetIdOrderByApplicationDateDesc(nina.getPetId())).isEmpty();
+
+            // rex tem outro tutor e sobrevive, com a titularidade passada a maria
+            assertThat(petRepository.findById(rex.getPetId())).isPresent();
+        }
+
+        /**
+         * O registro de consentimento aponta para owners, e o schema nao tem
+         * ON DELETE CASCADE: sem sair antes, a FK segura o delete da conta - a mesma
+         * familia de bug que travou a exclusao na V12 e na V15.
+         *
+         * E ele sai de fato: guardar prova de consentimento de quem pediu para ser
+         * esquecido inverteria o proposito da prova.
+         */
+        @Test
+        @DisplayName("conta com consentimento registrado e apagada, e o registro sai junto")
+        void contaComConsentimentoEApagada() {
+            consentRecordRepository.saveAndFlush(ConsentRecord.builder()
+                    .owner(owner)
+                    .document(ConsentDocument.PRIVACY_POLICY)
+                    .documentVersion("2026-08-05")
+                    .acceptedAt(LocalDateTime.now())
+                    .ipAddress("203.0.113.7")
+                    .userAgent("Mozilla/5.0")
+                    .build());
+
+            autenticar(owner);
+
+            ownerService.deleteCurrentOwner();
+
+            assertThat(ownerRepository.findById(owner.getOwnerId())).isEmpty();
+            assertThat(consentRecordRepository
+                    .findByOwnerOwnerIdOrderByAcceptedAtDesc(owner.getOwnerId())).isEmpty();
         }
 
         /** Co-tutor sai: o pet nao muda de titular e continua de pe. */

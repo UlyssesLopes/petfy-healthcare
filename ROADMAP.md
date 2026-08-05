@@ -427,10 +427,41 @@ recusa; `ControllerPathVariableTest` ganhou as rotas de tutor, as únicas com du
 path variables do mesmo tipo — trocar `petId` por `ownerId` compila e passa por
 revisão sem chamar atenção.
 
-**Fica para depois, deliberadamente:** avisar os tutores quando alguém entra no pet
-ou a titularidade muda. É evento relevante de privacidade e o `ClinicActivityNotifier`
-já tem o molde, mas é uma feature separável — juntá-la aqui inflaria justamente o PR
-que precisa ser revisado com cuidado.
+#### 8c — aviso de mudança de tutores, concluído em 2026-08-05
+
+Ficou fora do 8b de propósito, para não inflar o PR que precisava de revisão
+cuidadosa, e entrou logo depois. `PetTutorActivityNotifier`, irmão do
+`ClinicActivityNotifier`: lá o aviso é sobre o que uma clínica escreveu no pet, aqui
+é sobre **quem passou a poder escrever**.
+
+Três eventos, todos de privacidade:
+
+- **Alguém entrou no pet** — os outros tutores sabem que uma pessoa nova lê o
+  histórico de saúde, e em que papel.
+- **A titularidade mudou** — vai para todos os tutores, não só para os dois
+  envolvidos: quem é titular define quem pode convidar, remover e apagar o pet.
+- **Um tutor saiu** — e **quem foi removido também é avisado**, quando não saiu por
+  conta própria. Perder acesso ao histórico de um animal que se cuidava e descobrir
+  tentando abrir a carteira é a pior versão deste evento.
+
+**Quem age não recebe o aviso** do que acabou de fazer, e aceitar convite de `HOLDER`
+gera **um** aviso, não dois — entrar no pet e virar titular são o mesmo fato.
+
+Não avisam: convidar (ninguém entrou ainda) e trocar `EDITOR`↔`VIEWER` (muda o que a
+pessoa pode fazer, não quem alcança o pet).
+
+**Os destinatários vêm de consulta, não de `Pet.getTutorOwners()`.** A coleção é lazy
+e acabou de ser mexida — vínculo inserido, papel alterado —, então ler dela daria uma
+lista que pode não refletir o que foi gravado, e o aviso iria para o conjunto errado
+de pessoas. Que é a única forma de este recurso piorar a privacidade em vez de
+melhorar. No caso da remoção há um `flush` explícito entre o delete e a consulta, pelo
+mesmo motivo.
+
+Herdou do `ClinicActivityNotifier` o que já estava decidido: envio assíncrono fora do
+caminho da requisição, falha só logada — o vínculo já está gravado e perdê-lo porque o
+e-mail caiu seria trocar um problema pequeno por um grande —, `try` por destinatário
+para que falhar com um tutor não cale os outros, e **nada sai para e-mail não
+confirmado**.
 
 ### 9. Além da vacina: antiparasitário e peso como série — concluído
 

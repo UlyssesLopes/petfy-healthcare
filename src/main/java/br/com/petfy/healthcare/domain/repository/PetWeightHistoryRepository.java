@@ -17,4 +17,11 @@ public interface PetWeightHistoryRepository extends JpaRepository<PetWeightHisto
     /** Ultima medicao registrada, usada para espelhar Pet.weight. */
     Optional<PetWeightHistory> findFirstByPetPetIdOrderByMeasuredAtDesc(UUID petId);
 
+    /**
+     * Usado ao apagar o pet - ver {@code PetPurger}. Faltava: a serie de peso
+     * chegou no passo 9 e nenhuma das duas cascatas foi atualizada, o que travou o
+     * DELETE /owners/me para qualquer pet com pesagem.
+     */
+    void deleteByPetPetIdIn(List<UUID> petIds);
+
 }

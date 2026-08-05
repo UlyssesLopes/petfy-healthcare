@@ -10,6 +10,7 @@ import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
@@ -23,7 +24,9 @@ import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
+import br.com.petfy.healthcare.service.PetPurger;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -73,31 +76,19 @@ class OwnerServiceImplTest {
     private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
     @Mock
-    private PetRepository petRepository;
-
-    @Mock
     private PetTutorRepository petTutorRepository;
 
     @Mock
+    private PetPurger petPurger;
+
+    @Mock
+    private ConsentService consentService;
+
+    @Mock
+    private ConsentRecordRepository consentRecordRepository;
+
+    @Mock
     private PetTutorInviteRepository petTutorInviteRepository;
-
-    @Mock
-    private VaccineRepository vaccineRepository;
-
-    @Mock
-    private HealthRecordRepository healthRecordRepository;
-
-    @Mock
-    private PetShareRepository petShareRepository;
-
-    @Mock
-    private PetClinicAccessRepository petClinicAccessRepository;
-
-    @Mock
-    private VaccineCorrectionRepository vaccineCorrectionRepository;
-
-    @Mock
-    private HealthRecordCorrectionRepository healthRecordCorrectionRepository;
 
     @InjectMocks
     private OwnerServiceImpl ownerService;
@@ -126,7 +117,7 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve persistir o owner com os dados do request e data de criacao")
         void devePersistirOwnerComDadosDoRequest() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", "11999999999", "Rua A, 100");
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", "11999999999", "Rua A, 100", true);
             when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
             when(ownerRepository.save(any(Owner.class))).thenReturn(existingOwner());
 
@@ -144,7 +135,7 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("nao deve persistir a senha em texto puro")
         void naoDevePersistirSenhaEmTextoPuro() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null);
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
             when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
             when(ownerRepository.save(any(Owner.class))).thenReturn(existingOwner());
 
@@ -173,7 +164,7 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve recusar com 409 quando o e-mail ja pertence a outro owner")
         void deveRecusarQuandoEmailJaUsadoPorOwner() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null);
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
             when(ownerRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
 
             assertThatThrownBy(() -> ownerService.createOwner(request))
@@ -188,7 +179,7 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve recusar quando o e-mail ja pertence a um vet")
         void deveRecusarQuandoEmailJaUsadoPorVet() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null);
+            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
             when(ownerRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(false);
             when(vetRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
 
@@ -226,7 +217,7 @@ class OwnerServiceImplTest {
             when(currentOwnerProvider.require()).thenReturn(existingOwner());
             when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
-            var request = new OwnerRequestDTO(null, null, null, "11888888888", null);
+            var request = new OwnerRequestDTO(null, null, null, "11888888888", null, true);
             var result = ownerService.updateCurrentOwner(request);
 
             assertThat(result.getPhone()).isEqualTo("11888888888");
@@ -242,7 +233,7 @@ class OwnerServiceImplTest {
             when(currentOwnerProvider.require()).thenReturn(existingOwner());
             when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
-            ownerService.updateCurrentOwner(new OwnerRequestDTO(null, null, "nova-senha", null, null));
+            ownerService.updateCurrentOwner(new OwnerRequestDTO(null, null, "nova-senha", null, null, true));
 
             var captor = ArgumentCaptor.forClass(Owner.class);
             verify(ownerRepository).save(captor.capture());
@@ -257,7 +248,7 @@ class OwnerServiceImplTest {
             when(currentOwnerProvider.require()).thenReturn(autenticado);
             when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
 
-            ownerService.updateCurrentOwner(new OwnerRequestDTO("Outro Nome", null, null, null, null));
+            ownerService.updateCurrentOwner(new OwnerRequestDTO("Outro Nome", null, null, null, null, true));
 
             var captor = ArgumentCaptor.forClass(Owner.class);
             verify(ownerRepository).save(captor.capture());
@@ -368,25 +359,17 @@ class OwnerServiceImplTest {
 
             ownerService.deleteCurrentOwner();
 
-            var somenteEstePet = List.of(PET_ID);
-            var ordem = org.mockito.Mockito.inOrder(
-                    petTutorRepository,
-                    vaccineCorrectionRepository, healthRecordCorrectionRepository,
-                    vaccineRepository, healthRecordRepository,
-                    petShareRepository, petClinicAccessRepository,
-                    petRepository,
-                    passwordResetTokenRepository, emailVerificationTokenRepository,
-                    ownerRepository);
+            // A sequencia de deletes do pet saiu daqui para o PetPurger, porque ela
+            // era identica a do DELETE /pets/{id} e as duas divergiram. O que este
+            // teste guarda e a posicao do purge no fluxo da conta; a ordem interna
+            // dele esta no PetPurgerTest, e a recusa do banco no
+            // PetDeletionContainerTest.
+            var ordem = inOrder(petTutorRepository, petPurger,
+                    passwordResetTokenRepository, emailVerificationTokenRepository, ownerRepository);
 
             // os vinculos saem primeiro: seguram pet e owner ao mesmo tempo
             ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
-            ordem.verify(vaccineCorrectionRepository).deleteByVaccinePetPetIdIn(somenteEstePet);
-            ordem.verify(healthRecordCorrectionRepository).deleteByHealthRecordPetPetIdIn(somenteEstePet);
-            ordem.verify(vaccineRepository).deleteByPetPetIdIn(somenteEstePet);
-            ordem.verify(healthRecordRepository).deleteByPetPetIdIn(somenteEstePet);
-            ordem.verify(petShareRepository).deleteByPetPetIdIn(somenteEstePet);
-            ordem.verify(petClinicAccessRepository).deleteByPetPetIdIn(somenteEstePet);
-            ordem.verify(petRepository).deleteByPetIdIn(somenteEstePet);
+            ordem.verify(petPurger).purge(List.of(PET_ID));
             ordem.verify(passwordResetTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(emailVerificationTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(ownerRepository).delete(autenticado);
@@ -412,12 +395,9 @@ class OwnerServiceImplTest {
             ownerService.deleteCurrentOwner();
 
             verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
-            verify(petRepository, never()).deleteByPetIdIn(any());
-            verify(vaccineRepository, never()).deleteByPetPetIdIn(any());
-            verify(healthRecordRepository, never()).deleteByPetPetIdIn(any());
-            // o convite de terceiro para este pet nao e desta conta e nao morre com
-            // ela: o pet continua de pe, e o convite segue valendo para quem ficou
-            verify(petTutorInviteRepository, never()).deleteByPetPetIdIn(any());
+            // o purge roda com lista vazia: nenhum pet morre, e o convite de
+            // terceiro para este pet nao e desta conta - segue valendo para quem ficou
+            verify(petPurger).purge(List.of());
             verify(ownerRepository).delete(autenticado);
         }
 
@@ -443,12 +423,11 @@ class OwnerServiceImplTest {
 
             ownerService.deleteCurrentOwner();
 
-            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, petRepository, ownerRepository);
+            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, petPurger, ownerRepository);
             ordem.verify(petTutorInviteRepository).deleteByCreatedByOwnerId(OWNER_ID);
             ordem.verify(petTutorInviteRepository).deleteByAcceptedByOwnerId(OWNER_ID);
             ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
-            ordem.verify(petTutorInviteRepository).deleteByPetPetIdIn(List.of(PET_ID));
-            ordem.verify(petRepository).deleteByPetIdIn(List.of(PET_ID));
+            ordem.verify(petPurger).purge(List.of(PET_ID));
             ordem.verify(ownerRepository).delete(autenticado);
         }
 

@@ -7,10 +7,10 @@ import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
-import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.service.PetPurger;
 import br.com.petfy.healthcare.service.PetService;
 import br.com.petfy.healthcare.service.PuppyProtocolService;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +30,10 @@ public class PetServiceImpl implements PetService {
 
     private final PetRepository petRepository;
     private final PetTutorRepository petTutorRepository;
-    private final PetTutorInviteRepository petTutorInviteRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
     private final PetAccessGuard petAccessGuard;
     private final PuppyProtocolService puppyProtocolService;
+    private final PetPurger petPurger;
 
     /**
      * Quem cadastra o pet nasce titular dele. O vinculo e criado aqui, e nao por
@@ -112,15 +112,18 @@ public class PetServiceImpl implements PetService {
      * Apagar o pet e do titular. Um co-tutor que nao quer mais acompanhar sai do
      * pet - ver o endpoint de tutores -, e isso nao apaga o historico de saude
      * de um animal que continua tendo dono.
+     *
+     * A limpeza do que pende do pet fica no {@link PetPurger}, compartilhada com a
+     * exclusao de conta: eram duas listas separadas, e elas divergiram - o passo 9
+     * trouxe peso e antiparasitario e nenhuma das duas foi atualizada, o que fazia
+     * este metodo responder 500 para qualquer pet com vacina.
      */
     @Override
     @Transactional
     public void deletePet(UUID petId) {
         Pet pet = petAccessGuard.requireTitular(petId);
 
-        // convite pendente aponta para o pet: sem sair antes, a FK segura o delete
-        petTutorInviteRepository.deleteByPetPetIdIn(List.of(petId));
-        petTutorRepository.deleteAll(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId));
+        petPurger.purgeConteudo(List.of(petId));
         petRepository.delete(pet);
     }
 

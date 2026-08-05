@@ -6,23 +6,19 @@ import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
-import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
-import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
-import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
-import br.com.petfy.healthcare.domain.repository.PetShareRepository;
-import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
-import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.PetPurger;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -42,20 +38,16 @@ public class OwnerServiceImpl implements OwnerService {
 
     private final OwnerRepository ownerRepository;
     private final VetRepository vetRepository;
-    private final PetRepository petRepository;
     private final PetTutorRepository petTutorRepository;
     private final PetTutorInviteRepository petTutorInviteRepository;
-    private final VaccineRepository vaccineRepository;
-    private final HealthRecordRepository healthRecordRepository;
-    private final PetShareRepository petShareRepository;
-    private final PetClinicAccessRepository petClinicAccessRepository;
-    private final VaccineCorrectionRepository vaccineCorrectionRepository;
-    private final HealthRecordCorrectionRepository healthRecordCorrectionRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final CurrentOwnerProvider currentOwnerProvider;
     private final EmailVerificationService emailVerificationService;
+    private final PetPurger petPurger;
+    private final ConsentService consentService;
+    private final ConsentRecordRepository consentRecordRepository;
 
     @Override
     public OwnerResponseDTO createOwner(OwnerRequestDTO request) {
@@ -73,6 +65,13 @@ public class OwnerServiceImpl implements OwnerService {
                 .build();
 
         Owner salvo = ownerRepository.save(owner);
+
+        // O consentimento e gravado na mesma transacao do cadastro, e antes do
+        // envio de e-mail: conta que existisse sem aceite registrado seria
+        // exatamente a lacuna que a V16 fecha, e um erro no envio nao pode ser o
+        // que decide se a base legal ficou registrada. O @AssertTrue no request
+        // garante que houve aceite; aqui ele ganha data, versao e evidencia.
+        consentService.registrarAceiteNoCadastro(salvo);
 
         // e-mail comeca sem verificacao: a conta funciona, mas nao recebe aviso
         // ate o tutor confirmar o endereco. Falha de envio aqui nao desfaz o
@@ -220,26 +219,22 @@ public class OwnerServiceImpl implements OwnerService {
         petTutorRepository.flush();
         petsQuePrecisamDeSucessor.forEach(this::promoverSucessor);
 
-        if (!petsQueMorrem.isEmpty()) {
-            // Convite de terceiro para um pet que morre: nao pertence a esta conta,
-            // mas aponta para o pet, entao sai junto com ele
-            petTutorInviteRepository.deleteByPetPetIdIn(petsQueMorrem);
-
-            // Ordem obrigatoria, netas antes das filhas, filhas antes dos pais
-            vaccineCorrectionRepository.deleteByVaccinePetPetIdIn(petsQueMorrem);
-            healthRecordCorrectionRepository.deleteByHealthRecordPetPetIdIn(petsQueMorrem);
-
-            vaccineRepository.deleteByPetPetIdIn(petsQueMorrem);
-            healthRecordRepository.deleteByPetPetIdIn(petsQueMorrem);
-            petShareRepository.deleteByPetPetIdIn(petsQueMorrem);
-            petClinicAccessRepository.deleteByPetPetIdIn(petsQueMorrem);
-
-            petRepository.deleteByPetIdIn(petsQueMorrem);
-        }
+        // Os pets que morrem, com tudo que pende deles. A sequencia mora no
+        // PetPurger, compartilhada com o DELETE /pets/{id}: eram duas listas
+        // separadas e elas divergiram - quando o passo 9 trouxe peso e
+        // antiparasitario, nenhuma das duas foi atualizada, e os dois caminhos
+        // passaram a responder 500 em casos diferentes.
+        petPurger.purge(petsQueMorrem);
 
         // Tokens da conta
         passwordResetTokenRepository.deleteByOwnerOwnerId(ownerId);
         emailVerificationTokenRepository.deleteByOwnerOwnerId(ownerId);
+
+        // O registro de consentimento sai junto. A evidencia do aceite - IP, user
+        // agent, data - e dado pessoal do titular, e guardar prova de consentimento
+        // de quem pediu para ser esquecido inverteria o proposito da prova. Nao ha o
+        // que demonstrar sobre um titular que nao existe mais.
+        consentRecordRepository.deleteByOwnerOwnerId(ownerId);
 
         // Finalmente o owner
         ownerRepository.delete(owner);
