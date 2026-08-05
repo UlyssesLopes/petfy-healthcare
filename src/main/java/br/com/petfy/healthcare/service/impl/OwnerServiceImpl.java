@@ -4,6 +4,8 @@ import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.PetTutor;
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
@@ -11,6 +13,7 @@ import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
@@ -27,6 +30,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -36,6 +42,7 @@ public class OwnerServiceImpl implements OwnerService {
     private final OwnerRepository ownerRepository;
     private final VetRepository vetRepository;
     private final PetRepository petRepository;
+    private final PetTutorRepository petTutorRepository;
     private final VaccineRepository vaccineRepository;
     private final HealthRecordRepository healthRecordRepository;
     private final PetShareRepository petShareRepository;
@@ -148,11 +155,22 @@ public class OwnerServiceImpl implements OwnerService {
      * DELETE /owners/me estava quebrado desde a V12 exatamente por isso, so
      * apagava a conta sem pet.
      *
-     * A politica escolhida e apagar em cascata, e nao anonimizar nem transferir.
-     * Anonimizar deixaria dado de saude do pet associado a um "ex-tutor fantasma"
-     * que o vet ainda enxerga - contraria o pedido de sair do sistema. Transferir
-     * pressupoe multi-tutor, que nao existe (passo 8 do ROADMAP). Cascata e o que
-     * atende ao pedido de exclusao sem meio-termo.
+     * <b>Com multi-tutor, a cascata deixou de ser cega.</b> Antes da V15 todo pet
+     * tinha um dono so, entao sair do sistema e levar os pets junto eram a mesma
+     * coisa. Agora nao sao: um pet que outra pessoa tambem cuida nao pode morrer
+     * porque um dos tutores fechou a conta - seria apagar dado de saude de um
+     * animal que continua tendo quem responda por ele, e o pedido de exclusao de
+     * um titular nao autoriza destruir o historico do outro.
+     *
+     * Entao os pets se dividem em dois grupos:
+     * <ul>
+     *   <li><b>Pet sem outro tutor</b> - morre junto, com vacinas, historico,
+     *       correcoes, shares e acessos de clinica. E a cascata de antes.</li>
+     *   <li><b>Pet com outro tutor</b> - sobrevive e so perde este vinculo. Se
+     *       quem sai era o titular, a titularidade passa ao tutor mais antigo,
+     *       porque o indice do banco exige exatamente um HOLDER por pet e um pet
+     *       sem titular ficaria sem ninguem que pudesse convidar ou apagar.</li>
+     * </ul>
      *
      * A limpeza fica em codigo, nao em ON DELETE CASCADE no schema, para manter a
      * decisao visivel e testavel - mesmo padrao ja adotado para os tokens.
@@ -163,18 +181,35 @@ public class OwnerServiceImpl implements OwnerService {
         Owner owner = currentOwnerProvider.require();
         UUID ownerId = owner.getOwnerId();
 
-        // Netas primeiro: correcoes de vacina e de historico
-        vaccineCorrectionRepository.deleteByVaccinePetOwnerOwnerId(ownerId);
-        healthRecordCorrectionRepository.deleteByHealthRecordPetOwnerOwnerId(ownerId);
+        List<PetTutor> vinculos = petTutorRepository.findByOwnerOwnerId(ownerId);
 
-        // Filhas de pet
-        vaccineRepository.deleteByPetOwnerOwnerId(ownerId);
-        healthRecordRepository.deleteByPetOwnerOwnerId(ownerId);
-        petShareRepository.deleteByPetOwnerOwnerId(ownerId);
-        petClinicAccessRepository.deleteByPetOwnerOwnerId(ownerId);
+        List<UUID> petsQueMorrem = new ArrayList<>();
+        for (PetTutor vinculo : vinculos) {
+            UUID petId = vinculo.getPet().getPetId();
 
-        // Pets
-        petRepository.deleteByOwnerOwnerId(ownerId);
+            if (petTutorRepository.countByPetPetId(petId) > 1) {
+                promoverSucessorSePreciso(vinculo, petId);
+            } else {
+                petsQueMorrem.add(petId);
+            }
+        }
+
+        // Os vinculos saem primeiro: sao filhos de pet e de owner ao mesmo tempo,
+        // entao segurariam os dois deletes seguintes
+        petTutorRepository.deleteByOwnerOwnerId(ownerId);
+
+        if (!petsQueMorrem.isEmpty()) {
+            // Ordem obrigatoria, netas antes das filhas, filhas antes dos pais
+            vaccineCorrectionRepository.deleteByVaccinePetPetIdIn(petsQueMorrem);
+            healthRecordCorrectionRepository.deleteByHealthRecordPetPetIdIn(petsQueMorrem);
+
+            vaccineRepository.deleteByPetPetIdIn(petsQueMorrem);
+            healthRecordRepository.deleteByPetPetIdIn(petsQueMorrem);
+            petShareRepository.deleteByPetPetIdIn(petsQueMorrem);
+            petClinicAccessRepository.deleteByPetPetIdIn(petsQueMorrem);
+
+            petRepository.deleteByPetIdIn(petsQueMorrem);
+        }
 
         // Tokens da conta
         passwordResetTokenRepository.deleteByOwnerOwnerId(ownerId);
@@ -182,6 +217,27 @@ public class OwnerServiceImpl implements OwnerService {
 
         // Finalmente o owner
         ownerRepository.delete(owner);
+    }
+
+    /**
+     * Quem sai era o titular de um pet que sobrevive: alguem precisa herdar.
+     * O criterio e o vinculo mais antigo entre os que ficam - quem acompanha o
+     * pet ha mais tempo. Nao ha escolha do usuario aqui de proposito: apagar a
+     * conta nao pode ficar bloqueado esperando uma decisao.
+     */
+    private void promoverSucessorSePreciso(PetTutor queSai, UUID petId) {
+        if (!queSai.isHolder()) {
+            return;
+        }
+
+        petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId).stream()
+                .filter(candidato -> !candidato.getPetTutorId().equals(queSai.getPetTutorId()))
+                .min(Comparator.comparing(PetTutor::getCreationDate))
+                .ifPresent(sucessor -> {
+                    sucessor.setRole(PetTutorRole.HOLDER);
+                    sucessor.setUpdateDate(LocalDateTime.now());
+                    petTutorRepository.save(sucessor);
+                });
     }
 
     private void garantirEmailLivre(String email) {

@@ -12,6 +12,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
@@ -61,6 +62,9 @@ class VaccineServiceImplTest {
     private CurrentOwnerProvider currentOwnerProvider;
 
     @Mock
+    private PetAccessGuard petAccessGuard;
+
+    @Mock
     private VaccineCorrectionLog vaccineCorrectionLog;
 
     private VaccineServiceImpl vaccineService;
@@ -71,7 +75,7 @@ class VaccineServiceImplTest {
         // entao mocka-los esvaziaria o teste. Construido aqui, e nao por
         // @InjectMocks, porque a factory depende de um mock que so existe agora
         vaccineService = new VaccineServiceImpl(vaccineRepository, petRepository, clinicRepository,
-                currentOwnerProvider, new VaccineStatusCalculator(),
+                currentOwnerProvider, petAccessGuard, new VaccineStatusCalculator(),
                 new VaccineFactory(vaccineCatalogRepository), vaccineCorrectionLog);
     }
 
@@ -98,7 +102,7 @@ class VaccineServiceImplTest {
     }
 
     private Pet petDe(UUID ownerId) {
-        return Pet.builder().petId(PET_ID).name("Rex").species(br.com.petfy.healthcare.domain.entity.Species.CANINA).owner(owner(ownerId)).build();
+        return Pet.builder().petId(PET_ID).name("Rex").species(br.com.petfy.healthcare.domain.entity.Species.CANINA).tutors(br.com.petfy.healthcare.PetTutores.titular(owner(ownerId))).build();
     }
 
     private Clinic clinic() {
@@ -130,7 +134,7 @@ class VaccineServiceImplTest {
         @DisplayName("deve vincular a vacina ao pet e a clinica informados")
         void deveVincularAoPetEClinica() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
             when(vaccineRepository.save(any(Vaccine.class))).thenReturn(vacinaDe(OWNER_ID));
 
@@ -152,7 +156,7 @@ class VaccineServiceImplTest {
                     .vaccineId(VACCINE_ID).pet(petDe(OWNER_ID)).vaccineName("Antirrabica").build();
 
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(vaccineRepository.save(any(Vaccine.class))).thenReturn(semClinica);
 
             var result = vaccineService.createVaccine(
@@ -170,7 +174,7 @@ class VaccineServiceImplTest {
         @DisplayName("deve calcular a proxima dose somando o intervalo do catalogo a data de aplicacao")
         void deveCalcularProximaDosePeloCatalogo() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -189,7 +193,7 @@ class VaccineServiceImplTest {
         @DisplayName("deve usar o nome do catalogo quando o request nao manda nome")
         void deveUsarNomeDoCatalogo() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -207,7 +211,7 @@ class VaccineServiceImplTest {
         @DisplayName("data explicita deve vencer o calculo do catalogo - o vet pode orientar diferente")
         void dataExplicitaDeveVencerOCatalogo() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -226,7 +230,7 @@ class VaccineServiceImplTest {
         @DisplayName("deve aceitar vacina em texto livre, sem catalogo")
         void deveAceitarVacinaEmTextoLivre() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
             vaccineService.createVaccine(VaccineRequestDTO.builder()
@@ -246,7 +250,7 @@ class VaccineServiceImplTest {
             when(petRepository.findById(PET_ID)).thenReturn(Optional.of(
                     Pet.builder().petId(PET_ID).name("Mia")
                             .species(br.com.petfy.healthcare.domain.entity.Species.FELINA)
-                            .owner(owner(OWNER_ID)).build()));
+                            .tutors(br.com.petfy.healthcare.PetTutores.titular(owner(OWNER_ID))).build()));
             when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));  // CANINA
 
             assertThatThrownBy(() -> vaccineService.createVaccine(
@@ -263,7 +267,7 @@ class VaccineServiceImplTest {
         @DisplayName("deve recusar com 400 quando nao ha nem nome nem catalogo")
         void deveRecusarSemNomeESemCatalogo() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
 
             assertThatThrownBy(() -> vaccineService.createVaccine(
                     VaccineRequestDTO.builder().petId(PET_ID).build()))
@@ -278,7 +282,7 @@ class VaccineServiceImplTest {
         @DisplayName("deve lancar VACCINE_CATALOG_NOT_FOUND quando o catalogo informado nao existe")
         void deveLancarQuandoCatalogoNaoExiste() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> vaccineService.createVaccine(
@@ -295,7 +299,7 @@ class VaccineServiceImplTest {
         @DisplayName("nao deve permitir registrar vacina em pet de outro dono")
         void naoDevePermitirVacinaEmPetDeOutroDono() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
 
             assertThatThrownBy(() -> vaccineService.createVaccine(
                     VaccineRequestDTO.builder().petId(PET_ID).vaccineName("Antirrabica").build()))
@@ -324,7 +328,7 @@ class VaccineServiceImplTest {
         @DisplayName("deve lancar CLINIC_NOT_FOUND sem salvar quando a clinica informada nao existe")
         void deveLancarQuandoClinicaNaoExiste() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> vaccineService.createVaccine(
@@ -451,7 +455,7 @@ class VaccineServiceImplTest {
         void deveListarApenasDoOwnerAutenticado() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(vaccineRepository.findByPetOwnerOwnerId(OWNER_ID, pageable))
+            when(vaccineRepository.findByPetTutorsOwnerOwnerId(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of(vacinaDe(OWNER_ID))));
 
             assertThat(vaccineService.listAllVaccines(pageable).getContent()).hasSize(1);

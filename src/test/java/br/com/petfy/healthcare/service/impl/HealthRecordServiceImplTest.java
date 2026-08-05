@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
@@ -47,6 +48,9 @@ class HealthRecordServiceImplTest {
     private PetRepository petRepository;
 
     @Mock
+    private PetAccessGuard petAccessGuard;
+
+    @Mock
     private ClinicRepository clinicRepository;
 
     @Mock
@@ -69,7 +73,7 @@ class HealthRecordServiceImplTest {
     }
 
     private Pet petDe(UUID ownerId) {
-        return Pet.builder().petId(PET_ID).name("Rex").owner(owner(ownerId)).build();
+        return Pet.builder().petId(PET_ID).name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner(ownerId))).build();
     }
 
     private Clinic clinic() {
@@ -100,7 +104,7 @@ class HealthRecordServiceImplTest {
         @DisplayName("deve vincular o registro ao pet e a clinica informados")
         void deveVincularAoPetEClinica() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
             when(healthRecordRepository.save(any(HealthRecord.class))).thenReturn(registroDe(OWNER_ID));
 
@@ -126,7 +130,7 @@ class HealthRecordServiceImplTest {
                     .healthRecordId(RECORD_ID).pet(petDe(OWNER_ID)).eventType("Consulta").build();
 
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(healthRecordRepository.save(any(HealthRecord.class))).thenReturn(semClinica);
 
             var result = healthRecordService.createHealthRecord(
@@ -140,7 +144,7 @@ class HealthRecordServiceImplTest {
         @DisplayName("nao deve permitir criar registro em pet de outro dono")
         void naoDevePermitirRegistroEmPetDeOutroDono() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
 
             assertThatThrownBy(() -> healthRecordService.createHealthRecord(
                     HealthRecordRequestDTO.builder().petId(PET_ID).eventType("Consulta").build()))
@@ -170,7 +174,7 @@ class HealthRecordServiceImplTest {
         @DisplayName("deve lancar CLINIC_NOT_FOUND sem salvar quando a clinica informada nao existe")
         void deveLancarQuandoClinicaNaoExiste() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> healthRecordService.createHealthRecord(
@@ -231,7 +235,7 @@ class HealthRecordServiceImplTest {
         @DisplayName("deve retornar o historico do pet")
         void deveRetornarHistoricoDoPet() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(PET_ID))
                     .thenReturn(List.of(registroDe(OWNER_ID)));
 
@@ -245,7 +249,7 @@ class HealthRecordServiceImplTest {
         @DisplayName("deve retornar lista vazia quando o pet existe e ainda nao tem historico")
         void deveRetornarListaVaziaQuandoPetSemHistorico() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(PET_ID)).thenReturn(List.of());
 
             assertThat(healthRecordService.listHealthRecordsByPet(PET_ID)).isEmpty();
@@ -255,7 +259,7 @@ class HealthRecordServiceImplTest {
         @DisplayName("nao deve expor o historico de pet de outro dono")
         void naoDeveExporHistoricoDePetDeOutroDono() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
 
             assertThatThrownBy(() -> healthRecordService.listHealthRecordsByPet(PET_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -287,7 +291,7 @@ class HealthRecordServiceImplTest {
         void deveListarApenasDoOwnerAutenticado() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(healthRecordRepository.findByPetOwnerOwnerIdOrderByEventDateDesc(OWNER_ID, pageable))
+            when(healthRecordRepository.findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of(registroDe(OWNER_ID))));
 
             assertThat(healthRecordService.listAllHealthRecords(pageable).getContent()).hasSize(1);

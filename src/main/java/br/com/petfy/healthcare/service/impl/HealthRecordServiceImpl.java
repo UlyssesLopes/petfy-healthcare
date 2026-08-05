@@ -11,6 +11,7 @@ import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.HealthRecordService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -37,6 +38,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     private final ClinicRepository clinicRepository;
 
     private final CurrentOwnerProvider currentOwnerProvider;
+    private final PetAccessGuard petAccessGuard;
 
     private final HealthRecordCorrectionLog healthRecordCorrectionLog;
 
@@ -66,7 +68,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     @Override
     public Page<HealthRecordResponseDTO> listAllHealthRecords(Pageable pageable) {
         return healthRecordRepository
-                .findByPetOwnerOwnerIdOrderByEventDateDesc(currentOwnerProvider.require().getOwnerId(), pageable)
+                .findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(currentOwnerProvider.require().getOwnerId(), pageable)
                 .map(this::toResponse);
     }
 
@@ -130,17 +132,16 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         UUID ownerId = currentOwnerProvider.require().getOwnerId();
 
         return healthRecordRepository.findById(healthRecordId)
-                .filter(registro -> registro.getPet().getOwner().getOwnerId().equals(ownerId))
+                .filter(registro -> petAccessGuard.alcanca(registro.getPet().getPetId()))
                 .orElseThrow(this::notFound);
     }
 
-    /** Pet de outro dono e indistinguivel de pet inexistente, pelo mesmo motivo. */
+    /**
+     * Registrar atendimento no historico de saude e escrita, entao exige EDITOR.
+     * Pet inalcancavel e indistinguivel de pet inexistente - ver PetAccessGuard.
+     */
     private Pet findPet(UUID petId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
-        return petRepository.findById(petId)
-                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
-                .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.PET_NOT_FOUND.getMessage(), ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
+        return petAccessGuard.requireEscrita(petId);
     }
 
     private Clinic findClinic(UUID clinicId) {

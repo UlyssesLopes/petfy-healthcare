@@ -6,12 +6,9 @@ import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetWeightHistory;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.PetWeightHistoryRepository;
-import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.PetWeightService;
-import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,12 +23,12 @@ public class PetWeightServiceImpl implements PetWeightService {
 
     private final PetWeightHistoryRepository weightHistoryRepository;
     private final PetRepository petRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final PetAccessGuard petAccessGuard;
 
     @Override
     @Transactional
     public PetWeightResponseDTO addWeight(UUID petId, PetWeightRequestDTO request) {
-        Pet pet = buscarPetDoOwnerAutenticado(petId);
+        Pet pet = petAccessGuard.requireEscrita(petId);
 
         PetWeightHistory entry = PetWeightHistory.builder()
                 .pet(pet)
@@ -58,23 +55,12 @@ public class PetWeightServiceImpl implements PetWeightService {
 
     @Override
     public List<PetWeightResponseDTO> listWeights(UUID petId) {
-        buscarPetDoOwnerAutenticado(petId);
+        petAccessGuard.requireLeitura(petId);
 
         return weightHistoryRepository.findByPetPetIdOrderByMeasuredAtDesc(petId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
-    }
-
-    private Pet buscarPetDoOwnerAutenticado(UUID petId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
-        return petRepository.findById(petId)
-                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
     }
 
     private PetWeightResponseDTO toResponse(PetWeightHistory h) {

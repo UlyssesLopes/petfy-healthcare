@@ -57,7 +57,7 @@ class HealthRecordRepositoryTest {
                 .password("hash")
                 .build());
 
-        Pet rex = petRepository.save(Pet.builder().name("Rex").owner(owner).species(Species.CANINA).build());
+        Pet rex = petRepository.save(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
 
         healthRecordRepository.save(HealthRecord.builder()
                 .pet(rex)
@@ -78,7 +78,7 @@ class HealthRecordRepositoryTest {
                 .password("hash")
                 .build());
 
-        Pet pet = petRepository.save(Pet.builder().name("Mia").owner(owner).species(Species.CANINA).build());
+        Pet pet = petRepository.save(Pet.builder().name("Mia").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
 
         HealthRecord salvo = healthRecordRepository.save(HealthRecord.builder()
                 .pet(pet)

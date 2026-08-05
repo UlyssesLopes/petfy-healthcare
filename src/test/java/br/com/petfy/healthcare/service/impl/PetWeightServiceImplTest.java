@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.domain.dto.PetWeightRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
@@ -8,7 +9,7 @@ import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.PetWeightHistoryRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class PetWeightServiceImplTest {
     private PetRepository petRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private PetAccessGuard petAccessGuard;
 
     @InjectMocks
     private PetWeightServiceImpl petWeightService;
@@ -61,7 +62,7 @@ class PetWeightServiceImplTest {
                 .name("Rex")
                 .species(Species.CANINA)
                 .weight(pesoAtual)
-                .owner(owner(ownerId))
+                .tutors(br.com.petfy.healthcare.PetTutores.titular(owner(ownerId)))
                 .build();
     }
 
@@ -75,9 +76,6 @@ class PetWeightServiceImplTest {
                 .build();
     }
 
-    private void autenticadoComo(UUID ownerId) {
-        when(currentOwnerProvider.require()).thenReturn(owner(ownerId));
-    }
 
     @Nested
     @DisplayName("addWeight")
@@ -86,9 +84,9 @@ class PetWeightServiceImplTest {
         @Test
         @DisplayName("grava a medicao vinculada ao pet do dono autenticado")
         void gravaMedicaoDoPetDoDono() {
-            autenticadoComo(OWNER_ID);
+
             var pet = petDe(OWNER_ID, 12.5);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(pet));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet);
             when(weightHistoryRepository.save(any(PetWeightHistory.class))).thenAnswer(i -> i.getArgument(0));
             when(weightHistoryRepository.findFirstByPetPetIdOrderByMeasuredAtDesc(PET_ID))
                     .thenReturn(Optional.of(medicao(pet, 14.0, LocalDate.of(2026, 3, 10))));
@@ -113,9 +111,9 @@ class PetWeightServiceImplTest {
         @Test
         @DisplayName("a medicao mais recente vira o espelho em Pet.weight")
         void medicaoMaisRecenteAtualizaOEspelho() {
-            autenticadoComo(OWNER_ID);
+
             var pet = petDe(OWNER_ID, 12.5);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(pet));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet);
             when(weightHistoryRepository.save(any(PetWeightHistory.class))).thenAnswer(i -> i.getArgument(0));
             when(weightHistoryRepository.findFirstByPetPetIdOrderByMeasuredAtDesc(PET_ID))
                     .thenReturn(Optional.of(medicao(pet, 14.0, LocalDate.of(2026, 3, 10))));
@@ -133,9 +131,9 @@ class PetWeightServiceImplTest {
         @Test
         @DisplayName("medicao historica antiga nao faz o espelho regredir")
         void medicaoAntigaNaoRegrideOEspelho() {
-            autenticadoComo(OWNER_ID);
+
             var pet = petDe(OWNER_ID, 14.0);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(pet));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet);
             when(weightHistoryRepository.save(any(PetWeightHistory.class))).thenAnswer(i -> i.getArgument(0));
             // o tutor lancou uma pesagem esquecida de janeiro; a de marco continua
             // sendo a mais recente
@@ -155,8 +153,8 @@ class PetWeightServiceImplTest {
         @Test
         @DisplayName("pet de outro dono responde 404 e nao grava")
         void petDeOutroDonoNaoGrava() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID, 12.5)));
+
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID, 12.5));
 
             var request = PetWeightRequestDTO.builder()
                     .weight(14.0)
@@ -179,9 +177,9 @@ class PetWeightServiceImplTest {
         @Test
         @DisplayName("devolve a serie do pet do dono autenticado")
         void devolveSerieDoPetDoDono() {
-            autenticadoComo(OWNER_ID);
+
             var pet = petDe(OWNER_ID, 14.0);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(pet));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet);
             when(weightHistoryRepository.findByPetPetIdOrderByMeasuredAtDesc(PET_ID))
                     .thenReturn(List.of(
                             medicao(pet, 14.0, LocalDate.of(2026, 3, 10)),
@@ -197,8 +195,8 @@ class PetWeightServiceImplTest {
         @Test
         @DisplayName("pet de outro dono responde 404 sem consultar a serie")
         void petDeOutroDonoNaoLista() {
-            autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID, 12.5)));
+
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID, 12.5));
 
             assertThatThrownBy(() -> petWeightService.listWeights(PET_ID))
                     .isInstanceOf(PetfyHealthcareException.class)

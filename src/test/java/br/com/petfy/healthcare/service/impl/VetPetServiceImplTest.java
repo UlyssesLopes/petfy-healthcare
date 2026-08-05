@@ -98,8 +98,7 @@ class VetPetServiceImplTest {
 
     private Pet pet() {
         return Pet.builder().petId(PET_ID).name("Rex").type("Cachorro").weight(12.5)
-                .owner(Owner.builder().ownerId(UUID.randomUUID()).name("Ulysses")
-                        .email("ulysses@petfy.com.br").phone("11999999999").build())
+                .tutors(br.com.petfy.healthcare.PetTutores.titular(Owner.builder().ownerId(UUID.randomUUID()).name("Ulysses").email("ulysses@petfy.com.br").phone("11999999999").build()))
                 .build();
     }
 

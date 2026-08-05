@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,12 +37,13 @@ public class VaccineCatalogController {
     private final VaccineCatalogRepository vaccineCatalogRepository;
     private final PetRepository petRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
+    private final PetAccessGuard petAccessGuard;
 
     @GetMapping
     public ResponseEntity<List<VaccineCatalogResponseDTO>> list(@RequestParam(required = false) UUID petId) {
         List<VaccineCatalog> catalogo = petId == null
                 ? vaccineCatalogRepository.findAllByOrderBySpeciesAscNameAsc()
-                : vaccineCatalogRepository.findBySpeciesOrderByNameAsc(buscarPetDoDono(petId).getSpecies());
+                : vaccineCatalogRepository.findBySpeciesOrderByNameAsc(petAccessGuard.requireLeitura(petId).getSpecies());
 
         return ResponseEntity.ok(catalogo.stream()
                 .map(this::toResponse)
@@ -53,17 +55,6 @@ public class VaccineCatalogController {
      * que aquele id existe, o que permitiria varrer ids para descobrir o que ha
      * na base. Mesma regra do PetServiceImpl.
      */
-    private Pet buscarPetDoDono(UUID petId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
-        return petRepository.findById(petId)
-                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
-    }
-
     private VaccineCatalogResponseDTO toResponse(VaccineCatalog entrada) {
         return VaccineCatalogResponseDTO.builder()
                 .vaccineCatalogId(entrada.getVaccineCatalogId())

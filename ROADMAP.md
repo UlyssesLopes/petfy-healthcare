@@ -295,6 +295,56 @@ apoiar a mudança.
 **Pronto quando:** dois logins distintos editam o mesmo pet e nenhum dos dois
 alcança pet de terceiro.
 
+#### O passo foi fatiado em 8a e 8b
+
+Ao executar, ficou claro que sao duas mudancas com riscos diferentes dentro de um
+numero so, e junta-las num PR dificultaria revisar justamente a parte que mexe em
+privacidade:
+
+- **8a — estrutural.** O pet passa a ter tutores e a autorizacao vira uma peca
+  unica. O comportamento externo muda pouco: quem cadastra o pet continua sendo o
+  unico tutor dele.
+- **8b — comportamental.** Convite de co-tutor, transferencia de titularidade e
+  os endpoints de gestao. E o que entrega o valor visivel do passo.
+
+#### Estado do 8a em 2026-08-05 (branch `feat/passo-8-multi-tutor`, sem PR)
+
+**Pronto e compilando:**
+
+- `PetTutor` e `PetTutorRole` (HOLDER, EDITOR, VIEWER — hierarquia pela ordem da
+  declaracao). Tres papeis, e nao dois: quem cuida junto precisa registrar
+  vacina, quem so acompanha nao precisa alterar nada.
+- `PetTutorInvite`, no molde do `ClinicInvite`, ja modelado — usado no 8b.
+- `V15`: cria `pet_tutors`, faz o backfill de todo dono atual como `HOLDER`,
+  garante **um titular por pet** com indice unico parcial, e **remove
+  `pets.owner_id`**. A coluna nao foi mantida ao lado da tabela de proposito: com
+  as duas, "quem e o dono" teria duas respostas, e o dia em que divergissem seria
+  um vazamento.
+- `PetAccessGuard`: as seis copias de
+  `pet.getOwner().getOwnerId().equals(...)` viraram uma regra so, com tres
+  niveis. Pet inalcancavel responde 404; falta de nivel responde 403, que so
+  acontece com quem ja e tutor e por isso nao revela nada novo.
+- **Lembrete e aviso de clinica vao para todos os tutores** com e-mail
+  confirmado. A dose e marcada como avisada **uma vez so**, fora do laco: um pet
+  compartilhado aparece no lembrete de mais de uma pessoa.
+- **Exclusao de conta deixou de ser cascata cega.** Pet sem outro tutor morre
+  junto; pet com outro tutor sobrevive e so perde o vinculo. Se quem sai era o
+  titular, a titularidade passa ao vinculo mais antigo — o indice do banco exige
+  exatamente um `HOLDER`, e um pet sem titular ficaria sem ninguem que pudesse
+  convida-lo ou apaga-lo.
+
+**O que falta, e por que nao foi remendado as pressas:** `mvn test` fecha em
+**392 testes com 78 falhando**. As falhas nao sao regressao — sao testes que
+verificavam o escopo por dono **dentro de cada servico**, e essa regra mudou de
+lugar. Adapta-los mecanicamente para continuarem passando seria mentir sobre o
+que eles cobrem. O certo e:
+
+1. Remover dos testes de servico o que virou responsabilidade do guard, deixando
+   neles a verificacao de que delegam com o nivel certo (escrita x leitura).
+2. Escrever o **`PetAccessGuardTest`**, que ainda nao existe e e a peca que
+   decide quem enxerga o pet de quem — a cobertura mais importante do passo.
+3. Ensinar a `V15` ao `SchemaMigrationContainerTest`.
+
 ### 9. Além da vacina: antiparasitário e peso como série — concluído
 
 Vermífugo e antipulgas são o recorrente que o tutor de fato esquece, e

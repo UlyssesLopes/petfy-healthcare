@@ -6,6 +6,9 @@ import org.hibernate.annotations.GenericGenerator;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Entity
@@ -51,9 +54,33 @@ public class Pet {
     @Column(nullable = false, length = 32)
     private Species species;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private Owner owner;
+    /**
+     * Quem cuida deste pet. Substituiu o {@code owner} unico na V15 - ver
+     * {@link PetTutor} para por que a coluna antiga nao foi mantida ao lado.
+     *
+     * Nao ha cascade: vinculo se cria e se apaga pelos fluxos de convite e de
+     * remocao, que tem regra propria (o titular nao pode simplesmente sumir).
+     */
+    @OneToMany(mappedBy = "pet", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<PetTutor> tutors = new ArrayList<>();
+
+    /**
+     * O titular. Sempre existe - a V15 fez o backfill e o indice unico parcial
+     * garante que ha exatamente um - mas devolve Optional porque a colecao e
+     * lazy e chamar isto fora de transacao e um erro de uso, nao um pet sem dono.
+     */
+    public Optional<Owner> getHolder() {
+        return tutors.stream()
+                .filter(PetTutor::isHolder)
+                .map(PetTutor::getOwner)
+                .findFirst();
+    }
+
+    /** Todos os tutores, em qualquer papel. Usado por quem notifica. */
+    public List<Owner> getTutorOwners() {
+        return tutors.stream().map(PetTutor::getOwner).toList();
+    }
 
     private String generalRegistry;
 

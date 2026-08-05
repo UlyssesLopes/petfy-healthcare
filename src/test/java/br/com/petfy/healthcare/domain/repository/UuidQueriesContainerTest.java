@@ -65,8 +65,8 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
                 .name("Maria").email("maria-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash").build());
 
-        rex = petRepository.save(Pet.builder().name("Rex").owner(ulysses).species(Species.CANINA).build());
-        nina = petRepository.save(Pet.builder().name("Nina").owner(maria).species(Species.CANINA).build());
+        rex = petRepository.save(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(ulysses)).species(Species.CANINA).build());
+        nina = petRepository.save(Pet.builder().name("Nina").tutors(br.com.petfy.healthcare.PetTutores.titular(maria)).species(Species.CANINA).build());
 
         bichoFeliz = clinicRepository.save(Clinic.builder().name("Clinica Bicho Feliz").build());
 
@@ -89,10 +89,10 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("pets devem ser filtrados pelo dono, sem vazar os do outro")
         void petsFiltradosPeloDono() {
-            var doUlysses = petRepository.findByOwnerOwnerId(ulysses.getOwnerId());
+            var doUlysses = petRepository.findByTutorsOwnerOwnerId(ulysses.getOwnerId());
 
             assertThat(doUlysses).extracting(Pet::getName).containsExactly("Rex");
-            assertThat(petRepository.findByOwnerOwnerId(maria.getOwnerId()))
+            assertThat(petRepository.findByTutorsOwnerOwnerId(maria.getOwnerId()))
                     .extracting(Pet::getName).containsExactly("Nina");
         }
 
@@ -102,7 +102,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
             vacina(rex, "V10", LocalDate.now().plusDays(10));
             vacina(nina, "V8", LocalDate.now().plusDays(10));
 
-            assertThat(vaccineRepository.findByPetOwnerOwnerId(ulysses.getOwnerId()))
+            assertThat(vaccineRepository.findByPetTutorsOwnerOwnerId(ulysses.getOwnerId()))
                     .extracting(Vaccine::getVaccineName).containsExactly("V10");
         }
 
@@ -116,7 +116,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
             healthRecordRepository.save(HealthRecord.builder()
                     .pet(nina).eventType("De outro dono").eventDate(LocalDate.now()).build());
 
-            assertThat(healthRecordRepository.findByPetOwnerOwnerIdOrderByEventDateDesc(ulysses.getOwnerId()))
+            assertThat(healthRecordRepository.findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(ulysses.getOwnerId()))
                     .extracting(HealthRecord::getEventType)
                     .containsExactly("Recente", "Antiga");
         }

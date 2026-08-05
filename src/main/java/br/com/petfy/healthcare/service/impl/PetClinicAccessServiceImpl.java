@@ -10,6 +10,7 @@ import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.PetClinicAccessService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +30,11 @@ public class PetClinicAccessServiceImpl implements PetClinicAccessService {
     private final PetRepository petRepository;
     private final ClinicRepository clinicRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
+    private final PetAccessGuard petAccessGuard;
 
     @Override
     public ClinicAccessResponseDTO grant(UUID petId, ClinicAccessRequestDTO request) {
-        Pet pet = buscarPetDoOwnerAutenticado(petId);
+        Pet pet = petAccessGuard.requireEscrita(petId);
         Clinic clinic = buscarClinica(request.getClinicId());
 
         // reconceder reativa a linha existente: a chave unica impede duplicar o
@@ -50,7 +52,7 @@ public class PetClinicAccessServiceImpl implements PetClinicAccessService {
 
     @Override
     public List<ClinicAccessResponseDTO> list(UUID petId) {
-        buscarPetDoOwnerAutenticado(petId);
+        petAccessGuard.requireEscrita(petId);
 
         return petClinicAccessRepository.findByPetPetIdOrderByGrantedAtDesc(petId)
                 .stream()
@@ -60,7 +62,7 @@ public class PetClinicAccessServiceImpl implements PetClinicAccessService {
 
     @Override
     public void revoke(UUID petId, UUID clinicId) {
-        buscarPetDoOwnerAutenticado(petId);
+        petAccessGuard.requireEscrita(petId);
 
         PetClinicAccess access = petClinicAccessRepository
                 .findByPetPetIdAndClinicClinicId(petId, clinicId)
@@ -74,17 +76,6 @@ public class PetClinicAccessServiceImpl implements PetClinicAccessService {
             access.setRevokedAt(LocalDateTime.now());
             petClinicAccessRepository.save(access);
         }
-    }
-
-    private Pet buscarPetDoOwnerAutenticado(UUID petId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
-        return petRepository.findById(petId)
-                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
     }
 
     private Clinic buscarClinica(UUID clinicId) {

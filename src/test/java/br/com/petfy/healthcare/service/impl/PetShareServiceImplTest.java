@@ -13,6 +13,7 @@ import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +56,9 @@ class PetShareServiceImplTest {
     @Mock
     private CurrentOwnerProvider currentOwnerProvider;
 
+    @Mock
+    private PetAccessGuard petAccessGuard;
+
     private PetShareServiceImpl service;
 
     private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
@@ -68,7 +72,7 @@ class PetShareServiceImplTest {
         // calculator real: o valor do teste esta em conferir o status que o link
         // mostra, e nao em repetir a regra num mock
         service = new PetShareServiceImpl(petShareRepository, petRepository, vaccineRepository,
-                currentOwnerProvider, new VaccineStatusCalculator(), new OpaqueTokenService());
+                currentOwnerProvider, petAccessGuard, new VaccineStatusCalculator(), new OpaqueTokenService());
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 30);
         ReflectionTestUtils.setField(service, "windowDays", 30);
     }
@@ -80,7 +84,7 @@ class PetShareServiceImplTest {
 
     private Pet petDe(UUID ownerId) {
         return Pet.builder().petId(PET_ID).name("Rex").type("Cachorro").breed("Vira-lata")
-                .bornDate(LocalDate.of(2021, 3, 15)).gender("Macho").owner(owner(ownerId)).build();
+                .bornDate(LocalDate.of(2021, 3, 15)).gender("Macho").tutors(br.com.petfy.healthcare.PetTutores.titular(owner(ownerId))).build();
     }
 
     private void autenticadoComo(UUID ownerId) {
@@ -105,7 +109,7 @@ class PetShareServiceImplTest {
         @DisplayName("deve devolver o token apenas na criacao")
         void deveDevolverTokenApenasNaCriacao() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(PET_ID, null);
@@ -118,7 +122,7 @@ class PetShareServiceImplTest {
         @DisplayName("nao deve guardar o token, apenas o hash")
         void naoDeveGuardarOToken() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(PET_ID, null);
@@ -143,7 +147,7 @@ class PetShareServiceImplTest {
         @DisplayName("dois links do mesmo pet devem ter tokens diferentes")
         void doisLinksDevemTerTokensDiferentes() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             assertThat(service.createShare(PET_ID, null).getToken())
@@ -154,7 +158,7 @@ class PetShareServiceImplTest {
         @DisplayName("deve usar a validade padrao quando o request nao informa")
         void deveUsarValidadePadrao() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(PET_ID, null);
@@ -167,7 +171,7 @@ class PetShareServiceImplTest {
         @DisplayName("deve respeitar a validade informada no request")
         void deveRespeitarValidadeInformada() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petShareRepository.save(any(PetShare.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(PET_ID, PetShareRequestDTO.builder().expiresInDays(3).build());
@@ -179,7 +183,7 @@ class PetShareServiceImplTest {
         @DisplayName("nao deve permitir compartilhar pet de outro dono")
         void naoDevePermitirCompartilharPetDeOutroDono() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
 
             assertThatThrownBy(() -> service.createShare(PET_ID, null))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -197,7 +201,7 @@ class PetShareServiceImplTest {
         @DisplayName("nao deve devolver o token nas listagens")
         void naoDeveDevolverTokenNasListagens() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petShareRepository.findByPetOrderByCreationDateDesc(any())).thenReturn(List.of(shareAtivo()));
 
             assertThat(service.listShares(PET_ID)).singleElement()

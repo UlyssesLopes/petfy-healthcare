@@ -26,6 +26,12 @@ public enum ErrorMessageEnum {
     // mensagem nao nomeia mais so a vacina. O codigo 117 nao mudou
     SPECIES_MISMATCH(117, "Catalog species does not match the pet species"),
     ANTIPARASITIC_CATALOG_NOT_FOUND(118, "Antiparasitic catalog entry not found"),
+    // 403, e nao 404: so chega aqui quem ja e tutor do pet, entao a resposta nao
+    // revela a existencia de nada que a pessoa ainda nao conhecesse
+    INSUFFICIENT_PET_ROLE(119, "Your role on this pet does not allow this action"),
+    PET_TUTOR_INVITE_NOT_FOUND(120, "Invite not found or no longer valid"),
+    ALREADY_A_TUTOR(121, "This person is already a tutor of this pet"),
+    CANNOT_REMOVE_HOLDER(122, "The holder cannot be removed; transfer ownership first"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

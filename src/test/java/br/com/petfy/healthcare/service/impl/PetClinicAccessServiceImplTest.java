@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.domain.dto.ClinicAccessRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.Owner;
@@ -43,6 +44,9 @@ class PetClinicAccessServiceImplTest {
     private PetRepository petRepository;
 
     @Mock
+    private PetAccessGuard petAccessGuard;
+
+    @Mock
     private ClinicRepository clinicRepository;
 
     @Mock
@@ -61,7 +65,7 @@ class PetClinicAccessServiceImplTest {
     }
 
     private Pet petDe(UUID ownerId) {
-        return Pet.builder().petId(PET_ID).name("Rex").owner(owner(ownerId)).build();
+        return Pet.builder().petId(PET_ID).name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner(ownerId))).build();
     }
 
     private Clinic clinic() {
@@ -90,7 +94,7 @@ class PetClinicAccessServiceImplTest {
         @DisplayName("deve conceder acesso da clinica ao pet")
         void deveConcederAcesso() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.empty());
@@ -110,7 +114,7 @@ class PetClinicAccessServiceImplTest {
             var revogado = acesso(LocalDateTime.now().minusDays(1));
 
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.of(revogado));
@@ -127,7 +131,7 @@ class PetClinicAccessServiceImplTest {
         @DisplayName("nao deve permitir conceder acesso a pet de outro dono")
         void naoDevePermitirConcederPetDeOutroDono() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
 
             assertThatThrownBy(() -> service.grant(PET_ID, ClinicAccessRequestDTO.builder().clinicId(CLINIC_ID).build()))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -140,7 +144,7 @@ class PetClinicAccessServiceImplTest {
         @DisplayName("deve lancar CLINIC_NOT_FOUND quando a clinica nao existe")
         void deveLancarQuandoClinicaNaoExiste() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.grant(PET_ID, ClinicAccessRequestDTO.builder().clinicId(CLINIC_ID).build()))
@@ -159,7 +163,7 @@ class PetClinicAccessServiceImplTest {
         @DisplayName("deve listar as concessoes do pet, ativas e revogadas")
         void deveListarConcessoes() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petClinicAccessRepository.findByPetPetIdOrderByGrantedAtDesc(PET_ID))
                     .thenReturn(List.of(acesso(null), acesso(LocalDateTime.now())));
 
@@ -173,7 +177,7 @@ class PetClinicAccessServiceImplTest {
         @DisplayName("nao deve listar concessoes de pet de outro dono")
         void naoDeveListarDePetDeOutroDono() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
 
             assertThatThrownBy(() -> service.list(PET_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -193,7 +197,7 @@ class PetClinicAccessServiceImplTest {
             var ativo = acesso(null);
 
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.of(ativo));
 
@@ -211,7 +215,7 @@ class PetClinicAccessServiceImplTest {
             var jaRevogado = acesso(original);
 
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.of(jaRevogado));
 
@@ -225,7 +229,7 @@ class PetClinicAccessServiceImplTest {
         @DisplayName("deve lancar CLINIC_ACCESS_NOT_FOUND quando nao ha concessao")
         void deveLancarQuandoNaoHaConcessao() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID));
             when(petClinicAccessRepository.findByPetPetIdAndClinicClinicId(PET_ID, CLINIC_ID))
                     .thenReturn(Optional.empty());
 
@@ -239,7 +243,7 @@ class PetClinicAccessServiceImplTest {
         @DisplayName("nao deve permitir revogar concessao de pet de outro dono")
         void naoDevePermitirRevogarDePetDeOutroDono() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID));
 
             assertThatThrownBy(() -> service.revoke(PET_ID, CLINIC_ID))
                     .isInstanceOf(PetfyHealthcareException.class)

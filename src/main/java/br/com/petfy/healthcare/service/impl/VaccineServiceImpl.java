@@ -16,6 +16,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VaccineService;
@@ -49,6 +50,7 @@ public class VaccineServiceImpl implements VaccineService {
     private final ClinicRepository clinicRepository;
 
     private final CurrentOwnerProvider currentOwnerProvider;
+    private final PetAccessGuard petAccessGuard;
 
     private final VaccineStatusCalculator vaccineStatusCalculator;
 
@@ -58,7 +60,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public VaccineResponseDTO createVaccine(VaccineRequestDTO request) {
-        Pet pet = buscarPetDoOwnerAutenticado(request.getPetId());
+        Pet pet = petAccessGuard.requireEscrita(request.getPetId());
 
         Clinic clinic = request.getClinicId() != null
                 ? clinicRepository.findById(request.getClinicId())
@@ -83,7 +85,7 @@ public class VaccineServiceImpl implements VaccineService {
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
         if (request.getPetId() != null) {
-            existing.setPet(buscarPetDoOwnerAutenticado(request.getPetId()));
+            existing.setPet(petAccessGuard.requireEscrita(request.getPetId()));
         }
 
         if (request.getClinicId() != null) {
@@ -118,7 +120,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public Page<VaccineResponseDTO> listAllVaccines(Pageable pageable) {
-        return vaccineRepository.findByPetOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
+        return vaccineRepository.findByPetTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
                 .map(this::toResponse);
     }
 
@@ -128,7 +130,7 @@ public class VaccineServiceImpl implements VaccineService {
 
         // filtra em memoria de proposito: a agenda cobre as vacinas de um tutor,
         // que sao poucas, e assim a classificacao inteira fica testavel sem banco
-        List<Vaccine> doTutor = vaccineRepository.findByPetOwnerOwnerId(currentOwnerProvider.require().getOwnerId());
+        List<Vaccine> doTutor = vaccineRepository.findByPetTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId());
 
         Map<VaccineStatus, List<VaccineAgendaItemDTO>> porStatus = doTutor.stream()
                 .map(vaccine -> toAgendaItem(vaccine, hoje, windowDays))
@@ -177,21 +179,10 @@ public class VaccineServiceImpl implements VaccineService {
         UUID ownerId = currentOwnerProvider.require().getOwnerId();
 
         return vaccineRepository.findById(vaccineId)
-                .filter(vaccine -> vaccine.getPet().getOwner().getOwnerId().equals(ownerId))
+                .filter(vaccine -> petAccessGuard.alcanca(vaccine.getPet().getPetId()))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
-    }
-
-    private Pet buscarPetDoOwnerAutenticado(UUID petId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-
-        return petRepository.findById(petId)
-                .filter(pet -> pet.getOwner().getOwnerId().equals(ownerId))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
                         HttpStatus.NOT_FOUND));
     }
 

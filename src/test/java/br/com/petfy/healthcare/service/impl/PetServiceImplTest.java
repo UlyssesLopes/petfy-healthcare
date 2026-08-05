@@ -1,6 +1,10 @@
 package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.PetRequestDTO;
+import br.com.petfy.healthcare.domain.entity.PetTutor;
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.Species;
@@ -40,7 +44,13 @@ class PetServiceImplTest {
     private PetRepository petRepository;
 
     @Mock
+    private PetTutorRepository petTutorRepository;
+
+    @Mock
     private CurrentOwnerProvider currentOwnerProvider;
+
+    @Mock
+    private PetAccessGuard petAccessGuard;
 
     @Mock
     private PuppyProtocolService puppyProtocolService;
@@ -66,7 +76,7 @@ class PetServiceImplTest {
                 .weight(12.5)
                 .gender("Macho")
                 .species(Species.CANINA)
-                .owner(owner(ownerId))
+                .tutors(br.com.petfy.healthcare.PetTutores.titular(owner(ownerId)))
                 .creationDate(LocalDateTime.of(2025, 1, 1, 10, 0))
                 .build();
     }
@@ -103,8 +113,14 @@ class PetServiceImplTest {
 
             var captor = ArgumentCaptor.forClass(Pet.class);
             verify(petRepository).save(captor.capture());
-            assertThat(captor.getValue().getOwner().getOwnerId()).isEqualTo(OWNER_ID);
             assertThat(captor.getValue().getCreationDate()).isNotNull();
+
+            // o vinculo e o que diz quem manda no pet, e nasce como HOLDER: a
+            // partir da V15 nao ha campo owner no pet para conferir
+            var vinculo = ArgumentCaptor.forClass(PetTutor.class);
+            verify(petTutorRepository).save(vinculo.capture());
+            assertThat(vinculo.getValue().getOwner().getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(vinculo.getValue().getRole()).isEqualTo(PetTutorRole.HOLDER);
         }
 
         @Test
@@ -166,7 +182,7 @@ class PetServiceImplTest {
         void deveListarApenasPetsDoOwnerAutenticado() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(petRepository.findByOwnerOwnerId(OWNER_ID, pageable))
+            when(petRepository.findByTutorsOwnerOwnerId(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of(petDe(OWNER_ID))));
 
             var result = petService.listAllPets(pageable);
@@ -181,7 +197,7 @@ class PetServiceImplTest {
         void listagemPaginadaNaoUsaFindAll() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(3, 50);
-            when(petRepository.findByOwnerOwnerId(OWNER_ID, pageable))
+            when(petRepository.findByTutorsOwnerOwnerId(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of()));
 
             petService.listAllPets(pageable);

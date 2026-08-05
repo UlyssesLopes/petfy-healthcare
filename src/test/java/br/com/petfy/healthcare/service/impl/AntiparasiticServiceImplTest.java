@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.domain.dto.AntiparasiticRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticCatalog;
@@ -49,6 +50,9 @@ class AntiparasiticServiceImplTest {
     private PetRepository petRepository;
 
     @Mock
+    private PetAccessGuard petAccessGuard;
+
+    @Mock
     private CurrentOwnerProvider currentOwnerProvider;
 
     @InjectMocks
@@ -71,7 +75,7 @@ class AntiparasiticServiceImplTest {
                 .petId(PET_ID)
                 .name("Rex")
                 .species(especie)
-                .owner(owner(ownerId))
+                .tutors(br.com.petfy.healthcare.PetTutores.titular(owner(ownerId)))
                 .build();
     }
 
@@ -110,7 +114,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("sem catalogo, nome e kind vem do request")
         void semCatalogoUsaORequest() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID, Species.CANINA));
             when(antiparasiticRepository.save(any(Antiparasitic.class))).thenAnswer(i -> i.getArgument(0));
 
             var request = AntiparasiticRequestDTO.builder()
@@ -131,7 +135,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("com catalogo, nome e kind saem do catalogo e a proxima dose e calculada")
         void comCatalogoCalculaProximaDose() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID, Species.CANINA));
             when(catalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogo(Species.CANINA, 90)));
             when(antiparasiticRepository.save(any(Antiparasitic.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -152,7 +156,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("data explicita vence o intervalo do catalogo")
         void dataExplicitaVenceOCatalogo() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID, Species.CANINA));
             when(catalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogo(Species.CANINA, 90)));
             when(antiparasiticRepository.save(any(Antiparasitic.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -173,7 +177,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("catalogo de especie diferente da do pet responde 409")
         void catalogoDeOutraEspecieResponde409() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID, Species.FELINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID, Species.FELINA));
             when(catalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogo(Species.CANINA, 90)));
 
             var request = AntiparasiticRequestDTO.builder()
@@ -194,7 +198,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("sem catalogo e sem name responde 400")
         void semCatalogoESemNomeResponde400() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID, Species.CANINA));
 
             var request = AntiparasiticRequestDTO.builder()
                     .petId(PET_ID)
@@ -212,7 +216,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("sem catalogo e sem kind responde 400")
         void semCatalogoESemKindResponde400() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID, Species.CANINA));
 
             var request = AntiparasiticRequestDTO.builder()
                     .petId(PET_ID)
@@ -230,7 +234,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("pet de outro dono responde 404, nao 403")
         void petDeOutroDonoResponde404() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID, Species.CANINA));
 
             var request = AntiparasiticRequestDTO.builder()
                     .petId(PET_ID)
@@ -248,7 +252,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("catalogo inexistente responde 404")
         void catalogoInexistenteResponde404() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID, Species.CANINA));
             when(catalogRepository.findById(CATALOG_ID)).thenReturn(Optional.empty());
 
             var request = AntiparasiticRequestDTO.builder()
@@ -301,9 +305,9 @@ class AntiparasiticServiceImplTest {
                     .petId(gatoId)
                     .name("Mia")
                     .species(Species.FELINA)
-                    .owner(owner(OWNER_ID))
+                    .tutors(br.com.petfy.healthcare.PetTutores.titular(owner(OWNER_ID)))
                     .build();
-            when(petRepository.findById(gatoId)).thenReturn(Optional.of(gato));
+            when(petAccessGuard.requireEscrita(gatoId)).thenReturn(gato);
 
             var request = AntiparasiticRequestDTO.builder().petId(gatoId).build();
 
@@ -397,7 +401,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("lista os antiparasitarios do pet do dono autenticado")
         void listaDoPetDoDono() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID, Species.CANINA));
             when(antiparasiticRepository.findByPetPetIdOrderByApplicationDateDesc(PET_ID))
                     .thenReturn(List.of(registroDe(OWNER_ID)));
 
@@ -411,7 +415,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("pet de outro dono responde 404 sem consultar a listagem")
         void petDeOutroDonoNaoLista() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID, Species.CANINA));
 
             assertThatThrownBy(() -> antiparasiticService.listByPet(PET_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -442,7 +446,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("com petId filtra pela especie do pet")
         void comPetIdFiltraPelaEspecie() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OWNER_ID, Species.FELINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OWNER_ID, Species.FELINA));
             when(catalogRepository.findBySpeciesOrderByNameAsc(Species.FELINA))
                     .thenReturn(List.of(catalogo(Species.FELINA, 90)));
 
@@ -457,7 +461,7 @@ class AntiparasiticServiceImplTest {
         @DisplayName("pet de outro dono responde 404 em vez de vazar o catalogo dele")
         void petDeOutroDonoResponde404() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findById(PET_ID)).thenReturn(Optional.of(petDe(OUTRO_OWNER_ID, Species.CANINA)));
+            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(petDe(OUTRO_OWNER_ID, Species.CANINA));
 
             assertThatThrownBy(() -> antiparasiticService.listCatalog(PET_ID))
                     .isInstanceOf(PetfyHealthcareException.class)

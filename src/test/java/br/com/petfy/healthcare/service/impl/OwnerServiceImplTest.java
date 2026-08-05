@@ -3,6 +3,11 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
+import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.PetTutor;
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
@@ -31,11 +36,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +74,9 @@ class OwnerServiceImplTest {
     private PetRepository petRepository;
 
     @Mock
+    private PetTutorRepository petTutorRepository;
+
+    @Mock
     private VaccineRepository vaccineRepository;
 
     @Mock
@@ -88,6 +98,8 @@ class OwnerServiceImplTest {
     private OwnerServiceImpl ownerService;
 
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID OUTRO_OWNER_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
     private static final String HASH = "$2a$10$hashDeMentiraParaOTeste";
 
     private Owner existingOwner() {
@@ -337,14 +349,23 @@ class OwnerServiceImplTest {
          * de verdade - mas garante que a sequencia nao seja alterada por engano.
          */
         @Test
-        @DisplayName("deve apagar em cascata: netas -> filhas -> pets -> tokens -> owner")
-        void deveApagarEmCascataNaOrdemCerta() {
+        @DisplayName("pet sem outro tutor morre junto, na ordem netas -> filhas -> pets")
+        void petSemOutroTutorMorreJunto() {
             var autenticado = existingOwner();
             when(currentOwnerProvider.require()).thenReturn(autenticado);
 
+            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var vinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
+            vinculo.setPet(pet);
+
+            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(vinculo));
+            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(1L);
+
             ownerService.deleteCurrentOwner();
 
+            var somenteEstePet = List.of(PET_ID);
             var ordem = org.mockito.Mockito.inOrder(
+                    petTutorRepository,
                     vaccineCorrectionRepository, healthRecordCorrectionRepository,
                     vaccineRepository, healthRecordRepository,
                     petShareRepository, petClinicAccessRepository,
@@ -352,16 +373,78 @@ class OwnerServiceImplTest {
                     passwordResetTokenRepository, emailVerificationTokenRepository,
                     ownerRepository);
 
-            ordem.verify(vaccineCorrectionRepository).deleteByVaccinePetOwnerOwnerId(OWNER_ID);
-            ordem.verify(healthRecordCorrectionRepository).deleteByHealthRecordPetOwnerOwnerId(OWNER_ID);
-            ordem.verify(vaccineRepository).deleteByPetOwnerOwnerId(OWNER_ID);
-            ordem.verify(healthRecordRepository).deleteByPetOwnerOwnerId(OWNER_ID);
-            ordem.verify(petShareRepository).deleteByPetOwnerOwnerId(OWNER_ID);
-            ordem.verify(petClinicAccessRepository).deleteByPetOwnerOwnerId(OWNER_ID);
-            ordem.verify(petRepository).deleteByOwnerOwnerId(OWNER_ID);
+            // os vinculos saem primeiro: seguram pet e owner ao mesmo tempo
+            ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            ordem.verify(vaccineCorrectionRepository).deleteByVaccinePetPetIdIn(somenteEstePet);
+            ordem.verify(healthRecordCorrectionRepository).deleteByHealthRecordPetPetIdIn(somenteEstePet);
+            ordem.verify(vaccineRepository).deleteByPetPetIdIn(somenteEstePet);
+            ordem.verify(healthRecordRepository).deleteByPetPetIdIn(somenteEstePet);
+            ordem.verify(petShareRepository).deleteByPetPetIdIn(somenteEstePet);
+            ordem.verify(petClinicAccessRepository).deleteByPetPetIdIn(somenteEstePet);
+            ordem.verify(petRepository).deleteByPetIdIn(somenteEstePet);
             ordem.verify(passwordResetTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(emailVerificationTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(ownerRepository).delete(autenticado);
+        }
+
+        /**
+         * O pedido de exclusao de um tutor nao autoriza destruir o historico de
+         * saude de um pet que continua tendo quem responda por ele.
+         */
+        @Test
+        @DisplayName("pet com outro tutor sobrevive: nada dele e apagado")
+        void petComOutroTutorSobrevive() {
+            var autenticado = existingOwner();
+            when(currentOwnerProvider.require()).thenReturn(autenticado);
+
+            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.EDITOR);
+            meuVinculo.setPet(pet);
+
+            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(2L);
+
+            ownerService.deleteCurrentOwner();
+
+            verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            verify(petRepository, never()).deleteByPetIdIn(any());
+            verify(vaccineRepository, never()).deleteByPetPetIdIn(any());
+            verify(healthRecordRepository, never()).deleteByPetPetIdIn(any());
+            verify(ownerRepository).delete(autenticado);
+        }
+
+        /**
+         * O indice do banco exige exatamente um HOLDER por pet, entao o titular
+         * nao pode simplesmente sumir: alguem herda.
+         */
+        @Test
+        @DisplayName("titular que sai passa a titularidade ao tutor mais antigo")
+        void titularQueSaiPassaATitularidade() {
+            var autenticado = existingOwner();
+            when(currentOwnerProvider.require()).thenReturn(autenticado);
+
+            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+
+            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
+            meuVinculo.setPet(pet);
+            meuVinculo.setCreationDate(LocalDateTime.of(2026, 1, 1, 10, 0));
+
+            var maria = Owner.builder().ownerId(OUTRO_OWNER_ID).name("Maria").build();
+            var vinculoDaMaria = PetTutores.vinculo(maria, PetTutorRole.VIEWER);
+            vinculoDaMaria.setPet(pet);
+            vinculoDaMaria.setCreationDate(LocalDateTime.of(2026, 2, 1, 10, 0));
+
+            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(2L);
+            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+                    .thenReturn(List.of(meuVinculo, vinculoDaMaria));
+
+            ownerService.deleteCurrentOwner();
+
+            var captor = ArgumentCaptor.forClass(PetTutor.class);
+            verify(petTutorRepository).save(captor.capture());
+            assertThat(captor.getValue().getOwner().getOwnerId()).isEqualTo(OUTRO_OWNER_ID);
+            assertThat(captor.getValue().getRole()).isEqualTo(PetTutorRole.HOLDER);
         }
     }
 }
