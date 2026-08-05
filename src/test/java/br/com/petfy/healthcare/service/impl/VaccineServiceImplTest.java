@@ -24,6 +24,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
@@ -448,9 +450,11 @@ class VaccineServiceImplTest {
         @DisplayName("deve listar apenas as vacinas dos pets do owner autenticado")
         void deveListarApenasDoOwnerAutenticado() {
             autenticadoComo(OWNER_ID);
-            when(vaccineRepository.findByPetOwnerOwnerId(OWNER_ID)).thenReturn(List.of(vacinaDe(OWNER_ID)));
+            var pageable = PageRequest.of(0, 20);
+            when(vaccineRepository.findByPetOwnerOwnerId(OWNER_ID, pageable))
+                    .thenReturn(new PageImpl<>(List.of(vacinaDe(OWNER_ID))));
 
-            assertThat(vaccineService.listAllVaccines()).hasSize(1);
+            assertThat(vaccineService.listAllVaccines(pageable).getContent()).hasSize(1);
             verify(vaccineRepository, never()).findAll();
         }
     }

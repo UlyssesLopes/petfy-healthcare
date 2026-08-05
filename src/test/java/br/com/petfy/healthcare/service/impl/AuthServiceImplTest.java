@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.config.PetfyMetrics;
 import br.com.petfy.healthcare.domain.dto.LoginRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.Owner;
@@ -43,6 +44,13 @@ class AuthServiceImplTest {
 
     @Mock
     private JwtService jwtService;
+
+    /**
+     * A metrica de tentativa de login e efeito colateral, nao regra: mockada para
+     * os testes seguirem falando so sobre autenticacao.
+     */
+    @Mock
+    private PetfyMetrics petfyMetrics;
 
     @InjectMocks
     private AuthServiceImpl authService;

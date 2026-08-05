@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.config;
 
 import br.com.petfy.healthcare.security.JwtAuthenticationFilter;
+import br.com.petfy.healthcare.security.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -25,7 +26,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+                                                   JwtAuthenticationFilter jwtAuthenticationFilter,
+                                                   RateLimitFilter rateLimitFilter) throws Exception {
         http
                 // API stateless com token no header: nao ha cookie de sessao
                 // para um site terceiro reaproveitar, entao CSRF nao se aplica
@@ -67,6 +69,9 @@ public class SecurityConfig {
                 .exceptionHandling(eh -> eh
                         .authenticationEntryPoint((request, response, ex) ->
                                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
+                // rateLimitFilter roda antes do JWT: barramos flood antes de
+                // gastar validacao de token
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

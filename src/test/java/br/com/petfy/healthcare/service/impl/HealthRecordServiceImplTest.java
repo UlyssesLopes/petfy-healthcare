@@ -19,6 +19,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
@@ -284,10 +286,11 @@ class HealthRecordServiceImplTest {
         @DisplayName("deve listar apenas os registros dos pets do owner autenticado")
         void deveListarApenasDoOwnerAutenticado() {
             autenticadoComo(OWNER_ID);
-            when(healthRecordRepository.findByPetOwnerOwnerIdOrderByEventDateDesc(OWNER_ID))
-                    .thenReturn(List.of(registroDe(OWNER_ID)));
+            var pageable = PageRequest.of(0, 20);
+            when(healthRecordRepository.findByPetOwnerOwnerIdOrderByEventDateDesc(OWNER_ID, pageable))
+                    .thenReturn(new PageImpl<>(List.of(registroDe(OWNER_ID))));
 
-            assertThat(healthRecordService.listAllHealthRecords()).hasSize(1);
+            assertThat(healthRecordService.listAllHealthRecords(pageable).getContent()).hasSize(1);
             verify(healthRecordRepository, never()).findAll();
         }
     }

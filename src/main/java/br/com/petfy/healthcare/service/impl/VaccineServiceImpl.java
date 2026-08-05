@@ -25,6 +25,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -114,11 +117,9 @@ public class VaccineServiceImpl implements VaccineService {
     }
 
     @Override
-    public List<VaccineResponseDTO> listAllVaccines() {
-        return vaccineRepository.findByPetOwnerOwnerId(currentOwnerProvider.require().getOwnerId())
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public Page<VaccineResponseDTO> listAllVaccines(Pageable pageable) {
+        return vaccineRepository.findByPetOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
+                .map(this::toResponse);
     }
 
     @Override

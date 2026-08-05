@@ -16,6 +16,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
@@ -163,13 +165,28 @@ class PetServiceImplTest {
         @DisplayName("deve listar apenas os pets do owner autenticado")
         void deveListarApenasPetsDoOwnerAutenticado() {
             autenticadoComo(OWNER_ID);
-            when(petRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(petDe(OWNER_ID)));
+            var pageable = PageRequest.of(0, 20);
+            when(petRepository.findByOwnerOwnerId(OWNER_ID, pageable))
+                    .thenReturn(new PageImpl<>(List.of(petDe(OWNER_ID))));
 
-            var result = petService.listAllPets();
+            var result = petService.listAllPets(pageable);
 
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getOwnerId()).isEqualTo(OWNER_ID);
             verify(petRepository, never()).findAll();
+        }
+
+        @Test
+        @DisplayName("a listagem paginada nao pode cair no findAll, que ignoraria o dono")
+        void listagemPaginadaNaoUsaFindAll() {
+            autenticadoComo(OWNER_ID);
+            var pageable = PageRequest.of(3, 50);
+            when(petRepository.findByOwnerOwnerId(OWNER_ID, pageable))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            petService.listAllPets(pageable);
+
+            verify(petRepository, never()).findAll(any(org.springframework.data.domain.Pageable.class));
         }
     }
 

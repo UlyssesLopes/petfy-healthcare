@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.config.PetfyMetrics;
 import br.com.petfy.healthcare.domain.dto.LoginRequestDTO;
 import br.com.petfy.healthcare.domain.dto.LoginResponseDTO;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
@@ -25,6 +26,7 @@ public class AuthServiceImpl implements AuthService {
     private final VetRepository vetRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final PetfyMetrics petfyMetrics;
 
     /**
      * Tutor e veterinario entram pelo mesmo endpoint. O papel sai de qual tabela
@@ -45,12 +47,19 @@ public class AuthServiceImpl implements AuthService {
 
         // a mesma resposta para email inexistente e para senha errada: distinguir
         // os dois casos entregaria de graca quais emails estao cadastrados
-        Credenciais credenciais = encontrado
-                .filter(c -> passwordEncoder.matches(request.getPassword(), c.senhaComHash))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.INVALID_CREDENTIALS.getMessage(),
-                        ErrorMessageEnum.INVALID_CREDENTIALS.getCode(),
-                        HttpStatus.UNAUTHORIZED));
+        Optional<Credenciais> validas = encontrado
+                .filter(c -> passwordEncoder.matches(request.getPassword(), c.senhaComHash));
+
+        if (validas.isEmpty()) {
+            petfyMetrics.loginAttempt("failure");
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.INVALID_CREDENTIALS.getMessage(),
+                    ErrorMessageEnum.INVALID_CREDENTIALS.getCode(),
+                    HttpStatus.UNAUTHORIZED);
+        }
+
+        Credenciais credenciais = validas.get();
+        petfyMetrics.loginAttempt("success");
 
         return LoginResponseDTO.builder()
                 .token(jwtService.generateToken(credenciais.email, credenciais.role, credenciais.id))

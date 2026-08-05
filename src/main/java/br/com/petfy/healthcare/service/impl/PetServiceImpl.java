@@ -14,10 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,11 +59,9 @@ public class PetServiceImpl implements PetService {
     }
 
     @Override
-    public List<PetResponseDTO> listAllPets() {
-        return petRepository.findByOwnerOwnerId(currentOwnerProvider.require().getOwnerId())
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public Page<PetResponseDTO> listAllPets(Pageable pageable) {
+        return petRepository.findByOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
+                .map(this::toResponse);
     }
 
     @Override
