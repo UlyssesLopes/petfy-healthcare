@@ -18,4 +18,6 @@ public interface PetClinicAccessRepository extends JpaRepository<PetClinicAccess
     /** Usado pelo vet para listar os pets que a clinica dele pode atender. */
     List<PetClinicAccess> findByClinicClinicIdAndRevokedAtIsNull(UUID clinicId);
 
+    void deleteByPetOwnerOwnerId(UUID ownerId);
+
 }

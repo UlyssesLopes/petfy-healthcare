@@ -5,8 +5,15 @@ import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
+import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
+import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
+import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
+import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.domain.repository.PetShareRepository;
+import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
+import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
@@ -55,6 +62,27 @@ class OwnerServiceImplTest {
 
     @Mock
     private EmailVerificationTokenRepository emailVerificationTokenRepository;
+
+    @Mock
+    private PetRepository petRepository;
+
+    @Mock
+    private VaccineRepository vaccineRepository;
+
+    @Mock
+    private HealthRecordRepository healthRecordRepository;
+
+    @Mock
+    private PetShareRepository petShareRepository;
+
+    @Mock
+    private PetClinicAccessRepository petClinicAccessRepository;
+
+    @Mock
+    private VaccineCorrectionRepository vaccineCorrectionRepository;
+
+    @Mock
+    private HealthRecordCorrectionRepository healthRecordCorrectionRepository;
 
     @InjectMocks
     private OwnerServiceImpl ownerService;
@@ -301,22 +329,36 @@ class OwnerServiceImplTest {
     class DeleteCurrentOwner {
 
         /**
-         * A ordem importa e nao e detalhe de implementacao: os tokens apontam
-         * para owners por chave estrangeira, entao apagar a conta antes deles faz
-         * o banco recusar. Este teste com mock nao pega isso sozinho - quem pega
-         * e o OwnerDeletionContainerTest, contra Postgres de verdade - mas
-         * garante que a limpeza nao seja removida por engano.
+         * A ordem importa e nao e detalhe de implementacao: as correcoes apontam
+         * para vacina e historico, esses apontam para pet, pet aponta para owner,
+         * e os tokens apontam para owner tambem. Apagar fora da ordem faz o banco
+         * recusar por violacao de chave estrangeira. Este teste com mock nao pega
+         * isso sozinho - quem pega e o OwnerDeletionContainerTest, contra Postgres
+         * de verdade - mas garante que a sequencia nao seja alterada por engano.
          */
         @Test
-        @DisplayName("deve remover os tokens da conta antes de remover o owner")
-        void deveRemoverOwnerAutenticado() {
+        @DisplayName("deve apagar em cascata: netas -> filhas -> pets -> tokens -> owner")
+        void deveApagarEmCascataNaOrdemCerta() {
             var autenticado = existingOwner();
             when(currentOwnerProvider.require()).thenReturn(autenticado);
 
             ownerService.deleteCurrentOwner();
 
             var ordem = org.mockito.Mockito.inOrder(
-                    passwordResetTokenRepository, emailVerificationTokenRepository, ownerRepository);
+                    vaccineCorrectionRepository, healthRecordCorrectionRepository,
+                    vaccineRepository, healthRecordRepository,
+                    petShareRepository, petClinicAccessRepository,
+                    petRepository,
+                    passwordResetTokenRepository, emailVerificationTokenRepository,
+                    ownerRepository);
+
+            ordem.verify(vaccineCorrectionRepository).deleteByVaccinePetOwnerOwnerId(OWNER_ID);
+            ordem.verify(healthRecordCorrectionRepository).deleteByHealthRecordPetOwnerOwnerId(OWNER_ID);
+            ordem.verify(vaccineRepository).deleteByPetOwnerOwnerId(OWNER_ID);
+            ordem.verify(healthRecordRepository).deleteByPetOwnerOwnerId(OWNER_ID);
+            ordem.verify(petShareRepository).deleteByPetOwnerOwnerId(OWNER_ID);
+            ordem.verify(petClinicAccessRepository).deleteByPetOwnerOwnerId(OWNER_ID);
+            ordem.verify(petRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(passwordResetTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(emailVerificationTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(ownerRepository).delete(autenticado);

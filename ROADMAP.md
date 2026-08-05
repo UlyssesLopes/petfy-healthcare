@@ -282,21 +282,29 @@ valor único — virar histórico dá curva de crescimento do filhote.
 **Pronto quando:** um lembrete de vermífugo sai pelo mesmo caminho do de vacina,
 sem código novo de canal.
 
-### 10. LGPD e confiança
+### 10. LGPD e confiança — parcialmente concluído
 
-- Exportação e exclusão a pedido do titular — é dado pessoal somado a dado de
-  saúde. **Hoje `DELETE /owners/me` falha para qualquer conta com pet**, porque
-  `pets` aponta para `owners` por chave estrangeira. Decidir o que acontece com o
-  histórico do pet é o cerne deste item: apagar junto, transferir para outro
-  tutor ou anonimizar são decisões diferentes, e nenhuma delas pode ser efeito
-  colateral silencioso de um `ON DELETE CASCADE`.
-- Limite de acesso e rastro nos links públicos de carteira: hoje quem tem a URL
-  abre quantas vezes quiser e não há registro de quem abriu.
-- Decidir o que fazer com CRMV não verificado e com criação de clínica não
-  verificada. A porta do convite protege clínicas existentes, mas qualquer pessoa
-  cadastra uma clínica nova e vira o primeiro vet dela.
+- [x] **Exclusão a pedido do titular.** `DELETE /owners/me` agora apaga em
+      cascata todo o rastro do tutor: correções → vacinas/histórico/shares/
+      acessos por clínica → pets → tokens → owner. **Política escolhida: apagar,
+      não anonimizar nem transferir.** Anonimizar deixaria dado de saúde
+      associado a um "ex-tutor fantasma" que o vet ainda enxerga — contraria o
+      pedido de sair. Transferir pressupõe multi-tutor (passo 8), que não
+      existe. Cascata é o que atende ao pedido sem meio-termo. Cobertura por
+      teste de mock (`OwnerServiceImplTest.deveApagarEmCascataNaOrdemCerta`) e
+      pelo `OwnerDeletionContainerTest` no CI. Concluído em 2026-08-04.
+- [ ] **Exportação a pedido do titular** — não entrou nesta rodada. Endpoint
+      agregador `GET /owners/me/export` (JSON com owner + pets + vaccines +
+      health records + shares) é o próximo passo natural, mecânico.
+- [ ] **Rastro nos links públicos de carteira.** Não entrou. Precisa de tabela
+      nova `pet_share_access_log` e hook em `SharedCardController` gravando IP
+      e timestamp a cada `GET /share/{token}`. Também vale limite de acessos
+      por link.
+- [ ] **CRMV/clínica não verificada.** Decisão pendente — mistura produto e
+      compliance (validação de CRMV exige integração externa).
 
 **Pronto quando:** você atende um pedido de exclusão sem abrir o banco na mão.
+**Exclusão feita; export e rastro ainda em aberto.**
 
 ## Fase 5 — Frontend
 
@@ -329,19 +337,65 @@ dose.
 
 ## Dívidas com relógio
 
-- **Spring Boot 2.7.18 saiu do suporte OSS.** Para dado de saúde com usuário
-  real, o relógio de patch de segurança passa a contar. Não é valor de produto,
-  então não ocupa um passo — mas o encaixe natural é **entre o 3 e o 4**: migrar
-  para Boot 3 mexe em `javax`→`jakarta` e sai muito mais barato antes de existir
-  um cliente dependendo da API. É também o que libera o springdoc 2.x no passo 4,
-  em vez de entrar na 1.6.x e trocar depois.
-- **Actions com Node 20 deprecado** (`checkout@v4`, `setup-java@v4`,
-  `upload/download-artifact@v4`, `login-action@v3`, `build-push-action@v5`). O
-  runner está forçando Node 24 e apenas avisa. Um bump numa passada só resolve.
+- ~~**Spring Boot 2.7.18 saiu do suporte OSS.**~~ Migrado para Boot 3.3.5 em
+  2026-08-04 (PR #16).
+- ~~**Actions com Node 20 deprecado.**~~ Bump para v7/v5/v4/v7/v4/v7 feito na
+  higiene lateral (PR #17), 2026-08-04.
 - **OCR em container nunca foi exercitado.** O build instala o Tesseract e
   descobre o `tessdata`, mas ninguém chamou o endpoint de importação de dentro do
   container. A base mudou de Debian slim para Ubuntu 22.04 na correção da imagem,
   então a versão do Tesseract também mudou.
+
+## Trabalho em curso — branches vivas em 2026-08-04
+
+Três subagentes foram lançados em paralelo. Dois deles morreram por cota antes
+de commitar, mas deixaram o worktree com código escrito. Retomar amanhã.
+
+### Passo 9 — antiparasitário + peso série (branch `feat/passo-9-antiparasitario-peso-wip`)
+
+Subagent escreveu a estrutura completa mas não testou nem commitou. Código no
+disco (subido como WIP para não perder):
+
+- Entidades: `Antiparasitic`, `AntiparasiticCatalog`, `PetWeightHistory`
+- DTOs: `AntiparasiticRequestDTO`, `AntiparasiticResponseDTO`,
+  `AntiparasiticCatalogResponseDTO`, `PetWeightRequestDTO`,
+  `PetWeightResponseDTO`
+- Repositórios: `AntiparasiticRepository`, `AntiparasiticCatalogRepository`,
+  `PetWeightHistoryRepository`
+- Services: `AntiparasiticService` + impl, `PetWeightService` + impl
+- Controllers: `AntiparasiticController`, `PetWeightController`
+- Migration: `V14__antiparasitario_e_peso_historico.sql`
+- Alteração em `VaccineReminderService` (varre antiparasitário também)
+
+**O que falta:** rodar `mvn test`, corrigir o que quebrar, escrever teste do
+serviço novo, verificar se o scheduler integra sem regressão, ajustar
+`VaccineReminderServiceTest`. Estimativa: 1-2h.
+
+### Dívidas operacionais (branch `chore/dividas-operacionais-wip`)
+
+Subagent escreveu a estrutura das três dívidas mas não testou nem commitou.
+Código no disco:
+
+- **Rate limit:** `RateLimitFilter` + teste, config em `SecurityConfig`.
+- **Paginação:** todos os controllers de listagem (`PetController`,
+  `VaccineController`, `HealthRecordController`, `ClinicController`) e os
+  services correspondentes receberam `Pageable`; repositórios ganharam
+  assinaturas `Page<T>` além das antigas.
+- **Observabilidade:** `PetfyMetrics` (Micrometer counters), `PageableConfig`,
+  properties expondo `/actuator/prometheus`.
+- `pom.xml`: Bucket4j e micrometer-prometheus adicionados.
+
+**O que falta:** rodar `mvn test`, corrigir o que quebrar, checar se a
+serialização de `Page<T>` na resposta está no formato esperado, decidir se
+`RateLimitFilter` roda antes ou depois do `JwtAuthenticationFilter`,
+documentar breaking changes de contrato (endpoints agora devolvem `Page`
+em vez de `List`). Estimativa: 2-3h.
+
+### Fora dos WIPs — pendências do passo 10
+
+- Export LGPD `GET /owners/me/export` (mecânico).
+- Rastro em `SharedCardController` (nova tabela + hook + endpoint de leitura).
+- Decisão sobre CRMV/clínica não verificada.
 
 ## Fora do escopo desta rodada
 

@@ -5,8 +5,15 @@ import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
+import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
+import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
+import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
+import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.domain.repository.PetShareRepository;
+import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
+import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
@@ -20,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +35,13 @@ public class OwnerServiceImpl implements OwnerService {
 
     private final OwnerRepository ownerRepository;
     private final VetRepository vetRepository;
+    private final PetRepository petRepository;
+    private final VaccineRepository vaccineRepository;
+    private final HealthRecordRepository healthRecordRepository;
+    private final PetShareRepository petShareRepository;
+    private final PetClinicAccessRepository petClinicAccessRepository;
+    private final VaccineCorrectionRepository vaccineCorrectionRepository;
+    private final HealthRecordCorrectionRepository healthRecordCorrectionRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
@@ -123,22 +138,49 @@ public class OwnerServiceImpl implements OwnerService {
     }
 
     /**
-     * Remove antes os tokens da conta.
+     * Apaga a conta e todo o rastro do tutor no sistema: pets, vacinas, historico,
+     * shares, acessos por clinica, correcoes e tokens. E o exercicio do direito de
+     * exclusao pela LGPD.
      *
-     * Eles apontam para owners por chave estrangeira, e como todo cadastro gera
-     * um token de confirmacao de e-mail, sem isto nenhuma conta consegue mais ser
-     * apagada - o banco recusa. A limpeza e explicita, e nao ON DELETE CASCADE na
-     * migration, para que apagar conta continue sendo uma decisao visivel no
-     * codigo, e nao um efeito colateral escondido no schema.
+     * Ordem obrigatoria: filhas antes das pais. As correcoes apontam para vacina e
+     * historico; vacina/historico apontam para pet; pet aponta para owner. Sem
+     * essa ordem o banco recusa cada delete com violacao de chave estrangeira - o
+     * DELETE /owners/me estava quebrado desde a V12 exatamente por isso, so
+     * apagava a conta sem pet.
+     *
+     * A politica escolhida e apagar em cascata, e nao anonimizar nem transferir.
+     * Anonimizar deixaria dado de saude do pet associado a um "ex-tutor fantasma"
+     * que o vet ainda enxerga - contraria o pedido de sair do sistema. Transferir
+     * pressupoe multi-tutor, que nao existe (passo 8 do ROADMAP). Cascata e o que
+     * atende ao pedido de exclusao sem meio-termo.
+     *
+     * A limpeza fica em codigo, nao em ON DELETE CASCADE no schema, para manter a
+     * decisao visivel e testavel - mesmo padrao ja adotado para os tokens.
      */
     @Override
     @Transactional
     public void deleteCurrentOwner() {
         Owner owner = currentOwnerProvider.require();
+        UUID ownerId = owner.getOwnerId();
 
-        passwordResetTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
-        emailVerificationTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
+        // Netas primeiro: correcoes de vacina e de historico
+        vaccineCorrectionRepository.deleteByVaccinePetOwnerOwnerId(ownerId);
+        healthRecordCorrectionRepository.deleteByHealthRecordPetOwnerOwnerId(ownerId);
 
+        // Filhas de pet
+        vaccineRepository.deleteByPetOwnerOwnerId(ownerId);
+        healthRecordRepository.deleteByPetOwnerOwnerId(ownerId);
+        petShareRepository.deleteByPetOwnerOwnerId(ownerId);
+        petClinicAccessRepository.deleteByPetOwnerOwnerId(ownerId);
+
+        // Pets
+        petRepository.deleteByOwnerOwnerId(ownerId);
+
+        // Tokens da conta
+        passwordResetTokenRepository.deleteByOwnerOwnerId(ownerId);
+        emailVerificationTokenRepository.deleteByOwnerOwnerId(ownerId);
+
+        // Finalmente o owner
         ownerRepository.delete(owner);
     }
 
