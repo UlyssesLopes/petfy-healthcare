@@ -160,6 +160,23 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.6.0</version>
         </dependency>
+
+        <!-- rate limiting por IP em endpoints publicos sensiveis (brute force de
+             login, flood de cadastro). Cache em memoria e suficiente porque a
+             aplicacao roda em instancia unica - decisao registrada no ROADMAP.
+             Nao ha dependencia de Redis ou Hazelcast. -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
+
+        <!-- metricas via Micrometer expostas em /actuator/prometheus. A versao vem
+             do BOM do Boot 3, sem hardcode aqui. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

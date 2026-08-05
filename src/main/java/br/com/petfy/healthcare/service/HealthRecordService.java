@@ -3,6 +3,8 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +15,8 @@ public interface HealthRecordService {
 
     HealthRecordResponseDTO getHealthRecordById(UUID healthRecordId);
 
-    List<HealthRecordResponseDTO> listAllHealthRecords();
+    /** Listagem paginada para o controller. */
+    Page<HealthRecordResponseDTO> listAllHealthRecords(Pageable pageable);
 
     List<HealthRecordResponseDTO> listHealthRecordsByPet(UUID petId);
 

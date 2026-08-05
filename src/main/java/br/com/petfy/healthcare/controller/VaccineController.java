@@ -7,6 +7,9 @@ import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.service.VaccineService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,8 +57,9 @@ public class VaccineController {
     }
 
     @GetMapping
-    public ResponseEntity<List<VaccineResponseDTO>> listAllVaccines() {
-        return ResponseEntity.ok(vaccineService.listAllVaccines());
+    public ResponseEntity<Page<VaccineResponseDTO>> listAllVaccines(
+            @PageableDefault(size = 20, sort = "applicationDate") Pageable pageable) {
+        return ResponseEntity.ok(vaccineService.listAllVaccines(pageable));
     }
 
     /** Rastro de alteracoes: quem mudou o que, e quando. */

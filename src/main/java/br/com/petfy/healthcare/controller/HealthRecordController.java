@@ -6,6 +6,9 @@ import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
 import br.com.petfy.healthcare.service.HealthRecordService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,8 +35,9 @@ public class HealthRecordController {
     }
 
     @GetMapping
-    public ResponseEntity<List<HealthRecordResponseDTO>> listAll() {
-        return ResponseEntity.ok(healthRecordService.listAllHealthRecords());
+    public ResponseEntity<Page<HealthRecordResponseDTO>> listAll(
+            @PageableDefault(size = 20, sort = "eventDate") Pageable pageable) {
+        return ResponseEntity.ok(healthRecordService.listAllHealthRecords(pageable));
     }
 
     /** Rastro de alteracoes: quem mudou o que, e quando. */
