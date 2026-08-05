@@ -5,6 +5,7 @@ import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
+import br.com.petfy.healthcare.domain.repository.PetHealthConditionRepository;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
 import br.com.petfy.healthcare.domain.repository.PetShareRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
@@ -59,6 +60,7 @@ class PetPurgerTest {
     @Mock private PetShareRepository petShareRepository;
     @Mock private PetClinicAccessRepository petClinicAccessRepository;
     @Mock private SensitiveAccessLogRepository sensitiveAccessLogRepository;
+    @Mock private PetHealthConditionRepository petHealthConditionRepository;
 
     @InjectMocks
     private PetPurger petPurger;
@@ -72,6 +74,7 @@ class PetPurgerTest {
                 vaccineRepository, healthRecordRepository,
                 petWeightHistoryRepository, antiparasiticRepository,
                 petShareRepository, petClinicAccessRepository, sensitiveAccessLogRepository,
+                petHealthConditionRepository,
                 petTutorInviteRepository, petTutorRepository,
                 petRepository, attachmentStorage);
     }
@@ -111,6 +114,7 @@ class PetPurgerTest {
             ordem.verify(petShareRepository).deleteByPetPetIdIn(UM_PET);
             ordem.verify(petClinicAccessRepository).deleteByPetPetIdIn(UM_PET);
             ordem.verify(sensitiveAccessLogRepository).deleteByPetPetIdIn(UM_PET);
+            ordem.verify(petHealthConditionRepository).deleteByPetPetIdIn(UM_PET);
             ordem.verify(petTutorInviteRepository).deleteByPetPetIdIn(UM_PET);
             ordem.verify(petTutorRepository).deleteByPetPetIdIn(UM_PET);
 
@@ -163,6 +167,7 @@ class PetPurgerTest {
                     vaccineRepository, healthRecordRepository,
                     petWeightHistoryRepository, antiparasiticRepository,
                     petShareRepository, petClinicAccessRepository, sensitiveAccessLogRepository,
+                petHealthConditionRepository,
                     petTutorInviteRepository, petTutorRepository,
                     petRepository, attachmentStorage);
         }

@@ -54,6 +54,12 @@ public class PetServiceImpl implements PetService {
                 .weight(dto.getWeight())
                 .gender(dto.getGender())
                 .species(dto.getSpecies())
+                .microchipNumber(dto.getMicrochipNumber())
+                // o booleano segue o numero: informar o numero e afirmar que tem chip, e
+                // deixar os dois divergirem daria duas respostas para a mesma pergunta
+                .microchip(dto.getMicrochipNumber() != null ? Boolean.TRUE : null)
+                .castrated(castradoSegundo(dto))
+                .castratedAt(dto.getCastratedAt())
                 .creationDate(LocalDateTime.now())
                 .build();
 
@@ -99,6 +105,19 @@ public class PetServiceImpl implements PetService {
         pet.setBornDate(dto.getBornDate() != null ? dto.getBornDate() : pet.getBornDate());
         pet.setWeight(dto.getWeight() != null ? dto.getWeight() : pet.getWeight());
         pet.setGender(dto.getGender() != null ? dto.getGender() : pet.getGender());
+
+        if (dto.getMicrochipNumber() != null) {
+            pet.setMicrochipNumber(dto.getMicrochipNumber());
+            pet.setMicrochip(Boolean.TRUE);
+        }
+
+        if (dto.getCastratedAt() != null) {
+            pet.setCastratedAt(dto.getCastratedAt());
+        }
+
+        if (castradoSegundo(dto) != null) {
+            pet.setCastrated(castradoSegundo(dto));
+        }
         // species fica de fora do PUT parcial de proposito: mudar especie de
         // um pet ja com historico deixaria vacinas cruzadas (aplicada como
         // canina agora consulta catalogo felino). Se acontecer de valer, vai
@@ -127,6 +146,21 @@ public class PetServiceImpl implements PetService {
         petRepository.delete(pet);
     }
 
+    /**
+     * Castrado, considerando que a data implica o fato.
+     *
+     * Informar {@code castratedAt} sem {@code castrated} e afirmar que foi castrado -
+     * exigir os dois campos juntos seria burocracia sobre o obvio, e deixar o pet com data
+     * de castracao e {@code castrated} nulo daria duas respostas para a mesma pergunta.
+     */
+    private Boolean castradoSegundo(PetRequestDTO dto) {
+        if (dto.getCastrated() != null) {
+            return dto.getCastrated();
+        }
+
+        return dto.getCastratedAt() != null ? Boolean.TRUE : null;
+    }
+
     private PetResponseDTO toResponse(Pet pet) {
         return toResponse(pet, pet.getHolder().map(Owner::getOwnerId).orElse(null));
     }
@@ -146,6 +180,10 @@ public class PetServiceImpl implements PetService {
                 .weight(pet.getWeight())
                 .gender(pet.getGender())
                 .species(pet.getSpecies())
+                .microchipNumber(pet.getMicrochipNumber())
+                .microchip(pet.getMicrochip())
+                .castrated(pet.getCastrated())
+                .castratedAt(pet.getCastratedAt())
                 .ownerId(holderId)
                 .creationDate(pet.getCreationDate())
                 .updateDate(pet.getUpdateDate())

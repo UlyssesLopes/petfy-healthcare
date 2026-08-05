@@ -168,6 +168,8 @@ public class VetPetServiceImpl implements VetPetService {
                 .pet(pet)
                 .clinic(vet.getClinic())
                 .eventType(request.getEventType())
+                .category(request.getCategory())
+                .diagnosis(request.getDiagnosis())
                 .eventDate(request.getEventDate())
                 .description(request.getDescription())
                 .creationDate(LocalDateTime.now())
@@ -197,6 +199,8 @@ public class VetPetServiceImpl implements VetPetService {
         healthRecordCorrectionLog.recordByVet(record, vet);
 
         if (request.getEventType() != null) record.setEventType(request.getEventType());
+        if (request.getCategory() != null) record.setCategory(request.getCategory());
+        if (request.getDiagnosis() != null) record.setDiagnosis(request.getDiagnosis());
         if (request.getEventDate() != null) record.setEventDate(request.getEventDate());
         if (request.getDescription() != null) record.setDescription(request.getDescription());
         record.setUpdateDate(LocalDateTime.now());
@@ -230,6 +234,8 @@ public class VetPetServiceImpl implements VetPetService {
         return HealthRecordResponseDTO.builder()
                 .healthRecordId(record.getHealthRecordId())
                 .eventType(record.getEventType())
+                .category(record.getCategory())
+                .diagnosis(record.getDiagnosis())
                 .eventDate(record.getEventDate())
                 .description(record.getDescription())
                 .petId(record.getPet().getPetId())

@@ -79,7 +79,8 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 "owners", "clinics", "pets", "vaccines", "health_records",
                 "vaccine_catalog", "pet_shares", "vets", "pet_clinic_access",
                 "clinic_invites", "vaccine_corrections",
-                "pet_tutors", "pet_tutor_invites", "consent_records", "sensitive_access_log");
+                "pet_tutors", "pet_tutor_invites", "consent_records", "sensitive_access_log",
+                "attachments", "pet_health_conditions");
     }
 
     @Test
