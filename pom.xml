@@ -178,6 +178,17 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- Heap explicito, e nao o default da JVM.
+                         O default e uma fracao da RAM da maquina, entao a suite passa
+                         ou nao dependendo de quem a roda. Sob pressao de memoria o
+                         DockerClientFactory.isDockerAvailable() do Testcontainers
+                         engole o Throwable e devolve false: os testes de container
+                         viram "pulados por falta de Docker" e o build fica VERDE sem
+                         nenhuma migration validada contra Postgres. Aconteceu com 630
+                         testes numa maquina de 16 GB.
+                         @{argLine} preserva o agente do JaCoCo, que injeta o proprio
+                         argumento nessa mesma propriedade. -->
+                    <argLine>@{argLine} -Xmx2g</argLine>
                     <systemPropertyVariables>
                         <!-- o docker-java assume 1.32 quando a negociacao pelo
                              named pipe do Windows falha, e daemon moderno recusa

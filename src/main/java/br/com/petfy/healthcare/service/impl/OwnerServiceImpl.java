@@ -6,6 +6,7 @@ import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
@@ -48,6 +49,7 @@ public class OwnerServiceImpl implements OwnerService {
     private final PetPurger petPurger;
     private final ConsentService consentService;
     private final ConsentRecordRepository consentRecordRepository;
+    private final AttachmentRepository attachmentRepository;
 
     @Override
     public OwnerResponseDTO createOwner(OwnerRequestDTO request) {
@@ -218,6 +220,16 @@ public class OwnerServiceImpl implements OwnerService {
         // de mock, que nao tem indice.
         petTutorRepository.flush();
         petsQuePrecisamDeSucessor.forEach(this::promoverSucessor);
+
+        // Anexo enviado por quem sai, num pet que SOBREVIVE porque tem outro tutor: o
+        // arquivo pertence ao pet, nao a quem fez o upload. Apagar o laudo porque quem o
+        // subiu fechou a conta destruiria dado de saude de um animal que continua tendo
+        // quem responda por ele - a mesma regra que a V15 aplicou ao pet inteiro. Perde-se
+        // so a autoria.
+        //
+        // Nos pets que morrem, o purge apaga o anexo e o arquivo de qualquer forma; este
+        // update passa por eles antes sem prejuizo.
+        attachmentRepository.desassociarUploader(ownerId);
 
         // Os pets que morrem, com tudo que pende deles. A sequencia mora no
         // PetPurger, compartilhada com o DELETE /pets/{id}: eram duas listas

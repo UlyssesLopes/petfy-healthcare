@@ -18,6 +18,9 @@ public enum AccessedResource {
 
     HEALTH_RECORD_CORRECTIONS,
 
+    /** Arquivo anexado - laudo, exame, foto da carteirinha de papel. */
+    ATTACHMENTS,
+
     /** Carteira aberta pelo link publico. */
     SHARED_CARD
 
