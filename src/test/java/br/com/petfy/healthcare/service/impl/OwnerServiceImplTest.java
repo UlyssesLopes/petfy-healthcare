@@ -41,6 +41,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -436,8 +437,12 @@ class OwnerServiceImplTest {
 
             when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
             when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(2L);
+            // devolve so quem fica: a consulta acontece depois de o vinculo de quem
+            // sai ter sido apagado e descarregado, entao o banco nao teria como
+            // trazer o proprio. Stubar os dois aqui foi o que deixou passar a
+            // violacao do indice unico - ver OwnerDeletionContainerTest
             when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
-                    .thenReturn(List.of(meuVinculo, vinculoDaMaria));
+                    .thenReturn(List.of(vinculoDaMaria));
 
             ownerService.deleteCurrentOwner();
 
@@ -445,6 +450,63 @@ class OwnerServiceImplTest {
             verify(petTutorRepository).save(captor.capture());
             assertThat(captor.getValue().getOwner().getOwnerId()).isEqualTo(OUTRO_OWNER_ID);
             assertThat(captor.getValue().getRole()).isEqualTo(PetTutorRole.HOLDER);
+        }
+
+        /**
+         * A ordem e a regra, nao detalhe de implementacao: o indice unico parcial da
+         * V15 exige exatamente um HOLDER por pet, entao promover o sucessor antes de
+         * o vinculo de quem sai ter saido deixa dois na tabela e o Postgres recusa o
+         * update - derrubando a exclusao inteira.
+         */
+        @Test
+        @DisplayName("o vinculo de quem sai e apagado antes de o sucessor ser promovido")
+        void apagaOVinculoAntesDePromover() {
+            var autenticado = existingOwner();
+            when(currentOwnerProvider.require()).thenReturn(autenticado);
+
+            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+
+            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
+            meuVinculo.setPet(pet);
+            meuVinculo.setCreationDate(LocalDateTime.of(2026, 1, 1, 10, 0));
+
+            var maria = Owner.builder().ownerId(OUTRO_OWNER_ID).name("Maria").build();
+            var vinculoDaMaria = PetTutores.vinculo(maria, PetTutorRole.VIEWER);
+            vinculoDaMaria.setPet(pet);
+            vinculoDaMaria.setCreationDate(LocalDateTime.of(2026, 2, 1, 10, 0));
+
+            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(2L);
+            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+                    .thenReturn(List.of(vinculoDaMaria));
+
+            ownerService.deleteCurrentOwner();
+
+            var ordem = inOrder(petTutorRepository);
+            ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            ordem.verify(petTutorRepository).flush();
+            ordem.verify(petTutorRepository).save(any(PetTutor.class));
+        }
+
+        /** Co-tutor que sai nao mexe em titularidade: nao ha o que herdar. */
+        @Test
+        @DisplayName("co-tutor que sai nao promove ninguem")
+        void coTutorQueSaiNaoPromoveNinguem() {
+            var autenticado = existingOwner();
+            when(currentOwnerProvider.require()).thenReturn(autenticado);
+
+            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.EDITOR);
+            meuVinculo.setPet(pet);
+
+            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(2L);
+
+            ownerService.deleteCurrentOwner();
+
+            verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            verify(petTutorRepository, never()).save(any(PetTutor.class));
+            verify(petTutorRepository, never()).findByPetPetIdOrderByRoleAscCreationDateAsc(any());
         }
     }
 }
