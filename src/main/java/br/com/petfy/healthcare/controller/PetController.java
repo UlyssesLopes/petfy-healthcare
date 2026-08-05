@@ -5,12 +5,14 @@ import br.com.petfy.healthcare.domain.dto.PetResponseDTO;
 import br.com.petfy.healthcare.service.PetService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -31,8 +33,9 @@ public class PetController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PetResponseDTO>> listAll() {
-        return ResponseEntity.ok(petService.listAllPets());
+    public ResponseEntity<Page<PetResponseDTO>> listAll(
+            @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+        return ResponseEntity.ok(petService.listAllPets(pageable));
     }
 
     /**

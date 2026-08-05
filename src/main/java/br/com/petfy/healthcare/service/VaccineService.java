@@ -4,6 +4,8 @@ import br.com.petfy.healthcare.domain.dto.VaccineAgendaResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,7 +23,8 @@ public interface VaccineService {
 
     VaccineResponseDTO getVaccineById(UUID id);
 
-    List<VaccineResponseDTO> listAllVaccines();
+    /** Listagem paginada para o controller. */
+    Page<VaccineResponseDTO> listAllVaccines(Pageable pageable);
 
     /** Rastro de alteracoes de um registro do proprio tutor. */
     List<VaccineCorrectionResponseDTO> listCorrections(UUID vaccineId);

@@ -14,6 +14,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
@@ -140,9 +142,11 @@ class ClinicServiceImplTest {
         @Test
         @DisplayName("deve mapear todas as clinicas retornadas pelo repositorio")
         void deveMapearTodasAsClinicas() {
-            when(clinicRepository.findAll()).thenReturn(List.of(existingClinic()));
+            var pageable = PageRequest.of(0, 20);
+            when(clinicRepository.findAll(pageable))
+                    .thenReturn(new PageImpl<>(List.of(existingClinic())));
 
-            assertThat(clinicService.listAllClinics()).hasSize(1);
+            assertThat(clinicService.listAllClinics(pageable).getContent()).hasSize(1);
         }
     }
 

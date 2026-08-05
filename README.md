@@ -162,6 +162,35 @@ Erros são padronizados por `ErrorMessageEnum` e tratados no
 `GlobalExceptionHandler`. Campos de auditoria (`creationDate`, `updateDate`)
 existem em todas as entidades.
 
+### Listagens são paginadas
+
+`GET /pets`, `GET /vaccines`, `GET /health-records` e `GET /clinics` devolvem
+`Page`, não um array — **mudança de contrato**, feita antes de existir cliente
+justamente para não quebrar nenhum depois:
+
+```jsonc
+// antes:  [ {...}, {...} ]
+// agora:
+{
+  "content": [ {...}, {...} ],
+  "totalElements": 42,
+  "totalPages": 3,
+  "number": 0,
+  "size": 20
+}
+```
+
+Aceitam `?page=`, `?size=` e `?sort=campo,asc`. O default é 20 e o teto é 100:
+acima disso o Spring corta para o teto em vez de recusar, então `?size=999999`
+devolve 100, e não um erro. O teto existe para o cliente não conseguir empurrar
+o problema de volume para o banco.
+
+As listagens escopadas por pet — `GET /health-records/pet/{petId}`,
+`GET /antiparasitics?petId=`, `GET /pets/{petId}/weights` — **continuam como
+array**. São naturalmente pequenas (o histórico de um pet), e paginá-las custaria
+ao cliente um laço para montar a carteira. A agenda de vacinas também não é
+paginada: ela produz uma resposta calculada, não uma listagem de tabela.
+
 ## Agenda de vacinas
 
 É a única parte do sistema que produz informação em vez de devolver o que foi
@@ -481,6 +510,44 @@ pool de envio até a aplicação reiniciar.
 rotina e o tutor receberia o lembrete repetido. Ligar exige decidir quem executa
 — uma instância só, ou um agendador externo chamando a rotina. Enquanto essa
 decisão não existe, o default seguro é não enviar.
+
+## Rate limit
+
+Os endpoints públicos são limitados por IP, porque são os únicos que qualquer
+pessoa alcança sem credencial — e três deles **enviam e-mail**, então sem limite
+viram máquina de mandar mensagem para terceiro:
+
+| Grupo | Rotas | Default |
+|---|---|---|
+| Login | `POST /auth/login` | 10/min (`RATE_LIMIT_LOGIN`) |
+| Cadastro e recuperação | `POST /owners`, `/vets`, `/auth/password-reset`, `/auth/email-verification/resend` | 5/min (`RATE_LIMIT_RESTRITO`) |
+
+Estourar responde `429` no mesmo formato de erro do resto da API. Só `POST` é
+limitado: `GET` no mesmo path passa.
+
+O `RateLimitFilter` roda **antes** do `JwtAuthenticationFilter` — não faz sentido
+gastar validação de token num flood que seria bloqueado de qualquer jeito. E ele
+estende `OncePerRequestFilter`, o que **não é detalhe de estilo**: um `Filter`
+anotado com `@Component` é registrado duas vezes, uma pelo Boot na cadeia do
+servlet container e outra na `SecurityFilterChain`, e a segunda roda dentro da
+primeira. Sem essa proteção cada requisição consumiria dois tokens do balde e o
+limite real seria metade do configurado. Há teste para isso.
+
+Os baldes são em memória, coerente com a instância única. **Escalar para duas
+instâncias divide o limite entre elas**, do mesmo jeito que reintroduz o lembrete
+duplicado — o caminho nesse dia é um contador compartilhado.
+
+## Métricas
+
+`GET /actuator/prometheus` expõe as métricas do Micrometer, mais os contadores
+próprios de `PetfyMetrics` (tentativas de login, entre outros).
+
+**Ele exige token**, ao contrário do `/actuator/health`. Contagem de requisição,
+latência e tentativa de login são dado de operação: dizem quanto o sistema é
+usado e quando alguém está tentando entrar. O health é público porque o provedor
+de hospedagem o chama sem credencial; a métrica não tem essa desculpa. Quem
+garante isso é o `anyRequest().authenticated()`, e há teste para que expor uma
+métrica nova não vire vazamento por descuido de configuração.
 
 ## Banco
 

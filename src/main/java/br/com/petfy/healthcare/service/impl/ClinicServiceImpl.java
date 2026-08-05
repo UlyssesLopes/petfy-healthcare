@@ -11,10 +11,11 @@ import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,10 +52,8 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
-    public List<ClinicResponseDTO> listAllClinics() {
-        return clinicRepository.findAll().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public Page<ClinicResponseDTO> listAllClinics(Pageable pageable) {
+        return clinicRepository.findAll(pageable).map(this::toResponse);
     }
 
     @Override

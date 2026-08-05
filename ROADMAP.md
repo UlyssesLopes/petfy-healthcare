@@ -374,33 +374,60 @@ dose.
   que o Boot gerencia. **O que fica de lição:** teste que pula em silêncio é pior
   que teste que falha, porque some do radar exatamente quando mais se confia nele.
 
-## Trabalho em curso — branches vivas
+## As branches WIP de 2026-08-04 — retomadas e fechadas
 
 Três subagentes foram lançados em paralelo em 2026-08-04. Dois morreram por cota
 antes de commitar, mas deixaram o worktree com código escrito, subido como WIP.
+**Os dois foram retomados e fechados em 2026-08-05**, e nenhuma branch WIP
+continua viva: o passo 9 está registrado na seção própria acima, e as dívidas
+operacionais logo abaixo.
 
-**O passo 9 saiu daqui em 2026-08-05** — fechado, testado e registrado na seção
-própria acima. Restou uma branch.
+**O que os dois casos ensinaram, e vale mais que o código que entregaram:**
+código de subagente que nunca rodou parece pronto e não está. O passo 9
+reintroduzia o furo de espécie que o passo 6 tinha fechado horas antes; as
+dívidas operacionais tinham uma classe que não compilava, um rate limit valendo
+metade do configurado e seis testes quebrados. **Nos dois casos o erro só
+apareceu depois de rebasear na `main` e rodar `mvn test` de verdade** — e em
+nenhum dos dois o rebase era opcional, porque a branch tinha saído de uma base
+anterior aos merges do mesmo dia.
 
-### Dívidas operacionais (branch `chore/dividas-operacionais-wip`)
+### Dívidas operacionais — concluído em 2026-08-05
 
-Subagent escreveu a estrutura das três dívidas mas não testou nem commitou.
-Código no disco:
+Rate limit, paginação e observabilidade. As três eram dívida de operação, não
+valor de produto — mas a primeira é a que impede que os endpoints de e-mail
+virem máquina de mandar mensagem para terceiro.
 
-- **Rate limit:** `RateLimitFilter` + teste, config em `SecurityConfig`.
-- **Paginação:** todos os controllers de listagem (`PetController`,
-  `VaccineController`, `HealthRecordController`, `ClinicController`) e os
-  services correspondentes receberam `Pageable`; repositórios ganharam
-  assinaturas `Page<T>` além das antigas.
-- **Observabilidade:** `PetfyMetrics` (Micrometer counters), `PageableConfig`,
-  properties expondo `/actuator/prometheus`.
-- `pom.xml`: Bucket4j e micrometer-prometheus adicionados.
+- [x] **Rate limit por IP** nos públicos: 10/min no login, 5/min em cadastro,
+      recuperação de senha e reenvio de confirmação. Roda antes do
+      `JwtAuthenticationFilter` — não faz sentido validar token de um flood que
+      seria bloqueado de qualquer jeito.
+- [x] **Paginação** em `/pets`, `/vaccines`, `/health-records` e `/clinics`,
+      com teto de 100 por página. As listagens escopadas por pet continuam array,
+      por serem naturalmente pequenas.
+- [x] **`/actuator/prometheus`** exposto e **protegido por token**, ao contrário
+      do `health`. Métrica diz quanto o sistema é usado e quando alguém está
+      tentando entrar; o health é público só porque o provedor o chama sem
+      credencial.
 
-**O que falta:** rodar `mvn test`, corrigir o que quebrar, checar se a
-serialização de `Page<T>` na resposta está no formato esperado, decidir se
-`RateLimitFilter` roda antes ou depois do `JwtAuthenticationFilter`,
-documentar breaking changes de contrato (endpoints agora devolvem `Page`
-em vez de `List`). Estimativa: 2-3h.
+**Três defeitos que só apareceram ao rodar o que o WIP nunca rodou:**
+
+1. `PageableConfig` chamava `setDefaultPageable`, que **não existe** — não
+   compilava. Substituído por `spring.data.web.pageable.*`, que é como o Boot
+   expõe isso, e a classe deixou de ser necessária.
+2. `RateLimitFilter` implementava `Filter` cru sendo `@Component`. Isso o
+   registra **duas vezes** — na cadeia do servlet container e na
+   `SecurityFilterChain`, a segunda rodando dentro da primeira. Cada requisição
+   consumiria dois tokens do balde, e o limite real seria **metade** do
+   configurado: 5 logins por minuto onde a property diz 10. Corrigido com
+   `OncePerRequestFilter`, como o `JwtAuthenticationFilter` vizinho já fazia, e
+   travado por teste.
+3. `AuthServiceImpl` ganhou `PetfyMetrics` sem que `AuthServiceImplTest`
+   soubesse — seis testes quebravam com `NullPointerException`.
+
+**O choque com o passo 4, que era o risco registrado:** o OpenAPI publicado no
+mesmo dia descrevia as listagens como array, e agora elas são `Page`. Como não
+existe cliente ainda, a mudança saiu de graça — foi exatamente por isso que
+valeu fazer agora e não depois. Está documentada no `README`.
 
 **Atenção antes de mergear, descoberto em 2026-08-05:** esta branch saiu do PR
 #18 e colide com o passo 4, que entrou no mesmo dia. O OpenAPI recém-publicado
@@ -414,7 +441,9 @@ Vale fatiar: o **rate limit** é a parte que protege recuperação de senha e
 reenvio de confirmação, é aditiva e não mexe em contrato. A paginação é a parte
 cara. Não precisam entrar juntas.
 
-### Fora dos WIPs — pendências do passo 10
+## O que restou em aberto do passo 10
+
+Nunca esteve nas branches WIP, e continua pendente:
 
 - Export LGPD `GET /owners/me/export` (mecânico).
 - Rastro em `SharedCardController` (nova tabela + hook + endpoint de leitura).

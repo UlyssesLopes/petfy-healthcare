@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -94,7 +95,7 @@ class SecurityFilterChainTest {
         mockMvc.perform(get("/pets"))
                 .andExpect(status().isUnauthorized());
 
-        verify(petService, never()).listAllPets();
+        verify(petService, never()).listAllPets(any());
     }
 
     @Test
@@ -103,7 +104,7 @@ class SecurityFilterChainTest {
         mockMvc.perform(get("/pets").header("Authorization", "Bearer token-falsificado"))
                 .andExpect(status().isUnauthorized());
 
-        verify(petService, never()).listAllPets();
+        verify(petService, never()).listAllPets(any());
     }
 
     @Test
@@ -116,12 +117,12 @@ class SecurityFilterChainTest {
     @Test
     @DisplayName("deve liberar a rota protegida quando o token e valido")
     void deveLiberarComTokenValido() throws Exception {
-        when(petService.listAllPets()).thenReturn(List.of());
+        when(petService.listAllPets(any())).thenReturn(Page.empty());
 
         mockMvc.perform(get("/pets").header("Authorization", "Bearer " + tokenValido()))
                 .andExpect(status().isOk());
 
-        verify(petService).listAllPets();
+        verify(petService).listAllPets(any());
     }
 
     @Test
@@ -225,7 +226,7 @@ class SecurityFilterChainTest {
         mockMvc.perform(get("/pets").header("Authorization", "Bearer " + tokenValido()))
                 .andExpect(status().isUnauthorized());
 
-        verify(petService, never()).listAllPets();
+        verify(petService, never()).listAllPets(any());
     }
 
     @Test
@@ -245,6 +246,21 @@ class SecurityFilterChainTest {
     @DisplayName("os demais endpoints do actuator devem exigir token - so o health e publico")
     void demaisEndpointsDoActuatorDevemExigirToken() throws Exception {
         mockMvc.perform(get("/actuator/info"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    /**
+     * O prometheus passou a ser exposto sobre HTTP junto com health e info. Ele
+     * conta requisicoes, latencia e tentativas de login - dado de operacao que
+     * nao deve ser publico como o health e. Como nao ha regra propria para ele
+     * no SecurityConfig, quem o protege e o anyRequest().authenticated(); este
+     * teste existe para que expor uma metrica nova nao vire vazamento por
+     * descuido de configuracao.
+     */
+    @Test
+    @DisplayName("o endpoint de metricas nao pode ser publico como o health")
+    void metricasDevemExigirToken() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
                 .andExpect(status().isUnauthorized());
     }
 }
