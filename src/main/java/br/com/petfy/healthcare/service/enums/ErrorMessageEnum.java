@@ -32,6 +32,10 @@ public enum ErrorMessageEnum {
     PET_TUTOR_INVITE_NOT_FOUND(120, "Invite not found or no longer valid"),
     ALREADY_A_TUTOR(121, "This person is already a tutor of this pet"),
     CANNOT_REMOVE_HOLDER(122, "The holder cannot be removed; transfer ownership first"),
+    // promover alguem a titular rebaixa o titular atual, entao nao cabe no PATCH
+    // de papel: e a transferencia, que tem endpoint proprio
+    TRANSFER_REQUIRED_FOR_HOLDER(123, "Use the ownership transfer endpoint to change the holder"),
+    TUTOR_NOT_FOUND(124, "This person is not a tutor of this pet"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

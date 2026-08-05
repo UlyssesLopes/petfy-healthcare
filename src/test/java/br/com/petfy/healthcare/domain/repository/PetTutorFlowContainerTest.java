@@ -1,0 +1,419 @@
+package br.com.petfy.healthcare.domain.repository;
+
+import br.com.petfy.healthcare.PostgresContainerTest;
+import br.com.petfy.healthcare.domain.dto.PetTutorInviteRequestDTO;
+import br.com.petfy.healthcare.domain.dto.PetTutorRoleUpdateRequestDTO;
+import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.PetTutor;
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Species;
+import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.service.PetService;
+import br.com.petfy.healthcare.service.PetTutorService;
+import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+/**
+ * O fluxo de co-tutor contra Postgres de verdade.
+ *
+ * Existe porque a parte perigosa do 8b nao e regra de negocio, e sim <b>ordem de
+ * comandos</b>: a V15 garante exatamente um HOLDER por pet com indice unico
+ * parcial, e toda troca de titularidade passa por um instante em que dois
+ * candidatos existem. Mock nao tem indice, e foi assim que a exclusao de conta
+ * quebrou antes - ver OwnerDeletionContainerTest.
+ *
+ * O convite tambem trouxe chaves estrangeiras novas para pets e owners, que so
+ * recusam o delete no banco.
+ */
+@SpringBootTest
+@Transactional
+@DisplayName("fluxo de co-tutor contra Postgres real")
+class PetTutorFlowContainerTest extends PostgresContainerTest {
+
+    @Autowired private PetTutorService petTutorService;
+    @Autowired private PetService petService;
+    @Autowired private OwnerRepository ownerRepository;
+    @Autowired private PetRepository petRepository;
+    @Autowired private PetTutorRepository petTutorRepository;
+    @Autowired private PetTutorInviteRepository petTutorInviteRepository;
+
+    private Owner ulysses;
+    private Owner maria;
+    private Pet rex;
+
+    @BeforeEach
+    void setUp() {
+        ulysses = owner("ulysses");
+        maria = owner("maria");
+
+        rex = petRepository.saveAndFlush(Pet.builder()
+                .name("Rex").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
+
+        vinculo(ulysses, PetTutorRole.HOLDER);
+    }
+
+    @AfterEach
+    void limparContexto() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private Owner owner(String prefixo) {
+        return ownerRepository.saveAndFlush(Owner.builder()
+                .name(prefixo)
+                .email(prefixo + "-" + UUID.randomUUID() + "@petfy.com.br")
+                .password("hash")
+                .build());
+    }
+
+    private PetTutor vinculo(Owner de, PetTutorRole papel) {
+        return petTutorRepository.saveAndFlush(PetTutor.builder()
+                .pet(rex).owner(de).role(papel).creationDate(LocalDateTime.now()).build());
+    }
+
+    private void autenticar(Owner como) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(como.getEmail(), "n/a", List.of()));
+    }
+
+    private String convidar(Owner emissor, Owner para, PetTutorRole papel) {
+        autenticar(emissor);
+        return petTutorService.invite(rex.getPetId(), PetTutorInviteRequestDTO.builder()
+                .email(para.getEmail()).role(papel).build()).getToken();
+    }
+
+    private List<PetTutor> tutoresDoRex() {
+        return petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(rex.getPetId());
+    }
+
+    private long holdersDoRex() {
+        return tutoresDoRex().stream().filter(PetTutor::isHolder).count();
+    }
+
+    @Nested
+    @DisplayName("convite e aceite")
+    class ConviteEAceite {
+
+        @Test
+        @DisplayName("co-tutor aceito passa a alcancar o pet, no papel do convite")
+        void coTutorAceitoAlcancaOPet() {
+            String token = convidar(ulysses, maria, PetTutorRole.EDITOR);
+
+            autenticar(maria);
+            var vinculo = petTutorService.accept(token);
+
+            assertThat(vinculo.getRole()).isEqualTo(PetTutorRole.EDITOR);
+            assertThat(vinculo.getPetId()).isEqualTo(rex.getPetId());
+            assertThat(petRepository.findByTutorsOwnerOwnerId(maria.getOwnerId()))
+                    .extracting(Pet::getName).containsExactly("Rex");
+        }
+
+        /** Uso unico: o mesmo token nao entra duas vezes. */
+        @Test
+        @DisplayName("o mesmo convite nao pode ser aceito duas vezes")
+        void conviteNaoAceitaDuasVezes() {
+            String token = convidar(ulysses, maria, PetTutorRole.EDITOR);
+
+            autenticar(maria);
+            petTutorService.accept(token);
+
+            assertThatThrownBy(() -> petTutorService.accept(token))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.PET_TUTOR_INVITE_NOT_FOUND.getCode(),
+                            HttpStatus.NOT_FOUND);
+        }
+
+        /**
+         * O e-mail trava o destinatario: sem isso o link viraria portador, e quem o
+         * recebesse encaminhado entraria no historico de saude de um animal alheio.
+         */
+        @Test
+        @DisplayName("quem nao e o destinatario nao aceita, e recebe a mesma resposta de token invalido")
+        void terceiroNaoAceita() {
+            String token = convidar(ulysses, maria, PetTutorRole.EDITOR);
+            Owner estranho = owner("estranho");
+
+            autenticar(estranho);
+
+            assertThatThrownBy(() -> petTutorService.accept(token))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code")
+                    .isEqualTo(ErrorMessageEnum.PET_TUTOR_INVITE_NOT_FOUND.getCode());
+
+            assertThat(petRepository.findByTutorsOwnerOwnerId(estranho.getOwnerId())).isEmpty();
+        }
+
+        @Test
+        @DisplayName("convite revogado nao e aceito")
+        void conviteRevogadoNaoEAceito() {
+            String token = convidar(ulysses, maria, PetTutorRole.EDITOR);
+            UUID inviteId = petTutorInviteRepository.findByPetPetIdOrderByCreationDateDesc(rex.getPetId())
+                    .get(0).getPetTutorInviteId();
+
+            autenticar(ulysses);
+            petTutorService.revokeInvite(rex.getPetId(), inviteId);
+
+            autenticar(maria);
+            assertThatThrownBy(() -> petTutorService.accept(token))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code")
+                    .isEqualTo(ErrorMessageEnum.PET_TUTOR_INVITE_NOT_FOUND.getCode());
+        }
+
+        /** O token nao fica guardado: a tabela tem o hash, e ele nao e o token. */
+        @Test
+        @DisplayName("o convite guarda hash, nao o token")
+        void conviteGuardaHash() {
+            String token = convidar(ulysses, maria, PetTutorRole.EDITOR);
+
+            assertThat(petTutorInviteRepository.findByPetPetIdOrderByCreationDateDesc(rex.getPetId()))
+                    .singleElement()
+                    .satisfies(invite -> assertThat(invite.getTokenHash()).isNotBlank().isNotEqualTo(token));
+        }
+
+        @Test
+        @DisplayName("nao se convida quem ja e tutor do pet")
+        void naoConvidaQuemJaETutor() {
+            vinculo(maria, PetTutorRole.VIEWER);
+            autenticar(ulysses);
+
+            var request = PetTutorInviteRequestDTO.builder()
+                    .email(maria.getEmail()).role(PetTutorRole.EDITOR).build();
+
+            assertThatThrownBy(() -> petTutorService.invite(rex.getPetId(), request))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.ALREADY_A_TUTOR.getCode(), HttpStatus.CONFLICT);
+        }
+    }
+
+    /**
+     * O nucleo do risco. Cada caso aqui passaria em mock e falharia no banco se a
+     * ordem rebaixa-depois-promove fosse invertida.
+     */
+    @Nested
+    @DisplayName("titularidade")
+    class Titularidade {
+
+        @Test
+        @DisplayName("convite HOLDER aceito troca o titular sem violar o indice")
+        void conviteHolderTrocaOTitular() {
+            String token = convidar(ulysses, maria, PetTutorRole.HOLDER);
+
+            autenticar(maria);
+            var novoVinculo = petTutorService.accept(token);
+            petTutorRepository.flush();
+
+            assertThat(novoVinculo.getRole()).isEqualTo(PetTutorRole.HOLDER);
+            assertThat(holdersDoRex()).isEqualTo(1);
+
+            // quem transferiu continua enxergando a carteira, agora como EDITOR
+            assertThat(petTutorRepository.findByPetPetIdAndOwnerOwnerId(rex.getPetId(), ulysses.getOwnerId()))
+                    .get()
+                    .satisfies(antigo -> assertThat(antigo.getRole()).isEqualTo(PetTutorRole.EDITOR));
+        }
+
+        @Test
+        @DisplayName("transferir para quem ja e tutor troca os dois papeis")
+        void transferirParaTutorExistente() {
+            vinculo(maria, PetTutorRole.VIEWER);
+            autenticar(ulysses);
+
+            var resultado = petTutorService.transferHolder(rex.getPetId(), maria.getOwnerId());
+            petTutorRepository.flush();
+
+            assertThat(resultado.getRole()).isEqualTo(PetTutorRole.HOLDER);
+            assertThat(resultado.getOwnerId()).isEqualTo(maria.getOwnerId());
+            assertThat(holdersDoRex()).isEqualTo(1);
+            assertThat(petTutorRepository.findByPetPetIdAndOwnerOwnerId(rex.getPetId(), ulysses.getOwnerId()))
+                    .get()
+                    .satisfies(antigo -> assertThat(antigo.getRole()).isEqualTo(PetTutorRole.EDITOR));
+        }
+
+        /**
+         * Depois de transferir, quem passou a titularidade perde o que so o titular
+         * faz - inclusive transferir de volta por conta propria.
+         */
+        @Test
+        @DisplayName("quem transferiu deixa de poder transferir de volta")
+        void quemTransferiuPerdeOPoder() {
+            vinculo(maria, PetTutorRole.VIEWER);
+            autenticar(ulysses);
+            petTutorService.transferHolder(rex.getPetId(), maria.getOwnerId());
+            petTutorRepository.flush();
+
+            assertThatThrownBy(() -> petTutorService.transferHolder(rex.getPetId(), ulysses.getOwnerId()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.INSUFFICIENT_PET_ROLE.getCode(), HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("transferir para o proprio titular nao muda nada")
+        void transferirParaSiMesmoNaoMudaNada() {
+            autenticar(ulysses);
+
+            var resultado = petTutorService.transferHolder(rex.getPetId(), ulysses.getOwnerId());
+
+            assertThat(resultado.getRole()).isEqualTo(PetTutorRole.HOLDER);
+            assertThat(holdersDoRex()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("transferir para quem nao e tutor responde TUTOR_NOT_FOUND")
+        void transferirParaNaoTutor() {
+            autenticar(ulysses);
+
+            assertThatThrownBy(() -> petTutorService.transferHolder(rex.getPetId(), maria.getOwnerId()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.TUTOR_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("papel e saida")
+    class PapelESaida {
+
+        @Test
+        @DisplayName("titular troca o papel do co-tutor entre EDITOR e VIEWER")
+        void titularTrocaOPapel() {
+            vinculo(maria, PetTutorRole.VIEWER);
+            autenticar(ulysses);
+
+            var resultado = petTutorService.changeRole(rex.getPetId(), maria.getOwnerId(),
+                    PetTutorRoleUpdateRequestDTO.builder().role(PetTutorRole.EDITOR).build());
+
+            assertThat(resultado.getRole()).isEqualTo(PetTutorRole.EDITOR);
+        }
+
+        @Test
+        @DisplayName("promover a HOLDER pelo PATCH e recusado, apontando a transferencia")
+        void patchNaoPromoveAHolder() {
+            vinculo(maria, PetTutorRole.VIEWER);
+            autenticar(ulysses);
+
+            var request = PetTutorRoleUpdateRequestDTO.builder().role(PetTutorRole.HOLDER).build();
+
+            assertThatThrownBy(() -> petTutorService.changeRole(rex.getPetId(), maria.getOwnerId(), request))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.TRANSFER_REQUIRED_FOR_HOLDER.getCode(),
+                            HttpStatus.CONFLICT);
+
+            assertThat(holdersDoRex()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("co-tutor sai do pet por conta propria")
+        void coTutorSaiSozinho() {
+            vinculo(maria, PetTutorRole.EDITOR);
+            autenticar(maria);
+
+            petTutorService.removeTutor(rex.getPetId(), maria.getOwnerId());
+            petTutorRepository.flush();
+
+            assertThat(petRepository.findByTutorsOwnerOwnerId(maria.getOwnerId())).isEmpty();
+            assertThat(petRepository.findById(rex.getPetId())).isPresent();
+        }
+
+        @Test
+        @DisplayName("co-tutor nao remove outro co-tutor")
+        void coTutorNaoRemoveOutro() {
+            vinculo(maria, PetTutorRole.EDITOR);
+            Owner joao = owner("joao");
+            vinculo(joao, PetTutorRole.EDITOR);
+
+            autenticar(maria);
+
+            assertThatThrownBy(() -> petTutorService.removeTutor(rex.getPetId(), joao.getOwnerId()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.INSUFFICIENT_PET_ROLE.getCode(), HttpStatus.FORBIDDEN);
+        }
+
+        /**
+         * Nem o proprio titular sai por aqui: o indice exige exatamente um HOLDER, e
+         * um pet sem titular ficaria sem ninguem que pudesse convidar ou apaga-lo.
+         */
+        @Test
+        @DisplayName("o titular nao se remove: transfere primeiro ou apaga o pet")
+        void titularNaoSeRemove() {
+            autenticar(ulysses);
+
+            assertThatThrownBy(() -> petTutorService.removeTutor(rex.getPetId(), ulysses.getOwnerId()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.CANNOT_REMOVE_HOLDER.getCode(), HttpStatus.CONFLICT);
+
+            assertThat(holdersDoRex()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("quem nao alcanca o pet recebe 404 na lista de tutores")
+        void estranhoNaoVeALista() {
+            Owner estranho = owner("estranho");
+            autenticar(estranho);
+
+            assertThatThrownBy(() -> petTutorService.listTutors(rex.getPetId()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
+        }
+
+        /** Saber quem alcanca o pet e parte da privacidade, inclusive para o VIEWER. */
+        @Test
+        @DisplayName("o co-tutor VIEWER ve quem mais alcanca o pet")
+        void viewerVeALista() {
+            vinculo(maria, PetTutorRole.VIEWER);
+            autenticar(maria);
+
+            assertThat(petTutorService.listTutors(rex.getPetId()))
+                    .hasSize(2)
+                    .extracting("role")
+                    .containsExactly(PetTutorRole.HOLDER, PetTutorRole.VIEWER);
+        }
+    }
+
+    /**
+     * O convite trouxe chaves estrangeiras novas para pets e owners. Como o schema
+     * nao tem ON DELETE CASCADE em lugar nenhum, quem recusa o delete e o banco - e
+     * so aqui isso aparece.
+     */
+    @Nested
+    @DisplayName("convite pendente nao pode travar exclusao")
+    class ConvitePendenteEExclusao {
+
+        @Test
+        @DisplayName("apagar o pet com convite pendente funciona")
+        void apagarPetComConvitePendente() {
+            convidar(ulysses, maria, PetTutorRole.EDITOR);
+
+            autenticar(ulysses);
+            petService.deletePet(rex.getPetId());
+            petRepository.flush();
+
+            assertThat(petRepository.findById(rex.getPetId())).isEmpty();
+            assertThat(petTutorInviteRepository.findByPetPetIdOrderByCreationDateDesc(rex.getPetId())).isEmpty();
+        }
+    }
+
+}

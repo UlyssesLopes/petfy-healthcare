@@ -4,6 +4,7 @@ import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.PetRequestDTO;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.security.PetAccessGuard;
 import br.com.petfy.healthcare.domain.entity.Owner;
@@ -42,6 +43,9 @@ class PetServiceImplTest {
 
     @Mock
     private PetTutorRepository petTutorRepository;
+
+    @Mock
+    private PetTutorInviteRepository petTutorInviteRepository;
 
     @Mock
     private CurrentOwnerProvider currentOwnerProvider;
@@ -247,6 +251,22 @@ class PetServiceImplTest {
             petService.deletePet(PET_ID);
 
             verify(petTutorRepository).deleteAll(vinculos);
+        }
+
+        /**
+         * Convite pendente aponta para o pet, e o schema nao tem ON DELETE CASCADE
+         * em lugar nenhum: sem esta limpeza a FK segura o delete e apagar o pet
+         * responde 500. Quem recusa e o banco, entao o caso de verdade esta no
+         * PetTutorFlowContainerTest - aqui fica travada apenas a chamada.
+         */
+        @Test
+        @DisplayName("leva os convites pendentes junto, senao a FK segura o delete")
+        void apagaOsConvitesPendentesJunto() {
+            when(petAccessGuard.requireTitular(PET_ID)).thenReturn(petDe(OWNER_ID));
+
+            petService.deletePet(PET_ID);
+
+            verify(petTutorInviteRepository).deleteByPetPetIdIn(List.of(PET_ID));
         }
     }
 

@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.domain.entity.Pet;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.security.PetAccessGuard;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -28,6 +30,7 @@ public class PetServiceImpl implements PetService {
 
     private final PetRepository petRepository;
     private final PetTutorRepository petTutorRepository;
+    private final PetTutorInviteRepository petTutorInviteRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
     private final PetAccessGuard petAccessGuard;
     private final PuppyProtocolService puppyProtocolService;
@@ -115,6 +118,8 @@ public class PetServiceImpl implements PetService {
     public void deletePet(UUID petId) {
         Pet pet = petAccessGuard.requireTitular(petId);
 
+        // convite pendente aponta para o pet: sem sair antes, a FK segura o delete
+        petTutorInviteRepository.deleteByPetPetIdIn(List.of(petId));
         petTutorRepository.deleteAll(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId));
         petRepository.delete(pet);
     }
