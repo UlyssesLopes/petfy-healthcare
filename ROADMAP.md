@@ -954,6 +954,27 @@ Já é v1, não fundação. Não bloqueia a tela, e provavelmente é desenhado c
       orientação em histórico de aderência, o dado que o veterinário nunca tem
       quando o tratamento não funciona.
 
+### A regra de saída do `PRODUTO.md` 3.4 — resolvida em 2026-08-06, contra o documento
+
+O `PRODUTO.md` decidiu que apagar a conta passaria a ser **recusado** até o titular
+dar destino ao animal. **Isso não entra, e o motivo é jurídico:** a LGPD dá o direito
+de exclusão ao titular, e um produto que recusa o pedido até ele fazer outra coisa
+está condicionando o exercício de um direito. O que 3.4 podia legitimamente exigir é
+o destino **junto do pedido** — nunca o bloqueio.
+
+**O comportamento que fica** já satisfaz o invariante sem condicionar nada: a
+custódia passa para quem tem a concessão mais antiga, e o animal só morre com a conta
+quando ninguém mais o alcança. Nenhum animal fica órfão de registro, e nenhum pedido
+de exclusão é negado.
+
+O que continua valendo de 3.4 é a exportação antes de sair, que já existe. Se um dia
+o produto quiser pedir destino explícito, é campo no request de exclusão — não um
+`409` na cara de quem pediu para ser esquecido.
+
+*Isto contradiz o `PRODUTO.md` de propósito, e o documento não foi alterado: ele é o
+porquê, e a ressalva dele mesmo em 5.9 diz que raciocínio de produto não é parecer
+jurídico. Este é um dos casos em que a diferença apareceu.*
+
 ### O que esta fase não faz
 
 Vínculo, turma, lotação, check-in, conteúdo, disponibilidade e percepção **não
