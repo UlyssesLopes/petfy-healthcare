@@ -6,6 +6,7 @@ import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.SensitiveAccessLog;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
+import br.com.petfy.healthcare.security.ProfessionalContext;
 import br.com.petfy.healthcare.security.RequestEvidenceProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -45,13 +46,18 @@ public class SensitiveAccessLogger {
      * importa porque foi ela que o tutor autorizou - a pessoa que abriu e uma
      * consequencia dessa autorizacao, nao o objeto dela.
      */
-    public void vetLeu(Person vet, Animal animal, AccessedResource recurso) {
+    public void vetLeu(ProfessionalContext contexto, Animal animal, AccessedResource recurso) {
         registrar(SensitiveAccessLog.builder()
                 .animal(animal)
                 .actorType(AccessActorType.VET)
-                .actorId(vet.getPersonId())
-                .actorName(vet.getName())
-                .organizationName(vet.getOrganization() != null ? vet.getOrganization().getName() : null)
+                .actorId(contexto.person().getPersonId())
+                .actorName(contexto.person().getName())
+                // nulo no autonomo, e isso e o registro correto: nao houve organizacao
+                // autorizada, houve uma pessoa. Inventar um nome aqui contaria ao tutor
+                // que uma instituicao leu o historico quando nao leu
+                .organizationName(contexto.organizacao()
+                        .map(br.com.petfy.healthcare.domain.entity.Organization::getName)
+                        .orElse(null))
                 .resource(recurso));
     }
 

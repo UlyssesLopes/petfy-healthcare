@@ -66,11 +66,18 @@ class OrganizationInviteServiceImplTest {
     }
 
     private Person vetDa(UUID organizationId) {
-        return Person.builder().personId(VET_ID).name("Dra. Marina").organization(organization(organizationId)).build();
+        return Person.builder().personId(VET_ID).name("Dra. Marina").build();
+    }
+
+    /** O contexto substituiu o campo organization da pessoa - ver ProfessionalContext. */
+    private br.com.petfy.healthcare.security.ProfessionalContext contextoDa(UUID organizationId) {
+        return br.com.petfy.healthcare.Contextos.por(vetDa(organizationId), organization(organizationId));
     }
 
     private void autenticadoComoVetDa(UUID organizationId) {
-        when(currentProfessionalProvider.require()).thenReturn(vetDa(organizationId));
+        org.mockito.Mockito.lenient()
+                .when(currentProfessionalProvider.require()).thenReturn(vetDa(organizationId));
+        when(currentProfessionalProvider.requireContext()).thenReturn(contextoDa(organizationId));
     }
 
     private OrganizationInvite convite(String email, LocalDateTime expiresAt,

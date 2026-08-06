@@ -117,7 +117,7 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
 
         assertThat(constraints).contains(
                 "fk_vaccines_animal", "fk_health_records_animal",
-                "fk_persons_organization", "fk_professional_credentials_person", "fk_grants_animal", "fk_organization_invites_organization",
+                "fk_memberships_person", "fk_memberships_organization", "fk_professional_credentials_person", "fk_grants_animal", "fk_organization_invites_organization",
                 "fk_vaccine_corrections_vaccine",
                 "fk_custodies_animal", "fk_custodies_holder_person", "fk_pet_tutor_invites_pet",
                 "fk_consent_records_person", "fk_sensitive_access_log_animal");

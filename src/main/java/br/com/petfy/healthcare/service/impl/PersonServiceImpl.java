@@ -3,6 +3,8 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.PersonRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
+import br.com.petfy.healthcare.domain.entity.Membership;
+import br.com.petfy.healthcare.domain.entity.MembershipRole;
 import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.OrganizationInvite;
 import br.com.petfy.healthcare.domain.entity.CredentialStatus;
@@ -14,6 +16,7 @@ import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
+import br.com.petfy.healthcare.domain.repository.MembershipRepository;
 import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
@@ -50,6 +53,7 @@ public class PersonServiceImpl implements PersonService {
 
     private final PersonRepository personRepository;
     private final ProfessionalCredentialRepository credentialRepository;
+    private final MembershipRepository membershipRepository;
     private final OrganizationRepository organizationRepository;
     private final OrganizationService organizationService;
     private final OrganizationInviteService organizationInviteService;
@@ -85,7 +89,6 @@ public class PersonServiceImpl implements PersonService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .address(request.getAddress())
-                .organization(organization)
                 .creationDate(LocalDateTime.now())
                 .updateDate(LocalDateTime.now())
                 .build();
@@ -93,6 +96,7 @@ public class PersonServiceImpl implements PersonService {
         Person salvo = personRepository.save(person);
 
         registrarCredencial(salvo, request);
+        registrarVinculo(salvo, organization, request);
 
         // consome o convite: e de uso unico, senao o mesmo link serviria a
         // qualquer numero de pessoas
@@ -303,6 +307,11 @@ public class PersonServiceImpl implements PersonService {
         // concedeu perde o autor, e sem autor a linha nao diz mais nada.
         grantRepository.deleteAll(grantRepository.findDaPessoa(personId));
 
+        // O vinculo com organizacao tambem: a linha aponta para persons e seguraria o
+        // delete. Vinculo encerrado e biografia, mas biografia de uma pessoa que deixou
+        // de existir nao tem a quem pertencer
+        membershipRepository.deleteAll(membershipRepository.findByPersonPersonId(personId));
+
         // A credencial profissional sai junto: numero de registro em conselho e
         // dado pessoal do titular, e a tabela aponta para persons, entao seguraria
         // o delete abaixo. E a mesma familia dos seis bugs da Fase 4 - tabela nova
@@ -378,6 +387,34 @@ public class PersonServiceImpl implements PersonService {
                         ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(),
                         HttpStatus.NOT_FOUND));
+    }
+
+    /**
+     * O vinculo com a organizacao, quando ha organizacao.
+     *
+     * <b>Substituiu o campo {@code person.organization}.</b> Aquele campo dizia que a
+     * pessoa pertence a uma organizacao, no singular e para sempre; o vinculo diz que
+     * ela esta numa, agora, com funcao - e admite N.
+     *
+     * <b>A funcao sai da credencial, e nao de um campo do request.</b> Quem informou
+     * registro profissional entra como VETERINARIO; quem nao informou e criou a
+     * organizacao entra como ADMINISTRADOR, porque foi quem a cadastrou. Deixar o
+     * cliente escolher a funcao seria deixa-lo escolher a propria permissao, que e a
+     * mesma razao pela qual o papel nunca veio do request.
+     */
+    private void registrarVinculo(Person person, Organization organization, PersonRequestDTO request) {
+        if (organization == null) {
+            // sem organizacao e um estado legitimo: e o veterinario autonomo, e nao um
+            // cadastro incompleto
+            return;
+        }
+
+        membershipRepository.save(Membership.builder()
+                .person(person)
+                .organization(organization)
+                .role(temTexto(request.getCrmv()) ? MembershipRole.VETERINARIO : MembershipRole.ADMINISTRADOR)
+                .joinedAt(LocalDateTime.now())
+                .build());
     }
 
     /**

@@ -99,7 +99,7 @@ public class OrganizationServiceImpl implements OrganizationService {
      * publica, entao esconder o motivo so confundiria.
      */
     private void exigirVetDaClinica(UUID organizationId) {
-        UUID clinicaDoVet = currentProfessionalProvider.require().getOrganization().getOrganizationId();
+        UUID clinicaDoVet = organizacaoDoContexto();
 
         if (!clinicaDoVet.equals(organizationId)) {
             throw new PetfyHealthcareException(
@@ -125,6 +125,26 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .creationDate(organization.getCreationDate())
                 .updateDate(organization.getUpdateDate())
                 .build();
+    }
+
+    /**
+     * A organizacao em nome de quem a pessoa esta agindo.
+     *
+     * Convidar membro e manter o cadastro sao atos <b>da organizacao</b>, nao da
+     * pessoa: quem atua por si nao tem organizacao para convidar ninguem, e a resposta
+     * certa e dizer isso, nao um NullPointerException onde antes havia um campo sempre
+     * preenchido.
+     */
+    private Organization organizacaoDoContextoOuFalha() {
+        return currentProfessionalProvider.requireContext().organizacao()
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getMessage(),
+                        ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getCode(),
+                        HttpStatus.CONFLICT));
+    }
+
+    private java.util.UUID organizacaoDoContexto() {
+        return organizacaoDoContextoOuFalha().getOrganizationId();
     }
 
 }

@@ -52,6 +52,19 @@ public enum ErrorMessageEnum {
     // alguem sobre a propria conta
     PROFESSIONAL_CREDENTIAL_REQUIRED(133, "An active professional credential is required for this action"),
     CREDENTIAL_ALREADY_REGISTERED(134, "This professional credential is already registered"),
+    // 403: a pessoa esta autenticada e tem credencial, mas nao e membro da organizacao
+    // que ela pediu como contexto. Nada a esconder - ela sabe que a organizacao existe,
+    // porque informou o id
+    // 403: a organizacao nao tem a capacidade que a operacao exige. Sem isto, creche e
+    // abrigo na mesma tabela da clinica herdariam o direito de escrever no prontuario
+    // 409: a operacao e da organizacao, e a pessoa esta atuando por si. Nao e falta de
+    // permissao - e falta de contexto, e a diferenca importa para o cliente
+    ORGANIZATION_CONTEXT_REQUIRED(138, "This action requires acting on behalf of an organization"),
+    CAPABILITY_NOT_GRANTED(137, "This organization cannot perform this action"),
+    NOT_ORGANIZATION_MEMBER(135, "You are not an active member of this organization"),
+    // 409: mais de um vinculo ativo e nenhum contexto informado. Escolher em silencio
+    // faria um ato clinico sair assinado por uma organizacao que a pessoa nao pretendia
+    AMBIGUOUS_CONTEXT(136, "You act for more than one organization; inform X-Petfy-Organization"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

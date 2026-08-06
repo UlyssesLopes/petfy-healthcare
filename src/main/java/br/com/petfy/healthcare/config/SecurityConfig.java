@@ -60,12 +60,14 @@ public class SecurityConfig {
                         // para decidir se a instancia esta viva. So o health: os demais
                         // endpoints do actuator seguem exigindo token
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
-                        // era hasRole("VET"), com o papel vindo do token. O papel morreu
-                        // no P1: quem alcanca /vet/** e quem tem credencial profissional
+                        // era hasRole("VET") em /vet/**, com o papel vindo do token. O papel morreu
+                        // no P1, e o espaco /vet/** morreu no P3b: nao ha area de um tipo de
+                        // conta, ha operacao que exige credencial. Quem alcanca e quem tem
+                        // credencial profissional
                         // ativa, conferida no banco a cada requisicao. O
                         // CurrentProfessionalProvider repete a checagem mais adiante, e as
                         // duas camadas seguem sendo deliberadas
-                        .requestMatchers("/vet/**").access(professionalAccessManager)
+                        .requestMatchers("/professional/**", "/organizations/invites/**").access(professionalAccessManager)
                         .anyRequest().authenticated())
                 // sem entry point explicito o Spring Security devolve 403 para
                 // quem nao esta autenticado; 401 e o correto - o cliente nao

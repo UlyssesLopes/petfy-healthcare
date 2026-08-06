@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.dto.OrganizationInviteRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OrganizationInviteResponseDTO;
 import br.com.petfy.healthcare.domain.entity.OrganizationInvite;
@@ -44,7 +45,7 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
         String token = opaqueTokenService.generate();
 
         OrganizationInvite invite = organizationInviteRepository.save(OrganizationInvite.builder()
-                .organization(emissor.getOrganization())
+                .organization(organizacaoDoContextoOuFalha())
                 .createdBy(emissor)
                 .tokenHash(opaqueTokenService.hash(token))
                 .email(request != null ? request.getEmail() : null)
@@ -58,7 +59,7 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
 
     @Override
     public List<OrganizationInviteResponseDTO> listFromMyOrganization() {
-        UUID organizationId = currentProfessionalProvider.require().getOrganization().getOrganizationId();
+        UUID organizationId = organizacaoDoContexto();
 
         return organizationInviteRepository.findByOrganizationOrganizationIdOrderByCreationDateDesc(organizationId)
                 .stream()
@@ -68,7 +69,7 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
 
     @Override
     public void revoke(UUID organizationInviteId) {
-        UUID organizationId = currentProfessionalProvider.require().getOrganization().getOrganizationId();
+        UUID organizationId = organizacaoDoContexto();
 
         OrganizationInvite invite = organizationInviteRepository.findById(organizationInviteId)
                 .filter(i -> i.getOrganization().getOrganizationId().equals(organizationId))
@@ -130,6 +131,26 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
                 .revokedAt(invite.getRevokedAt())
                 .usable(invite.isUsable(LocalDateTime.now()))
                 .build();
+    }
+
+    /**
+     * A organizacao em nome de quem a pessoa esta agindo.
+     *
+     * Convidar membro e manter o cadastro sao atos <b>da organizacao</b>, nao da
+     * pessoa: quem atua por si nao tem organizacao para convidar ninguem, e a resposta
+     * certa e dizer isso, nao um NullPointerException onde antes havia um campo sempre
+     * preenchido.
+     */
+    private Organization organizacaoDoContextoOuFalha() {
+        return currentProfessionalProvider.requireContext().organizacao()
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getMessage(),
+                        ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getCode(),
+                        HttpStatus.CONFLICT));
+    }
+
+    private java.util.UUID organizacaoDoContexto() {
+        return organizacaoDoContextoOuFalha().getOrganizationId();
     }
 
 }

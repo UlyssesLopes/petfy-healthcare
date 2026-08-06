@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.repository.MembershipRepository;
 import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
@@ -90,6 +91,9 @@ class PersonServiceImplTest {
 
     @Mock
     private EmailVerificationTokenRepository emailVerificationTokenRepository;
+
+    @Mock
+    private MembershipRepository membershipRepository;
 
     @Mock
     private CustodyRepository custodyRepository;

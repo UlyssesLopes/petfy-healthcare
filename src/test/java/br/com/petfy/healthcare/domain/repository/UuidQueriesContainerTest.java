@@ -2,6 +2,8 @@ package br.com.petfy.healthcare.domain.repository;
 
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
+import br.com.petfy.healthcare.domain.entity.Membership;
+import br.com.petfy.healthcare.domain.entity.MembershipRole;
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
@@ -48,6 +50,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     @Autowired private AnimalRepository animalRepository;
     @Autowired private CustodyRepository custodyRepository;
     @Autowired private OrganizationRepository organizationRepository;
+    @Autowired private MembershipRepository membershipRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
     @Autowired private GrantRepository grantRepository;
@@ -88,7 +91,14 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
 
         marina = personRepository.save(Person.builder()
                 .name("Dra. Marina").email("marina-" + UUID.randomUUID() + "@vet.com.br")
-                .password("hash").organization(bichoFeliz).build());
+                .password("hash").build());
+
+        // o vinculo e uma linha propria desde o P3b: a pessoa esta na organizacao, e nao
+        // pertence a ela. Gravar so em memoria deixaria a consulta por membro vazia -
+        // mesma armadilha que a colecao de tutores tinha antes da V15
+        membershipRepository.save(Membership.builder()
+                .person(marina).organization(bichoFeliz).role(MembershipRole.VETERINARIO)
+                .joinedAt(LocalDateTime.now()).build());
     }
 
     /**
@@ -344,7 +354,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
                     .vaccine(vacina).correctedBy(ulysses).previousVaccineName("Antiga")
                     .correctedAt(LocalDateTime.now().minusDays(2)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(vacina).correctedBy(marina).correctedInOrganization(marina.getOrganization()).previousVaccineName("Recente")
+                    .vaccine(vacina).correctedBy(marina).correctedInOrganization(bichoFeliz).previousVaccineName("Recente")
                     .correctedAt(LocalDateTime.now().minusHours(1)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
                     .vaccine(outra).correctedBy(ulysses).previousVaccineName("De outra vacina")

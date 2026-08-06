@@ -47,10 +47,11 @@ class OrganizationServiceImplTest {
 
     /** Person cuja clinica e a informada - quem tem permissao de manter o cadastro. */
     private void autenticadoComoVetDa(UUID organizationId) {
-        when(currentProfessionalProvider.require()).thenReturn(Person.builder()
-                .personId(UUID.randomUUID())
-                .organization(Organization.builder().organizationId(organizationId).build())
-                .build());
+        var pessoa = Person.builder().personId(UUID.randomUUID()).build();
+        org.mockito.Mockito.lenient().when(currentProfessionalProvider.require()).thenReturn(pessoa);
+        when(currentProfessionalProvider.requireContext()).thenReturn(
+                br.com.petfy.healthcare.Contextos.por(pessoa,
+                        Organization.builder().organizationId(organizationId).build()));
     }
 
     private Organization existingOrganization() {

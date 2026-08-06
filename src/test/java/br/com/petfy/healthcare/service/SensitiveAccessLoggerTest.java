@@ -49,8 +49,14 @@ class SensitiveAccessLoggerTest {
     private Person marina() {
         return Person.builder()
                 .personId(VET_ID).name("Dra. Marina").email("marina@vet.com.br")
-                .organization(Organization.builder().organizationId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
                 .build();
+    }
+
+    /** Marina atuando pela clinica: o contexto substituiu o campo organization. */
+    private br.com.petfy.healthcare.security.ProfessionalContext porClinica() {
+        return br.com.petfy.healthcare.Contextos.por(marina(),
+                Organization.builder().organizationId(UUID.randomUUID())
+                        .name("Clinica Bicho Feliz").build());
     }
 
     private SensitiveAccessLog gravado() {
@@ -66,7 +72,7 @@ class SensitiveAccessLoggerTest {
         @Test
         @DisplayName("registra o animal, o recurso e quem leu")
         void registraOEssencial() {
-            logger.vetLeu(marina(), rex(), AccessedResource.HEALTH_RECORDS);
+            logger.vetLeu(porClinica(), rex(), AccessedResource.HEALTH_RECORDS);
 
             var log = gravado();
             assertThat(log.getAnimal().getAnimalId()).isEqualTo(ANIMAL_ID);
@@ -83,7 +89,7 @@ class SensitiveAccessLoggerTest {
         @Test
         @DisplayName("guarda o nome do veterinario no momento do acesso")
         void guardaONomeComoSnapshot() {
-            logger.vetLeu(marina(), rex(), AccessedResource.VACCINES);
+            logger.vetLeu(porClinica(), rex(), AccessedResource.VACCINES);
 
             assertThat(gravado().getActorName()).isEqualTo("Dra. Marina");
         }
@@ -92,18 +98,23 @@ class SensitiveAccessLoggerTest {
         @Test
         @DisplayName("guarda a clinica, que e o que o tutor autorizou")
         void guardaAClinica() {
-            logger.vetLeu(marina(), rex(), AccessedResource.VACCINES);
+            logger.vetLeu(porClinica(), rex(), AccessedResource.VACCINES);
 
             assertThat(gravado().getOrganizationName()).isEqualTo("Clinica Bicho Feliz");
         }
 
-        /** Person sem clinica nao deveria existir, mas o log nao e o lugar de estourar por isso. */
+        /**
+         * <b>Atuar sem organizacao deixou de ser anomalia no P3b:</b> e o veterinario
+         * autonomo, e o log registra isso como o fato que e. O nome nulo nao e falta de
+         * dado - e a informacao de que nao houve organizacao autorizada, houve uma
+         * pessoa. Inventar um nome aqui contaria ao tutor que uma instituicao leu o
+         * historico quando nao leu.
+         */
         @Test
-        @DisplayName("veterinario sem clinica registra o acesso sem o nome dela")
-        void vetSemClinicaNaoQuebra() {
-            var semClinica = Person.builder().personId(VET_ID).name("Dra. Marina").build();
-
-            logger.vetLeu(semClinica, rex(), AccessedResource.VACCINES);
+        @DisplayName("veterinario autonomo registra o acesso sem nome de organizacao")
+        void autonomoRegistraSemOrganizacao() {
+            logger.vetLeu(br.com.petfy.healthcare.Contextos.autonomo(marina()), rex(),
+                    AccessedResource.VACCINES);
 
             assertThat(gravado().getOrganizationName()).isNull();
         }
@@ -114,7 +125,7 @@ class SensitiveAccessLoggerTest {
             when(requestEvidenceProvider.ip()).thenReturn("203.0.113.7");
             when(requestEvidenceProvider.userAgent()).thenReturn("Mozilla/5.0");
 
-            logger.vetLeu(marina(), rex(), AccessedResource.VACCINES);
+            logger.vetLeu(porClinica(), rex(), AccessedResource.VACCINES);
 
             var log = gravado();
             assertThat(log.getIpAddress()).isEqualTo("203.0.113.7");
@@ -169,7 +180,7 @@ class SensitiveAccessLoggerTest {
             doThrow(new RuntimeException("tabela indisponivel"))
                     .when(sensitiveAccessLogRepository).save(any(SensitiveAccessLog.class));
 
-            assertThatThrownBy(() -> logger.vetLeu(marina(), rex(), AccessedResource.HEALTH_RECORDS))
+            assertThatThrownBy(() -> logger.vetLeu(porClinica(), rex(), AccessedResource.HEALTH_RECORDS))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("tabela indisponivel");
         }

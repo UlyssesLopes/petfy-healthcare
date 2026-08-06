@@ -53,31 +53,8 @@ public class Person {
      */
     private LocalDateTime emailVerifiedAt;
 
-    /**
-     * A clinica em que a pessoa atua. <b>Ponte transitoria, e ela morre no P3.</b>
-     *
-     * O lugar certo disto e {@code Membership}, porque uma pessoa atua em N
-     * organizacoes - vet em duas clinicas, voluntario de abrigo, dono de creche
-     * que tambem e tutor. Enquanto Membership nao existe, a coluna fica aqui em
-     * vez de o P1 arrastar a Fase 3 inteira junto.
-     *
-     * <b>O que ja muda por ela ser nullable:</b> o veterinario autonomo deixa de
-     * ser impossivel por constraint. Antes era {@code nullable = false} em
-     * {@code vets}, entao atendimento domiciliar obrigava a inventar uma clinica.
-     * Que o cadastro ainda exija convite ou clinica nova e outro assunto, e ele e
-     * do P3.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organization_id")
-    private Organization organization;
-
     public boolean podeReceberNotificacao() {
         return emailVerifiedAt != null;
-    }
-
-    /** Atua em nome de uma organizacao, e nao por si. E o contexto da secao 3.2. */
-    public boolean atuaPorOrganizacao() {
-        return organization != null;
     }
 
 }

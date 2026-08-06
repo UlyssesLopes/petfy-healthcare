@@ -46,9 +46,13 @@ class VaccineCorrectionLogTest {
     }
 
     private Person vet() {
-        return Person.builder().personId(UUID.randomUUID()).name("Dra. Marina")
-                .organization(Organization.builder().organizationId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
-                .build();
+        return Person.builder().personId(UUID.randomUUID()).name("Dra. Marina").build();
+    }
+
+    /** A organizacao em nome de quem o vet age: deixou de ser campo da pessoa no P3b. */
+    private Organization clinica() {
+        return Organization.builder().organizationId(UUID.randomUUID())
+                .name("Clinica Bicho Feliz").build();
     }
 
     private Person person() {
@@ -62,7 +66,7 @@ class VaccineCorrectionLogTest {
         @Test
         @DisplayName("deve guardar o estado ANTERIOR, e nao o novo")
         void deveGuardarOEstadoAnterior() {
-            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), vet().getOrganization());
+            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), clinica());
 
             var captor = ArgumentCaptor.forClass(VaccineCorrection.class);
             verify(vaccineCorrectionRepository).save(captor.capture());
@@ -86,7 +90,7 @@ class VaccineCorrectionLogTest {
         @Test
         @DisplayName("o autor e sempre uma pessoa; a clinica so aparece quando houve contexto")
         void autorSempreExisteEClinicaSoQuandoHouveContexto() {
-            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), vet().getOrganization());
+            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), clinica());
             var comContexto = capturar();
             assertThat(comContexto.getCorrectedBy()).isNotNull();
             assertThat(comContexto.getCorrectedInOrganization()).isNotNull();
@@ -129,7 +133,7 @@ class VaccineCorrectionLogTest {
         @DisplayName("correcao feita em nome de uma clinica deve trazer a clinica")
         void correcaoComContextoDeveTrazerAClinica() {
             when(vaccineCorrectionRepository.findByVaccineVaccineIdOrderByCorrectedAtDesc(VACCINE_ID))
-                    .thenReturn(List.of(correcao(vet(), vet().getOrganization())));
+                    .thenReturn(List.of(correcao(vet(), clinica())));
 
             assertThat(vaccineCorrectionLog.list(VACCINE_ID)).singleElement().satisfies(c -> {
                 assertThat(c.getCorrectedByName()).isEqualTo("Dra. Marina");

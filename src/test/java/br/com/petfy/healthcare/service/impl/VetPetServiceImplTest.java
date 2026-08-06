@@ -120,9 +120,28 @@ class VetPetServiceImplTest {
                 .build();
     }
 
+    /**
+     * O vet atuando pela clinica.
+     *
+     * Antes era um campo da pessoa; agora e contexto da requisicao - e o teste stuba as
+     * duas formas porque o servico usa require() para a pessoa e requireContext() para
+     * em nome de quem ela age.
+     */
     private void vetDaClinica(UUID organizationId) {
-        when(currentProfessionalProvider.require()).thenReturn(Person.builder()
-                .personId(UUID.randomUUID()).name("Dra. Marina").organization(organization(organizationId)).build());
+        var pessoa = Person.builder().personId(UUID.randomUUID()).name("Dra. Marina").build();
+        // lenient: a maioria dos fluxos passou a usar requireContext(), e nem todos
+        // chegam a pedir a pessoa isolada
+        org.mockito.Mockito.lenient().when(currentProfessionalProvider.require()).thenReturn(pessoa);
+        when(currentProfessionalProvider.requireContext()).thenReturn(
+                br.com.petfy.healthcare.Contextos.por(pessoa, organizationComCapacidadeClinica(organizationId)));
+    }
+
+    /** Organizacao com a capacidade que o ato clinico exige desde o P3b. */
+    private Organization organizationComCapacidadeClinica(UUID id) {
+        return Organization.builder().organizationId(id).name("Clinica Bicho Feliz")
+                .capabilities(new java.util.LinkedHashSet<>(java.util.Set.of(
+                        br.com.petfy.healthcare.domain.entity.OrganizationCapability.REGISTRAR_ATO_CLINICO)))
+                .build();
     }
 
     @Nested
@@ -723,7 +742,7 @@ class VetPetServiceImplTest {
 
             service.listVaccines(ANIMAL_ID);
 
-            verify(sensitiveAccessLogger).vetLeu(any(Person.class), any(Animal.class),
+            verify(sensitiveAccessLogger).vetLeu(any(br.com.petfy.healthcare.security.ProfessionalContext.class), any(Animal.class),
                     eq(AccessedResource.VACCINES));
         }
 
@@ -737,7 +756,7 @@ class VetPetServiceImplTest {
 
             service.listHealthRecords(ANIMAL_ID);
 
-            verify(sensitiveAccessLogger).vetLeu(any(Person.class), any(Animal.class),
+            verify(sensitiveAccessLogger).vetLeu(any(br.com.petfy.healthcare.security.ProfessionalContext.class), any(Animal.class),
                     eq(AccessedResource.HEALTH_RECORDS));
         }
 

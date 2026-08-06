@@ -25,9 +25,9 @@ import java.util.UUID;
  * correcao - ver README.
  */
 @RestController
-@RequestMapping("/vet/animals")
+@RequestMapping("/professional/animals")
 @RequiredArgsConstructor
-public class VetPetController {
+public class ProfessionalAnimalController {
 
     private final VetPetService vetPetService;
 

@@ -12,6 +12,7 @@ import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Grant;
+import br.com.petfy.healthcare.domain.entity.OrganizationCapability;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
@@ -19,6 +20,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.OrganizationActivityNotifier;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
+import br.com.petfy.healthcare.security.ProfessionalContext;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.SensitiveAccessLogger;
@@ -58,7 +60,7 @@ public class VetPetServiceImpl implements VetPetService {
 
     @Override
     public List<VetPetDTO> listAccessibleAnimals() {
-        return acessosAtivosDaClinica()
+        return acessosAtivosDoContexto()
                 .stream()
                 .map(this::toVetPet)
                 .collect(Collectors.toList());
@@ -76,12 +78,14 @@ public class VetPetServiceImpl implements VetPetService {
 
     @Override
     public VaccineResponseDTO registerVaccine(UUID animalId, VaccineRequestDTO request) {
-        Person vet = currentProfessionalProvider.require();
+        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+        Person vet = contexto.person();
+        exigirCapacidadeClinica(contexto);
         Animal animal = exigirAcessoAoAnimal(animalId).getAnimal();
 
         // a clinica vem do vet autenticado, nunca do payload: aceitar organizationId do
         // cliente deixaria um vet registrar vacina em nome de outra clinica
-        Vaccine vaccine = vaccineRepository.save(vaccineFactory.build(animal, vet.getOrganization(), request));
+        Vaccine vaccine = vaccineRepository.save(vaccineFactory.build(animal, contexto.organization(), request));
 
         // o tutor precisa saber o que a clinica escreveu no animal dele
         organizationActivityNotifier.vaccineRecorded(vaccine);
@@ -97,12 +101,14 @@ public class VetPetServiceImpl implements VetPetService {
      */
     @Override
     public VaccineResponseDTO correctVaccine(UUID animalId, UUID vaccineId, VaccineRequestDTO request) {
-        Person vet = currentProfessionalProvider.require();
+        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+        Person vet = contexto.person();
+        exigirCapacidadeClinica(contexto);
         exigirAcessoAoAnimal(animalId);
 
         Vaccine vaccine = vaccineRepository.findById(vaccineId)
                 .filter(v -> v.getAnimal().getAnimalId().equals(animalId))
-                .filter(v -> registradaPelaClinica(v, vet))
+                .filter(v -> registradaPeloContexto(v, contexto))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(),
@@ -111,7 +117,7 @@ public class VetPetServiceImpl implements VetPetService {
         exigirJanelaAberta(vaccine.getCreationDate());
 
         // o snapshot precisa sair antes dos setters, senao grava o estado novo
-        vaccineCorrectionLog.recordByProfessional(vaccine, vet, vet.getOrganization());
+        vaccineCorrectionLog.recordByProfessional(vaccine, vet, contexto.organization());
 
         if (request.getVaccineName() != null) vaccine.setVaccineName(request.getVaccineName());
         if (request.getApplicationDate() != null) vaccine.setApplicationDate(request.getApplicationDate());
@@ -158,14 +164,16 @@ public class VetPetServiceImpl implements VetPetService {
 
     @Override
     public HealthRecordResponseDTO registerHealthRecord(UUID animalId, HealthRecordRequestDTO request) {
-        Person vet = currentProfessionalProvider.require();
+        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+        Person vet = contexto.person();
+        exigirCapacidadeClinica(contexto);
         Animal animal = exigirAcessoAoAnimal(animalId).getAnimal();
 
         // mesma regra da vacina: a clinica vem do vet autenticado, nunca do
         // payload, e o animalId vem do path
         HealthRecord record = healthRecordRepository.save(HealthRecord.builder()
                 .animal(animal)
-                .organization(vet.getOrganization())
+                .organization(contexto.organization())
                 .eventType(request.getEventType())
                 .category(request.getCategory())
                 .diagnosis(request.getDiagnosis())
@@ -183,19 +191,22 @@ public class VetPetServiceImpl implements VetPetService {
     @Override
     public HealthRecordResponseDTO correctHealthRecord(UUID animalId, UUID healthRecordId,
                                                        HealthRecordRequestDTO request) {
-        Person vet = currentProfessionalProvider.require();
+        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+        Person vet = contexto.person();
+        exigirCapacidadeClinica(contexto);
         exigirAcessoAoAnimal(animalId);
 
         HealthRecord record = healthRecordRepository.findById(healthRecordId)
                 .filter(r -> r.getAnimal().getAnimalId().equals(animalId))
                 .filter(r -> r.getOrganization() != null
-                        && vet.getOrganization().getOrganizationId().equals(r.getOrganization().getOrganizationId()))
+                        && contexto.atuaPorOrganizacao()
+                        && contexto.organization().getOrganizationId().equals(r.getOrganization().getOrganizationId()))
                 .orElseThrow(this::registroNaoEncontrado);
 
         exigirJanelaAberta(record.getCreationDate());
 
         // o snapshot precisa sair antes dos setters, senao grava o estado novo
-        healthRecordCorrectionLog.recordByProfessional(record, vet, vet.getOrganization());
+        healthRecordCorrectionLog.recordByProfessional(record, vet, contexto.organization());
 
         if (request.getEventType() != null) record.setEventType(request.getEventType());
         if (request.getCategory() != null) record.setCategory(request.getCategory());
@@ -252,9 +263,38 @@ public class VetPetServiceImpl implements VetPetService {
      * assim clinica sem id nao vira NullPointerException no meio de uma checagem
      * de permissao.
      */
-    private boolean registradaPelaClinica(Vaccine vaccine, Person vet) {
+    private boolean registradaPeloContexto(Vaccine vaccine, ProfessionalContext contexto) {
+        // contexto sem organizacao so corrige o que ele mesmo registrou sem organizacao,
+        // e vacina lancada pelo tutor nao tem nem uma nem outra - continua fora do
+        // alcance da correcao profissional, que era a regra desde o comeco
+        if (!contexto.atuaPorOrganizacao()) {
+            return false;
+        }
+
         return vaccine.getOrganization() != null
-                && vet.getOrganization().getOrganizationId().equals(vaccine.getOrganization().getOrganizationId());
+                && contexto.organization().getOrganizationId()
+                        .equals(vaccine.getOrganization().getOrganizationId());
+    }
+
+    /**
+     * Ato clinico exige que a organizacao possa registra-lo.
+     *
+     * <b>E aqui que a capacidade deixa de ser decorativa.</b> Antes bastava ser vet de
+     * uma clinica, e "clinica" carregava implicitamente o direito de escrever no
+     * prontuario. Com creche e abrigo na mesma tabela, o implicito viraria buraco: um
+     * monitor de creche com credencial - existe, e nao e raro - escreveria diagnostico
+     * no historico medico do animal, e o valor clinico do registro morre.
+     *
+     * Contexto sem organizacao passa: quem atua por si e limitado pela propria
+     * credencial, que o ProfessionalAccessManager ja conferiu.
+     */
+    private void exigirCapacidadeClinica(ProfessionalContext contexto) {
+        if (!contexto.permite(OrganizationCapability.REGISTRAR_ATO_CLINICO)) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.CAPABILITY_NOT_GRANTED.getMessage(),
+                    ErrorMessageEnum.CAPABILITY_NOT_GRANTED.getCode(),
+                    HttpStatus.FORBIDDEN);
+        }
     }
 
     private void exigirJanelaAberta(LocalDateTime registro) {
@@ -266,9 +306,22 @@ public class VetPetServiceImpl implements VetPetService {
         }
     }
 
-    private List<Grant> acessosAtivosDaClinica() {
-        UUID organizationId = currentProfessionalProvider.require().getOrganization().getOrganizationId();
-        return grantRepository.findVigentesDaClinica(organizationId, LocalDateTime.now());
+    /**
+     * Os animais que este contexto alcanca.
+     *
+     * <b>Duas consultas, e a segunda e o veterinario autonomo.</b> Quando a pessoa atua
+     * por uma organizacao, o tutor autorizou a organizacao - quem atende hoje pode nao
+     * ser quem atende no retorno. Quando ela atua por si, o tutor autorizou a pessoa. O
+     * modelo antigo so sabia da primeira, e era por isso que atendimento domiciliar
+     * obrigava a inventar uma clinica.
+     */
+    private List<Grant> acessosAtivosDoContexto() {
+        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+        LocalDateTime agora = LocalDateTime.now();
+
+        return contexto.atuaPorOrganizacao()
+                ? grantRepository.findVigentesDaClinica(contexto.organization().getOrganizationId(), agora)
+                : grantRepository.findVigentesDaPessoa(contexto.person().getPersonId(), agora);
     }
 
     /**
@@ -284,13 +337,18 @@ public class VetPetServiceImpl implements VetPetService {
      * tutor por e-mail na hora. Era a leitura que passava invisivel.
      */
     private void registrarLeitura(Animal animal, AccessedResource recurso) {
-        sensitiveAccessLogger.vetLeu(currentProfessionalProvider.require(), animal, recurso);
+        sensitiveAccessLogger.vetLeu(currentProfessionalProvider.requireContext(), animal, recurso);
     }
 
     private Grant exigirAcessoAoAnimal(UUID animalId) {
-        UUID organizationId = currentProfessionalProvider.require().getOrganization().getOrganizationId();
+        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+        LocalDateTime agora = LocalDateTime.now();
 
-        return grantRepository.findVigenteDaClinicaNoAnimal(animalId, organizationId, LocalDateTime.now())
+        return (contexto.atuaPorOrganizacao()
+                ? grantRepository.findVigenteDaClinicaNoAnimal(
+                        animalId, contexto.organization().getOrganizationId(), agora)
+                : grantRepository.findVigenteDaPessoaNoAnimal(
+                        animalId, contexto.person().getPersonId(), agora))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.ANIMAL_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.ANIMAL_NOT_FOUND.getCode(),

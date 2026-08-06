@@ -14,7 +14,7 @@ import java.util.UUID;
 
 /** Sob /vet, entao ja exige ROLE_VET na cadeia de filtros. */
 @RestController
-@RequestMapping("/vet/organization-invites")
+@RequestMapping("/organizations/invites")
 @RequiredArgsConstructor
 public class OrganizationInviteController {
 
