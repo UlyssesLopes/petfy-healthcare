@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.AnimalShareRequestDTO;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineStatus;
@@ -93,7 +93,7 @@ class AnimalShareServiceImplTest {
 
     private Animal animal() {
         return Animal.builder().animalId(ANIMAL_ID).name("Rex").type("Cachorro").breed("Vira-lata")
-                .bornDate(LocalDate.of(2021, 3, 15)).gender("Macho").tutors(PetTutores.titular(person(OWNER_ID))).build();
+                .bornDate(LocalDate.of(2021, 3, 15)).gender("Macho").custodies(Custodias.titular(person(OWNER_ID))).build();
     }
 
     private PetfyHealthcareException animalNaoEncontrado() {
@@ -266,7 +266,7 @@ class AnimalShareServiceImplTest {
             service.revokeShare(SHARE_ID);
 
             verify(animalAccessGuard, never()).requireEscrita(any());
-            verify(animalAccessGuard, never()).requireTitular(any());
+            verify(animalAccessGuard, never()).requireCustodia(any());
         }
 
         @Test

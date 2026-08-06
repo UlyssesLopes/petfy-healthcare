@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
@@ -34,6 +34,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -70,7 +71,7 @@ class HealthRecordServiceImplTest {
     }
 
     private Animal animal() {
-        return Animal.builder().animalId(ANIMAL_ID).name("Rex").tutors(PetTutores.titular(person(OWNER_ID))).build();
+        return Animal.builder().animalId(ANIMAL_ID).name("Rex").custodies(Custodias.titular(person(OWNER_ID))).build();
     }
 
     private Clinic clinic() {
@@ -282,7 +283,7 @@ class HealthRecordServiceImplTest {
         void deveListarApenasDosAnimalsEmQueETutora() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(healthRecordRepository.findByAnimalTutorsPersonPersonIdOrderByEventDateDesc(OWNER_ID, pageable))
+            when(healthRecordRepository.findAlcancadosPor(eq(OWNER_ID), any(), eq(pageable)))
                     .thenReturn(new PageImpl<>(List.of(registro())));
 
             assertThat(healthRecordService.listAllHealthRecords(pageable).getContent()).hasSize(1);
@@ -431,7 +432,7 @@ class HealthRecordServiceImplTest {
             when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registro()));
             alcancaOAnimal(true);
             when(animalAccessGuard.requireEscrita(destinoId)).thenReturn(
-                    Animal.builder().animalId(destinoId).name("Bob").tutors(PetTutores.titular(person(OWNER_ID))).build());
+                    Animal.builder().animalId(destinoId).name("Bob").custodies(Custodias.titular(person(OWNER_ID))).build());
             when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
 
             healthRecordService.updateHealthRecord(RECORD_ID,

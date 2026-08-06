@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.entity.Attachment;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Person;
@@ -76,7 +76,7 @@ class AttachmentServiceImplTest {
 
     private Animal animal() {
         return Animal.builder().animalId(ANIMAL_ID).name("Rex").species(Species.CANINA)
-                .tutors(PetTutores.titular(ulysses())).build();
+                .custodies(Custodias.titular(ulysses())).build();
     }
 
     /** PDF de mentira, mas com a assinatura que a deteccao exige. */

@@ -1,14 +1,18 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
+import br.com.petfy.healthcare.domain.entity.Grant;
+import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.repository.CustodyRepository;
+import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.dto.PersonRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
-import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
@@ -19,7 +23,6 @@ import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
-import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
@@ -50,6 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,7 +92,10 @@ class PersonServiceImplTest {
     private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
     @Mock
-    private PetTutorRepository petTutorRepository;
+    private CustodyRepository custodyRepository;
+
+    @Mock
+    private GrantRepository grantRepository;
 
     @Mock
     private AnimalPurger animalPurger;
@@ -112,6 +119,19 @@ class PersonServiceImplTest {
     private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID OUTRO_OWNER_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
     private static final String HASH = "$2a$10$hashDeMentiraParaOTeste";
+
+    /**
+     * Uma concessao a pessoa. Depois do P2b o co-tutor nao e mais uma linha da
+     * mesma tabela do titular - e concessao, e o helper reflete isso.
+     */
+    private Grant concessaoPara(Person person, GrantLevel nivel) {
+        return Grant.builder()
+                .grantId(UUID.randomUUID())
+                .granteePerson(person)
+                .level(nivel)
+                .grantedAt(LocalDateTime.now())
+                .build();
+    }
 
     private Person existingPerson() {
         return Person.builder()
@@ -366,11 +386,11 @@ class PersonServiceImplTest {
             when(currentPersonProvider.require()).thenReturn(autenticado);
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
-            var vinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
+            var vinculo = Custodias.emCurso(autenticado);
             vinculo.setAnimal(animal);
 
-            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(vinculo));
-            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(1L);
+            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of(vinculo));
+            when(grantRepository.findVigentesDePessoasNoAnimal(eq(ANIMAL_ID), any())).thenReturn(List.of());
 
             personService.deleteCurrentPerson();
 
@@ -379,11 +399,11 @@ class PersonServiceImplTest {
             // teste guarda e a posicao do purge no fluxo da conta; a ordem interna
             // dele esta no AnimalPurgerTest, e a recusa do banco no
             // AnimalDeletionContainerTest.
-            var ordem = inOrder(petTutorRepository, animalPurger,
+            var ordem = inOrder(custodyRepository, animalPurger,
                     passwordResetTokenRepository, emailVerificationTokenRepository, personRepository);
 
-            // os vinculos saem primeiro: seguram animal e person ao mesmo tempo
-            ordem.verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
+            // as custodias saem primeiro: seguram animal e person ao mesmo tempo
+            ordem.verify(custodyRepository).deleteAll(any());
             ordem.verify(animalPurger).purge(List.of(ANIMAL_ID));
             ordem.verify(passwordResetTokenRepository).deleteByPersonPersonId(OWNER_ID);
             ordem.verify(emailVerificationTokenRepository).deleteByPersonPersonId(OWNER_ID);
@@ -400,16 +420,14 @@ class PersonServiceImplTest {
             var autenticado = existingPerson();
             when(currentPersonProvider.require()).thenReturn(autenticado);
 
-            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
-            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.EDITOR);
-            meuVinculo.setAnimal(animal);
+            // quem sai alcanca o animal por concessao, e nao por custodia: nao responde
+            // por animal nenhum, entao nao ha animal para morrer nem sucessor a abrir
+            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of());
 
-            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
 
             personService.deleteCurrentPerson();
 
-            verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
+            verify(custodyRepository).deleteAll(any());
             // o purge roda com lista vazia: nenhum animal morre, e o convite de
             // terceiro para este animal nao e desta conta - segue valendo para quem ficou
             verify(animalPurger).purge(List.of());
@@ -430,18 +448,18 @@ class PersonServiceImplTest {
             when(currentPersonProvider.require()).thenReturn(autenticado);
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
-            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
+            var meuVinculo = Custodias.emCurso(autenticado);
             meuVinculo.setAnimal(animal);
 
-            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(1L);
+            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(grantRepository.findVigentesDePessoasNoAnimal(eq(ANIMAL_ID), any())).thenReturn(List.of());
 
             personService.deleteCurrentPerson();
 
-            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, animalPurger, personRepository);
+            var ordem = inOrder(petTutorInviteRepository, custodyRepository, animalPurger, personRepository);
             ordem.verify(petTutorInviteRepository).deleteByCreatedByPersonId(OWNER_ID);
             ordem.verify(petTutorInviteRepository).deleteByAcceptedByPersonId(OWNER_ID);
-            ordem.verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
+            ordem.verify(custodyRepository).deleteAll(any());
             ordem.verify(animalPurger).purge(List.of(ANIMAL_ID));
             ordem.verify(personRepository).delete(autenticado);
         }
@@ -458,30 +476,29 @@ class PersonServiceImplTest {
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
 
-            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
+            var meuVinculo = Custodias.emCurso(autenticado);
             meuVinculo.setAnimal(animal);
-            meuVinculo.setCreationDate(LocalDateTime.of(2026, 1, 1, 10, 0));
+            meuVinculo.setStartedAt(LocalDateTime.of(2026, 1, 1, 10, 0));
 
             var maria = Person.builder().personId(OUTRO_OWNER_ID).name("Maria").build();
-            var vinculoDaMaria = PetTutores.vinculo(maria, PetTutorRole.VIEWER);
+            var vinculoDaMaria = concessaoPara(maria, GrantLevel.VIEWER);
             vinculoDaMaria.setAnimal(animal);
-            vinculoDaMaria.setCreationDate(LocalDateTime.of(2026, 2, 1, 10, 0));
+            vinculoDaMaria.setGrantedAt(LocalDateTime.of(2026, 2, 1, 10, 0));
 
-            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
+            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            
             // devolve so quem fica: a consulta acontece depois de o vinculo de quem
             // sai ter sido apagado e descarregado, entao o banco nao teria como
             // trazer o proprio. Stubar os dois aqui foi o que deixou passar a
             // violacao do indice unico - ver PersonDeletionContainerTest
-            when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
-                    .thenReturn(List.of(vinculoDaMaria));
+            when(grantRepository.findVigentesDePessoasNoAnimal(eq(ANIMAL_ID), any()))                    .thenReturn(List.of(vinculoDaMaria));
 
             personService.deleteCurrentPerson();
 
-            var captor = ArgumentCaptor.forClass(PetTutor.class);
-            verify(petTutorRepository).save(captor.capture());
-            assertThat(captor.getValue().getPerson().getPersonId()).isEqualTo(OUTRO_OWNER_ID);
-            assertThat(captor.getValue().getRole()).isEqualTo(PetTutorRole.HOLDER);
+            var captor = ArgumentCaptor.forClass(Custody.class);
+            verify(custodyRepository).save(captor.capture());
+            assertThat(captor.getValue().getHolderPerson().getPersonId()).isEqualTo(OUTRO_OWNER_ID);
+            assertThat(captor.getValue().getNature()).isEqualTo(CustodyNature.DEFINITIVA);
         }
 
         /**
@@ -498,26 +515,25 @@ class PersonServiceImplTest {
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
 
-            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
+            var meuVinculo = Custodias.emCurso(autenticado);
             meuVinculo.setAnimal(animal);
-            meuVinculo.setCreationDate(LocalDateTime.of(2026, 1, 1, 10, 0));
+            meuVinculo.setStartedAt(LocalDateTime.of(2026, 1, 1, 10, 0));
 
             var maria = Person.builder().personId(OUTRO_OWNER_ID).name("Maria").build();
-            var vinculoDaMaria = PetTutores.vinculo(maria, PetTutorRole.VIEWER);
+            var vinculoDaMaria = concessaoPara(maria, GrantLevel.VIEWER);
             vinculoDaMaria.setAnimal(animal);
-            vinculoDaMaria.setCreationDate(LocalDateTime.of(2026, 2, 1, 10, 0));
+            vinculoDaMaria.setGrantedAt(LocalDateTime.of(2026, 2, 1, 10, 0));
 
-            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
-            when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
-                    .thenReturn(List.of(vinculoDaMaria));
+            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            
+            when(grantRepository.findVigentesDePessoasNoAnimal(eq(ANIMAL_ID), any()))                    .thenReturn(List.of(vinculoDaMaria));
 
             personService.deleteCurrentPerson();
 
-            var ordem = inOrder(petTutorRepository);
-            ordem.verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
-            ordem.verify(petTutorRepository).flush();
-            ordem.verify(petTutorRepository).save(any(PetTutor.class));
+            var ordem = inOrder(custodyRepository);
+            ordem.verify(custodyRepository).deleteAll(any());
+            ordem.verify(custodyRepository).flush();
+            ordem.verify(custodyRepository).save(any(Custody.class));
         }
 
         /** Co-tutor que sai nao mexe em titularidade: nao ha o que herdar. */
@@ -527,18 +543,16 @@ class PersonServiceImplTest {
             var autenticado = existingPerson();
             when(currentPersonProvider.require()).thenReturn(autenticado);
 
-            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
-            var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.EDITOR);
-            meuVinculo.setAnimal(animal);
+            // quem sai alcanca o animal por concessao, e nao por custodia: nao responde
+            // por animal nenhum, entao nao ha animal para morrer nem sucessor a abrir
+            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of());
 
-            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
 
             personService.deleteCurrentPerson();
 
-            verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
-            verify(petTutorRepository, never()).save(any(PetTutor.class));
-            verify(petTutorRepository, never()).findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(any());
+            verify(custodyRepository).deleteAll(any());
+            verify(custodyRepository, never()).save(any(Custody.class));
+            
         }
     }
 }

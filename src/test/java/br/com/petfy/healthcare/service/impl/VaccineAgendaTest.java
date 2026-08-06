@@ -20,6 +20,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -61,7 +63,7 @@ class VaccineAgendaTest {
 
     private void tutorTem(Vaccine... vacinas) {
         when(currentPersonProvider.require()).thenReturn(Person.builder().personId(OWNER_ID).build());
-        when(vaccineRepository.findByAnimalTutorsPersonPersonId(OWNER_ID)).thenReturn(List.of(vacinas));
+        when(vaccineRepository.findAlcancadasPor(eq(OWNER_ID), any())).thenReturn(List.of(vacinas));
     }
 
     @Nested

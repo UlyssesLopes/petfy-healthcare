@@ -1,10 +1,11 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
-import br.com.petfy.healthcare.domain.dto.AnimalRequestDTO;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
-import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
+import br.com.petfy.healthcare.Custodias;
+import br.com.petfy.healthcare.domain.dto.AnimalRequestDTO;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
+import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
@@ -31,6 +32,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -43,7 +45,7 @@ class AnimalServiceImplTest {
     private AnimalRepository animalRepository;
 
     @Mock
-    private PetTutorRepository petTutorRepository;
+    private CustodyRepository custodyRepository;
 
     @Mock
     private CurrentPersonProvider currentPersonProvider;
@@ -78,7 +80,7 @@ class AnimalServiceImplTest {
                 .weight(12.5)
                 .gender("Macho")
                 .species(Species.CANINA)
-                .tutors(PetTutores.titular(person(personId)))
+                .custodies(Custodias.titular(person(personId)))
                 .creationDate(LocalDateTime.of(2025, 1, 1, 10, 0))
                 .build();
     }
@@ -117,12 +119,13 @@ class AnimalServiceImplTest {
             verify(animalRepository).save(captor.capture());
             assertThat(captor.getValue().getCreationDate()).isNotNull();
 
-            // o vinculo e o que diz quem manda no animal, e nasce como HOLDER: a
-            // partir da V15 nao ha campo person no animal para conferir
-            var vinculo = ArgumentCaptor.forClass(PetTutor.class);
-            verify(petTutorRepository).save(vinculo.capture());
-            assertThat(vinculo.getValue().getPerson().getPersonId()).isEqualTo(OWNER_ID);
-            assertThat(vinculo.getValue().getRole()).isEqualTo(PetTutorRole.HOLDER);
+            // a custodia e o que diz quem responde pelo animal, e nasce DEFINITIVA: nao
+            // ha campo person no animal para conferir desde a V15
+            var custodia = ArgumentCaptor.forClass(Custody.class);
+            verify(custodyRepository).save(custodia.capture());
+            assertThat(custodia.getValue().getHolderPerson().getPersonId()).isEqualTo(OWNER_ID);
+            assertThat(custodia.getValue().getNature()).isEqualTo(CustodyNature.DEFINITIVA);
+            assertThat(custodia.getValue().getStartedAt()).isNotNull();
         }
 
         @Test
@@ -152,8 +155,9 @@ class AnimalServiceImplTest {
         @Test
         @DisplayName("personId na resposta e o titular, e nao quem esta lendo")
         void personIdNaRespostaEOTitular() {
+            // quem le pode nao ser quem responde: aqui o leitor alcanca por concessao, e a
+            // resposta tem de trazer quem responde pelo animal, nao quem esta lendo
             var animal = animalDe(OWNER_ID);
-            animal.getTutors().add(PetTutores.vinculo(person(OUTRO_OWNER_ID), PetTutorRole.EDITOR));
             when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenReturn(animal);
 
             assertThat(animalService.getAnimalById(ANIMAL_ID).getPersonId()).isEqualTo(OWNER_ID);
@@ -169,7 +173,7 @@ class AnimalServiceImplTest {
         void deveListarApenasAnimalsDoPersonAutenticado() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(animalRepository.findByTutorsPersonPersonId(OWNER_ID, pageable))
+            when(animalRepository.findAlcancadosPor(eq(OWNER_ID), any(), eq(pageable)))
                     .thenReturn(new PageImpl<>(List.of(animalDe(OWNER_ID))));
 
             var result = animalService.listAllAnimals(pageable);
@@ -184,7 +188,7 @@ class AnimalServiceImplTest {
         void listagemPaginadaNaoUsaFindAll() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(3, 50);
-            when(animalRepository.findByTutorsPersonPersonId(OWNER_ID, pageable))
+            when(animalRepository.findAlcancadosPor(eq(OWNER_ID), any(), eq(pageable)))
                     .thenReturn(new PageImpl<>(List.of()));
 
             animalService.listAllAnimals(pageable);
@@ -232,7 +236,7 @@ class AnimalServiceImplTest {
         @DisplayName("apaga o animal que o guard liberou")
         void apagaOAnimalQueOGuardLiberou() {
             var animal = animalDe(OWNER_ID);
-            when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal);
+            when(animalAccessGuard.requireCustodia(ANIMAL_ID)).thenReturn(animal);
 
             animalService.deleteAnimal(ANIMAL_ID);
 
@@ -254,7 +258,7 @@ class AnimalServiceImplTest {
         @DisplayName("limpa o que pende do animal antes de apaga-lo")
         void limpaAntesDeApagar() {
             var animal = animalDe(OWNER_ID);
-            when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal);
+            when(animalAccessGuard.requireCustodia(ANIMAL_ID)).thenReturn(animal);
 
             animalService.deleteAnimal(ANIMAL_ID);
 
@@ -302,11 +306,11 @@ class AnimalServiceImplTest {
         @Test
         @DisplayName("apagar o animal exige titular: nem editor apaga o animal dos outros")
         void apagarExigeTitular() {
-            when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animalDe(OWNER_ID));
+            when(animalAccessGuard.requireCustodia(ANIMAL_ID)).thenReturn(animalDe(OWNER_ID));
 
             animalService.deleteAnimal(ANIMAL_ID);
 
-            verify(animalAccessGuard).requireTitular(ANIMAL_ID);
+            verify(animalAccessGuard).requireCustodia(ANIMAL_ID);
             verify(animalAccessGuard, never()).requireEscrita(any());
         }
     }

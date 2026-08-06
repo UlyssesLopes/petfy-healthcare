@@ -59,7 +59,7 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             // aponta para grants, que aponta para animals
             "grants",
             "grant_scopes",
-            "pet_tutors",
+            "custodies",
             "pet_tutor_invites",
             "sensitive_access_log",
             "animal_health_conditions");

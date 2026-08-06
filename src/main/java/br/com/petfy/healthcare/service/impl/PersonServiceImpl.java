@@ -294,6 +294,15 @@ public class PersonServiceImpl implements PersonService {
         // que demonstrar sobre um titular que nao existe mais.
         consentRecordRepository.deleteByPersonPersonId(personId);
 
+        // As concessoes de quem sai tambem: a linha aponta para persons e seguraria o
+        // delete abaixo. Encontrado pelo PersonDeletionContainerTest, nao por teste de
+        // mock - mock nao tem chave estrangeira, e esta e a setima ocorrencia da mesma
+        // familia neste projeto.
+        //
+        // Sai tanto o que ela concedeu quanto o que ela recebeu: concessao que ela
+        // concedeu perde o autor, e sem autor a linha nao diz mais nada.
+        grantRepository.deleteAll(grantRepository.findDaPessoa(personId));
+
         // A credencial profissional sai junto: numero de registro em conselho e
         // dado pessoal do titular, e a tabela aponta para persons, entao seguraria
         // o delete abaixo. E a mesma familia dos seis bugs da Fase 4 - tabela nova

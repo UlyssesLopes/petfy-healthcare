@@ -25,12 +25,21 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ClinicActivityNotifierTest {
 
     @Mock
     private AsyncNotificationDispatcher dispatcher;
+
+    /**
+     * Os destinatarios vem do AnimalReach desde o P2b: alcancar um animal passou a ter
+     * duas origens - custodia e concessao -, e a colecao do animal nao responde mais
+     * isso sozinha.
+     */
+    @Mock
+    private br.com.petfy.healthcare.service.AnimalReach animalReach;
 
     @InjectMocks
     private ClinicActivityNotifier notifier;
@@ -51,7 +60,7 @@ class ClinicActivityNotifierTest {
                 .applicationDate(LocalDate.of(2026, 8, 1))
                 .nextDoseDate(LocalDate.of(2027, 8, 1))
                 .clinic(Clinic.builder().name("Clinica Animal Feliz").build())
-                .animal(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(dono)).build())
+                .animal(Animal.builder().name("Rex").custodies(br.com.petfy.healthcare.Custodias.titular(dono)).build())
                 .build();
     }
 
@@ -61,8 +70,20 @@ class ClinicActivityNotifierTest {
                 .eventDate(LocalDate.of(2026, 8, 1))
                 .description("Checkup anual")
                 .clinic(Clinic.builder().name("Clinica Animal Feliz").build())
-                .animal(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(dono)).build())
+                .animal(Animal.builder().name("Rex").custodies(br.com.petfy.healthcare.Custodias.titular(dono)).build())
                 .build();
+    }
+
+    /**
+     * Diz ao AnimalReach quem alcanca o animal.
+     *
+     * Antes o notifier lia a colecao do animal, e montar o animal bastava. Agora ele
+     * pergunta - de proposito, porque a colecao e lazy e pode nao refletir o que foi
+     * gravado -, entao o teste responde.
+     */
+    private void quemAlcanca(Person... pessoas) {
+        when(animalReach.pessoas(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.List.of(pessoas));
     }
 
     private Notification capturar() {
@@ -75,6 +96,7 @@ class ClinicActivityNotifierTest {
     @DisplayName("vacina registrada deve virar aviso com animal, clinica e proxima dose")
     void vacinaRegistradaDeveVirarAviso() {
         var dono = tutor(true);
+        quemAlcanca(dono);
 
         notifier.vaccineRecorded(vacina(dono));
 
@@ -94,7 +116,9 @@ class ClinicActivityNotifierTest {
     @Test
     @DisplayName("todo aviso deve terminar com a orientacao de revogar o acesso")
     void todoAvisoDeveTerminarComOrientacao() {
-        notifier.healthRecordRecorded(atendimento(tutor(true)));
+        var comEmail = tutor(true);
+        quemAlcanca(comEmail);
+        notifier.healthRecordRecorded(atendimento(comEmail));
 
         assertThat(capturar().getLines())
                 .last().asString().contains("revogue o acesso da clinica");
@@ -107,7 +131,9 @@ class ClinicActivityNotifierTest {
     @Test
     @DisplayName("nao deve notificar tutor que ainda nao confirmou o e-mail")
     void naoDeveNotificarTutorSemEmailConfirmado() {
-        notifier.vaccineRecorded(vacina(tutor(false)));
+        var semEmail = tutor(false);
+        quemAlcanca(semEmail);
+        notifier.vaccineRecorded(vacina(semEmail));
 
         verify(dispatcher, never()).dispatch(any(), anyString());
     }
@@ -116,6 +142,7 @@ class ClinicActivityNotifierTest {
     @DisplayName("a supressao deve valer para os quatro avisos, nao so para a vacina")
     void supressaoDeveValerParaOsQuatroAvisos() {
         var dono = tutor(false);
+        quemAlcanca(dono);
 
         notifier.vaccineRecorded(vacina(dono));
         notifier.vaccineCorrected(vacina(dono));
@@ -140,6 +167,7 @@ class ClinicActivityNotifierTest {
         doThrow(new RejectedExecutionException("pool em shutdown"))
                 .when(dispatcher).dispatch(any(), anyString());
 
+        quemAlcanca(tutor(true));
         assertThatCode(() -> notifier.vaccineRecorded(vacina(tutor(true))))
                 .doesNotThrowAnyException();
     }

@@ -52,7 +52,7 @@ class PuppyProtocolServiceTest {
                 .name("Rex")
                 .bornDate(LocalDate.now().minusDays(dias))
                 .species(species)
-                .tutors(br.com.petfy.healthcare.PetTutores.titular(Person.builder().personId(UUID.randomUUID()).build()))
+                .custodies(br.com.petfy.healthcare.Custodias.titular(Person.builder().personId(UUID.randomUUID()).build()))
                 .build();
     }
 
@@ -155,7 +155,7 @@ class PuppyProtocolServiceTest {
                     .animalId(ANIMAL_ID)
                     .name("Rex")
                     .species(Species.CANINA)
-                    .tutors(br.com.petfy.healthcare.PetTutores.titular(Person.builder().personId(UUID.randomUUID()).build()))
+                    .custodies(br.com.petfy.healthcare.Custodias.titular(Person.builder().personId(UUID.randomUUID()).build()))
                     .build();
 
             puppyProtocolService.gerarEsquemaInicialSePuppy(animal);

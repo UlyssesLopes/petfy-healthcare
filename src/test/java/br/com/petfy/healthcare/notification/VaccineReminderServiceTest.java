@@ -45,6 +45,14 @@ class VaccineReminderServiceTest {
     @Mock
     private Notifier notifier;
 
+    /**
+     * Os destinatarios vem do AnimalReach desde o P2b: alcancar um animal passou a ter
+     * duas origens - custodia e concessao -, e a colecao do animal nao responde mais
+     * isso sozinha.
+     */
+    @Mock
+    private br.com.petfy.healthcare.service.AnimalReach animalReach;
+
     @InjectMocks
     private VaccineReminderService service;
 
@@ -55,6 +63,26 @@ class VaccineReminderServiceTest {
     void setUp() {
         ReflectionTestUtils.setField(service, "windowDays", 30);
         ReflectionTestUtils.setField(service, "cooldownDays", 7);
+
+        // Quem alcanca o animal passou a vir do AnimalReach, e nao da colecao do animal:
+        // depois do P2b sao duas origens - custodia e concessao -, e a colecao e lazy.
+        // Aqui a resposta e derivada das custodias que o proprio teste montou, para os
+        // casos continuarem falando sobre lembrete e nao sobre encanamento.
+        org.mockito.Mockito.lenient().when(animalReach.pessoas(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(i -> quemAlcanca.getOrDefault(i.getArgument(0), java.util.List.of()));
+        org.mockito.Mockito.lenient().when(animalReach.temAlguemNotificavel(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(i -> quemAlcanca.getOrDefault(i.getArgument(0), java.util.List.<Person>of())
+                        .stream().anyMatch(Person::podeReceberNotificacao));
+    }
+
+    /** animalId -> quem alcanca, preenchido por quem monta o animal no teste. */
+    private final java.util.Map<UUID, java.util.List<Person>> quemAlcanca = new java.util.HashMap<>();
+
+    private Animal animalDe(Person person, String animalName) {
+        Animal animal = Animal.builder().animalId(UUID.randomUUID()).name(animalName)
+                .custodies(br.com.petfy.healthcare.Custodias.titular(person)).build();
+        quemAlcanca.put(animal.getAnimalId(), java.util.List.of(person));
+        return animal;
     }
 
     /** Com e-mail confirmado: sem isso o lembrete nao sai, e o assunto do teste e outro. */
@@ -78,7 +106,7 @@ class VaccineReminderServiceTest {
                 .vaccineName(vaccineName)
                 .nextDoseDate(proximaDose)
                 .lastReminderSentAt(ultimoEnvio)
-                .animal(Animal.builder().animalId(UUID.randomUUID()).name(animalName).tutors(br.com.petfy.healthcare.PetTutores.titular(person)).build())
+                .animal(animalDe(person, animalName))
                 .build();
     }
 
@@ -90,7 +118,7 @@ class VaccineReminderServiceTest {
                 .kind(AntiparasiticKind.DEWORMER)
                 .nextDoseDate(proximaDose)
                 .lastReminderSentAt(ultimoEnvio)
-                .animal(Animal.builder().animalId(UUID.randomUUID()).name(animalName).tutors(br.com.petfy.healthcare.PetTutores.titular(person)).build())
+                .animal(animalDe(person, animalName))
                 .build();
     }
 

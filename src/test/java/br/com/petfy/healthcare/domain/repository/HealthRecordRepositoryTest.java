@@ -58,7 +58,7 @@ class HealthRecordRepositoryTest {
                 .password("hash")
                 .build());
 
-        Animal rex = animalRepository.save(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(person)).species(Species.CANINA).build());
+        Animal rex = animalRepository.save(Animal.builder().name("Rex").custodies(br.com.petfy.healthcare.Custodias.titular(person)).species(Species.CANINA).build());
 
         healthRecordRepository.save(HealthRecord.builder()
                 .category(HealthEventCategory.CONSULTA)
@@ -80,7 +80,7 @@ class HealthRecordRepositoryTest {
                 .password("hash")
                 .build());
 
-        Animal animal = animalRepository.save(Animal.builder().name("Mia").tutors(br.com.petfy.healthcare.PetTutores.titular(person)).species(Species.CANINA).build());
+        Animal animal = animalRepository.save(Animal.builder().name("Mia").custodies(br.com.petfy.healthcare.Custodias.titular(person)).species(Species.CANINA).build());
 
         HealthRecord salvo = healthRecordRepository.save(HealthRecord.builder()
                 .category(HealthEventCategory.CONSULTA)

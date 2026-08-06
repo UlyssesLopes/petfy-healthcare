@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.AnimalHealthConditionRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
@@ -50,7 +50,7 @@ class AnimalHealthConditionServiceImplTest {
 
     private Animal animal() {
         return Animal.builder().animalId(ANIMAL_ID).name("Rex").species(Species.CANINA)
-                .tutors(PetTutores.titular(Person.builder().personId(OWNER_ID).name("Ulysses").build()))
+                .custodies(Custodias.titular(Person.builder().personId(OWNER_ID).name("Ulysses").build()))
                 .build();
     }
 

@@ -8,8 +8,11 @@ import br.com.petfy.healthcare.domain.entity.ConsentRecord;
 import br.com.petfy.healthcare.domain.entity.EmailVerificationToken;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.Grant;
+import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -173,7 +176,8 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
 
         @Autowired private PersonService personService;
         @Autowired private AnimalRepository animalRepository;
-        @Autowired private PetTutorRepository petTutorRepository;
+        @Autowired private CustodyRepository custodyRepository;
+    @Autowired private GrantRepository grantRepository;
         @Autowired private VaccineRepository vaccineRepository;
         @Autowired private AnimalWeightHistoryRepository animalWeightHistoryRepository;
         @Autowired private AntiparasiticRepository antiparasiticRepository;
@@ -193,14 +197,22 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
             rex = animalRepository.save(Animal.builder().name("Rex").species(Species.CANINA)
                     .creationDate(LocalDateTime.now()).build());
 
-            // person e o titular; maria entrou depois como co-tutora
-            vinculo(person, PetTutorRole.HOLDER, LocalDateTime.now().minusDays(10));
-            vinculo(maria, PetTutorRole.EDITOR, LocalDateTime.now().minusDays(2));
+            // person responde pelo animal; maria entrou depois por concessao. Depois do
+            // P2b sao duas tabelas diferentes, e e essa diferenca que este teste passa a
+            // exercitar: apagar a conta de quem responde tem de passar a custodia para
+            // quem tem a concessao mais antiga, e nao apagar o animal.
+            custodyRepository.saveAndFlush(Custody.builder()
+                    .animal(rex).holderPerson(person).nature(CustodyNature.DEFINITIVA)
+                    .startedAt(LocalDateTime.now().minusDays(10)).build());
+
+            concessao(maria, LocalDateTime.now().minusDays(2));
         }
 
-        private void vinculo(Person de, PetTutorRole papel, LocalDateTime quando) {
-            petTutorRepository.saveAndFlush(PetTutor.builder()
-                    .animal(rex).person(de).role(papel).creationDate(quando).build());
+        private void concessao(Person para, LocalDateTime quando) {
+            grantRepository.saveAndFlush(Grant.builder()
+                    .animal(rex).granteePerson(para).level(GrantLevel.EDITOR)
+                    .scopes(new java.util.LinkedHashSet<>(java.util.Set.of(GrantScope.CARTEIRA)))
+                    .grantedAt(quando).build());
         }
 
         private void autenticar(Person como) {
@@ -225,12 +237,15 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
             personService.deleteCurrentPerson();
 
             assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
-            assertThat(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(rex.getAnimalId()))
-                    .singleElement()
-                    .satisfies(restante -> {
-                        assertThat(restante.getPerson().getPersonId()).isEqualTo(maria.getPersonId());
-                        assertThat(restante.getRole()).isEqualTo(PetTutorRole.HOLDER);
-                    });
+            // maria tinha concessao; passa a responder pelo animal, e a concessao dela
+            // e revogada - manter as duas deixaria a mesma pessoa alcancando o animal
+            // por dois caminhos, e o dia em que divergissem seria um vazamento
+            assertThat(custodyRepository.findEmCurso(rex.getAnimalId()))
+                    .get()
+                    .satisfies(nova -> assertThat(nova.getHolderPerson().getPersonId())
+                            .isEqualTo(maria.getPersonId()));
+            assertThat(grantRepository.findVigentesDePessoasNoAnimal(rex.getAnimalId(), LocalDateTime.now()))
+                    .isEmpty();
         }
 
         /**
@@ -246,9 +261,9 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
         void animalUnicoMorreComACarteiraInteira() {
             Animal nina = animalRepository.saveAndFlush(Animal.builder()
                     .name("Nina").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
-            petTutorRepository.saveAndFlush(PetTutor.builder()
-                    .animal(nina).person(person).role(PetTutorRole.HOLDER)
-                    .creationDate(LocalDateTime.now()).build());
+            custodyRepository.saveAndFlush(Custody.builder()
+                    .animal(nina).holderPerson(person).nature(CustodyNature.DEFINITIVA)
+                    .startedAt(LocalDateTime.now()).build());
 
             vaccineRepository.saveAndFlush(Vaccine.builder()
                     .animal(nina).vaccineName("V10").applicationDate(LocalDate.now().minusMonths(2))
@@ -312,12 +327,14 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
             personService.deleteCurrentPerson();
 
             assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
-            assertThat(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(rex.getAnimalId()))
-                    .singleElement()
-                    .satisfies(restante -> {
-                        assertThat(restante.getPerson().getPersonId()).isEqualTo(person.getPersonId());
-                        assertThat(restante.getRole()).isEqualTo(PetTutorRole.HOLDER);
-                    });
+            // quem sai tinha concessao, nao custodia: quem responde pelo animal nao e
+            // tocado, e a concessao dela desaparece junto com a conta
+            assertThat(custodyRepository.findEmCurso(rex.getAnimalId()))
+                    .get()
+                    .satisfies(atual -> assertThat(atual.getHolderPerson().getPersonId())
+                            .isEqualTo(person.getPersonId()));
+            assertThat(grantRepository.findVigentesDePessoasNoAnimal(rex.getAnimalId(), LocalDateTime.now()))
+                    .isEmpty();
         }
     }
 

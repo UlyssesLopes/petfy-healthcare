@@ -6,8 +6,8 @@ import br.com.petfy.healthcare.domain.entity.Attachment;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.service.AnimalService;
@@ -54,7 +54,7 @@ class AttachmentContainerTest extends PostgresContainerTest {
     @Autowired private AttachmentStorage attachmentStorage;
     @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
-    @Autowired private PetTutorRepository petTutorRepository;
+    @Autowired private CustodyRepository custodyRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
     @Autowired private AnimalService animalService;
@@ -73,9 +73,9 @@ class AttachmentContainerTest extends PostgresContainerTest {
         rex = animalRepository.saveAndFlush(Animal.builder()
                 .name("Rex").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
 
-        petTutorRepository.saveAndFlush(PetTutor.builder()
-                .animal(rex).person(ulysses).role(PetTutorRole.HOLDER)
-                .creationDate(LocalDateTime.now()).build());
+        custodyRepository.saveAndFlush(Custody.builder()
+                .animal(rex).holderPerson(ulysses).nature(CustodyNature.DEFINITIVA)
+                .startedAt(LocalDateTime.now()).build());
 
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(ulysses.getEmail(), "n/a", List.of()));

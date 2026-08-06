@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.AntiparasiticRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticCatalog;
@@ -67,7 +67,7 @@ class AntiparasiticServiceImplTest {
                 .animalId(ANIMAL_ID)
                 .name("Rex")
                 .species(especie)
-                .tutors(PetTutores.titular(person(OWNER_ID)))
+                .custodies(Custodias.titular(person(OWNER_ID)))
                 .build();
     }
 
@@ -276,7 +276,7 @@ class AntiparasiticServiceImplTest {
                     .animalId(gatoId)
                     .name("Mia")
                     .species(Species.FELINA)
-                    .tutors(PetTutores.titular(person(OWNER_ID)))
+                    .custodies(Custodias.titular(person(OWNER_ID)))
                     .build();
             when(animalAccessGuard.requireEscrita(gatoId)).thenReturn(gato);
 
@@ -515,7 +515,7 @@ class AntiparasiticServiceImplTest {
                     .animalId(destinoId)
                     .name("Bob")
                     .species(Species.CANINA)
-                    .tutors(PetTutores.titular(person(OWNER_ID)))
+                    .custodies(Custodias.titular(person(OWNER_ID)))
                     .build());
             when(antiparasiticRepository.save(any(Antiparasitic.class))).thenAnswer(i -> i.getArgument(0));
 

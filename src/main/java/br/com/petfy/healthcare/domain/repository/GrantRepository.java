@@ -66,6 +66,19 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
     List<Grant> findVigentesDePessoasNoAnimal(@Param("animalId") UUID animalId,
                                               @Param("agora") LocalDateTime agora);
 
+    /**
+     * Toda concessao que toca esta pessoa - recebida ou concedida por ela.
+     *
+     * Usada na exclusao de conta. As duas pontas entram: a concessao que ela recebeu
+     * deixa de ter beneficiario, e a que ela concedeu deixa de ter autor - e concessao
+     * sem autor nao diz mais de onde veio a autorizacao.
+     *
+     * Por entidade, e nao delete em massa: grant_scopes aponta para grants.
+     */
+    @Query("select g from Grant g where g.granteePerson.personId = :personId "
+            + "or g.grantedBy.personId = :personId")
+    List<Grant> findDaPessoa(@Param("personId") UUID personId);
+
     /** Os animais que esta pessoa alcanca por concessao agora. */
     @Query("select g from Grant g where g.granteePerson.personId = :personId "
             + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")

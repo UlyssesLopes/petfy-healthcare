@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.repository;
 
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Clinic;
@@ -9,8 +10,8 @@ import br.com.petfy.healthcare.domain.entity.GrantLevel;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
@@ -45,7 +46,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
 
     @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
-    @Autowired private PetTutorRepository petTutorRepository;
+    @Autowired private CustodyRepository custodyRepository;
     @Autowired private ClinicRepository clinicRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
@@ -101,14 +102,14 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     private Animal animalComTitular(String nome, Person titular) {
         Animal animal = animalRepository.save(Animal.builder().name(nome).species(Species.CANINA).build());
 
-        PetTutor vinculo = petTutorRepository.save(PetTutor.builder()
+        Custody custodia = custodyRepository.save(Custody.builder()
                 .animal(animal)
-                .person(titular)
-                .role(PetTutorRole.HOLDER)
-                .creationDate(LocalDateTime.now())
+                .holderPerson(titular)
+                .nature(CustodyNature.DEFINITIVA)
+                .startedAt(LocalDateTime.now())
                 .build());
 
-        animal.setTutors(new ArrayList<>(List.of(vinculo)));
+        animal.setCustodies(new ArrayList<>(List.of(custodia)));
         return animal;
     }
 
@@ -126,10 +127,10 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("animals devem ser filtrados pelo dono, sem vazar os do outro")
         void animalsFiltradosPeloDono() {
-            var doUlysses = animalRepository.findByTutorsPersonPersonId(ulysses.getPersonId());
+            var doUlysses = animalRepository.findAlcancadosPor(ulysses.getPersonId(), java.time.LocalDateTime.now());
 
             assertThat(doUlysses).extracting(Animal::getName).containsExactly("Rex");
-            assertThat(animalRepository.findByTutorsPersonPersonId(maria.getPersonId()))
+            assertThat(animalRepository.findAlcancadosPor(maria.getPersonId(), java.time.LocalDateTime.now()))
                     .extracting(Animal::getName).containsExactly("Nina");
         }
 
@@ -141,31 +142,37 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("animal com dois tutores aparece para os dois, e para mais ninguem")
         void animalCompartilhadoApareceParaOsDoisTutores() {
-            petTutorRepository.save(PetTutor.builder()
-                    .animal(rex).person(maria).role(PetTutorRole.EDITOR)
-                    .invitedBy(ulysses).creationDate(LocalDateTime.now()).build());
+            // maria alcanca o Rex por concessao, nao por custodia: depois do P2b sao duas
+            // tabelas, e a consulta de "meus animais" tem de cobrir as duas
+            grantRepository.save(Grant.builder()
+                    .animal(rex).granteePerson(maria).level(GrantLevel.EDITOR)
+                    .scopes(escopoCarteira()).grantedBy(ulysses)
+                    .grantedAt(LocalDateTime.now()).build());
 
-            assertThat(animalRepository.findByTutorsPersonPersonId(ulysses.getPersonId()))
+            assertThat(animalRepository.findAlcancadosPor(ulysses.getPersonId(), java.time.LocalDateTime.now()))
                     .extracting(Animal::getName).containsExactly("Rex");
-            assertThat(animalRepository.findByTutorsPersonPersonId(maria.getPersonId()))
+            assertThat(animalRepository.findAlcancadosPor(maria.getPersonId(), java.time.LocalDateTime.now()))
                     .extracting(Animal::getName).containsExactlyInAnyOrder("Rex", "Nina");
 
             var estranho = personRepository.save(Person.builder()
                     .name("Estranho").email("estranho-" + UUID.randomUUID() + "@petfy.com.br")
                     .password("hash").build());
-            assertThat(animalRepository.findByTutorsPersonPersonId(estranho.getPersonId())).isEmpty();
+            assertThat(animalRepository.findAlcancadosPor(estranho.getPersonId(), java.time.LocalDateTime.now())).isEmpty();
         }
 
         /** O co-tutor EDITOR ve a carteira do animal compartilhado, nao so o cadastro. */
         @Test
         @DisplayName("vacinas do animal compartilhado aparecem para o co-tutor")
         void vacinasDoAnimalCompartilhadoAparecemParaOCoTutor() {
-            petTutorRepository.save(PetTutor.builder()
-                    .animal(rex).person(maria).role(PetTutorRole.EDITOR)
-                    .invitedBy(ulysses).creationDate(LocalDateTime.now()).build());
+            // maria alcanca o Rex por concessao, nao por custodia: depois do P2b sao duas
+            // tabelas, e a consulta de "meus animais" tem de cobrir as duas
+            grantRepository.save(Grant.builder()
+                    .animal(rex).granteePerson(maria).level(GrantLevel.EDITOR)
+                    .scopes(escopoCarteira()).grantedBy(ulysses)
+                    .grantedAt(LocalDateTime.now()).build());
             vacina(rex, "V10", LocalDate.now().plusDays(10));
 
-            assertThat(vaccineRepository.findByAnimalTutorsPersonPersonId(maria.getPersonId()))
+            assertThat(vaccineRepository.findAlcancadasPor(maria.getPersonId(), java.time.LocalDateTime.now()))
                     .extracting(Vaccine::getVaccineName).containsExactly("V10");
         }
 
@@ -175,7 +182,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
             vacina(rex, "V10", LocalDate.now().plusDays(10));
             vacina(nina, "V8", LocalDate.now().plusDays(10));
 
-            assertThat(vaccineRepository.findByAnimalTutorsPersonPersonId(ulysses.getPersonId()))
+            assertThat(vaccineRepository.findAlcancadasPor(ulysses.getPersonId(), java.time.LocalDateTime.now()))
                     .extracting(Vaccine::getVaccineName).containsExactly("V10");
         }
 
@@ -192,7 +199,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
                     .category(HealthEventCategory.CONSULTA)
                     .animal(nina).eventType("De outro dono").eventDate(LocalDate.now()).build());
 
-            assertThat(healthRecordRepository.findByAnimalTutorsPersonPersonIdOrderByEventDateDesc(ulysses.getPersonId()))
+            assertThat(healthRecordRepository.findAlcancadosPor(ulysses.getPersonId(), java.time.LocalDateTime.now()))
                     .extracting(HealthRecord::getEventType)
                     .containsExactly("Recente", "Antiga");
         }

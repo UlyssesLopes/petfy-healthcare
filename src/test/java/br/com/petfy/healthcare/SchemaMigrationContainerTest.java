@@ -79,7 +79,7 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 "persons", "clinics", "animals", "vaccines", "health_records",
                 "vaccine_catalog", "grants", "grant_scopes", "professional_credentials",
                 "clinic_invites", "vaccine_corrections",
-                "pet_tutors", "pet_tutor_invites", "consent_records", "sensitive_access_log",
+                "custodies", "pet_tutor_invites", "consent_records", "sensitive_access_log",
                 "attachments", "animal_health_conditions");
     }
 
@@ -119,7 +119,7 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 "fk_vaccines_animal", "fk_health_records_animal",
                 "fk_persons_clinic", "fk_professional_credentials_person", "fk_grants_animal", "fk_clinic_invites_clinic",
                 "fk_vaccine_corrections_vaccine",
-                "fk_pet_tutors_pet", "fk_pet_tutors_owner", "fk_pet_tutor_invites_pet",
+                "fk_custodies_animal", "fk_custodies_holder_person", "fk_pet_tutor_invites_pet",
                 "fk_consent_records_person", "fk_sensitive_access_log_animal");
     }
 
@@ -131,110 +131,130 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
      * se o banco aceitasse dois titulares, a regra de acesso passaria a ter duas
      * respostas possiveis para a mesma pergunta.
      */
+    /**
+     * O que a V24 promete, conferido contra o banco e nao contra o mapeamento.
+     *
+     * <b>Substituiu o bloco "V15 - multi-tutor".</b> Aquele bloco exercitava
+     * {@code pet_tutors}, que a V24 derrubou - e o invariante que ele protegia nao
+     * desapareceu, mudou de lugar: onde havia "exatamente um HOLDER por animal", ha
+     * "no maximo uma custodia em curso por animal". Apagar os casos teria perdido a
+     * garantia; adapta-los ao nome novo e o que os mantem verdadeiros.
+     */
     @Nested
-    @DisplayName("V15 - multi-tutor")
-    class MultiTutor {
+    @DisplayName("V24 - custodia")
+    class Custodia {
 
-        /**
-         * A coluna antiga tem de ter saido. Mantida ao lado de pet_tutors, "quem e
-         * o dono" teria duas respostas, e o dia em que divergissem seria alguem
-         * enxergando animal que nao e seu.
-         */
         @Test
-        @DisplayName("animals.person_id nao pode mais existir")
-        void personIdDeveTerSaidoDeAnimals() {
-            List<String> colunas = jdbcTemplate.queryForList(
-                    "select column_name from information_schema.columns "
-                            + "where table_schema = 'public' and table_name = 'animals'",
+        @DisplayName("pet_tutors nao pode mais existir")
+        void petTutorsDeveTerSaido() {
+            List<String> tabelas = jdbcTemplate.queryForList(
+                    "select table_name from information_schema.tables where table_schema = 'public'",
                     String.class);
 
-            assertThat(colunas).isNotEmpty().doesNotContain("person_id");
+            assertThat(tabelas).isNotEmpty().doesNotContain("pet_tutors");
         }
 
-        /**
-         * A coluna continua chamando {@code pet_id}, e nao {@code animal_id}, depois
-         * da V20. Nao e esquecimento: {@code pet_tutors} se dissolve em custodia e
-         * acesso no P2 da Fase 6, e renomear coluna de tabela marcada para morrer e
-         * trabalho que se joga fora. O descasamento com {@code animals.animal_id}
-         * marca justamente o que ainda e o mundo velho.
-         */
         @Test
-        @DisplayName("o vinculo de tutor deve existir com papel obrigatorio")
-        void petTutorsDeveTerPapelObrigatorio() {
+        @DisplayName("a custodia deve existir com natureza e inicio obrigatorios")
+        void custodiaDeveTerNaturezaEInicio() {
             List<String> obrigatorias = jdbcTemplate.queryForList(
                     "select column_name from information_schema.columns "
-                            + "where table_schema = 'public' and table_name = 'pet_tutors' "
+                            + "where table_schema = 'public' and table_name = 'custodies' "
                             + "and is_nullable = 'NO'",
                     String.class);
 
-            assertThat(obrigatorias).contains("pet_tutor_id", "pet_id", "owner_id", "role", "creation_date");
+            assertThat(obrigatorias).contains("custody_id", "animal_id", "nature", "started_at");
         }
 
         /**
-         * O convite nasce com o vinculo do titular ausente, entao invited_by e o
-         * unico campo de relacao que pode ser nulo: os vinculos que a migration
-         * criou no backfill nao tem convite atras deles.
+         * Encerramento e sucessor sao opcionais na coluna porque custodia em curso nao
+         * os tem. As regras sobre eles vivem em CHECK e no servico.
          */
         @Test
-        @DisplayName("invited_by_owner_id deve aceitar nulo, para os vinculos do backfill")
-        void invitedByDeveAceitarNulo() {
-            String nullable = jdbcTemplate.queryForObject(
-                    "select is_nullable from information_schema.columns "
-                            + "where table_schema = 'public' and table_name = 'pet_tutors' "
-                            + "and column_name = 'invited_by_owner_id'",
+        @DisplayName("fim, motivo e sucessor devem aceitar nulo")
+        void fimEsucessorDevemAceitarNulo() {
+            List<String> opcionais = jdbcTemplate.queryForList(
+                    "select column_name from information_schema.columns "
+                            + "where table_schema = 'public' and table_name = 'custodies' "
+                            + "and is_nullable = 'YES'",
                     String.class);
 
-            assertThat(nullable).isEqualTo("YES");
+            assertThat(opcionais).contains("ended_at", "end_reason", "successor_custody_id");
         }
 
         @Test
-        @DisplayName("o indice parcial de um titular por animal deve existir")
-        void indiceDeUmTitularPorAnimalDeveExistir() {
+        @DisplayName("o indice parcial de uma custodia em curso por animal deve existir")
+        void indiceDeUmaEmCursoPorAnimalDeveExistir() {
             List<String> indices = jdbcTemplate.queryForList(
                     "select indexname from pg_indexes "
-                            + "where schemaname = 'public' and tablename = 'pet_tutors'",
+                            + "where schemaname = 'public' and tablename = 'custodies'",
                     String.class);
 
-            assertThat(indices).contains("uk_pet_tutors_um_holder_por_pet",
-                    "idx_pet_tutors_pet", "idx_pet_tutors_owner");
+            assertThat(indices).contains("uk_custodies_uma_em_curso_por_animal",
+                    "idx_custodies_animal", "idx_custodies_holder_person");
         }
 
         /**
-         * O indice parcial em acao. Um animal sem titular ficaria sem ninguem que
-         * pudesse convidar ou apagar; com dois, os dois se removeriam mutuamente.
-         * Por isso a garantia e do banco, e nao so do servico.
+         * O indice parcial em acao, e e o coracao deste bloco.
+         *
+         * Um animal com duas custodias em curso teria dois responsaveis, e a pergunta
+         * "quem responde por este animal" passaria a ter duas respostas - o dia em que
+         * divergissem seria alguem decidindo sobre um animal que nao e seu. Por isso a
+         * garantia e do banco, e nao so do servico: mock nao tem indice.
          */
         @Test
-        @DisplayName("o banco recusa um segundo titular no mesmo animal")
-        void bancoRecusaSegundoTitular() {
-            UUID donoA = inserirPerson("titular-a");
-            UUID donoB = inserirPerson("titular-b");
+        @DisplayName("o banco recusa uma segunda custodia em curso no mesmo animal")
+        void bancoRecusaSegundaCustodiaEmCurso() {
+            UUID pessoaA = inserirPerson("responsavel-a");
+            UUID pessoaB = inserirPerson("responsavel-b");
             UUID animalId = inserirAnimal();
 
-            inserirTutor(animalId, donoA, "HOLDER");
+            inserirCustodia(animalId, pessoaA, null);
 
-            assertThatThrownBy(() -> inserirTutor(animalId, donoB, "HOLDER"))
+            assertThatThrownBy(() -> inserirCustodia(animalId, pessoaB, null))
                     .isInstanceOf(DuplicateKeyException.class);
 
-            // o mesmo animal aceita quantos co-tutores quiser: a restricao e so sobre
-            // HOLDER, e e por isso que ela e um indice parcial
-            inserirTutor(animalId, donoB, "EDITOR");
+            // encerrada nao conta: o historico tem quantas custodias quiser, e e ele que
+            // conta a vida do animal. E por isso que o indice e parcial
+            inserirCustodia(animalId, pessoaB, "OBITO");
 
-            assertThat(contarTutores(animalId)).isEqualTo(2);
+            assertThat(contarCustodias(animalId)).isEqualTo(2);
 
             limpar(animalId);
         }
 
+        /** Encerrar sem dizer por que deixaria a linha do tempo do animal sem o fato. */
         @Test
-        @DisplayName("o banco recusa a mesma pessoa duas vezes no mesmo animal")
-        void bancoRecusaTutorDuplicado() {
-            UUID dono = inserirPerson("tutor-repetido");
+        @DisplayName("o banco recusa custodia encerrada sem motivo")
+        void bancoRecusaFimSemMotivo() {
+            UUID pessoa = inserirPerson("sem-motivo");
             UUID animalId = inserirAnimal();
 
-            inserirTutor(animalId, dono, "HOLDER");
+            assertThatThrownBy(() -> jdbcTemplate.update(
+                    "insert into custodies (custody_id, animal_id, holder_person_id, nature, "
+                            + "started_at, ended_at) values (?, ?, ?, ?, ?, ?)",
+                    UUID.randomUUID(), animalId, pessoa, "DEFINITIVA",
+                    Timestamp.valueOf(LocalDateTime.now()), Timestamp.valueOf(LocalDateTime.now())))
+                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
 
-            assertThatThrownBy(() -> inserirTutor(animalId, dono, "VIEWER"))
-                    .isInstanceOf(DuplicateKeyException.class);
+            limpar(animalId);
+        }
+
+        /**
+         * Exatamente um responsavel por linha: nem os dois, nem nenhum. Sem este CHECK
+         * seria possivel gravar custodia sem ninguem respondendo pelo animal - o oposto
+         * do que ela existe para dizer.
+         */
+        @Test
+        @DisplayName("o banco recusa custodia sem responsavel")
+        void bancoRecusaCustodiaSemResponsavel() {
+            UUID animalId = inserirAnimal();
+
+            assertThatThrownBy(() -> jdbcTemplate.update(
+                    "insert into custodies (custody_id, animal_id, nature, started_at) "
+                            + "values (?, ?, ?, ?)",
+                    UUID.randomUUID(), animalId, "DEFINITIVA", Timestamp.valueOf(LocalDateTime.now())))
+                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
 
             limpar(animalId);
         }
@@ -255,22 +275,26 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
             return id;
         }
 
-        private void inserirTutor(UUID animalId, UUID personId, String role) {
+        private void inserirCustodia(UUID animalId, UUID personId, String motivoDeFim) {
             jdbcTemplate.update(
-                    "insert into pet_tutors (pet_tutor_id, pet_id, owner_id, role, creation_date) "
-                            + "values (?, ?, ?, ?, ?)",
-                    UUID.randomUUID(), animalId, personId, role, Timestamp.valueOf(LocalDateTime.now()));
+                    "insert into custodies (custody_id, animal_id, holder_person_id, nature, "
+                            + "started_at, ended_at, end_reason) values (?, ?, ?, ?, ?, ?, ?)",
+                    UUID.randomUUID(), animalId, personId, "DEFINITIVA",
+                    Timestamp.valueOf(LocalDateTime.now()),
+                    motivoDeFim == null ? null : Timestamp.valueOf(LocalDateTime.now()),
+                    motivoDeFim);
         }
 
-        private Integer contarTutores(UUID animalId) {
+        private Integer contarCustodias(UUID animalId) {
             return jdbcTemplate.queryForObject(
-                    "select count(*) from pet_tutors where pet_id = ?", Integer.class, animalId);
+                    "select count(*) from custodies where animal_id = ?", Integer.class, animalId);
         }
 
-        /** O container e compartilhado entre as classes: o animal e os vinculos saem daqui. */
+        /** O container e compartilhado entre as classes: o animal e as custodias saem daqui. */
         private void limpar(UUID animalId) {
-            jdbcTemplate.update("delete from pet_tutors where pet_id = ?", animalId);
+            jdbcTemplate.update("delete from custodies where animal_id = ?", animalId);
             jdbcTemplate.update("delete from animals where animal_id = ?", animalId);
         }
     }
+
 }

@@ -7,8 +7,8 @@ import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthCondition;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionKind;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionSeverity;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.Species;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,7 +43,7 @@ class AnimalHealthConditionContainerTest extends PostgresContainerTest {
     @Autowired private HealthRecordRepository healthRecordRepository;
     @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
-    @Autowired private PetTutorRepository petTutorRepository;
+    @Autowired private CustodyRepository custodyRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
 
     private Animal rex;
@@ -59,9 +59,9 @@ class AnimalHealthConditionContainerTest extends PostgresContainerTest {
         rex = animalRepository.saveAndFlush(Animal.builder()
                 .name("Rex").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
 
-        petTutorRepository.saveAndFlush(PetTutor.builder()
-                .animal(rex).person(ulysses).role(PetTutorRole.HOLDER)
-                .creationDate(LocalDateTime.now()).build());
+        custodyRepository.saveAndFlush(Custody.builder()
+                .animal(rex).holderPerson(ulysses).nature(CustodyNature.DEFINITIVA)
+                .startedAt(LocalDateTime.now()).build());
     }
 
     private AnimalHealthCondition.AnimalHealthConditionBuilder condicao() {

@@ -91,7 +91,7 @@ public class AnimalServiceImpl implements AnimalService {
     @Override
     @Transactional(readOnly = true)
     public Page<AnimalResponseDTO> listAllAnimals(Pageable pageable) {
-        return animalRepository.findByTutorsPersonPersonId(currentPersonProvider.require().getPersonId(), pageable)
+        return animalRepository.findAlcancadosPor(currentPersonProvider.require().getPersonId(), LocalDateTime.now(), pageable)
                 .map(this::toResponse);
     }
 

@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.Person;
@@ -39,6 +39,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -101,7 +102,7 @@ class VaccineServiceImplTest {
 
     private Animal animal() {
         return Animal.builder().animalId(ANIMAL_ID).name("Rex").species(Species.CANINA)
-                .tutors(PetTutores.titular(person(OWNER_ID))).build();
+                .custodies(Custodias.titular(person(OWNER_ID))).build();
     }
 
     private Clinic clinic() {
@@ -253,7 +254,7 @@ class VaccineServiceImplTest {
         void deveRecusarQuandoEspecieNaoBate() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(
                     Animal.builder().animalId(ANIMAL_ID).name("Mia").species(Species.FELINA)
-                            .tutors(PetTutores.titular(person(OWNER_ID))).build());
+                            .custodies(Custodias.titular(person(OWNER_ID))).build());
             when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));  // CANINA
 
             assertThatThrownBy(() -> vaccineService.createVaccine(
@@ -465,7 +466,7 @@ class VaccineServiceImplTest {
         void deveListarApenasDosAnimalsEmQueETutora() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(vaccineRepository.findByAnimalTutorsPersonPersonId(OWNER_ID, pageable))
+            when(vaccineRepository.findAlcancadasPor(eq(OWNER_ID), any(), eq(pageable)))
                     .thenReturn(new PageImpl<>(List.of(vacina())));
 
             assertThat(vaccineService.listAllVaccines(pageable).getContent()).hasSize(1);
@@ -534,7 +535,7 @@ class VaccineServiceImplTest {
             alcancaOAnimal(true);
             when(animalAccessGuard.requireEscrita(destinoId)).thenReturn(Animal.builder()
                     .animalId(destinoId).name("Bob").species(Species.CANINA)
-                    .tutors(PetTutores.titular(person(OWNER_ID))).build());
+                    .custodies(Custodias.titular(person(OWNER_ID))).build());
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
             vaccineService.updateVaccine(VACCINE_ID, VaccineRequestDTO.builder().animalId(destinoId).build());
@@ -551,7 +552,7 @@ class VaccineServiceImplTest {
         void listagemGeralNaoConsultaOGuard() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(vaccineRepository.findByAnimalTutorsPersonPersonId(OWNER_ID, pageable))
+            when(vaccineRepository.findAlcancadasPor(eq(OWNER_ID), any(), eq(pageable)))
                     .thenReturn(new PageImpl<>(List.of()));
 
             vaccineService.listAllVaccines(pageable);

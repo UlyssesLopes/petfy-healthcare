@@ -12,8 +12,8 @@ import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.HealthRecordCorrection;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -57,7 +57,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
     @Autowired private AnimalService animalService;
     @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
-    @Autowired private PetTutorRepository petTutorRepository;
+    @Autowired private CustodyRepository custodyRepository;
     @Autowired private ClinicRepository clinicRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
@@ -82,9 +82,9 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
         rex = animalRepository.saveAndFlush(Animal.builder()
                 .name("Rex").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
 
-        petTutorRepository.saveAndFlush(PetTutor.builder()
-                .animal(rex).person(ulysses).role(PetTutorRole.HOLDER)
-                .creationDate(LocalDateTime.now()).build());
+        custodyRepository.saveAndFlush(Custody.builder()
+                .animal(rex).holderPerson(ulysses).nature(CustodyNature.DEFINITIVA)
+                .startedAt(LocalDateTime.now()).build());
 
         bichoFeliz = clinicRepository.saveAndFlush(Clinic.builder().name("Clinica Bicho Feliz").build());
 
@@ -203,9 +203,9 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
 
         Animal nina = animalRepository.saveAndFlush(Animal.builder()
                 .name("Nina").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
-        petTutorRepository.saveAndFlush(PetTutor.builder()
-                .animal(nina).person(ulysses).role(PetTutorRole.HOLDER)
-                .creationDate(LocalDateTime.now()).build());
+        custodyRepository.saveAndFlush(Custody.builder()
+                .animal(nina).holderPerson(ulysses).nature(CustodyNature.DEFINITIVA)
+                .startedAt(LocalDateTime.now()).build());
         vaccineRepository.saveAndFlush(Vaccine.builder()
                 .animal(nina).vaccineName("V10").applicationDate(LocalDate.now())
                 .creationDate(LocalDateTime.now()).build());

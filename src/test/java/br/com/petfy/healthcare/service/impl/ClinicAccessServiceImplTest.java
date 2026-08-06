@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.ClinicAccessRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
@@ -64,7 +64,7 @@ class ClinicAccessServiceImplTest {
     }
 
     private Animal animal() {
-        return Animal.builder().animalId(ANIMAL_ID).name("Rex").tutors(PetTutores.titular(person(OWNER_ID))).build();
+        return Animal.builder().animalId(ANIMAL_ID).name("Rex").custodies(Custodias.titular(person(OWNER_ID))).build();
     }
 
     private Clinic clinic() {

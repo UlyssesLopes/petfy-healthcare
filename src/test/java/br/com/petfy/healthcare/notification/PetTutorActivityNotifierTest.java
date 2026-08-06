@@ -1,8 +1,8 @@
 package br.com.petfy.healthcare.notification;
 
+import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Species;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

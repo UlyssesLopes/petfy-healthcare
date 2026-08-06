@@ -51,7 +51,7 @@ class VaccineRepositoryTest {
         Person person = personRepository.save(Person.builder()
                 .name("Ulysses").email("ulysses@petfy.com.br").password("hash").build());
 
-        rex = animalRepository.save(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(person)).species(Species.CANINA).build());
+        rex = animalRepository.save(Animal.builder().name("Rex").custodies(br.com.petfy.healthcare.Custodias.titular(person)).species(Species.CANINA).build());
     }
 
     private void gravarVacina(String nome, LocalDate proximaDose) {

@@ -117,7 +117,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public Page<VaccineResponseDTO> listAllVaccines(Pageable pageable) {
-        return vaccineRepository.findByAnimalTutorsPersonPersonId(currentPersonProvider.require().getPersonId(), pageable)
+        return vaccineRepository.findAlcancadasPor(currentPersonProvider.require().getPersonId(), LocalDateTime.now(), pageable)
                 .map(this::toResponse);
     }
 
@@ -127,7 +127,7 @@ public class VaccineServiceImpl implements VaccineService {
 
         // filtra em memoria de proposito: a agenda cobre as vacinas de um tutor,
         // que sao poucas, e assim a classificacao inteira fica testavel sem banco
-        List<Vaccine> doTutor = vaccineRepository.findByAnimalTutorsPersonPersonId(currentPersonProvider.require().getPersonId());
+        List<Vaccine> doTutor = vaccineRepository.findAlcancadasPor(currentPersonProvider.require().getPersonId(), LocalDateTime.now());
 
         Map<VaccineStatus, List<VaccineAgendaItemDTO>> porStatus = doTutor.stream()
                 .map(vaccine -> toAgendaItem(vaccine, hoje, windowDays))

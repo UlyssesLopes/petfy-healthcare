@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.AnimalWeightRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
@@ -58,7 +58,7 @@ class AnimalWeightServiceImplTest {
                 .name("Rex")
                 .species(Species.CANINA)
                 .weight(pesoAtual)
-                .tutors(PetTutores.titular(person(OWNER_ID)))
+                .custodies(Custodias.titular(person(OWNER_ID)))
                 .build();
     }
 

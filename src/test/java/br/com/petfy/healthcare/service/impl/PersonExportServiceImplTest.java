@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.PetTutores;
+import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.PersonExportDTO;
 import br.com.petfy.healthcare.domain.entity.*;
 import br.com.petfy.healthcare.domain.repository.*;
@@ -42,7 +42,7 @@ class PersonExportServiceImplTest {
 
     @Mock private CurrentPersonProvider currentPersonProvider;
     @Mock private ConsentRecordRepository consentRecordRepository;
-    @Mock private PetTutorRepository petTutorRepository;
+    @Mock private CustodyRepository custodyRepository;
     @Mock private VaccineRepository vaccineRepository;
     @Mock private VaccineCorrectionRepository vaccineCorrectionRepository;
     @Mock private HealthRecordRepository healthRecordRepository;
@@ -81,19 +81,44 @@ class PersonExportServiceImplTest {
                 .creationDate(LocalDateTime.now().minusMonths(5)).build();
     }
 
-    private PetTutor vinculo(Person person, PetTutorRole papel) {
-        PetTutor v = PetTutores.vinculo(person, papel);
-        v.setAnimal(rex());
-        return v;
+    private Custody custodiaDe(Person person) {
+        Custody c = Custodias.emCurso(person);
+        c.setAnimal(rex());
+        return c;
     }
 
-    /** O caminho normal: um tutor, um animal, coleções vazias. */
-    private void comUmAnimal(PetTutorRole meuPapel) {
+    private Grant concessaoPara(Person person, GrantLevel nivel) {
+        return Grant.builder()
+                .grantId(UUID.randomUUID())
+                .animal(rex())
+                .granteePerson(person)
+                .level(nivel)
+                .grantedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * O caminho normal, agora em duas variantes.
+     *
+     * Antes havia um helper so, {@code comUmAnimal(papel)}, porque titular e co-tutor
+     * eram linhas da mesma tabela. Depois do P2b sao duas origens diferentes, e o
+     * export tem de cobrir as duas - entao o helper se parte junto com o modelo, em
+     * vez de fingir que a diferenca nao existe.
+     */
+    private void comUmAnimalPorCustodia() {
+        comUmAnimal(List.of(custodiaDe(ulysses())), List.of());
+    }
+
+    private void comUmAnimalPorConcessao(GrantLevel nivel) {
+        comUmAnimal(List.of(), List.of(concessaoPara(ulysses(), nivel)));
+    }
+
+    private void comUmAnimal(List<Custody> minhasCustodias, List<Grant> minhasConcessoes) {
         when(currentPersonProvider.require()).thenReturn(ulysses());
-        when(petTutorRepository.findByPersonPersonId(OWNER_ID))
-                .thenReturn(List.of(vinculo(ulysses(), meuPapel)));
-        when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
-                .thenReturn(List.of());
+        when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(minhasCustodias);
+        when(grantRepository.findVigentesDaPessoa(eq(OWNER_ID), any())).thenReturn(minhasConcessoes);
+        when(custodyRepository.findEmCurso(ANIMAL_ID)).thenReturn(java.util.Optional.empty());
+        when(grantRepository.findVigentesDePessoasNoAnimal(eq(ANIMAL_ID), any())).thenReturn(List.of());
         when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                 .thenReturn(List.of());
         when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID)).thenReturn(List.of());
@@ -116,7 +141,7 @@ class PersonExportServiceImplTest {
         @Test
         @DisplayName("os dados do tutor e a data de geracao")
         void dadosDoTutor() {
-            comUmAnimal(PetTutorRole.HOLDER);
+            comUmAnimalPorCustodia();
 
             var export = exportService.exportarDoAutenticado();
 
@@ -130,7 +155,7 @@ class PersonExportServiceImplTest {
         @Test
         @DisplayName("os consentimentos, com a versao aceita")
         void consentimentos() {
-            comUmAnimal(PetTutorRole.HOLDER);
+            comUmAnimalPorCustodia();
             when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of(ConsentRecord.builder()
                             .person(ulysses())
@@ -155,12 +180,12 @@ class PersonExportServiceImplTest {
         @Test
         @DisplayName("o papel do titular em cada animal")
         void oPapelEmCadaAnimal() {
-            comUmAnimal(PetTutorRole.VIEWER);
+            comUmAnimalPorConcessao(GrantLevel.VIEWER);
 
             var export = exportService.exportarDoAutenticado();
 
             assertThat(export.animals()).singleElement()
-                    .satisfies(p -> assertThat(p.meuPapel()).isEqualTo(PetTutorRole.VIEWER));
+                    .satisfies(p -> assertThat(p.minhaRelacao()).isEqualTo("VIEWER"));
         }
 
         /**
@@ -170,17 +195,17 @@ class PersonExportServiceImplTest {
         @Test
         @DisplayName("animal compartilhado entra, com os co-tutores listados")
         void animalCompartilhadoEntra() {
-            comUmAnimal(PetTutorRole.EDITOR);
-            when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
-                    .thenReturn(List.of(vinculo(maria(), PetTutorRole.HOLDER)));
+            comUmAnimalPorConcessao(GrantLevel.EDITOR);
+            when(custodyRepository.findEmCurso(ANIMAL_ID))
+                    .thenReturn(java.util.Optional.of(custodiaDe(maria())));
 
             var export = exportService.exportarDoAutenticado();
 
             assertThat(export.animals()).singleElement().satisfies(p -> {
-                assertThat(p.meuPapel()).isEqualTo(PetTutorRole.EDITOR);
+                assertThat(p.minhaRelacao()).isEqualTo("EDITOR");
                 assertThat(p.coTutores()).singleElement().satisfies(c -> {
                     assertThat(c.name()).isEqualTo("Maria");
-                    assertThat(c.role()).isEqualTo(PetTutorRole.HOLDER);
+                    assertThat(c.relacao()).isEqualTo("CUSTODIA");
                 });
             });
         }
@@ -196,7 +221,7 @@ class PersonExportServiceImplTest {
                     .vaccineId(UUID.randomUUID()).animal(rex()).vaccineName("Antirrabica")
                     .applicationDate(LocalDate.now().minusMonths(2)).build();
 
-            comUmAnimal(PetTutorRole.HOLDER);
+            comUmAnimalPorCustodia();
             when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(vacina));
             when(vaccineCorrectionRepository
@@ -223,7 +248,7 @@ class PersonExportServiceImplTest {
         void anexoComCaminho() {
             var anexoId = UUID.randomUUID();
 
-            comUmAnimal(PetTutorRole.HOLDER);
+            comUmAnimalPorCustodia();
             when(attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(Attachment.builder()
                             .attachmentId(anexoId).animal(rex())
@@ -248,7 +273,7 @@ class PersonExportServiceImplTest {
         @Test
         @DisplayName("o documento declara as proprias limitacoes")
         void declaraLimitacoes() {
-            comUmAnimal(PetTutorRole.HOLDER);
+            comUmAnimalPorCustodia();
 
             var export = exportService.exportarDoAutenticado();
 
@@ -284,16 +309,16 @@ class PersonExportServiceImplTest {
         void emailDeCoTutorNaoAparece() {
             assertThat(PersonExportDTO.CoTutorDTO.class.getRecordComponents())
                     .extracting(java.lang.reflect.RecordComponent::getName)
-                    .contains("name", "role")
+                    .contains("name", "relacao")
                     .doesNotContain("email", "personId");
         }
 
         @Test
         @DisplayName("nenhum e-mail de terceiro chega ao documento montado")
         void nenhumEmailDeTerceiroNoDocumento() {
-            comUmAnimal(PetTutorRole.EDITOR);
-            when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
-                    .thenReturn(List.of(vinculo(maria(), PetTutorRole.HOLDER)));
+            comUmAnimalPorConcessao(GrantLevel.EDITOR);
+            when(custodyRepository.findEmCurso(ANIMAL_ID))
+                    .thenReturn(java.util.Optional.of(custodiaDe(maria())));
 
             var export = exportService.exportarDoAutenticado();
 
@@ -340,7 +365,8 @@ class PersonExportServiceImplTest {
         @DisplayName("tutor sem animal exporta o documento com a lista vazia")
         void semAnimalExportaVazio() {
             when(currentPersonProvider.require()).thenReturn(ulysses());
-            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of());
+            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of());
+            when(grantRepository.findVigentesDaPessoa(eq(OWNER_ID), any())).thenReturn(List.of());
             when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of());
 
@@ -360,7 +386,7 @@ class PersonExportServiceImplTest {
         @Test
         @DisplayName("o log de acesso vem truncado, e o corte esta declarado")
         void logDeAcessoVemTruncado() {
-            comUmAnimal(PetTutorRole.HOLDER);
+            comUmAnimalPorCustodia();
             when(sensitiveAccessLogRepository.findByAnimalAnimalIdOrderByAccessedAtDesc(eq(ANIMAL_ID), any()))
                     .thenReturn(new PageImpl<>(List.of(SensitiveAccessLog.builder()
                             .animal(rex())
@@ -386,7 +412,7 @@ class PersonExportServiceImplTest {
             var vacina = Vaccine.builder()
                     .vaccineId(UUID.randomUUID()).animal(rex()).vaccineName("V10").build();
 
-            comUmAnimal(PetTutorRole.HOLDER);
+            comUmAnimalPorCustodia();
             when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(vacina));
             when(vaccineCorrectionRepository

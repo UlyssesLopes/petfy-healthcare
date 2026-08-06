@@ -67,7 +67,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     @Override
     public Page<HealthRecordResponseDTO> listAllHealthRecords(Pageable pageable) {
         return healthRecordRepository
-                .findByAnimalTutorsPersonPersonIdOrderByEventDateDesc(currentPersonProvider.require().getPersonId(), pageable)
+                .findAlcancadosPor(currentPersonProvider.require().getPersonId(), LocalDateTime.now(), pageable)
                 .map(this::toResponse);
     }
 
