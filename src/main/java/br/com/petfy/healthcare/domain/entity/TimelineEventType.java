@@ -24,7 +24,24 @@ public enum TimelineEventType {
 
     CONDICAO(GrantScope.CONDICOES),
 
-    ANEXO(GrantScope.ANEXOS);
+    ANEXO(GrantScope.ANEXOS),
+
+    /**
+     * Alguem mandou fazer algo com o animal: prescricao, medicacao, tema de casa.
+     *
+     * Vai no escopo do prontuario porque orientacao clinica <b>e</b> informacao
+     * clinica - saber que o animal toma anticonvulsivante diz o que ele tem.
+     */
+    ORIENTACAO(GrantScope.PRONTUARIO),
+
+    /**
+     * Alguem cumpriu uma orientacao.
+     *
+     * Entrada propria, e nao a mesma da orientacao: mandar e fazer sao fatos
+     * diferentes, e juntar os dois perderia o historico de aderencia - o dado que o
+     * veterinario nao tem quando o tratamento nao funciona.
+     */
+    CUMPRIMENTO(GrantScope.PRONTUARIO);
 
     private final GrantScope escopo;
 

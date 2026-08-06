@@ -2,6 +2,8 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
+import br.com.petfy.healthcare.domain.repository.CareInstructionFulfillmentRepository;
+import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
@@ -60,6 +62,8 @@ class AnimalPurgerTest {
     @Mock private GrantRepository grantRepository;
     @Mock private SensitiveAccessLogRepository sensitiveAccessLogRepository;
     @Mock private AnimalHealthConditionRepository animalHealthConditionRepository;
+    @Mock private CareInstructionRepository careInstructionRepository;
+    @Mock private CareInstructionFulfillmentRepository careInstructionFulfillmentRepository;
 
     @InjectMocks
     private AnimalPurger animalPurger;
@@ -74,6 +78,7 @@ class AnimalPurgerTest {
                 animalWeightHistoryRepository, antiparasiticRepository,
                 grantRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
+                careInstructionRepository, careInstructionFulfillmentRepository,
                 petTutorInviteRepository, custodyRepository,
                 animalRepository, attachmentStorage);
     }
@@ -104,6 +109,7 @@ class AnimalPurgerTest {
             // netas
             ordem.verify(vaccineCorrectionRepository).deleteByVaccineAnimalAnimalIdIn(UM_PET);
             ordem.verify(healthRecordCorrectionRepository).deleteByHealthRecordAnimalAnimalIdIn(UM_PET);
+            ordem.verify(careInstructionFulfillmentRepository).deleteByAnimalIdIn(UM_PET);
 
             // filhas
             ordem.verify(vaccineRepository).deleteByAnimalAnimalIdIn(UM_PET);
@@ -113,6 +119,7 @@ class AnimalPurgerTest {
             ordem.verify(grantRepository).deleteAll(any());
             ordem.verify(sensitiveAccessLogRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(animalHealthConditionRepository).deleteByAnimalAnimalIdIn(UM_PET);
+            ordem.verify(careInstructionRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(petTutorInviteRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(custodyRepository).deleteAll(any());
 
@@ -166,6 +173,7 @@ class AnimalPurgerTest {
                     animalWeightHistoryRepository, antiparasiticRepository,
                     grantRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
+                    careInstructionRepository, careInstructionFulfillmentRepository,
                     petTutorInviteRepository, custodyRepository,
                     animalRepository, attachmentStorage);
         }

@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.security;
 
 import br.com.petfy.healthcare.domain.entity.Membership;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.CredentialStatus;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.MembershipRepository;
@@ -17,6 +18,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -91,6 +93,36 @@ public class CurrentProfessionalProvider {
         }
 
         return new ProfessionalContext(person, ativos.get(0).getOrganization());
+    }
+
+    /**
+     * A organizacao que o cliente declarou no header, quando declarou uma.
+     *
+     * <b>Existe para quem age sem credencial profissional.</b> O monitor da creche que
+     * manda um tema de casa e membro, e nao tem CRMV - e {@link #requireContext()}
+     * exigiria uma credencial que ele nunca vai ter. Aqui o que se confere e o vinculo,
+     * que e o que de fato autoriza agir em nome da organizacao.
+     *
+     * <b>So responde ao header, e nunca escolhe sozinha.</b> Sem header devolve vazio,
+     * ainda que a pessoa tenha vinculos: um registro assinado por uma organizacao que a
+     * pessoa nao pretendia nao se corrige depois. Quem quer assinar, declara.
+     */
+    public Optional<Organization> organizacaoDeclarada(Person person) {
+        String escolhido = organizacaoPedida();
+
+        if (escolhido == null) {
+            return Optional.empty();
+        }
+
+        UUID organizationId = parseOrganizationId(escolhido);
+
+        return Optional.of(membershipRepository
+                .findAtivoDaPessoaNaOrganizacao(person.getPersonId(), organizationId)
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.NOT_ORGANIZATION_MEMBER.getMessage(),
+                        ErrorMessageEnum.NOT_ORGANIZATION_MEMBER.getCode(),
+                        HttpStatus.FORBIDDEN))
+                .getOrganization());
     }
 
     private String organizacaoPedida() {

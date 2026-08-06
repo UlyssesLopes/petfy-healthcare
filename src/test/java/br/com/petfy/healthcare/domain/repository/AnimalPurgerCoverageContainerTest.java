@@ -62,7 +62,11 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             "custodies",
             "pet_tutor_invites",
             "sensitive_access_log",
-            "animal_health_conditions");
+            "animal_health_conditions",
+            // care_instruction_fulfillments alcanca animals pela neta, como as correcoes:
+            // aponta para care_instructions, que aponta para animals
+            "care_instructions",
+            "care_instruction_fulfillments");
 
     /**
      * Quem chega a {@code animals}, direta ou indiretamente.

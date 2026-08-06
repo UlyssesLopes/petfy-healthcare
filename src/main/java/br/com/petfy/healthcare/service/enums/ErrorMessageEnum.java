@@ -65,6 +65,11 @@ public enum ErrorMessageEnum {
     // 409: mais de um vinculo ativo e nenhum contexto informado. Escolher em silencio
     // faria um ato clinico sair assinado por uma organizacao que a pessoa nao pretendia
     AMBIGUOUS_CONTEXT(136, "You act for more than one organization; inform X-Petfy-Organization"),
+    CARE_INSTRUCTION_NOT_FOUND(139, "Care instruction not found"),
+    // 409: a orientacao existe, e nao esta valendo no instante do cumprimento -
+    // revogada, ou fora do prazo. Aceitar zeraria a pendencia de um tratamento que nao
+    // esta mais em curso
+    CARE_INSTRUCTION_NOT_IN_EFFECT(140, "This care instruction was not in effect at the informed time"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

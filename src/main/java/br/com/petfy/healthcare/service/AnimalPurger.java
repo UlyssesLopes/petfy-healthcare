@@ -3,6 +3,8 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
+import br.com.petfy.healthcare.domain.repository.CareInstructionFulfillmentRepository;
+import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
@@ -61,6 +63,8 @@ public class AnimalPurger {
     private final GrantRepository grantRepository;
     private final SensitiveAccessLogRepository sensitiveAccessLogRepository;
     private final AnimalHealthConditionRepository animalHealthConditionRepository;
+    private final CareInstructionRepository careInstructionRepository;
+    private final CareInstructionFulfillmentRepository careInstructionFulfillmentRepository;
 
     /**
      * Apaga os animals informados e todo o rastro deles, o proprio animal incluido.
@@ -109,9 +113,10 @@ public class AnimalPurger {
         attachmentStorage.delete(chavesDeAnexo);
         attachmentRepository.deleteByAnimalAnimalIdIn(animalIds);
 
-        // netas: apontam para vacina e para historico
+        // netas: apontam para vacina, para historico e para orientacao
         vaccineCorrectionRepository.deleteByVaccineAnimalAnimalIdIn(animalIds);
         healthRecordCorrectionRepository.deleteByHealthRecordAnimalAnimalIdIn(animalIds);
+        careInstructionFulfillmentRepository.deleteByAnimalIdIn(animalIds);
 
         // filhas: apontam para o animal
         vaccineRepository.deleteByAnimalAnimalIdIn(animalIds);
@@ -123,6 +128,7 @@ public class AnimalPurger {
         grantRepository.deleteAll(grantRepository.findByAnimalAnimalIdIn(animalIds));
         sensitiveAccessLogRepository.deleteByAnimalAnimalIdIn(animalIds);
         animalHealthConditionRepository.deleteByAnimalAnimalIdIn(animalIds);
+        careInstructionRepository.deleteByAnimalAnimalIdIn(animalIds);
 
         // o convite sai antes da custodia por clareza, nao por dependencia: um
         // aponta para o animal, o outro tambem, e nenhum dos dois aponta para o outro
