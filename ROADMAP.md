@@ -89,6 +89,13 @@ mudaram. A decisão 14 do `PRODUTO.md` é explícita: fundação inteira antes d
 tela. **É a terceira vez que este documento descobre que "falta frontend" estava
 adiantado**, e as três descobertas vieram do mesmo lugar: inventariar antes de afirmar.
 
+**Fase 6 concluída em 2026-08-06**, nos seis cortes planejados — `037f789` é o último.
+O modelo agora é o do `PRODUTO.md`: pessoa única sem tipo, custódia separada de acesso
+com escopo, organização por capacidades, núcleo de evento com linha do tempo, e
+orientação com histórico de cumprimento. **A Fase 5 volta a ser a próxima**, e desta
+vez sobre a fundação que a decisão 14 exigia. O que ficou de fora de propósito está
+listado no fechamento da fase, mais abaixo.
+
 **Ordem em que a Fase 4 foi fechada, e por quê.** A sequência não foi por facilidade:
 
 | # | Passo | Veio nesta posição porque |
@@ -792,11 +799,14 @@ verdade — não pulados.
 | # | Passo | Migration | Bloqueia o frontend? |
 |---|---|---|---|
 | P0 | Rename `Pet` → `Animal` | V20 | sim, só por vocabulário |
-| P1 | Pessoa única, sem tipo, e credencial profissional | V21 | **sim** |
-| P2 | Custódia separada de acesso, com escopo | V22 | **sim** |
-| P3 | Organização com capacidades, e membro | V23 | **sim** |
-| P4 | Núcleo de evento e linha do tempo | V24 | **sim** |
-| P5 | Orientação e pendência unificada | V25 | não — é v1, anda ao lado da tela |
+| P1 | Pessoa única, sem tipo, e credencial profissional | V21, V22 | **sim** |
+| P2 | Custódia separada de acesso, com escopo | V23, V24 | **sim** |
+| P3 | Organização com capacidades, e membro | V25, V26 | **sim** |
+| P4 | Núcleo de evento e linha do tempo | V27 | **sim** |
+| P5 | Orientação e pendência unificada | V28 | não — é v1, anda ao lado da tela |
+
+*A coluna de migration foi corrigida no fechamento: cada passo com rename mecânico
+mais mudança de comportamento gastou duas, como o 8a/8b já tinha ensinado.*
 
 **P0 a P4 são o Horizonte 1 do `PRODUTO.md`.** P5 já é v1.
 
@@ -953,6 +963,54 @@ Já é v1, não fundação. Não bloqueia a tela, e provavelmente é desenhado c
 - [ ] **Cumprir é evento**, e entra na linha do tempo: é o que transforma
       orientação em histórico de aderência, o dado que o veterinário nunca tem
       quando o tratamento não funciona.
+
+### Fase 6 — fechada em 2026-08-06
+
+Os seis cortes entraram na ordem planejada, cada um verde nas duas metades da suíte
+antes do seguinte começar. O que cada um deixou no código:
+
+| # | Commit | O que nasceu | O que morreu |
+|---|---|---|---|
+| P0 | `dedf3ab` | `Animal` (174 arquivos, 28 renomeados) | — |
+| P1a | `62965b9` | `Person` (123 arquivos) | `Owner` |
+| P1b | `bfc1f7e` | `ProfessionalCredential`, `CredentialStatus`, `ProfessionalAccessManager` | `Vet`, `UserRole`, `CurrentVetProvider`, `VetController`, o `role` no JWT |
+| P2a | `8a1b8af` | `Grant`, `GrantScope`, `GrantLevel` | `AnimalShare`, `PetOrganizationAccess` |
+| P2b | `fea7e85` | `Custody`, `CustodyNature`, `CustodyEndReason`, `AnimalReach` | `PetTutor` |
+| P3a | `d51474b` | `Organization`, `OrganizationCapability` | `Clinic`, `Vet.clinic` singular |
+| P3b | `cc1d646` | `Membership`, `ProfessionalContext`, `X-Petfy-Organization` | `Person.organization`, `/vet/**` |
+| P4 | `8fe6fb9` | `AnimalEvent`, view `animal_timeline`, `TimelineEntry` | — |
+| P5 | `037f789` | `CareInstruction`, `CareInstructionFulfillment`, `DueItem` derivada | — |
+
+**O que ficou de fora, e não por esquecimento:**
+
+- **Óbito e animal perdido** (era item do P4). É estado do animal com evento
+  correspondente, e o núcleo de evento não é pré-requisito dele — pode entrar
+  isolado, sem tocar em nada do que esta fase moveu. Ficou fora para o P4 não
+  crescer para dois assuntos.
+- **`occurredAt` e `isHealthData` no núcleo comum.** Cada evento já tem o seu
+  instante — `applicationDate`, `eventDate`, `measuredAt`, `since` — e um
+  `occurredAt` ao lado criaria duas respostas para "quando aconteceu"; o dia em que
+  divergissem, a linha do tempo mentiria sobre a ordem dos fatos. Quem uniformiza é
+  a view. `isHealthData` é propriedade do **tipo** de evento, não da linha: guardar
+  por linha abriria a porta para duas vacinas discordarem sobre serem dado de saúde.
+  A view deriva do tipo, e hoje deriva `true` para os oito ramos — a classificação
+  fina de 3.11 (recado e foto não são) entra quando existir evento que não seja.
+- **Cartão preparado pelo tutor com escopo** — o substituto do acesso de
+  emergência. `Grant` com escopo é a fundação dele, e o cartão é v1 com tela.
+
+**A suíte roda em duas metades, e isso é operacional, não preferência:**
+
+```
+mvn test -Dtest='!**/*ContainerTest'   # 682, Skipped: 0
+mvn test -Dtest='**/*ContainerTest'    #  97, Skipped: 0
+```
+
+O Docker Desktop desta máquina sobe um cluster Kubernetes, e a suíte inteira de uma
+vez não deixa memória para o Postgres do Testcontainers subir. Rodando junto, o
+`ContainerTestsHabilitadosTest` quebra o build — **o que é o comportamento certo**, e
+foi por isso que nenhum falso verde passou nesta fase. O glob precisa do `**/`: com
+`-Dtest='!*ContainerTest'` o surefire carrega as classes de container e as pula, e a
+guarda acusa de novo. `Skipped: 0` nas duas é a condição de fechamento.
 
 ### A regra de saída do `PRODUTO.md` 3.4 — resolvida em 2026-08-06, contra o documento
 
