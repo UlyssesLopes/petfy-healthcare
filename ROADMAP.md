@@ -96,12 +96,14 @@ orientação com histórico de cumprimento. **A Fase 5 volta a ser a próxima**,
 vez sobre a fundação que a decisão 14 exigia. O que ficou de fora de propósito está
 listado no fechamento da fase, mais abaixo.
 
-**Fase 5 aberta em 2026-08-06, pelos dois primeiros passos:** a estrutura do cliente
-virou a seção 9 do `PRODUTO.md` — três superfícies, uma aplicação com duas áreas, web
-antes do app — e a stack foi decidida aqui, com o BFF adiado e o gatilho dele escrito. O
-próximo passo é a direção visual, que abre o `DESIGN.md`. **A Fase 6 ainda não mergeou:**
-o PR #36 está aguardando o CI, parado por incidente do GitHub Actions em 2026-08-06, não
-por código.
+**Fase 5 aberta em 2026-08-06, pelos três primeiros passos:** a estrutura do cliente virou
+a seção 9 do `PRODUTO.md` — três superfícies, uma aplicação com duas áreas, web antes do
+app; a stack foi decidida aqui, com o BFF adiado e o gatilho dele escrito; e a direção
+visual fechou no `DESIGN.md`, com a tela de referência em `design/home-tutor.html`.
+**O próximo passo é o delta de contrato.**
+
+**A Fase 6 ainda não mergeou:** o PR #36 está aguardando o CI, parado por incidente do
+GitHub Actions em 2026-08-06, não por código.
 
 **Ordem em que a Fase 4 foi fechada, e por quê.** A sequência não foi por facilidade:
 
@@ -711,8 +713,8 @@ estrutura e stack, e é isto que esta seção passa a registrar.
 |---|---|---|---|
 | 1 | **Estrutura do cliente** | Feito — seção 9 do `PRODUTO.md` | É insumo dos dois seguintes. Sem ela escrita, "de que área é esta tela?" volta a ser decidido em cada tela |
 | 2 | **Stack** | Decidida em 2026-08-06 | Antes do design: metade das decisões de design se amarra a ela — componente, token, tema |
-| 3 | **Direção visual e fluxos** | Próximo | Nasce o `DESIGN.md`, que herda as referências desta fase |
-| 4 | **Delta de contrato** | Depois do design | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
+| 3 | **Direção visual** | Feito — `DESIGN.md`, seis seções, mais `design/home-tutor.html` | Antes do contrato, porque a tela define quais leituras o backend precisa |
+| 4 | **Delta de contrato** | **Próximo** | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
 | 5 | **Construir** | — | — |
 
 **Por que o delta de contrato vem depois do design, e não antes.** O OpenAPI é gerado
@@ -785,9 +787,7 @@ Dois custos, ambos de configuração:
 Separar depois é barato, e só se justifica com time próprio ou cadência de release
 própria. Não existe nenhum dos dois.
 
-#### As referências
-
-Migram para o `DESIGN.md` quando ele nascer, no passo 3.
+#### As referências, e a correção que elas sofreram
 
 | Eixo | Referência | O que se aproveita |
 |---|---|---|
@@ -797,24 +797,27 @@ Migram para o `DESIGN.md` quando ele nascer, no passo 3.
 | Estrutura | **Airbnb** | Uma conta, duas áreas, troca explícita — é a 9.3 rodando em produção há anos |
 | Produto | **Apple Health** | Registro longitudinal, compartilhamento com escopo e prazo, e a postura de que o dado é do titular |
 | Produto | **Oura, Whoop** | A régua da promessa 5.5: descrever padrão, mostrar evidência, nunca diagnosticar |
-| Vertical | **Digitail, Vetspire, PetDesk** | O que o profissional espera de uma tela densa — olhado com a seção 6 na mão: não somos gestão de clínica |
-| Design | **NHS Design System** | A mais importante: linguagem de saúde que informa **sem alarmar** (4.5), e acessibilidade levada a sério |
-| Design | **GOV.UK** | Clareza sem decoração transmitindo seriedade |
-| Design | **Nubank** | Tom em português real, sem jargão, numa categoria de baixa confiança |
-| Design | **Monzo** | Tom de voz documentado, e transparência como decisão de design |
-| Design | **Linear, Stripe** | Densidade sem ruído, para a área de organização |
+| **Sensação** | **Chewy, Petlove, Rover, PetDesk, Digitail, Zee.Dog** | **O nicho.** É daqui que sai o que o produto deve *parecer*: cuidado, acolhimento, segurança — e não plataforma de dados |
+| Conteúdo | **NHS Design System** | Linguagem de saúde que informa **sem alarmar** (4.5), e acessibilidade levada a sério |
+| Conteúdo | **GOV.UK** | Clareza sem decoração — vale para texto, não para forma |
+| Tom | **Nubank** | Português real, sem jargão, numa categoria de baixa confiança |
+| Tom | **Monzo** | Tom de voz documentado, e transparência como decisão de design |
+| Densidade | **Linear, Stripe** | A régua da área de organização |
 
-**A síntese, para o passo 3 não começar do zero:** conteúdo do NHS, tom do Nubank,
-densidade do Linear na área profissional, estrutura do Airbnb.
+**A correção, registrada porque custou uma rodada.** A primeira leitura destas referências
+deu peso demais ao NHS e ao GOV.UK e produziu uma direção austera — *"documento, não
+painel"* —, que ao ser renderizada leu como prontuário e ferramenta de gestão. O titular
+reprovou, com a razão certa: **quem define a sensação de um produto de animal são os
+produtos de animal.** NHS e GOV.UK continuam valendo para **conteúdo e acessibilidade**, e
+saíram da definição de forma. A lição maior é de método: **cor e tipografia aprovadas em
+texto não valem** — só valem renderizadas.
 
 **E o critério negativo, que é exigência do titular.** O visual de projeto gerado tem
-assinatura reconhecível — cinza slate, canto arredondado em tudo, card branco com sombra
-em grade de três, gradiente, herói centralizado. É por isso que o componente é
-**headless** e não pré-estilizado: biblioteca que entrega componente já vestido entrega
-junto a cara dela. Autoria vem do domínio, e este produto tem material raro para isso —
-as promessas da seção 5 são linguagem visual esperando ser desenhada: autoria aparente
-em cada evento, linha do tempo como objeto de primeira classe, observação distinguível
-de ato clínico, correção mostrando as duas versões.
+assinatura reconhecível — cinza slate, Inter, gradiente, herói centralizado, card branco
+com sombra em grade de três. É por isso que o componente é **headless** e não
+pré-estilizado: biblioteca que entrega componente já vestido entrega junto a cara dela.
+A direção fechada, a paleta com contraste medido e a lista de proibições estão no
+`DESIGN.md`; a tela de referência, em `design/home-tutor.html`.
 
 #### O que a Fase 5 antiga dizia e não vale mais
 
@@ -1175,6 +1178,16 @@ seis PRs em sequência sobre o mesmo núcleo é exatamente a situação em que u
 branch sai de base velha e os testes verdes não provam nada.
 
 ## Dívidas com relógio
+
+- **O CI/CD estourou a cota de armazenamento do GitHub Actions.** Aviso recebido em
+  2026-08-06: **0,46 GB de 0,5 GB** usados no ciclo, que reseta em 2026-09-01. Passando
+  disso, ou vira cobrança ou o Actions trava — e travar o CI é travar o fechamento de
+  qualquer passo. **O suspeito principal já está escrito neste documento:** o pipeline
+  publica a imagem no ghcr a cada push e *nada a consome*, porque o Railway constrói a
+  partir do repositório. Ou seja, estamos pagando armazenamento por um artefato de deploy
+  que não é usado por ninguém. A investigar junto: retenção de artefato de build e
+  acúmulo de cache. **Não é só limpar — é remodelar a abordagem**, e fica para uma sessão
+  própria.
 
 - **O `README.md` descreve uma API que morreu na Fase 6.** Ele documenta `/vet/pets`,
   `/vet/clinic-invites`, `ROLE_VET`, `Owner` e `Pet`, e não menciona `Person`,
