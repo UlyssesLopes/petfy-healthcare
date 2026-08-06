@@ -96,6 +96,13 @@ orientação com histórico de cumprimento. **A Fase 5 volta a ser a próxima**,
 vez sobre a fundação que a decisão 14 exigia. O que ficou de fora de propósito está
 listado no fechamento da fase, mais abaixo.
 
+**Fase 5 aberta em 2026-08-06, pelos dois primeiros passos:** a estrutura do cliente
+virou a seção 9 do `PRODUTO.md` — três superfícies, uma aplicação com duas áreas, web
+antes do app — e a stack foi decidida aqui, com o BFF adiado e o gatilho dele escrito. O
+próximo passo é a direção visual, que abre o `DESIGN.md`. **A Fase 6 ainda não mergeou:**
+o PR #36 está aguardando o CI, parado por incidente do GitHub Actions em 2026-08-06, não
+por código.
+
 **Ordem em que a Fase 4 foi fechada, e por quê.** A sequência não foi por facilidade:
 
 | # | Passo | Veio nesta posição porque |
@@ -121,7 +128,7 @@ publicada pelo pipeline como artefato de deploy, mas nada a consome hoje.
 | **Uma instância**, escala vertical | O lembrete de vacina dispensa lock distribuído. Escalar para duas reintroduz o problema — está registrado no passo 3 |
 | Monólito organizado por domínio | Os microserviços com RabbitMQ que o README cita como intenção original ficam fora desta rodada; não servem o objetivo de usuários reais |
 | Três ambientes, criados em ordem: `dev`, depois `stg`, depois `prd` | Nenhum cliente real chega antes de existir um lugar para homologar. Detalhe abaixo |
-| **Backend maduro primeiro, frontend depois** | Nada de frontend está escolhido — nem stack, nem telas, nem mecânicas. A API madura vira a especificação da tela. Ver a Fase 5 |
+| **Backend maduro primeiro, frontend depois** | A ordem se cumpriu. Desde 2026-08-06 **estrutura e stack do cliente estão decididas** — seção 9 do `PRODUTO.md` e Fase 5 aqui. Tela e mecânica continuam em aberto |
 
 ## Ambientes
 
@@ -690,49 +697,143 @@ aparece no comando em vez de num número que ninguém lê.
 sintoma desaparecer de forma reproduzível, mas isso é evidência, não explicação — e está
 dito assim no `pom`, em vez de uma causa inventada documentada como fato.
 
-## Fase 5 — Frontend
+## Fase 5 — o cliente
 
-### 5. O cliente — **liberado em 2026-08-05**
+### 5. O cliente — reaberto em 2026-08-06, sobre a seção 9 do `PRODUTO.md`
 
-**Nada do frontend está decidido.** Tecnologia, telas, o que aparece em cada uma,
-navegação, mecânicas de interação — tudo será decidido do zero, provavelmente com
-apoio do Claude para a parte de design. Não há stack escolhida, não há protótipo,
-e nenhuma decisão anterior deste roadmap presume uma.
+A frase de 2026-08-05 dizia que *"nada do frontend está decidido — nem stack, nem
+telas, nem mecânicas"*. Continua valendo para tela e mecânica; deixou de valer para
+estrutura e stack, e é isto que esta seção passa a registrar.
 
-**A ordem é deliberada:** primeiro o backend chega a produto maduro, e só então o
-frontend é desenhado **em cima do que existir de fato**. O motivo é que a API
-madura é a melhor especificação possível para a tela — ela já terá respondido o
-que é um pet, o que é uma dose vencendo, quem enxerga o quê e o que pode ser
-corrigido. Desenhar tela antes disso significaria adivinhar essas respostas e
-depois brigar com elas.
+#### A sequência
 
-**A condição está cumprida.** A forma do dado que a tela mostra está fechada: multi-tutor
-com papéis, anexo, prontuário com categoria e diagnóstico, alergia em destaque. O que
-sobrou de backend é o que a tela define melhor que o modelo — ver *Fica para depois do
-frontend*.
+| # | Passo | Estado | Por que nesta posição |
+|---|---|---|---|
+| 1 | **Estrutura do cliente** | Feito — seção 9 do `PRODUTO.md` | É insumo dos dois seguintes. Sem ela escrita, "de que área é esta tela?" volta a ser decidido em cada tela |
+| 2 | **Stack** | Decidida em 2026-08-06 | Antes do design: metade das decisões de design se amarra a ela — componente, token, tema |
+| 3 | **Direção visual e fluxos** | Próximo | Nasce o `DESIGN.md`, que herda as referências desta fase |
+| 4 | **Delta de contrato** | Depois do design | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
+| 5 | **Construir** | — | — |
 
-Três coisas que a API já responde e que a tela vai precisar respeitar, para não serem
-descobertas na metade do caminho:
+**Por que o delta de contrato vem depois do design, e não antes.** O OpenAPI é gerado
+das anotações, então **ele está correto** — quem mente é o `README.md`. O design pode se
+apoiar no contrato real desde já, e a reescrita do README deixa de ser bloqueio para
+virar entrega do passo 4, junto do que o design tiver cobrado.
 
-- **Papel manda no que aparece.** `VIEWER` lê carteira, agenda, histórico, anexo e
-  alergia, e não escreve nada. `EDITOR` escreve. Só o `HOLDER` convida, remove e
-  transfere. A tela não pode oferecer botão que o guard vai recusar.
-- **Download de anexo passa pela API**, não por URL assinada — então a tela precisa
-  autenticar cada download em vez de colar um `src` direto.
-- **Consentimento pendente é estado**, não erro. Quando a política muda de versão,
-  `GET /consents/me` volta com pendências e a tela tem de pedir aceite antes de seguir.
+#### A stack decidida
 
-O que já se sabe que a primeira versão precisa mostrar, e mesmo isso está sujeito
-a mudar: a carteira do pet, a agenda do que vence e o registro de uma dose. A
-agenda é a única parte do sistema que **produz** informação em vez de devolver o
-que foi gravado — é ela que justifica um app existir, e provavelmente é o centro
-da primeira tela.
+| Peça | Escolha | Por quê |
+|---|---|---|
+| Base | **Vite + React + TypeScript**, SPA | Bundle estático distribuído por CDN, e caminho direto para o app em Expo |
+| Estado de servidor | **TanStack Query** | Cache, revalidação e estado de erro que não se escreve à mão |
+| Rota | **TanStack Router** | Tipado ponta a ponta: rota inexistente não compila |
+| Contrato | **Cliente gerado do OpenAPI** | Fonte única. Se um endpoint muda de forma, o build do front quebra — a divergência que aconteceu com o README não tem como se repetir |
+| Tabela | **TanStack Table** | É a área de organização inteira (9.3) |
+| Estilo | **Tailwind com tokens próprios** | Ver as referências, abaixo |
+| Componente | **Headless — Radix ou React Aria** | Comportamento, foco, teclado e acessibilidade deles; visual inteiramente nosso |
+| i18n | **Desde a primeira tela** | Retrofit de i18n é das piores dívidas que existem, e a linha do tempo é toda timestamp |
 
-**Consequência prática:** enquanto esta fase não começa, tutor real não usa o
-Petfy, e `prd` não tem por que existir. A validação de tudo que vem antes é por
-API, em `dev` e `stg`.
+#### O que foi descartado, e por quê
 
-**Pronto quando:** alguém que nunca viu `curl` cadastra um pet e vê a próxima
+| Opção | Motivo |
+|---|---|
+| **Next.js** | O presente dele é o BFF embutido, e o BFF foi adiado. Sobra SSR que a área logada não usa e SEO que o cartão **não pode ter** (9.2). E o BFF dele nasce casado com a web: quando o app chegar, extrai-se outro de qualquer forma |
+| **Angular** | Segundo lugar de verdade, não consolo: modelo mental de Spring, opinionado, e a área de organização é o terreno dele. Perdeu pelo caminho do app — Capacitor é webview, e nada se reaproveita |
+| **Java na tela** (Vaadin, Thymeleaf + HTMX) | Entrega tela na primeira semana, num idioma só. Não sobrevive ao plano: microserviço, BFF e app pressupõem cliente desacoplado, e o Vaadin ainda guarda estado de UI no servidor — o oposto de escalar horizontalmente |
+
+#### O BFF, adiado — com gatilho escrito
+
+**BFF é por superfície, não do sistema.** Um por cliente: web e app têm necessidades
+opostas — a web pede lista de duzentos com filtro, o app pede o mínimo para uma
+notificação e um toque. Um BFF que sirva os dois vira um segundo monólito com outro
+nome.
+
+**O argumento a favor dele é a virada para microserviços.** Quando o monólito se
+dividir, quem re-agrega é o BFF, e o contrato que o cliente enxerga não muda. Sem BFF,
+cada quebra de serviço vira mudança de tela.
+
+**Por que não agora:** há um cliente e um backend. BFF hoje é um deploy a mais, um
+contrato a mais e um salto de latência sem contrapartida. O único argumento de dia um
+seria autenticação — SPA guardando JWT em `localStorage` é exposição a XSS —, e isso sai
+mais barato resolvido no Spring que já existe, com refresh em cookie `httpOnly`, do que
+construindo um serviço inteiro.
+
+**O gatilho, escrito para não depender de memória.** O primeiro dos três que acontecer:
+
+1. o app entrar;
+2. o monólito começar a se dividir;
+3. uma tela precisar de três chamadas em sequência para existir.
+
+**A regra que mantém o BFF possível, e é de dia um:** nenhuma tela chama HTTP. Todo
+acesso passa por uma camada de dados única, gerada do contrato. Quando o BFF entrar,
+mudam a base e as assinaturas geradas — não as telas.
+
+#### Repositório único
+
+**Mesmo repositório, e não como provisório.** O cliente gerado do OpenAPI só protege de
+divergência se contrato e consumidor forem versionados juntos; em repos separados, "qual
+versão do front fala com qual versão da API" volta a ser problema de gente lembrar.
+
+Dois custos, ambos de configuração:
+
+- **CI com filtro por caminho.** Hoje qualquer push roda os 705 testes Java. Mudança de
+  CSS não pode disparar isso, e mudança de controller precisa disparar a regeneração do
+  cliente.
+- **Um segundo serviço no Railway**, com *root directory* apontando para a pasta do
+  front.
+
+Separar depois é barato, e só se justifica com time próprio ou cadência de release
+própria. Não existe nenhum dos dois.
+
+#### As referências
+
+Migram para o `DESIGN.md` quando ele nascer, no passo 3.
+
+| Eixo | Referência | O que se aproveita |
+|---|---|---|
+| Arquitetura | **SoundCloud** | Onde o BFF nasceu, e pelo mesmo motivo que o nosso vai nascer: monólito virando serviços, com clientes de necessidades diferentes |
+| Arquitetura | **Netflix** | Backend JVM com cliente desacoplado e camada por dispositivo, em escala |
+| Arquitetura | **Mercado Livre** | A condição mais parecida com a nossa: Java pesado, escala continental, produto de duas pontas |
+| Estrutura | **Airbnb** | Uma conta, duas áreas, troca explícita — é a 9.3 rodando em produção há anos |
+| Produto | **Apple Health** | Registro longitudinal, compartilhamento com escopo e prazo, e a postura de que o dado é do titular |
+| Produto | **Oura, Whoop** | A régua da promessa 5.5: descrever padrão, mostrar evidência, nunca diagnosticar |
+| Vertical | **Digitail, Vetspire, PetDesk** | O que o profissional espera de uma tela densa — olhado com a seção 6 na mão: não somos gestão de clínica |
+| Design | **NHS Design System** | A mais importante: linguagem de saúde que informa **sem alarmar** (4.5), e acessibilidade levada a sério |
+| Design | **GOV.UK** | Clareza sem decoração transmitindo seriedade |
+| Design | **Nubank** | Tom em português real, sem jargão, numa categoria de baixa confiança |
+| Design | **Monzo** | Tom de voz documentado, e transparência como decisão de design |
+| Design | **Linear, Stripe** | Densidade sem ruído, para a área de organização |
+
+**A síntese, para o passo 3 não começar do zero:** conteúdo do NHS, tom do Nubank,
+densidade do Linear na área profissional, estrutura do Airbnb.
+
+**E o critério negativo, que é exigência do titular.** O visual de projeto gerado tem
+assinatura reconhecível — cinza slate, canto arredondado em tudo, card branco com sombra
+em grade de três, gradiente, herói centralizado. É por isso que o componente é
+**headless** e não pré-estilizado: biblioteca que entrega componente já vestido entrega
+junto a cara dela. Autoria vem do domínio, e este produto tem material raro para isso —
+as promessas da seção 5 são linguagem visual esperando ser desenhada: autoria aparente
+em cada evento, linha do tempo como objeto de primeira classe, observação distinguível
+de ato clínico, correção mostrando as duas versões.
+
+#### O que a Fase 5 antiga dizia e não vale mais
+
+| Dizia | Agora |
+|---|---|
+| *"Papel manda no que aparece"* — `VIEWER` lê, `EDITOR` escreve, só `HOLDER` convida e transfere | Papel morreu na Fase 6. Quem decide alcance é **custódia** e **acesso com escopo**, e o alcance vem junto do recurso |
+| *"A carteira do pet, a agenda e o registro de uma dose"* como centro da primeira tela | O centro da área do tutor é o **feed de pendências** (decisão 2, e 9.3). A agenda é uma das fontes dele, não o todo |
+| *"Nada de frontend está decidido"* | Estrutura e stack estão. Tela e mecânica, não |
+
+**Continua valendo, e a tela precisa respeitar:**
+
+- **Download de anexo passa pela API**, não por URL assinada — cada download é
+  autenticado, e não um `src` colado.
+- **Consentimento pendente é estado**, não erro: política nova exige aceite antes de
+  seguir.
+- Enquanto esta fase não terminar, tutor real não usa o Petfy e **`prd` não tem por que
+  existir**.
+
+**Pronto quando:** alguém que nunca viu `curl` cadastra um animal e vê a próxima
 dose.
 
 ## Fase 6 — a remodelagem que o `PRODUTO.md` cobra
