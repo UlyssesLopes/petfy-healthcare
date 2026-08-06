@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.service;
 
+import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
@@ -8,7 +9,7 @@ import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
-import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
+import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalWeightHistoryRepository;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
@@ -49,7 +50,7 @@ public class AnimalPurger {
     private final AnimalRepository animalRepository;
     private final AttachmentRepository attachmentRepository;
     private final AttachmentStorage attachmentStorage;
-    private final PetTutorRepository petTutorRepository;
+    private final CustodyRepository custodyRepository;
     private final PetTutorInviteRepository petTutorInviteRepository;
     private final VaccineRepository vaccineRepository;
     private final VaccineCorrectionRepository vaccineCorrectionRepository;
@@ -123,10 +124,19 @@ public class AnimalPurger {
         sensitiveAccessLogRepository.deleteByAnimalAnimalIdIn(animalIds);
         animalHealthConditionRepository.deleteByAnimalAnimalIdIn(animalIds);
 
-        // o convite sai antes do vinculo por clareza, nao por dependencia: um
+        // o convite sai antes da custodia por clareza, nao por dependencia: um
         // aponta para o animal, o outro tambem, e nenhum dos dois aponta para o outro
         petTutorInviteRepository.deleteByAnimalAnimalIdIn(animalIds);
-        petTutorRepository.deleteByAnimalAnimalIdIn(animalIds);
+
+        // A custodia aponta para si mesma pelo sucessor, entao um delete em massa
+        // esbarraria na propria FK dependendo da ordem que o banco escolher. Desfazer
+        // a corrente antes de apagar e o que torna a ordem irrelevante - e o flush no
+        // meio nao e decoracao: sem ele o UPDATE poderia sair depois do DELETE.
+        List<Custody> custodias = custodyRepository.findByAnimalAnimalIdIn(animalIds);
+        custodias.forEach(c -> c.setSuccessor(null));
+        custodyRepository.saveAll(custodias);
+        custodyRepository.flush();
+        custodyRepository.deleteAll(custodias);
     }
 
 }

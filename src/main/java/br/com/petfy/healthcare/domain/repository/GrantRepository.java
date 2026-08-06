@@ -54,6 +54,19 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
             UUID animalId, UUID clinicId);
 
     /**
+     * As pessoas que alcancam o animal por concessao agora.
+     *
+     * Só pessoas: clinica e link ficam de fora porque a pergunta que isto responde e
+     * "quem mais poderia responder por este animal se quem responde sair" - e uma
+     * clinica nunca vai responder por um animal.
+     */
+    @Query("select g from Grant g where g.animal.animalId = :animalId "
+            + "and g.granteePerson is not null "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
+    List<Grant> findVigentesDePessoasNoAnimal(@Param("animalId") UUID animalId,
+                                              @Param("agora") LocalDateTime agora);
+
+    /**
      * Devolve as concessoes para o purger apagar por entidade, e nao um delete em
      * massa.
      *

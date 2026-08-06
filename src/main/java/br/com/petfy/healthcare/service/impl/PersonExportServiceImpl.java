@@ -65,7 +65,18 @@ public class PersonExportServiceImpl implements PersonExportService {
     public PersonExportDTO exportarDoAutenticado() {
         Person person = currentPersonProvider.require();
 
-        List<PetTutor> vinculos = petTutorRepository.findByPersonPersonId(person.getPersonId());
+        // Depois do P2b sao duas origens, e o export tem de cobrir as duas: os animais
+        // por que a pessoa responde, e os que ela alcanca por concessao. Antes vinham
+        // da mesma tabela porque custodia e acesso eram a mesma coisa.
+        LocalDateTime agora = LocalDateTime.now();
+
+        List<Relacao> vinculos = new ArrayList<>();
+
+        custodyRepository.findEmCursoDaPessoa(person.getPersonId()).forEach(c ->
+                vinculos.add(new Relacao(c.getAnimal(), "CUSTODIA", c.getStartedAt())));
+
+        grantRepository.findVigentesDaPessoa(person.getPersonId(), agora).forEach(g ->
+                vinculos.add(new Relacao(g.getAnimal(), g.getLevel().name(), g.getGrantedAt())));
 
         return PersonExportDTO.builder()
                 .generatedAt(LocalDateTime.now())
@@ -94,8 +105,18 @@ public class PersonExportServiceImpl implements PersonExportService {
                 .build();
     }
 
-    private PersonExportDTO.AnimalExportDTO exportarAnimal(PetTutor meuVinculo) {
-        Animal animal = meuVinculo.getAnimal();
+    /**
+     * Como esta pessoa alcanca este animal.
+     *
+     * Existe porque as duas origens - custodia e concessao - nao tem uma classe em
+     * comum, e nem deveriam ter: sao conceitos opostos. Achata-las aqui, no limite do
+     * documento, e melhor que inventar uma superclasse no dominio so para o export.
+     */
+    private record Relacao(Animal animal, String relacao, LocalDateTime desde) {
+    }
+
+    private PersonExportDTO.AnimalExportDTO exportarAnimal(Relacao meuVinculo) {
+        Animal animal = meuVinculo.animal();
         UUID animalId = animal.getAnimalId();
 
         return PersonExportDTO.AnimalExportDTO.builder()
@@ -129,22 +150,39 @@ public class PersonExportServiceImpl implements PersonExportService {
     }
 
     /**
-     * Os outros tutores, por nome e papel.
+     * As outras pessoas que alcancam o animal, por nome e relacao.
      *
      * Sem e-mail e sem id: saber com quem se divide o animal e informacao do titular, o
      * endereco de contato da outra pessoa nao. O proprio vinculo sai da lista - ele ja
-     * esta em {@code meuPapel}, e repetir daria a impressao de haver um tutor a mais.
+     * esta em {@code minhaRelacao}, e repetir daria a impressao de haver uma pessoa a
+     * mais.
+     *
+     * Clinica e link ficam de fora daqui e aparecem em {@code acessosDeClinica} e
+     * {@code linksCompartilhados}: sao concessoes, mas nao sao pessoas com quem se
+     * divide o cuidado, e junta-las numa lista so apagaria a diferenca.
      */
-    private List<PersonExportDTO.CoTutorDTO> coTutores(UUID animalId, PetTutor meuVinculo) {
-        return petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(animalId)
-                .stream()
-                .filter(t -> !t.getPetTutorId().equals(meuVinculo.getPetTutorId()))
-                .map(t -> PersonExportDTO.CoTutorDTO.builder()
-                        .name(t.getPerson().getName())
-                        .role(t.getRole())
-                        .desde(t.getCreationDate())
-                        .build())
-                .toList();
+    private List<PersonExportDTO.CoTutorDTO> coTutores(UUID animalId, UUID euMesmo) {
+        LocalDateTime agora = LocalDateTime.now();
+        List<PersonExportDTO.CoTutorDTO> outros = new ArrayList<>();
+
+        custodyRepository.findEmCurso(animalId)
+                .filter(c -> c.getHolderPerson() != null)
+                .filter(c -> !c.getHolderPerson().getPersonId().equals(euMesmo))
+                .ifPresent(c -> outros.add(PersonExportDTO.CoTutorDTO.builder()
+                        .name(c.getHolderPerson().getName())
+                        .relacao("CUSTODIA")
+                        .desde(c.getStartedAt())
+                        .build()));
+
+        grantRepository.findVigentesDePessoasNoAnimal(animalId, agora).stream()
+                .filter(g -> !g.getGranteePerson().getPersonId().equals(euMesmo))
+                .forEach(g -> outros.add(PersonExportDTO.CoTutorDTO.builder()
+                        .name(g.getGranteePerson().getName())
+                        .relacao(g.getLevel().name())
+                        .desde(g.getGrantedAt())
+                        .build()));
+
+        return outros;
     }
 
     /**

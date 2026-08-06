@@ -2,12 +2,12 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Person;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
-import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
+import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.PetIdService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -36,7 +36,7 @@ public class PetIdServiceImpl implements PetIdService {
     private final TesseractOcrServiceImpl tesseractOcrService;
     private final ImageProcessorService imageProcessorService;
     private final AnimalRepository animalRepository;
-    private final PetTutorRepository petTutorRepository;
+    private final CustodyRepository custodyRepository;
     private final CurrentPersonProvider currentPersonProvider;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -78,11 +78,13 @@ public class PetIdServiceImpl implements PetIdService {
 
         // quem importou a carteirinha nasce titular do animal, igual a quem cadastra
         // pela API - a partir da V15 o vinculo e explicito, nao um campo no animal
-        petTutorRepository.save(PetTutor.builder()
+        // quem cadastra nasce respondendo pelo animal. Natureza DEFINITIVA: e o tutor
+        // comum, sem prazo - lar transitorio e abrigo entram por outro caminho
+        custodyRepository.save(Custody.builder()
                 .animal(saved)
-                .person(personById)
-                .role(PetTutorRole.HOLDER)
-                .creationDate(LocalDateTime.now())
+                .holderPerson(personById)
+                .nature(CustodyNature.DEFINITIVA)
+                .startedAt(LocalDateTime.now())
                 .build());
 
         return toResponse(saved);

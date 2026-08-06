@@ -8,8 +8,9 @@ import br.com.petfy.healthcare.domain.entity.ClinicInvite;
 import br.com.petfy.healthcare.domain.entity.CredentialStatus;
 import br.com.petfy.healthcare.domain.entity.ProfessionalCredential;
 import br.com.petfy.healthcare.domain.entity.Person;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
+import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
@@ -18,7 +19,8 @@ import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepositor
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
-import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
+import br.com.petfy.healthcare.domain.repository.CustodyRepository;
+import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.ClinicInviteService;
@@ -51,7 +53,8 @@ public class PersonServiceImpl implements PersonService {
     private final ClinicRepository clinicRepository;
     private final ClinicService clinicService;
     private final ClinicInviteService clinicInviteService;
-    private final PetTutorRepository petTutorRepository;
+    private final CustodyRepository custodyRepository;
+    private final GrantRepository grantRepository;
     private final PetTutorInviteRepository petTutorInviteRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
@@ -213,18 +216,28 @@ public class PersonServiceImpl implements PersonService {
         Person person = currentPersonProvider.require();
         UUID personId = person.getPersonId();
 
-        List<PetTutor> vinculos = petTutorRepository.findByPersonPersonId(personId);
+        // As custodias em curso de quem sai. Depois do P2b so elas dizem por quais
+        // animais esta pessoa responde - concessao a terceiros nao entra, porque quem
+        // tem acesso concedido nunca respondeu pelo animal.
+        List<Custody> custodias = custodyRepository.findEmCursoDaPessoa(personId);
 
         List<UUID> animalsQueMorrem = new ArrayList<>();
         List<UUID> animalsQuePrecisamDeSucessor = new ArrayList<>();
 
-        for (PetTutor vinculo : vinculos) {
-            UUID animalId = vinculo.getAnimal().getAnimalId();
+        LocalDateTime agora = LocalDateTime.now();
 
-            if (petTutorRepository.countByAnimalAnimalId(animalId) > 1) {
-                if (vinculo.isHolder()) {
-                    animalsQuePrecisamDeSucessor.add(animalId);
-                }
+        for (Custody custodia : custodias) {
+            UUID animalId = custodia.getAnimal().getAnimalId();
+
+            // sobrevive se alguem mais alcanca o animal: nesse caso a custodia passa
+            // para o mais antigo desses. Sem ninguem, o animal morre com a conta.
+            //
+            // A regra que o PRODUTO.md 3.4 decidiu e outra - recusar a exclusao ate o
+            // titular dar destino ao animal -, e ela nao entra aqui de proposito: e
+            // mudanca de contrato de um endpoint de LGPD, e vai numa fatia propria.
+            // Este passo preserva o comportamento que ja existia.
+            if (!grantRepository.findVigentesDePessoasNoAnimal(animalId, agora).isEmpty()) {
+                animalsQuePrecisamDeSucessor.add(animalId);
             } else {
                 animalsQueMorrem.add(animalId);
             }
@@ -238,17 +251,21 @@ public class PersonServiceImpl implements PersonService {
         petTutorInviteRepository.deleteByCreatedByPersonId(personId);
         petTutorInviteRepository.deleteByAcceptedByPersonId(personId);
 
-        // Os vinculos saem primeiro: sao filhos de animal e de person ao mesmo tempo,
-        // entao segurariam os dois deletes seguintes
-        petTutorRepository.deleteByPersonPersonId(personId);
+        // As custodias de quem sai saem primeiro: sao filhas de animal e de person ao
+        // mesmo tempo, entao segurariam os dois deletes seguintes.
+        //
+        // E saem antes de abrir a custodia do sucessor, nao depois. O indice unico
+        // parcial exige no maximo UMA custodia em curso por animal: criar a do sucessor
+        // com a de quem sai ainda aberta deixa duas, e o Postgres recusa - derrubando a
+        // exclusao de conta inteira. Nao aparece em teste de mock, que nao tem indice.
+        // E a mesma armadilha que o 8b encontrou na troca de titularidade.
+        custodias.forEach(c -> c.setSuccessor(null));
+        custodyRepository.saveAll(custodias);
+        custodyRepository.flush();
+        custodyRepository.deleteAll(custodias);
+        custodyRepository.flush();
 
-        // E saem tambem antes de promover o sucessor, nao depois. O indice unico
-        // parcial da V15 exige exatamente um HOLDER por animal: promover com o
-        // vinculo de quem sai ainda na tabela deixa dois, e o Postgres recusa o
-        // update - derrubando a exclusao de conta inteira. Nao aparecia em teste
-        // de mock, que nao tem indice.
-        petTutorRepository.flush();
-        animalsQuePrecisamDeSucessor.forEach(this::promoverSucessor);
+        animalsQuePrecisamDeSucessor.forEach(this::abrirCustodiaDoSucessor);
 
         // Anexo enviado por quem sai, num animal que SOBREVIVE porque tem outro tutor: o
         // arquivo pertence ao animal, nao a quem fez o upload. Apagar o laudo porque quem o
@@ -297,13 +314,23 @@ public class PersonServiceImpl implements PersonService {
      * no banco, entao os candidatos aqui sao apenas quem fica - nao ha mais o que
      * filtrar, e nao ha um segundo HOLDER competindo pelo indice unico.
      */
-    private void promoverSucessor(UUID animalId) {
-        petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(animalId).stream()
-                .min(Comparator.comparing(PetTutor::getCreationDate))
-                .ifPresent(sucessor -> {
-                    sucessor.setRole(PetTutorRole.HOLDER);
-                    sucessor.setUpdateDate(LocalDateTime.now());
-                    petTutorRepository.save(sucessor);
+    private void abrirCustodiaDoSucessor(UUID animalId) {
+        grantRepository.findVigentesDePessoasNoAnimal(animalId, LocalDateTime.now()).stream()
+                .min(Comparator.comparing(Grant::getGrantedAt))
+                .ifPresent(maisAntigo -> {
+                    // a pessoa com acesso mais antigo passa a responder pelo animal, e a
+                    // concessao dela e revogada: quem responde nao precisa de concessao, e
+                    // manter as duas deixaria a mesma pessoa alcancando o animal por dois
+                    // caminhos - o dia em que divergissem seria um vazamento
+                    custodyRepository.save(Custody.builder()
+                            .animal(maisAntigo.getAnimal())
+                            .holderPerson(maisAntigo.getGranteePerson())
+                            .nature(CustodyNature.DEFINITIVA)
+                            .startedAt(LocalDateTime.now())
+                            .build());
+
+                    maisAntigo.setRevokedAt(LocalDateTime.now());
+                    grantRepository.save(maisAntigo);
                 });
     }
 

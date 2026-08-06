@@ -55,31 +55,37 @@ public class Animal {
     private Species species;
 
     /**
-     * Quem cuida deste animal. Substituiu o {@code person} unico na V15 - ver
-     * {@link PetTutor} para por que a coluna antiga nao foi mantida ao lado.
+     * A historia de quem respondeu por este animal.
      *
-     * Nao ha cascade: vinculo se cria e se apaga pelos fluxos de convite e de
-     * remocao, que tem regra propria (o titular nao pode simplesmente sumir).
+     * Substituiu a colecao de {@code PetTutor} no P2b, e a diferenca nao e de nome:
+     * o PetTutor guardava tutor <b>e</b> quem tinha acesso concedido, entao a colecao
+     * nao sabia responder "quem responde por este animal" sem filtrar por papel.
+     * Aqui toda linha e alguem que respondeu, e no maximo uma esta em curso -
+     * garantido por indice unico parcial no banco.
+     *
+     * Nao ha cascade: custodia se cria e se encerra por fluxo com regra propria, e
+     * nenhuma termina sem sucessor.
      */
     @OneToMany(mappedBy = "animal", fetch = FetchType.LAZY)
     @Builder.Default
-    private List<PetTutor> tutors = new ArrayList<>();
+    private List<Custody> custodies = new ArrayList<>();
 
     /**
-     * O titular. Sempre existe - a V15 fez o backfill e o indice unico parcial
-     * garante que ha exatamente um - mas devolve Optional porque a colecao e
-     * lazy e chamar isto fora de transacao e um erro de uso, nao um animal sem dono.
+     * Quem responde pelo animal agora, quando e uma pessoa.
+     *
+     * <b>Devolve vazio em dois casos diferentes, e quem chama nao precisa
+     * distingui-los:</b> quando quem responde e uma organizacao - o abrigo nao tem
+     * nome de pessoa para mostrar - e quando nao ha custodia em curso, o que
+     * acontece depois de obito ou perda. Nenhum dos dois e erro.
+     *
+     * A colecao e lazy, entao chamar isto fora de transacao e erro de uso.
      */
     public Optional<Person> getHolder() {
-        return tutors.stream()
-                .filter(PetTutor::isHolder)
-                .map(PetTutor::getPerson)
+        return custodies.stream()
+                .filter(Custody::estaEmCurso)
+                .map(Custody::getHolderPerson)
+                .filter(java.util.Objects::nonNull)
                 .findFirst();
-    }
-
-    /** Todos os tutores, em qualquer papel. Usado por quem notifica. */
-    public List<Person> getTutorPersons() {
-        return tutors.stream().map(PetTutor::getPerson).toList();
     }
 
     private String generalRegistry;

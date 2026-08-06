@@ -4,10 +4,10 @@ import br.com.petfy.healthcare.domain.dto.AnimalRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
-import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
+import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.AnimalPurger;
@@ -29,7 +29,7 @@ import java.util.UUID;
 public class AnimalServiceImpl implements AnimalService {
 
     private final AnimalRepository animalRepository;
-    private final PetTutorRepository petTutorRepository;
+    private final CustodyRepository custodyRepository;
     private final CurrentPersonProvider currentPersonProvider;
     private final AnimalAccessGuard animalAccessGuard;
     private final PuppyProtocolService puppyProtocolService;
@@ -65,11 +65,13 @@ public class AnimalServiceImpl implements AnimalService {
 
         Animal salvo = animalRepository.save(animal);
 
-        petTutorRepository.save(PetTutor.builder()
+        // quem cadastra nasce respondendo pelo animal. Natureza DEFINITIVA: e o tutor
+        // comum, sem prazo - lar transitorio e abrigo entram por outro caminho
+        custodyRepository.save(Custody.builder()
                 .animal(salvo)
-                .person(person)
-                .role(PetTutorRole.HOLDER)
-                .creationDate(LocalDateTime.now())
+                .holderPerson(person)
+                .nature(CustodyNature.DEFINITIVA)
+                .startedAt(LocalDateTime.now())
                 .build());
 
         // Filhote ganha as doses planejadas do protocolo inicial. E silencioso
