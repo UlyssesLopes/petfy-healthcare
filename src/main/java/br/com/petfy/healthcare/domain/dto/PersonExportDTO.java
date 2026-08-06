@@ -7,7 +7,6 @@ import br.com.petfy.healthcare.domain.entity.ConsentDocument;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionKind;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionSeverity;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.entity.Species;
 import lombok.Builder;
@@ -107,8 +106,14 @@ public record PersonExportDTO(
             Double weight,
             LocalDateTime creationDate,
 
-            /** O papel do titular <b>neste</b> animal, que pode nao ser o de titular. */
-            PetTutorRole meuPapel,
+            /**
+             * Como o titular alcanca <b>este</b> animal: CUSTODIA quando ele responde
+             * pelo animal, ou o nivel da concessao quando alguem lhe deu acesso.
+             *
+             * Substituiu meuPapel, que era um PetTutorRole. O papel juntava as duas
+             * coisas num campo so, e era exatamente essa mistura que o P2 desfez.
+             */
+            String minhaRelacao,
 
             /**
              * Alergias e condicoes cronicas. Vem logo depois dos tutores de proposito: e a
@@ -150,7 +155,7 @@ public record PersonExportDTO(
     @Builder
     public record CoTutorDTO(
             String name,
-            PetTutorRole role,
+            String relacao,
             LocalDateTime desde
             // sem personId e sem e-mail: identificam outra pessoa fora deste documento
     ) {

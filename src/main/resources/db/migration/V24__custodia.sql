@@ -32,23 +32,27 @@ CREATE TABLE custodies (
       + (CASE WHEN holder_clinic_id IS NOT NULL THEN 1 ELSE 0 END) = 1
     ),
 
-    -- O quarto invariante do produto, como constraint: nenhuma custodia termina sem
-    -- sucessor. A excecao nao e um caso esquecido - e o fim da propria necessidade
-    -- de sucessor: animal morto ou perdido nao precisa de alguem que responda por
-    -- ele. Fora desses dois motivos, encerrar sem destino deixaria o animal orfao de
-    -- registro, que e exatamente o que o invariante proibe.
-    CONSTRAINT ck_custodies_fim_com_destino CHECK (
-        ended_at IS NULL
-        OR end_reason IN ('OBITO', 'PERDA')
-        OR successor_custody_id IS NOT NULL
-    ),
-
     -- Encerrar exige dizer por que. Sem isto seria possivel fechar uma custodia sem
     -- deixar rastro do motivo, e a linha do tempo do animal perderia o fato.
     CONSTRAINT ck_custodies_fim_tem_motivo CHECK (
         (ended_at IS NULL AND end_reason IS NULL)
         OR (ended_at IS NOT NULL AND end_reason IS NOT NULL)
     )
+
+    -- O QUE NAO DEU PARA TRAZER PARA CA, e por que fica dito em voz alta.
+    --
+    -- O quarto invariante do produto - nenhuma custodia termina sem sucessor -
+    -- nasceu aqui como CHECK, e foi removido: ele e o indice unico parcial abaixo
+    -- nao podem ser satisfeitos ao mesmo tempo por nenhuma ordem de escrita.
+    --
+    -- Encerrar a custodia antiga exige apontar para a nova, que ainda nao existe.
+    -- Criar a nova antes deixa duas em curso no mesmo instante, e o indice recusa.
+    -- Nao ha ordem que passe pelos dois, e CHECK nao e deferivel no Postgres.
+    --
+    -- Onde a regra vive, entao: no servico, que so encerra apontando destino, e no
+    -- CustodyFlowContainerTest, que exercita os cinco movimentos contra Postgres
+    -- real. E mais fraco que uma constraint e esta admitido como tal - o que nao se
+    -- faz e deixar um CHECK que parece garantir e nunca chega a rodar.
 );
 
 -- No maximo uma custodia em curso por animal. Indice unico PARCIAL, como o de um

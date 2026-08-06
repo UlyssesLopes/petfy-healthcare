@@ -29,6 +29,7 @@ public class ClinicActivityNotifier {
     private static final String ORIENTACAO = "Se nao reconhece este registro, revogue o acesso da clinica no Petfy.";
 
     private final AsyncNotificationDispatcher dispatcher;
+    private final br.com.petfy.healthcare.service.AnimalReach animalReach;
 
     public void vaccineRecorded(Vaccine vaccine) {
         enviar(vaccine.getAnimal(), destinatario -> {
@@ -125,7 +126,7 @@ public class ClinicActivityNotifier {
         // algo nele. O papel nao filtra - quem so le tambem quer saber que
         // apareceu vacina que ninguem da casa reconhece, que e justamente o caso
         // que a orientacao no rodape trata.
-        for (Person destinatario : animal.getTutorPersons()) {
+        for (Person destinatario : animalReach.pessoas(animal.getAnimalId())) {
             if (!destinatario.podeReceberNotificacao()) {
                 log.info("Tutor {} ainda nao confirmou o e-mail; aviso de {} suprimido",
                         destinatario.getPersonId(), evento);

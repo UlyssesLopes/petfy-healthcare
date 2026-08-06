@@ -142,7 +142,7 @@ public class AnimalServiceImpl implements AnimalService {
     @Override
     @Transactional
     public void deleteAnimal(UUID animalId) {
-        Animal animal = animalAccessGuard.requireTitular(animalId);
+        Animal animal = animalAccessGuard.requireCustodia(animalId);
 
         animalPurger.purgeConteudo(List.of(animalId));
         animalRepository.delete(animal);

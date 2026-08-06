@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,7 +37,7 @@ public class PersonExportServiceImpl implements PersonExportService {
 
     private final CurrentPersonProvider currentPersonProvider;
     private final ConsentRecordRepository consentRecordRepository;
-    private final PetTutorRepository petTutorRepository;
+    private final CustodyRepository custodyRepository;
     private final VaccineRepository vaccineRepository;
     private final VaccineCorrectionRepository vaccineCorrectionRepository;
     private final HealthRecordRepository healthRecordRepository;
@@ -49,7 +50,7 @@ public class PersonExportServiceImpl implements PersonExportService {
     private final AnimalHealthConditionRepository animalHealthConditionRepository;
 
     /**
-     * Monta o documento a partir dos vinculos de tutor, e nao de uma consulta por dono.
+     * Monta o documento a partir de como a pessoa alcanca cada animal.
      *
      * A diferenca importa desde a V15: um animal pode ter varios tutores, e o que define o
      * que este titular leva embora e o <b>vinculo</b> - inclusive o papel, que pode ser
@@ -135,9 +136,9 @@ public class PersonExportServiceImpl implements PersonExportService {
                 .generalRegistry(animal.getGeneralRegistry())
                 .weight(animal.getWeight())
                 .creationDate(animal.getCreationDate())
-                .meuPapel(meuVinculo.getRole())
+                .minhaRelacao(meuVinculo.relacao())
                 .condicoes(condicoes(animalId))
-                .coTutores(coTutores(animalId, meuVinculo))
+                .coTutores(coTutores(animalId, currentPersonProvider.require().getPersonId()))
                 .vacinas(vacinas(animalId))
                 .antiparasitarios(antiparasitarios(animalId))
                 .pesagens(pesagens(animalId))
@@ -406,7 +407,7 @@ public class PersonExportServiceImpl implements PersonExportService {
                 "Dado pessoal de terceiro vem reduzido: co-tutor aparece por nome e papel, "
                         + "sem e-mail. A portabilidade e dos dados do titular.",
                 "Animal compartilhado com outros tutores esta incluido, com o papel do titular "
-                        + "indicado em meuPapel - ele pode nao ser o titular do animal.",
+                        + "indicado em minhaRelacao - ele pode alcancar o animal por concessao, e nao por responder por ele.",
                 "A senha nao aparece, nem como hash.",
                 "As alergias e condicoes cronicas vem com as ativas primeiro; condicao "
                         + "encerrada aparece com resolvedAt preenchido, porque faz parte do "

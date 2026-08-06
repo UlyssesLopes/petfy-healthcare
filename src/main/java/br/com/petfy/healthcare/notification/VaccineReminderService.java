@@ -31,6 +31,7 @@ public class VaccineReminderService {
     private final VaccineRepository vaccineRepository;
     private final AntiparasiticRepository antiparasiticRepository;
     private final Notifier notifier;
+    private final br.com.petfy.healthcare.service.AnimalReach animalReach;
 
     /** Quantos dias de antecedencia entram no lembrete. */
     @Value("${petfy.reminders.window-days:30}")
@@ -94,7 +95,7 @@ public class VaccineReminderService {
         // indexar por um dono unico que nao existe mais.
         Map<Person, List<Vaccine>> vacinasPorTutor = new LinkedHashMap<>();
         for (Vaccine v : vacinasPendentes) {
-            for (Person tutor : v.getAnimal().getTutorPersons()) {
+            for (Person tutor : animalReach.pessoas(v.getAnimal().getAnimalId())) {
                 if (tutor.podeReceberNotificacao()) {
                     vacinasPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(v);
                 }
@@ -103,7 +104,7 @@ public class VaccineReminderService {
 
         Map<Person, List<Antiparasitic>> antisPorTutor = new LinkedHashMap<>();
         for (Antiparasitic a : antisPendentes) {
-            for (Person tutor : a.getAnimal().getTutorPersons()) {
+            for (Person tutor : animalReach.pessoas(a.getAnimal().getAnimalId())) {
                 if (tutor.podeReceberNotificacao()) {
                     antisPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(a);
                 }
@@ -153,7 +154,7 @@ public class VaccineReminderService {
      * na primeira varredura depois da confirmacao em vez de se perder.
      */
     private boolean temTutorNotificavel(Animal animal) {
-        return animal.getTutorPersons().stream().anyMatch(Person::podeReceberNotificacao);
+        return animalReach.temAlguemNotificavel(animal.getAnimalId());
     }
 
     private Notification montarLembrete(Person person, List<Vaccine> vacinas, List<Antiparasitic> antis, LocalDate hoje) {

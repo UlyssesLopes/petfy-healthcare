@@ -1,6 +1,5 @@
 package br.com.petfy.healthcare.domain.dto;
 
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -21,7 +20,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PetTutorResponseDTO {
 
-    private UUID petTutorId;
+    /** O id da custodia ou da concessao - as duas coisas que substituiram o vinculo. */
+    private UUID vinculoId;
 
     private UUID animalId;
 
@@ -31,7 +31,7 @@ public class PetTutorResponseDTO {
 
     private String personEmail;
 
-    private PetTutorRole role;
+    private String relacao;
 
     private boolean holder;
 
