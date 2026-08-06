@@ -3,19 +3,26 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.PersonRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
+import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.ClinicInvite;
+import br.com.petfy.healthcare.domain.entity.CredentialStatus;
+import br.com.petfy.healthcare.domain.entity.ProfessionalCredential;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
+import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
-import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
+import br.com.petfy.healthcare.service.ClinicInviteService;
+import br.com.petfy.healthcare.service.ClinicService;
 import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.PersonService;
@@ -37,8 +44,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PersonServiceImpl implements PersonService {
 
+    private static final String CONSELHO_CRMV = "CRMV";
+
     private final PersonRepository personRepository;
-    private final VetRepository vetRepository;
+    private final ProfessionalCredentialRepository credentialRepository;
+    private final ClinicRepository clinicRepository;
+    private final ClinicService clinicService;
+    private final ClinicInviteService clinicInviteService;
     private final PetTutorRepository petTutorRepository;
     private final PetTutorInviteRepository petTutorInviteRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -56,17 +68,34 @@ public class PersonServiceImpl implements PersonService {
 
         garantirEmailLivre(request.getEmail());
 
+        // valida o convite antes de criar a pessoa: nao faz sentido gravar a conta
+        // para depois descobrir que o convite nao servia
+        ClinicInvite invite = temTexto(request.getInviteToken())
+                ? clinicInviteService.validate(request.getInviteToken(), request.getEmail())
+                : null;
+
+        Clinic clinic = resolverClinica(request, invite);
+
         Person person = Person.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .address(request.getAddress())
+                .clinic(clinic)
                 .creationDate(LocalDateTime.now())
                 .updateDate(LocalDateTime.now())
                 .build();
 
         Person salvo = personRepository.save(person);
+
+        registrarCredencial(salvo, request);
+
+        // consome o convite: e de uso unico, senao o mesmo link serviria a
+        // qualquer numero de pessoas
+        if (invite != null) {
+            clinicInviteService.markAccepted(invite, salvo.getPersonId());
+        }
 
         // O consentimento e gravado na mesma transacao do cadastro, e antes do
         // envio de e-mail: conta que existisse sem aceite registrado seria
@@ -248,6 +277,12 @@ public class PersonServiceImpl implements PersonService {
         // que demonstrar sobre um titular que nao existe mais.
         consentRecordRepository.deleteByPersonPersonId(personId);
 
+        // A credencial profissional sai junto: numero de registro em conselho e
+        // dado pessoal do titular, e a tabela aponta para persons, entao seguraria
+        // o delete abaixo. E a mesma familia dos seis bugs da Fase 4 - tabela nova
+        // que aponta para a conta e nao entra na lista de exclusao.
+        credentialRepository.deleteByPersonPersonId(personId);
+
         // Finalmente o person
         personRepository.delete(person);
     }
@@ -260,7 +295,7 @@ public class PersonServiceImpl implements PersonService {
      *
      * Chamado <b>depois</b> de o vinculo de quem sai ter sido apagado e descarregado
      * no banco, entao os candidatos aqui sao apenas quem fica - nao ha mais o que
-     * filtrar, e nao ha um segundo HOLDER comanimalindo pelo indice unico.
+     * filtrar, e nao ha um segundo HOLDER competindo pelo indice unico.
      */
     private void promoverSucessor(UUID animalId) {
         petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(animalId).stream()
@@ -272,8 +307,86 @@ public class PersonServiceImpl implements PersonService {
                 });
     }
 
+    private static boolean temTexto(String valor) {
+        return valor != null && !valor.isBlank();
+    }
+
+    /**
+     * Uma clinica, nenhuma, ou erro se pedirem as duas coisas.
+     *
+     * <b>Nenhuma passou a ser valido no P1,</b> e essa e a entrada do veterinario
+     * autonomo: atendimento domiciliar e enorme no Brasil e nao tem clinica, e
+     * antes o cadastro obrigava a inventar uma. Quem atende e o profissional; a
+     * clinica e onde ele atende.
+     */
+    private Clinic resolverClinica(PersonRequestDTO request, ClinicInvite invite) {
+        if (invite != null && request.getClinic() != null) {
+            throw new PetfyHealthcareException(
+                    "informe inviteToken para entrar numa clinica existente, ou clinic para cadastrar uma nova",
+                    ErrorMessageEnum.INVALID_REQUEST.getCode(),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (invite != null) {
+            return invite.getClinic();
+        }
+
+        if (request.getClinic() == null) {
+            return null;
+        }
+
+        UUID clinicId = clinicService.createClinic(request.getClinic()).getClinicId();
+
+        return clinicRepository.findById(clinicId)
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(),
+                        ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(),
+                        HttpStatus.NOT_FOUND));
+    }
+
+    /**
+     * A credencial nasce INFORMADA, nunca VERIFICADA: nao ha integracao com
+     * conselho, e um estado que mentisse sobre isso seria pior que nao ter estado.
+     */
+    private void registrarCredencial(Person person, PersonRequestDTO request) {
+        if (!temTexto(request.getCrmv())) {
+            return;
+        }
+
+        String uf = temTexto(request.getCrmvUf()) ? request.getCrmvUf().toUpperCase() : null;
+
+        if (uf == null) {
+            throw new PetfyHealthcareException(
+                    "crmvUf e obrigatorio quando crmv e informado",
+                    ErrorMessageEnum.INVALID_REQUEST.getCode(),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (credentialRepository.existsByCouncilAndUfAndNumber(CONSELHO_CRMV, uf, request.getCrmv())) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.CREDENTIAL_ALREADY_REGISTERED.getMessage(),
+                    ErrorMessageEnum.CREDENTIAL_ALREADY_REGISTERED.getCode(),
+                    HttpStatus.CONFLICT);
+        }
+
+        credentialRepository.save(ProfessionalCredential.builder()
+                .person(person)
+                .council(CONSELHO_CRMV)
+                .uf(uf)
+                .number(request.getCrmv())
+                .status(CredentialStatus.INFORMADO)
+                .creationDate(LocalDateTime.now())
+                .updateDate(LocalDateTime.now())
+                .build());
+    }
+
+    /**
+     * O e-mail agora e unico no banco, e nao mais conferido em dois lados pelo
+     * servico. Esta checagem sobrevive para o cliente receber 409 em vez de um
+     * erro de integridade como 500.
+     */
     private void garantirEmailLivre(String email) {
-        boolean jaUsado = personRepository.existsByEmail(email) || vetRepository.existsByEmail(email);
+        boolean jaUsado = personRepository.existsByEmail(email);
 
         if (jaUsado) {
             throw new PetfyHealthcareException(

@@ -3,8 +3,8 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.entity.AccessActorType;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.SensitiveAccessLog;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
 import br.com.petfy.healthcare.security.RequestEvidenceProvider;
 import lombok.RequiredArgsConstructor;
@@ -45,11 +45,11 @@ public class SensitiveAccessLogger {
      * importa porque foi ela que o tutor autorizou - a pessoa que abriu e uma
      * consequencia dessa autorizacao, nao o objeto dela.
      */
-    public void vetLeu(Vet vet, Animal animal, AccessedResource recurso) {
+    public void vetLeu(Person vet, Animal animal, AccessedResource recurso) {
         registrar(SensitiveAccessLog.builder()
                 .animal(animal)
                 .actorType(AccessActorType.VET)
-                .actorId(vet.getVetId())
+                .actorId(vet.getPersonId())
                 .actorName(vet.getName())
                 .clinicName(vet.getClinic() != null ? vet.getClinic().getName() : null)
                 .resource(recurso));

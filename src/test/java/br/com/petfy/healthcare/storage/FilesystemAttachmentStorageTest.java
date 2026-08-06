@@ -147,7 +147,7 @@ class FilesystemAttachmentStorageTest {
 
         /**
          * Idempotente por necessidade: sem isso, uma exclusao de conta que falhasse no
-         * meio nao poderia ser reanimalida - a segunda tentativa quebraria no arquivo que a
+         * meio nao poderia ser repetida - a segunda tentativa quebraria no arquivo que a
          * primeira ja tinha apagado.
          */
         @Test

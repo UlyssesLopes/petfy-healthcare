@@ -18,7 +18,6 @@ import java.util.UUID;
 @Service
 public class JwtService {
 
-    private static final String CLAIM_ROLE = "role";
     private static final String CLAIM_SUBJECT_ID = "subjectId";
 
     private final SecretKey key;
@@ -33,12 +32,11 @@ public class JwtService {
         this.expiration = Duration.ofMinutes(expirationMinutes);
     }
 
-    public String generateToken(String email, UserRole role, UUID subjectId) {
+    public String generateToken(String email, UUID subjectId) {
         Instant agora = Instant.now();
 
         return Jwts.builder()
                 .subject(email)
-                .claim(CLAIM_ROLE, role.name())
                 .claim(CLAIM_SUBJECT_ID, subjectId.toString())
                 .issuedAt(Date.from(agora))
                 .expiration(Date.from(agora.plus(expiration)))
@@ -48,12 +46,12 @@ public class JwtService {
 
     /**
      * Devolve vazio para qualquer token invalido - assinatura errada, expirado,
-     * malformado, ausente ou com papel desconhecido. Quem chama nao precisa
-     * distinguir os casos: em todos eles a requisicao segue sem autenticacao.
+     * malformado ou ausente. Quem chama nao precisa distinguir os casos: em todos
+     * eles a requisicao segue sem autenticacao.
      *
-     * Papel irreconhecivel entra nessa lista de proposito: um token assinado por
-     * uma versao futura com papel novo nao pode ser tratado como se nao tivesse
-     * papel algum.
+     * O claim de papel saiu no P1. Token emitido antes disso continua valendo ate
+     * expirar: o claim a mais e ignorado, e o que a pessoa alcanca passa a sair
+     * dos vinculos dela em vez de vir carimbado dentro do token.
      */
     public Optional<JwtPrincipal> extractPrincipal(String token) {
         try {
@@ -64,17 +62,16 @@ public class JwtService {
                     .getPayload();
 
             String email = claims.getSubject();
-            String role = claims.get(CLAIM_ROLE, String.class);
             Date issuedAt = claims.getIssuedAt();
 
             // sem iat nao ha como saber se o token e anterior a uma troca de
             // senha, entao ele e tratado como invalido em vez de passar como se
             // fosse recente. Todo token emitido aqui tem iat
-            if (email == null || role == null || issuedAt == null) {
+            if (email == null || issuedAt == null) {
                 return Optional.empty();
             }
 
-            return Optional.of(new JwtPrincipal(email, UserRole.valueOf(role), issuedAt.toInstant()));
+            return Optional.of(new JwtPrincipal(email, issuedAt.toInstant()));
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }

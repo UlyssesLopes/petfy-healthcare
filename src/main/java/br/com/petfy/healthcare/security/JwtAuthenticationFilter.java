@@ -45,7 +45,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                var authorities = List.of(new SimpleGrantedAuthority(principal.getRole().asAuthority()));
+                // sem authorities: o papel morreu no P1. O que a pessoa alcanca e
+                // decidido por quem consulta o vinculo - o AnimalAccessGuard para o
+                // animal, o ProfessionalAccessManager para /vet/**. Uma authority aqui
+                // seria uma copia do vinculo, e copia envelhece dentro da validade do token
+                var authorities = List.<SimpleGrantedAuthority>of();
 
                 // o principal e o objeto, e nao a string do email, para o issuedAt
                 // continuar disponivel adiante. Quem le authentication.getName()

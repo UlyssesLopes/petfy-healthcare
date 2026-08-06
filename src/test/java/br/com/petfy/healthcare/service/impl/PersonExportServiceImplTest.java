@@ -205,7 +205,7 @@ class PersonExportServiceImplTest {
                     .findByVaccineVaccineIdOrderByCorrectedAtDesc(vacina.getVaccineId()))
                     .thenReturn(List.of(VaccineCorrection.builder()
                             .vaccine(vacina)
-                            .correctedByVet(Vet.builder().vetId(UUID.randomUUID()).name("Dra. Marina").build())
+                            .correctedBy(Person.builder().personId(UUID.randomUUID()).name("Dra. Marina").build())
                             .previousVaccineName("Antirabica")
                             .correctedAt(LocalDateTime.now())
                             .build()));

@@ -17,13 +17,21 @@ public class LoginResponseDTO {
 
     private long expiresInMinutes;
 
-    /** OWNER ou VET - o cliente precisa saber que tela abrir. */
-    private String role;
-
-    /** Preenchido apenas quando role e OWNER. */
+    /** Sempre preenchido: nao ha mais dois tipos de conta com dois ids. */
     private UUID personId;
 
-    /** Preenchido apenas quando role e VET. */
-    private UUID vetId;
+    /**
+     * A pessoa tem credencial profissional ativa agora.
+     *
+     * <b>Substituiu o campo {@code role}</b>, que dizia OWNER ou VET e vinha de
+     * qual tabela o e-mail estava. Nao e o mesmo campo com outro nome: papel era
+     * exclusivo - quem era vet nao era tutor -, e isto nao e. A veterinaria que
+     * tem cachorro e uma pessoa so, com credencial e com animais.
+     *
+     * O cliente usa isto para decidir se <i>oferece</i> a area profissional. Quem
+     * autoriza continua sendo o servidor, a cada requisicao: esconder um botao
+     * nao e controle de acesso.
+     */
+    private boolean professional;
 
 }

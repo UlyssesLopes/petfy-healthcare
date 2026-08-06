@@ -134,7 +134,7 @@ public class PersonExportServiceImpl implements PersonExportService {
      *
      * Sem e-mail e sem id: saber com quem se divide o animal e informacao do titular, o
      * endereco de contato da outra pessoa nao. O proprio vinculo sai da lista - ele ja
-     * esta em {@code meuPapel}, e reanimalir daria a impressao de haver um tutor a mais.
+     * esta em {@code meuPapel}, e repetir daria a impressao de haver um tutor a mais.
      */
     private List<PersonExportDTO.CoTutorDTO> coTutores(UUID animalId, PetTutor meuVinculo) {
         return petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(animalId)
@@ -197,7 +197,7 @@ public class PersonExportServiceImpl implements PersonExportService {
         return vaccineCorrectionRepository.findByVaccineVaccineIdOrderByCorrectedAtDesc(vaccineId)
                 .stream()
                 .map(c -> PersonExportDTO.CorrecaoDTO.builder()
-                        .corrigidoPor(quemCorrigiu(c.getCorrectedByPerson(), c.getCorrectedByVet()))
+                        .corrigidoPor(quemCorrigiu(c.getCorrectedBy()))
                         .valorAnterior(c.getPreviousVaccineName())
                         .corrigidoEm(c.getCorrectedAt())
                         .build())
@@ -226,7 +226,7 @@ public class PersonExportServiceImpl implements PersonExportService {
                 .findByHealthRecordHealthRecordIdOrderByCorrectedAtDesc(healthRecordId)
                 .stream()
                 .map(c -> PersonExportDTO.CorrecaoDTO.builder()
-                        .corrigidoPor(quemCorrigiu(c.getCorrectedByPerson(), c.getCorrectedByVet()))
+                        .corrigidoPor(quemCorrigiu(c.getCorrectedBy()))
                         .valorAnterior(c.getPreviousEventType())
                         .corrigidoEm(c.getCorrectedAt())
                         .build())
@@ -234,12 +234,16 @@ public class PersonExportServiceImpl implements PersonExportService {
     }
 
     /** Nome de quem corrigiu, seja tutor ou veterinario. Nulo se a conta ja saiu. */
-    private String quemCorrigiu(Person porTutor, Vet porVet) {
-        if (porTutor != null) {
-            return porTutor.getName();
-        }
-
-        return porVet != null ? porVet.getName() : null;
+    /**
+     * Deixou de escolher entre duas colunas: com pessoa unica ha um autor so.
+     *
+     * A clinica em nome de quem a pessoa agiu nao entra aqui de proposito. Este e
+     * o export do titular, e a clinica ja aparece no proprio registro corrigido -
+     * repeti-la na correcao so acrescentaria dado de terceiro a um arquivo que
+     * circula e fica guardado.
+     */
+    private String quemCorrigiu(Person autor) {
+        return autor != null ? autor.getName() : null;
     }
 
     private List<PersonExportDTO.AntiparasiticoDTO> antiparasitarios(UUID animalId) {

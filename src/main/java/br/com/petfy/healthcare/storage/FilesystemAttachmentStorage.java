@@ -94,7 +94,7 @@ public class FilesystemAttachmentStorage implements AttachmentStorage {
         for (String storageKey : storageKeys) {
             try {
                 // deleteIfExists, e nao delete: chave ausente nao e erro, senao uma
-                // exclusao que falhou no meio nao poderia ser reanimalida
+                // exclusao que falhou no meio nao poderia ser repetida
                 Files.deleteIfExists(resolver(storageKey));
             } catch (IOException e) {
                 throw falhaDeStorage("apagar", storageKey, e);

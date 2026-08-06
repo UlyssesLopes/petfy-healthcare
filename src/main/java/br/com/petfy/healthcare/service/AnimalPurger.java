@@ -104,7 +104,7 @@ public class AnimalPurger {
         // dado pessoal nao apagado - o oposto do que um pedido de exclusao pede.
         //
         // Se o storage falhar, a excecao sobe e nada e apagado: estado consistente e
-        // reanimalivel, em vez de banco limpo com arquivo sobrando. Mesma postura do log de
+        // repetivel, em vez de banco limpo com arquivo sobrando. Mesma postura do log de
         // acesso - falhar fechado onde o dado e sensivel.
         List<String> chavesDeAnexo = attachmentRepository.findStorageKeysByAnimalIdIn(animalIds);
         attachmentStorage.delete(chavesDeAnexo);

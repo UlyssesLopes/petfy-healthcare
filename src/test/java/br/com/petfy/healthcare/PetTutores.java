@@ -14,7 +14,7 @@ import java.util.UUID;
  * Monta os vinculos de tutor nos testes.
  *
  * Ate a V15 bastava {@code Animal.builder().person(alguem)}. Agora o vinculo e uma
- * entidade propria, e reanimalir a montagem dela em cada teste deixaria o teste
+ * entidade propria, e repetir a montagem dela em cada teste deixaria o teste
  * falando de tabela de juncao em vez de falar da regra que ele verifica.
  */
 public final class PetTutores {

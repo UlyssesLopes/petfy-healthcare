@@ -31,7 +31,7 @@ public class ClinicInvite {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_vet_id", nullable = false)
-    private Vet createdBy;
+    private Person createdBy;
 
     /** Hash do token. O token em si nao e guardado - ver V7__clinic_invite.sql. */
     @Column(unique = true, nullable = false)
@@ -50,7 +50,7 @@ public class ClinicInvite {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accepted_by_vet_id")
-    private Vet acceptedBy;
+    private Person acceptedBy;
 
     private LocalDateTime revokedAt;
 

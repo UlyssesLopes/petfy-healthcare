@@ -13,13 +13,12 @@ import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.ClinicActivityNotifier;
-import br.com.petfy.healthcare.security.CurrentVetProvider;
+import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.SensitiveAccessLogger;
@@ -42,7 +41,7 @@ public class VetPetServiceImpl implements VetPetService {
 
     private final PetClinicAccessRepository petClinicAccessRepository;
     private final VaccineRepository vaccineRepository;
-    private final CurrentVetProvider currentVetProvider;
+    private final CurrentProfessionalProvider currentProfessionalProvider;
     private final VaccineFactory vaccineFactory;
     private final ClinicActivityNotifier clinicActivityNotifier;
     private final VaccineCorrectionLog vaccineCorrectionLog;
@@ -77,7 +76,7 @@ public class VetPetServiceImpl implements VetPetService {
 
     @Override
     public VaccineResponseDTO registerVaccine(UUID animalId, VaccineRequestDTO request) {
-        Vet vet = currentVetProvider.require();
+        Person vet = currentProfessionalProvider.require();
         Animal animal = exigirAcessoAoAnimal(animalId).getAnimal();
 
         // a clinica vem do vet autenticado, nunca do payload: aceitar clinicId do
@@ -98,7 +97,7 @@ public class VetPetServiceImpl implements VetPetService {
      */
     @Override
     public VaccineResponseDTO correctVaccine(UUID animalId, UUID vaccineId, VaccineRequestDTO request) {
-        Vet vet = currentVetProvider.require();
+        Person vet = currentProfessionalProvider.require();
         exigirAcessoAoAnimal(animalId);
 
         Vaccine vaccine = vaccineRepository.findById(vaccineId)
@@ -112,7 +111,7 @@ public class VetPetServiceImpl implements VetPetService {
         exigirJanelaAberta(vaccine.getCreationDate());
 
         // o snapshot precisa sair antes dos setters, senao grava o estado novo
-        vaccineCorrectionLog.recordByVet(vaccine, vet);
+        vaccineCorrectionLog.recordByProfessional(vaccine, vet, vet.getClinic());
 
         if (request.getVaccineName() != null) vaccine.setVaccineName(request.getVaccineName());
         if (request.getApplicationDate() != null) vaccine.setApplicationDate(request.getApplicationDate());
@@ -159,7 +158,7 @@ public class VetPetServiceImpl implements VetPetService {
 
     @Override
     public HealthRecordResponseDTO registerHealthRecord(UUID animalId, HealthRecordRequestDTO request) {
-        Vet vet = currentVetProvider.require();
+        Person vet = currentProfessionalProvider.require();
         Animal animal = exigirAcessoAoAnimal(animalId).getAnimal();
 
         // mesma regra da vacina: a clinica vem do vet autenticado, nunca do
@@ -184,7 +183,7 @@ public class VetPetServiceImpl implements VetPetService {
     @Override
     public HealthRecordResponseDTO correctHealthRecord(UUID animalId, UUID healthRecordId,
                                                        HealthRecordRequestDTO request) {
-        Vet vet = currentVetProvider.require();
+        Person vet = currentProfessionalProvider.require();
         exigirAcessoAoAnimal(animalId);
 
         HealthRecord record = healthRecordRepository.findById(healthRecordId)
@@ -196,7 +195,7 @@ public class VetPetServiceImpl implements VetPetService {
         exigirJanelaAberta(record.getCreationDate());
 
         // o snapshot precisa sair antes dos setters, senao grava o estado novo
-        healthRecordCorrectionLog.recordByVet(record, vet);
+        healthRecordCorrectionLog.recordByProfessional(record, vet, vet.getClinic());
 
         if (request.getEventType() != null) record.setEventType(request.getEventType());
         if (request.getCategory() != null) record.setCategory(request.getCategory());
@@ -253,7 +252,7 @@ public class VetPetServiceImpl implements VetPetService {
      * assim clinica sem id nao vira NullPointerException no meio de uma checagem
      * de permissao.
      */
-    private boolean registradaPelaClinica(Vaccine vaccine, Vet vet) {
+    private boolean registradaPelaClinica(Vaccine vaccine, Person vet) {
         return vaccine.getClinic() != null
                 && vet.getClinic().getClinicId().equals(vaccine.getClinic().getClinicId());
     }
@@ -268,7 +267,7 @@ public class VetPetServiceImpl implements VetPetService {
     }
 
     private List<PetClinicAccess> acessosAtivosDaClinica() {
-        UUID clinicId = currentVetProvider.require().getClinic().getClinicId();
+        UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
         return petClinicAccessRepository.findByClinicClinicIdAndRevokedAtIsNull(clinicId);
     }
 
@@ -285,11 +284,11 @@ public class VetPetServiceImpl implements VetPetService {
      * tutor por e-mail na hora. Era a leitura que passava invisivel.
      */
     private void registrarLeitura(Animal animal, AccessedResource recurso) {
-        sensitiveAccessLogger.vetLeu(currentVetProvider.require(), animal, recurso);
+        sensitiveAccessLogger.vetLeu(currentProfessionalProvider.require(), animal, recurso);
     }
 
     private PetClinicAccess exigirAcessoAoAnimal(UUID animalId) {
-        UUID clinicId = currentVetProvider.require().getClinic().getClinicId();
+        UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
 
         return petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(animalId, clinicId)
                 .filter(PetClinicAccess::isActive)

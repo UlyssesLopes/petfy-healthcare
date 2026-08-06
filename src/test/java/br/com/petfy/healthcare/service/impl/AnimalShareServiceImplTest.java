@@ -68,7 +68,7 @@ class AnimalShareServiceImplTest {
     @BeforeEach
     void setUp() {
         // calculator real: o valor do teste esta em conferir o status que o link
-        // mostra, e nao em reanimalir a regra num mock
+        // mostra, e nao em repetir a regra num mock
         service = new AnimalShareServiceImpl(animalShareRepository, vaccineRepository,
                 animalAccessGuard, new VaccineStatusCalculator(), new OpaqueTokenService(),
                 sensitiveAccessLogger);

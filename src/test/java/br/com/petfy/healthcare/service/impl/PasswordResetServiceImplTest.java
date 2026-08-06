@@ -165,7 +165,7 @@ class PasswordResetServiceImplTest {
 
         /**
          * Sem cooldown, o endpoint publico vira maquina de enviar e-mail para
-         * terceiros: basta reanimalir a chamada com o endereco de alguem.
+         * terceiros: basta repetir a chamada com o endereco de alguem.
          */
         @Test
         @DisplayName("deve ignorar pedido dentro do cooldown, sem enviar nada")

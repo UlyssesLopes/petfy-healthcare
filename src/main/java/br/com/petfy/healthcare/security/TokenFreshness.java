@@ -1,7 +1,6 @@
 package br.com.petfy.healthcare.security;
 
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
-import br.com.petfy.healthcare.domain.repository.VetRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -19,21 +18,23 @@ import java.util.Optional;
  * senha por suspeita de acesso indevido precisa que a outra sessao caia, e isso
  * so acontece comparando o instante de emissao com o da troca.
  *
- * A checagem fica aqui, chamada pelo filtro, e nao dentro dos providers de person
- * e vet: assim ela vale para toda rota autenticada, inclusive as que nao sao
- * escopadas por dono e portanto nunca passam por um provider.
+ * A checagem fica aqui, chamada pelo filtro, e nao dentro do provider de pessoa:
+ * assim ela vale para toda rota autenticada, inclusive as que nao sao escopadas
+ * por dono e portanto nunca passam por um provider.
+ *
+ * Com pessoa unica a consulta deixou de se ramificar por papel - antes havia uma
+ * busca para tutor e outra para veterinario, e escolher errado deixaria uma
+ * sessao viva depois de uma troca de senha.
  */
 @Component
 @RequiredArgsConstructor
 public class TokenFreshness {
 
     private final PersonRepository personRepository;
-    private final VetRepository vetRepository;
 
     public boolean isStale(JwtPrincipal principal) {
-        Optional<LocalDateTime> trocaDeSenha = principal.getRole() == UserRole.VET
-                ? vetRepository.findPasswordChangedAtByEmail(principal.getEmail())
-                : personRepository.findPasswordChangedAtByEmail(principal.getEmail());
+        Optional<LocalDateTime> trocaDeSenha =
+                personRepository.findPasswordChangedAtByEmail(principal.getEmail());
 
         // vazio cobre dois casos que dao no mesmo: conta que nunca trocou de
         // senha e conta que nao existe mais. Nos dois nao ha token a invalidar,

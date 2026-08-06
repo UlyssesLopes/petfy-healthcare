@@ -31,10 +31,10 @@ public enum ErrorMessageEnum {
     INSUFFICIENT_ANIMAL_ROLE(119, "Your role on this animal does not allow this action"),
     PET_TUTOR_INVITE_NOT_FOUND(120, "Invite not found or no longer valid"),
     ALREADY_A_TUTOR(121, "This person is already a tutor of this animal"),
-    CANNOT_REMOVE_HOLDER(122, "The holder cannot be removed; transfer personship first"),
+    CANNOT_REMOVE_HOLDER(122, "The holder cannot be removed; transfer the holder role first"),
     // promover alguem a titular rebaixa o titular atual, entao nao cabe no PATCH
     // de papel: e a transferencia, que tem endpoint proprio
-    TRANSFER_REQUIRED_FOR_HOLDER(123, "Use the personship transfer endpoint to change the holder"),
+    TRANSFER_REQUIRED_FOR_HOLDER(123, "Use the holder transfer endpoint to change the holder"),
     TUTOR_NOT_FOUND(124, "This person is not a tutor of this animal"),
     ATTACHMENT_NOT_FOUND(125, "Attachment not found"),
     // 415: o formato foi recusado pelo CONTEUDO, e nao pelo Content-Type declarado
@@ -46,6 +46,12 @@ public enum ErrorMessageEnum {
     SEVERITY_ONLY_FOR_ALLERGY(131, "Severity applies to allergies only"),
     // trocar o tipo nao e corrigir um campo, e dizer que era outra coisa desde o comeco
     CONDITION_KIND_IS_IMMUTABLE(132, "The condition kind cannot be changed; create a new record instead"),
+    // 403: a pessoa esta autenticada e existe; o que falta e capacidade. Substituiu
+    // o 401 que o CurrentVetProvider dava quando o e-mail nao estava na tabela de
+    // vets - com pessoa unica todo mundo e encontrado, e nao ha o que esconder de
+    // alguem sobre a propria conta
+    PROFESSIONAL_CREDENTIAL_REQUIRED(133, "An active professional credential is required for this action"),
+    CREDENTIAL_ALREADY_REGISTERED(134, "This professional credential is already registered"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

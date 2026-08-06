@@ -16,9 +16,9 @@ import java.util.UUID;
 /**
  * Decide se a pessoa autenticada alcanca um animal, e em que nivel.
  *
- * Existe como peca unica porque antes da V15 essa decisao estava reanimalida em
+ * Existe como peca unica porque antes da V15 essa decisao estava repetida em
  * duas dezenas de lugares como {@code animal.getPerson().getPersonId().equals(...)}.
- * Enquanto a regra era "dono unico", reanimalir era so feio; com tres papeis e
+ * Enquanto a regra era "dono unico", repetir era so feio; com tres papeis e
  * varios tutores, cada copia vira uma chance de alguem esquecer um caso e
  * transformar leitura em escrita - ou pior, deixar passar animal de terceiro.
  *

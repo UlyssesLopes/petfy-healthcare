@@ -33,7 +33,7 @@ public interface AttachmentStorage {
      * Apaga os arquivos das chaves informadas.
      *
      * <b>Idempotente:</b> chave que nao existe mais nao e erro. Sem isso, uma exclusao
-     * de conta que falhasse no meio nao poderia ser reanimalida - a segunda tentativa
+     * de conta que falhasse no meio nao poderia ser repetida - a segunda tentativa
      * quebraria no arquivo que a primeira ja tinha apagado.
      */
     void delete(Collection<String> storageKeys);

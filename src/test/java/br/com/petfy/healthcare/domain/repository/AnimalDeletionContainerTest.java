@@ -58,7 +58,6 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
     @Autowired private AnimalRepository animalRepository;
     @Autowired private PetTutorRepository petTutorRepository;
     @Autowired private ClinicRepository clinicRepository;
-    @Autowired private VetRepository vetRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
@@ -107,7 +106,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
                 .creationDate(LocalDateTime.now()).build());
 
         vaccineCorrectionRepository.saveAndFlush(VaccineCorrection.builder()
-                .vaccine(vacina).correctedByPerson(ulysses).previousVaccineName("Antirabica")
+                .vaccine(vacina).correctedBy(ulysses).previousVaccineName("Antirabica")
                 .correctedAt(LocalDateTime.now()).build());
 
         HealthRecord atendimento = healthRecordRepository.saveAndFlush(HealthRecord.builder()
@@ -117,7 +116,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
                 .creationDate(LocalDateTime.now()).build());
 
         healthRecordCorrectionRepository.saveAndFlush(HealthRecordCorrection.builder()
-                .healthRecord(atendimento).correctedByPerson(ulysses).previousEventType("Retorno")
+                .healthRecord(atendimento).correctedBy(ulysses).previousEventType("Retorno")
                 .correctedAt(LocalDateTime.now()).build());
 
         animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()

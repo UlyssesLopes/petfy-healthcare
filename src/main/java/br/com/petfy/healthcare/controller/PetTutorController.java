@@ -18,7 +18,7 @@ import java.util.UUID;
  * Quem cuida do animal, junto com quem cadastrou.
  *
  * Os niveis de cada rota estao no {@code PetTutorServiceImpl}, e nao aqui: a
- * decisao de acesso mora numa peca so desde a V15, e reanimali-la em anotacao no
+ * decisao de acesso mora numa peca so desde a V15, e repeti-la em anotacao no
  * controller criaria a segunda copia que o {@code AnimalAccessGuard} existe para
  * evitar.
  */

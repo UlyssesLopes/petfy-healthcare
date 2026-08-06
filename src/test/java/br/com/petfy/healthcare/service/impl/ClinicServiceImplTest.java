@@ -2,10 +2,10 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.ClinicRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Vet;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentVetProvider;
+import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ class ClinicServiceImplTest {
     private ClinicRepository clinicRepository;
 
     @Mock
-    private CurrentVetProvider currentVetProvider;
+    private CurrentProfessionalProvider currentProfessionalProvider;
 
     @InjectMocks
     private ClinicServiceImpl clinicService;
@@ -45,10 +45,10 @@ class ClinicServiceImplTest {
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OUTRA_CLINIC_ID = UUID.fromString("aaaaaaaa-5555-5555-5555-555555555555");
 
-    /** Vet cuja clinica e a informada - quem tem permissao de manter o cadastro. */
+    /** Person cuja clinica e a informada - quem tem permissao de manter o cadastro. */
     private void autenticadoComoVetDa(UUID clinicId) {
-        when(currentVetProvider.require()).thenReturn(Vet.builder()
-                .vetId(UUID.randomUUID())
+        when(currentProfessionalProvider.require()).thenReturn(Person.builder()
+                .personId(UUID.randomUUID())
                 .clinic(Clinic.builder().clinicId(clinicId).build())
                 .build());
     }
@@ -81,7 +81,7 @@ class ClinicServiceImplTest {
 
             clinicService.createClinic(ClinicRequestDTO.builder().name("Clinica Bicho Feliz").build());
 
-            verify(currentVetProvider, never()).require();
+            verify(currentProfessionalProvider, never()).require();
         }
 
         @Test

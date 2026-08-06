@@ -1,12 +1,11 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
+import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
-import br.com.petfy.healthcare.security.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -32,12 +31,22 @@ public class VaccineCorrectionLog {
 
     private final VaccineCorrectionRepository vaccineCorrectionRepository;
 
-    public void recordByVet(Vaccine antes, Vet vet) {
-        vaccineCorrectionRepository.save(snapshot(antes).correctedByVet(vet).build());
+    /**
+     * Correcao feita por alguem agindo em nome de uma organizacao.
+     *
+     * A clinica nao e um detalhe da resposta: e ela que o tutor autorizou, e e ela
+     * que responde institucionalmente pelo que foi escrito.
+     */
+    public void recordByProfessional(Vaccine antes, Person profissional, Clinic clinic) {
+        vaccineCorrectionRepository.save(snapshot(antes)
+                .correctedBy(profissional)
+                .correctedInClinic(clinic)
+                .build());
     }
 
+    /** Correcao feita pela pessoa agindo por si, sem organizacao atras. */
     public void recordByPerson(Vaccine antes, Person person) {
-        vaccineCorrectionRepository.save(snapshot(antes).correctedByPerson(person).build());
+        vaccineCorrectionRepository.save(snapshot(antes).correctedBy(person).build());
     }
 
     /** Da correcao mais recente para a mais antiga. */
@@ -59,26 +68,30 @@ public class VaccineCorrectionLog {
                 .correctedAt(LocalDateTime.now());
     }
 
+    /**
+     * O papel saiu da resposta, e o contexto entrou no lugar.
+     *
+     * Antes havia {@code correctedByRole} com OWNER ou VET, inferido de qual das
+     * duas colunas estava preenchida. Papel deixou de existir, e o que separa os
+     * dois casos e outra coisa: em nome de quem a pessoa agiu. Quem le distingue
+     * "a Ana corrigiu" de "a Ana, pela Clinica Norte, corrigiu" por
+     * {@code correctedByClinicName} vir ou nao vazio.
+     */
     private VaccineCorrectionResponseDTO toResponse(VaccineCorrection correction) {
-        boolean porVet = correction.getCorrectedByVet() != null;
-
         return VaccineCorrectionResponseDTO.builder()
                 .vaccineCorrectionId(correction.getVaccineCorrectionId())
                 .correctedAt(correction.getCorrectedAt())
-                .correctedByRole(porVet ? UserRole.VET.name() : UserRole.OWNER.name())
-                .correctedByName(porVet
-                        ? correction.getCorrectedByVet().getName()
-                        : nomeDoTutor(correction))
-                .correctedByClinicName(porVet ? correction.getCorrectedByVet().getClinic().getName() : null)
+                .correctedByName(correction.getCorrectedBy() != null
+                        ? correction.getCorrectedBy().getName()
+                        : null)
+                .correctedByClinicName(correction.getCorrectedInClinic() != null
+                        ? correction.getCorrectedInClinic().getName()
+                        : null)
                 .previousVaccineName(correction.getPreviousVaccineName())
                 .previousApplicationDate(correction.getPreviousApplicationDate())
                 .previousNextDoseDate(correction.getPreviousNextDoseDate())
                 .previousDescription(correction.getPreviousDescription())
                 .build();
-    }
-
-    private String nomeDoTutor(VaccineCorrection correction) {
-        return correction.getCorrectedByPerson() != null ? correction.getCorrectedByPerson().getName() : null;
     }
 
 }

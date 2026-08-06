@@ -2,12 +2,12 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.ClinicInviteRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.ClinicInvite;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.ClinicInviteRepository;
-import br.com.petfy.healthcare.domain.repository.VetRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentVetProvider;
+import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,10 +40,10 @@ class ClinicInviteServiceImplTest {
     private ClinicInviteRepository clinicInviteRepository;
 
     @Mock
-    private VetRepository vetRepository;
+    private PersonRepository personRepository;
 
     @Mock
-    private CurrentVetProvider currentVetProvider;
+    private CurrentProfessionalProvider currentProfessionalProvider;
 
     private ClinicInviteServiceImpl service;
 
@@ -55,9 +55,9 @@ class ClinicInviteServiceImplTest {
     @BeforeEach
     void setUp() {
         // token service real: o valor do teste esta em conferir que o token nao e
-        // guardado em claro, e nao em reanimalir o hash num mock
-        service = new ClinicInviteServiceImpl(clinicInviteRepository, vetRepository,
-                currentVetProvider, new OpaqueTokenService());
+        // guardado em claro, e nao em repetir o hash num mock
+        service = new ClinicInviteServiceImpl(clinicInviteRepository, personRepository,
+                currentProfessionalProvider, new OpaqueTokenService());
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 7);
     }
 
@@ -65,12 +65,12 @@ class ClinicInviteServiceImplTest {
         return Clinic.builder().clinicId(id).name("Clinica Bicho Feliz").build();
     }
 
-    private Vet vetDa(UUID clinicId) {
-        return Vet.builder().vetId(VET_ID).name("Dra. Marina").clinic(clinic(clinicId)).build();
+    private Person vetDa(UUID clinicId) {
+        return Person.builder().personId(VET_ID).name("Dra. Marina").clinic(clinic(clinicId)).build();
     }
 
     private void autenticadoComoVetDa(UUID clinicId) {
-        when(currentVetProvider.require()).thenReturn(vetDa(clinicId));
+        when(currentProfessionalProvider.require()).thenReturn(vetDa(clinicId));
     }
 
     private ClinicInvite convite(String email, LocalDateTime expiresAt,
@@ -250,7 +250,7 @@ class ClinicInviteServiceImplTest {
         void deveConsumirRegistrandoQuemAceitou() {
             var invite = conviteAberto();
             var novoVet = vetDa(CLINIC_ID);
-            when(vetRepository.findById(VET_ID)).thenReturn(Optional.of(novoVet));
+            when(personRepository.findById(VET_ID)).thenReturn(Optional.of(novoVet));
 
             service.markAccepted(invite, VET_ID);
 

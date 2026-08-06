@@ -74,7 +74,7 @@ public class ConsentServiceImpl implements ConsentService {
      * Grava o aceite de cada documento vigente que ainda nao tenha sido aceito
      * naquela versao.
      *
-     * Reanimalir o aceite da mesma versao e no-op, e nao erro: o cliente pode reenviar
+     * Repetir o aceite da mesma versao e no-op, e nao erro: o cliente pode reenviar
      * por perda de resposta, e a chave unica (person, documento, versao) recusaria a
      * segunda linha com 500. O primeiro aceite e o que vale - e a data dele que
      * interessa a uma auditoria.

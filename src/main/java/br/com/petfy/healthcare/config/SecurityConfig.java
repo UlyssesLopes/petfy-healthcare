@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.config;
 
 import br.com.petfy.healthcare.security.JwtAuthenticationFilter;
+import br.com.petfy.healthcare.security.ProfessionalAccessManager;
 import br.com.petfy.healthcare.security.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +28,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthenticationFilter jwtAuthenticationFilter,
-                                                   RateLimitFilter rateLimitFilter) throws Exception {
+                                                   RateLimitFilter rateLimitFilter,
+                                                   ProfessionalAccessManager professionalAccessManager)
+            throws Exception {
         http
                 // API stateless com token no header: nao ha cookie de sessao
                 // para um site terceiro reaproveitar, entao CSRF nao se aplica
@@ -45,7 +48,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/email-verification/confirm").permitAll()
                         // cadastro precisa ser publico, senao nao existe primeiro usuario
                         .requestMatchers(HttpMethod.POST, "/persons").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/vets").permitAll()
                         // documentacao da API: o Swagger UI e a spec OpenAPI devem
                         // abrir sem token, senao nao servem para explorar a API
                         .requestMatchers("/v3/api-docs/**").permitAll()
@@ -58,10 +60,12 @@ public class SecurityConfig {
                         // para decidir se a instancia esta viva. So o health: os demais
                         // endpoints do actuator seguem exigindo token
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
-                        // o CurrentVetProvider ja barraria um tutor, mas exigir o papel
-                        // aqui responde 403 em vez de 401 e evita que a autorizacao
-                        // dependa so da busca falhar na tabela certa
-                        .requestMatchers("/vet/**").hasRole("VET")
+                        // era hasRole("VET"), com o papel vindo do token. O papel morreu
+                        // no P1: quem alcanca /vet/** e quem tem credencial profissional
+                        // ativa, conferida no banco a cada requisicao. O
+                        // CurrentProfessionalProvider repete a checagem mais adiante, e as
+                        // duas camadas seguem sendo deliberadas
+                        .requestMatchers("/vet/**").access(professionalAccessManager)
                         .anyRequest().authenticated())
                 // sem entry point explicito o Spring Security devolve 403 para
                 // quem nao esta autenticado; 401 e o correto - o cliente nao

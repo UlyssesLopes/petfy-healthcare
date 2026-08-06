@@ -226,7 +226,7 @@ class AnimalHealthConditionServiceImplTest {
             verify(animalHealthConditionRepository, never()).save(any());
         }
 
-        /** Reanimalir o mesmo kind nao e troca: nao ha o que recusar. */
+        /** Repetir o mesmo kind nao e troca: nao ha o que recusar. */
         @Test
         @DisplayName("reenviar o mesmo kind e aceito")
         void mesmoKindEAceito() {

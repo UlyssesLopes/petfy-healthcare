@@ -2,11 +2,11 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.AccessActorType;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.SensitiveAccessLog;
 import br.com.petfy.healthcare.domain.entity.Species;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
 import br.com.petfy.healthcare.security.RequestEvidenceProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -46,9 +46,9 @@ class SensitiveAccessLoggerTest {
         return Animal.builder().animalId(ANIMAL_ID).name("Rex").species(Species.CANINA).build();
     }
 
-    private Vet marina() {
-        return Vet.builder()
-                .vetId(VET_ID).name("Dra. Marina").email("marina@vet.com.br")
+    private Person marina() {
+        return Person.builder()
+                .personId(VET_ID).name("Dra. Marina").email("marina@vet.com.br")
                 .clinic(Clinic.builder().clinicId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
                 .build();
     }
@@ -97,11 +97,11 @@ class SensitiveAccessLoggerTest {
             assertThat(gravado().getClinicName()).isEqualTo("Clinica Bicho Feliz");
         }
 
-        /** Vet sem clinica nao deveria existir, mas o log nao e o lugar de estourar por isso. */
+        /** Person sem clinica nao deveria existir, mas o log nao e o lugar de estourar por isso. */
         @Test
         @DisplayName("veterinario sem clinica registra o acesso sem o nome dela")
         void vetSemClinicaNaoQuebra() {
-            var semClinica = Vet.builder().vetId(VET_ID).name("Dra. Marina").build();
+            var semClinica = Person.builder().personId(VET_ID).name("Dra. Marina").build();
 
             logger.vetLeu(semClinica, rex(), AccessedResource.VACCINES);
 

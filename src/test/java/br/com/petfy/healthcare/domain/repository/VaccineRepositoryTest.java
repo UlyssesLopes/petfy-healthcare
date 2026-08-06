@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Vale a pena porque e a query que alimenta a rotina de lembretes: se ela
  * trouxer de menos, o tutor nao e avisado; se trouxer de mais, vira spam. O
- * UuidQueriesContainerTest reanimale o caso contra Postgres.
+ * UuidQueriesContainerTest repete o caso contra Postgres.
  */
 @DataJpaTest
 @TestPropertySource(properties = {

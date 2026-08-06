@@ -3,11 +3,11 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.ClinicInviteRequestDTO;
 import br.com.petfy.healthcare.domain.dto.ClinicInviteResponseDTO;
 import br.com.petfy.healthcare.domain.entity.ClinicInvite;
-import br.com.petfy.healthcare.domain.entity.Vet;
+import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.ClinicInviteRepository;
-import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentVetProvider;
+import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.ClinicInviteService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 public class ClinicInviteServiceImpl implements ClinicInviteService {
 
     private final ClinicInviteRepository clinicInviteRepository;
-    private final VetRepository vetRepository;
-    private final CurrentVetProvider currentVetProvider;
+    private final PersonRepository personRepository;
+    private final CurrentProfessionalProvider currentProfessionalProvider;
     private final OpaqueTokenService opaqueTokenService;
 
     @Value("${petfy.clinic-invite.default-expiration-days:7}")
@@ -35,7 +35,7 @@ public class ClinicInviteServiceImpl implements ClinicInviteService {
 
     @Override
     public ClinicInviteResponseDTO create(ClinicInviteRequestDTO request) {
-        Vet emissor = currentVetProvider.require();
+        Person emissor = currentProfessionalProvider.require();
 
         int validade = request != null && request.getExpiresInDays() != null
                 ? request.getExpiresInDays()
@@ -58,7 +58,7 @@ public class ClinicInviteServiceImpl implements ClinicInviteService {
 
     @Override
     public List<ClinicInviteResponseDTO> listFromMyClinic() {
-        UUID clinicId = currentVetProvider.require().getClinic().getClinicId();
+        UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
 
         return clinicInviteRepository.findByClinicClinicIdOrderByCreationDateDesc(clinicId)
                 .stream()
@@ -68,7 +68,7 @@ public class ClinicInviteServiceImpl implements ClinicInviteService {
 
     @Override
     public void revoke(UUID clinicInviteId) {
-        UUID clinicId = currentVetProvider.require().getClinic().getClinicId();
+        UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
 
         ClinicInvite invite = clinicInviteRepository.findById(clinicInviteId)
                 .filter(i -> i.getClinic().getClinicId().equals(clinicId))
@@ -96,7 +96,7 @@ public class ClinicInviteServiceImpl implements ClinicInviteService {
 
     @Override
     public void markAccepted(ClinicInvite invite, UUID acceptedByVetId) {
-        Vet aceitante = vetRepository.findById(acceptedByVetId)
+        Person aceitante = personRepository.findById(acceptedByVetId)
                 .orElseThrow(this::inviteInvalido);
 
         invite.setAcceptedAt(LocalDateTime.now());

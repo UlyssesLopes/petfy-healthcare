@@ -5,7 +5,7 @@ import br.com.petfy.healthcare.domain.dto.ClinicResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentVetProvider;
+import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.service.ClinicService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ public class ClinicServiceImpl implements ClinicService {
 
     private final ClinicRepository clinicRepository;
 
-    private final CurrentVetProvider currentVetProvider;
+    private final CurrentProfessionalProvider currentProfessionalProvider;
 
     @Override
     public ClinicResponseDTO createClinic(ClinicRequestDTO request) {
@@ -99,7 +99,7 @@ public class ClinicServiceImpl implements ClinicService {
      * publica, entao esconder o motivo so confundiria.
      */
     private void exigirVetDaClinica(UUID clinicId) {
-        UUID clinicaDoVet = currentVetProvider.require().getClinic().getClinicId();
+        UUID clinicaDoVet = currentProfessionalProvider.require().getClinic().getClinicId();
 
         if (!clinicaDoVet.equals(clinicId)) {
             throw new PetfyHealthcareException(

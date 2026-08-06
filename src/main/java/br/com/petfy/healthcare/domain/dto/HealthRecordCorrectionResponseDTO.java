@@ -23,8 +23,6 @@ public class HealthRecordCorrectionResponseDTO {
 
     private LocalDateTime correctedAt;
 
-    /** OWNER ou VET. */
-    private String correctedByRole;
 
     private String correctedByName;
 

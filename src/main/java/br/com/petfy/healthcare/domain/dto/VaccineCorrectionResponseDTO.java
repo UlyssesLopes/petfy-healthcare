@@ -23,8 +23,6 @@ public class VaccineCorrectionResponseDTO {
 
     private LocalDateTime correctedAt;
 
-    /** OWNER ou VET. */
-    private String correctedByRole;
 
     private String correctedByName;
 

@@ -13,7 +13,6 @@ import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.AnimalShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,7 +49,6 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
     @Autowired private AnimalShareRepository animalShareRepository;
-    @Autowired private VetRepository vetRepository;
     @Autowired private PetClinicAccessRepository petClinicAccessRepository;
     @Autowired private ClinicInviteRepository clinicInviteRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
@@ -60,7 +58,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     private Animal rex;
     private Animal nina;
     private Clinic bichoFeliz;
-    private Vet marina;
+    private Person marina;
 
     @BeforeEach
     void setUp() {
@@ -76,7 +74,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
 
         bichoFeliz = clinicRepository.save(Clinic.builder().name("Clinica Bicho Feliz").build());
 
-        marina = vetRepository.save(Vet.builder()
+        marina = personRepository.save(Person.builder()
                 .name("Dra. Marina").email("marina-" + UUID.randomUUID() + "@vet.com.br")
                 .password("hash").clinic(bichoFeliz).build());
     }
@@ -296,8 +294,8 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @DisplayName("tutor e veterinario devem ser encontrados por email - a base do login")
         void loginEncontraTutorEVeterinario() {
             assertThat(personRepository.findByEmail(ulysses.getEmail())).isPresent();
-            assertThat(vetRepository.findByEmail(marina.getEmail())).isPresent();
-            assertThat(vetRepository.existsByEmail(marina.getEmail())).isTrue();
+            assertThat(personRepository.findByEmail(marina.getEmail())).isPresent();
+            assertThat(personRepository.existsByEmail(marina.getEmail())).isTrue();
             assertThat(personRepository.findByEmail("ninguem@petfy.com.br")).isEmpty();
         }
     }
@@ -325,13 +323,13 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
             var outra = vacina(rex, "V8", LocalDate.now().plusDays(10));
 
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(vacina).correctedByPerson(ulysses).previousVaccineName("Antiga")
+                    .vaccine(vacina).correctedBy(ulysses).previousVaccineName("Antiga")
                     .correctedAt(LocalDateTime.now().minusDays(2)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(vacina).correctedByVet(marina).previousVaccineName("Recente")
+                    .vaccine(vacina).correctedBy(marina).correctedInClinic(marina.getClinic()).previousVaccineName("Recente")
                     .correctedAt(LocalDateTime.now().minusHours(1)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(outra).correctedByPerson(ulysses).previousVaccineName("De outra vacina")
+                    .vaccine(outra).correctedBy(ulysses).previousVaccineName("De outra vacina")
                     .correctedAt(LocalDateTime.now()).build());
 
             assertThat(vaccineCorrectionRepository

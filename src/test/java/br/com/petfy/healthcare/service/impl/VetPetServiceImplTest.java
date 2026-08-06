@@ -10,14 +10,13 @@ import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.ClinicActivityNotifier;
-import br.com.petfy.healthcare.security.CurrentVetProvider;
+import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.SensitiveAccessLogger;
@@ -60,7 +59,7 @@ class VetPetServiceImplTest {
     private VaccineRepository vaccineRepository;
 
     @Mock
-    private CurrentVetProvider currentVetProvider;
+    private CurrentProfessionalProvider currentProfessionalProvider;
 
     @Mock
     private VaccineCatalogRepository vaccineCatalogRepository;
@@ -91,9 +90,9 @@ class VetPetServiceImplTest {
     @BeforeEach
     void setUp() {
         // factory real: o que interessa aqui e que a vacina saia carimbada com a
-        // clinica certa, e nao reanimalir a regra de montagem num mock
+        // clinica certa, e nao repetir a regra de montagem num mock
         service = new VetPetServiceImpl(petClinicAccessRepository, vaccineRepository,
-                currentVetProvider, new VaccineFactory(vaccineCatalogRepository),
+                currentProfessionalProvider, new VaccineFactory(vaccineCatalogRepository),
                 clinicActivityNotifier, vaccineCorrectionLog,
                 healthRecordRepository, healthRecordCorrectionLog, sensitiveAccessLogger);
         ReflectionTestUtils.setField(service, "correctionWindowDays", 7);
@@ -120,8 +119,8 @@ class VetPetServiceImplTest {
     }
 
     private void vetDaClinica(UUID clinicId) {
-        when(currentVetProvider.require()).thenReturn(Vet.builder()
-                .vetId(UUID.randomUUID()).name("Dra. Marina").clinic(clinic(clinicId)).build());
+        when(currentProfessionalProvider.require()).thenReturn(Person.builder()
+                .personId(UUID.randomUUID()).name("Dra. Marina").clinic(clinic(clinicId)).build());
     }
 
     @Nested
@@ -350,7 +349,7 @@ class VetPetServiceImplTest {
             doAnswer(invocation -> {
                 nomeNoMomentoDoRastro[0] = ((Vaccine) invocation.getArgument(0)).getVaccineName();
                 return null;
-            }).when(vaccineCorrectionLog).recordByVet(any(), any());
+            }).when(vaccineCorrectionLog).recordByProfessional(any(), any(), any());
 
             service.correctVaccine(ANIMAL_ID, VACCINE_ID,
                     VaccineRequestDTO.builder().vaccineName("V8").build());
@@ -382,7 +381,7 @@ class VetPetServiceImplTest {
                     .containsExactly(112, HttpStatus.CONFLICT);
 
             verify(vaccineRepository, never()).save(any());
-            verify(vaccineCorrectionLog, never()).recordByVet(any(), any());
+            verify(vaccineCorrectionLog, never()).recordByProfessional(any(), any(), any());
         }
 
         @Test
@@ -557,7 +556,7 @@ class VetPetServiceImplTest {
 
             assertThat(result.getDescription()).isEqualTo("corrigido");
             assertThat(result.getEventType()).isEqualTo("Consulta");
-            verify(healthRecordCorrectionLog).recordByVet(any(HealthRecord.class), any());
+            verify(healthRecordCorrectionLog).recordByProfessional(any(HealthRecord.class), any(), any());
             verify(clinicActivityNotifier).healthRecordCorrected(any(HealthRecord.class));
         }
 
@@ -573,7 +572,7 @@ class VetPetServiceImplTest {
             doAnswer(invocation -> {
                 tipoNoMomentoDoRastro[0] = ((HealthRecord) invocation.getArgument(0)).getEventType();
                 return null;
-            }).when(healthRecordCorrectionLog).recordByVet(any(), any());
+            }).when(healthRecordCorrectionLog).recordByProfessional(any(), any(), any());
 
             service.correctHealthRecord(ANIMAL_ID, RECORD_ID,
                     HealthRecordRequestDTO.builder().eventType("Cirurgia").build());
@@ -718,7 +717,7 @@ class VetPetServiceImplTest {
 
             service.listVaccines(ANIMAL_ID);
 
-            verify(sensitiveAccessLogger).vetLeu(any(Vet.class), any(Animal.class),
+            verify(sensitiveAccessLogger).vetLeu(any(Person.class), any(Animal.class),
                     eq(AccessedResource.VACCINES));
         }
 
@@ -732,7 +731,7 @@ class VetPetServiceImplTest {
 
             service.listHealthRecords(ANIMAL_ID);
 
-            verify(sensitiveAccessLogger).vetLeu(any(Vet.class), any(Animal.class),
+            verify(sensitiveAccessLogger).vetLeu(any(Person.class), any(Animal.class),
                     eq(AccessedResource.HEALTH_RECORDS));
         }
 

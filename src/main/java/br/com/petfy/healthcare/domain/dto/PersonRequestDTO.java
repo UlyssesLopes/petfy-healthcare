@@ -53,4 +53,34 @@ public class PersonRequestDTO {
     @AssertTrue(message = "e obrigatorio aceitar os termos e a politica de privacidade")
     private Boolean acceptedTerms;
 
+    /**
+     * Numero do registro profissional, opcional.
+     *
+     * <b>Isto nao e declarar um papel.</b> A pessoa nao diz "sou veterinaria";
+     * ela informa uma credencial, que e um fato verificavel sobre ela, e o que
+     * ela alcanca decorre disso. E a mesma diferenca entre dizer o que se e e
+     * mostrar o que se tem.
+     *
+     * Informado nao e verificado: nasce com estado INFORMADO, porque nao ha
+     * integracao com conselho. O registro carrega essa informacao em vez de
+     * fingir garantia que o produto nao tem.
+     */
+    @Size(max = 32, message = "registro profissional deve ter no maximo 32 caracteres")
+    private String crmv;
+
+    /** UF do registro. O CRMV e estadual, e o mesmo numero se repete entre UFs. */
+    @Size(min = 2, max = 2, message = "UF do registro deve ter 2 caracteres")
+    private String crmvUf;
+
+    /**
+     * Convite de uma clinica existente. Continua sendo a unica porta para entrar
+     * numa clinica que ja existe: antes bastava saber o clinicId, que aparece em
+     * qualquer listagem, e quem entra numa clinica alcanca todos os animais que
+     * ela ja foi autorizada a atender.
+     */
+    private String inviteToken;
+
+    /** Cadastrar uma clinica nova e ser o primeiro membro dela. */
+    private ClinicRequestDTO clinic;
+
 }

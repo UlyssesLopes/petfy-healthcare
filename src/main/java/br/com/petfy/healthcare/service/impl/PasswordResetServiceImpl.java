@@ -65,7 +65,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         LocalDateTime agora = LocalDateTime.now();
 
         if (dentroDoCooldown(person, agora)) {
-            log.info("Pedido de recuperacao dentro do cooldown para o person {}; nada enviado", person.getPersonId());
+            log.info("Pedido de recuperacao dentro do cooldown para a pessoa {}; nada enviado", person.getPersonId());
             return;
         }
 
@@ -94,7 +94,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         try {
             notifier.send(mensagem(person, token));
         } catch (Exception e) {
-            log.error("Falha ao enviar a recuperacao de senha do person {}", person.getPersonId(), e);
+            log.error("Falha ao enviar a recuperacao de senha da pessoa {}", person.getPersonId(), e);
         }
     }
 

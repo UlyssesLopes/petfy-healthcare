@@ -7,10 +7,11 @@ import br.com.petfy.healthcare.controller.AnimalShareController;
 import br.com.petfy.healthcare.controller.SharedCardController;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
 import br.com.petfy.healthcare.service.AnimalShareService;
+import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.security.JwtAuthenticationFilter;
 import br.com.petfy.healthcare.security.JwtService;
+import br.com.petfy.healthcare.security.ProfessionalAccessManager;
 import br.com.petfy.healthcare.security.TokenFreshness;
-import br.com.petfy.healthcare.security.UserRole;
 import br.com.petfy.healthcare.service.AuthService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.PersonExportService;
@@ -47,7 +48,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(controllers = {AuthController.class, AnimalController.class, PersonController.class,
         SharedCardController.class, AnimalShareController.class})
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class,
+        ProfessionalAccessManager.class})
 @TestPropertySource(properties = {
         "petfy.jwt.secret=segredo-de-teste-com-mais-de-32-caracteres",
         "petfy.jwt.expiration-minutes=120"
@@ -59,6 +61,15 @@ class SecurityFilterChainTest {
 
     @Autowired
     private JwtService jwtService;
+
+    /**
+     * O ProfessionalAccessManager entra na cadeia de verdade - e ele que decide
+     * /vet/** desde que hasRole("VET") morreu -, mas o repositorio que ele consulta
+     * e mockado: este teste fala sobre o que e publico e o que exige token, nao
+     * sobre credencial.
+     */
+    @MockBean
+    private ProfessionalCredentialRepository professionalCredentialRepository;
 
     @MockBean
     private AuthService authService;
@@ -90,7 +101,7 @@ class SecurityFilterChainTest {
     private TokenFreshness tokenFreshness;
 
     private String tokenValido() {
-        return jwtService.generateToken("ulysses@petfy.com.br", UserRole.OWNER, UUID.randomUUID());
+        return jwtService.generateToken("ulysses@petfy.com.br", UUID.randomUUID());
     }
 
     @Test

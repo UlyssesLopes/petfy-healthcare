@@ -15,6 +15,8 @@ import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
+import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
@@ -22,9 +24,10 @@ import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
-import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
+import br.com.petfy.healthcare.service.ClinicInviteService;
+import br.com.petfy.healthcare.service.ClinicService;
 import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.AnimalPurger;
@@ -59,7 +62,16 @@ class PersonServiceImplTest {
     private PersonRepository personRepository;
 
     @Mock
-    private VetRepository vetRepository;
+    private ProfessionalCredentialRepository credentialRepository;
+
+    @Mock
+    private ClinicRepository clinicRepository;
+
+    @Mock
+    private ClinicService clinicService;
+
+    @Mock
+    private ClinicInviteService clinicInviteService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -121,7 +133,7 @@ class PersonServiceImplTest {
         @Test
         @DisplayName("deve persistir o person com os dados do request e data de criacao")
         void devePersistirPersonComDadosDoRequest() {
-            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", "11999999999", "Rua A, 100", true);
+            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", "11999999999", "Rua A, 100", true, null, null, null, null);
             when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
             when(personRepository.save(any(Person.class))).thenReturn(existingPerson());
 
@@ -139,7 +151,7 @@ class PersonServiceImplTest {
         @Test
         @DisplayName("nao deve persistir a senha em texto puro")
         void naoDevePersistirSenhaEmTextoPuro() {
-            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
+            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true, null, null, null, null);
             when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
             when(personRepository.save(any(Person.class))).thenReturn(existingPerson());
 
@@ -168,7 +180,7 @@ class PersonServiceImplTest {
         @Test
         @DisplayName("deve recusar com 409 quando o e-mail ja pertence a outro person")
         void deveRecusarQuandoEmailJaUsadoPorPerson() {
-            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
+            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true, null, null, null, null);
             when(personRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
 
             assertThatThrownBy(() -> personService.createPerson(request))
@@ -183,9 +195,9 @@ class PersonServiceImplTest {
         @Test
         @DisplayName("deve recusar quando o e-mail ja pertence a um vet")
         void deveRecusarQuandoEmailJaUsadoPorVet() {
-            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
+            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true, null, null, null, null);
             when(personRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(false);
-            when(vetRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
+            when(personRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
 
             assertThatThrownBy(() -> personService.createPerson(request))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -221,7 +233,7 @@ class PersonServiceImplTest {
             when(currentPersonProvider.require()).thenReturn(existingPerson());
             when(personRepository.save(any(Person.class))).thenAnswer(i -> i.getArgument(0));
 
-            var request = new PersonRequestDTO(null, null, null, "11888888888", null, true);
+            var request = new PersonRequestDTO(null, null, null, "11888888888", null, true, null, null, null, null);
             var result = personService.updateCurrentPerson(request);
 
             assertThat(result.getPhone()).isEqualTo("11888888888");
@@ -237,7 +249,7 @@ class PersonServiceImplTest {
             when(currentPersonProvider.require()).thenReturn(existingPerson());
             when(personRepository.save(any(Person.class))).thenAnswer(i -> i.getArgument(0));
 
-            personService.updateCurrentPerson(new PersonRequestDTO(null, null, "nova-senha", null, null, true));
+            personService.updateCurrentPerson(new PersonRequestDTO(null, null, "nova-senha", null, null, true, null, null, null, null));
 
             var captor = ArgumentCaptor.forClass(Person.class);
             verify(personRepository).save(captor.capture());
@@ -252,7 +264,7 @@ class PersonServiceImplTest {
             when(currentPersonProvider.require()).thenReturn(autenticado);
             when(personRepository.save(any(Person.class))).thenAnswer(i -> i.getArgument(0));
 
-            personService.updateCurrentPerson(new PersonRequestDTO("Outro Nome", null, null, null, null, true));
+            personService.updateCurrentPerson(new PersonRequestDTO("Outro Nome", null, null, null, null, true, null, null, null, null));
 
             var captor = ArgumentCaptor.forClass(Person.class);
             verify(personRepository).save(captor.capture());

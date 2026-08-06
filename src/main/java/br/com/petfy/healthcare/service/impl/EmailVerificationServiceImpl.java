@@ -50,7 +50,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         try {
             emitirEEnviar(person, LocalDateTime.now());
         } catch (Exception e) {
-            log.error("Falha ao enviar a confirmacao de e-mail do person {}", person.getPersonId(), e);
+            log.error("Falha ao enviar a confirmacao de e-mail da pessoa {}", person.getPersonId(), e);
         }
     }
 
@@ -73,12 +73,12 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         LocalDateTime agora = LocalDateTime.now();
 
         if (person.podeReceberNotificacao()) {
-            log.info("Reenvio pedido para o person {}, que ja tinha verificado o e-mail", person.getPersonId());
+            log.info("Reenvio pedido para a pessoa {}, que ja tinha verificado o e-mail", person.getPersonId());
             return;
         }
 
         if (dentroDoCooldown(person, agora)) {
-            log.info("Reenvio dentro do cooldown para o person {}; nada enviado", person.getPersonId());
+            log.info("Reenvio dentro do cooldown para a pessoa {}; nada enviado", person.getPersonId());
             return;
         }
 
@@ -88,7 +88,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         try {
             emitirEEnviar(person, agora);
         } catch (Exception e) {
-            log.error("Falha ao reenviar a confirmacao de e-mail do person {}", person.getPersonId(), e);
+            log.error("Falha ao reenviar a confirmacao de e-mail da pessoa {}", person.getPersonId(), e);
         }
     }
 
@@ -112,7 +112,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         token.setUsedAt(agora);
         tokenRepository.save(token);
 
-        log.info("E-mail confirmado para o person {}", person.getPersonId());
+        log.info("E-mail confirmado para a pessoa {}", person.getPersonId());
     }
 
     private void emitirEEnviar(Person person, LocalDateTime agora) {
