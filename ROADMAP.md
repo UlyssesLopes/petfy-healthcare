@@ -998,19 +998,35 @@ antes do seguinte começar. O que cada um deixou no código:
 - **Cartão preparado pelo tutor com escopo** — o substituto do acesso de
   emergência. `Grant` com escopo é a fundação dele, e o cartão é v1 com tela.
 
-**A suíte roda em duas metades, e isso é operacional, não preferência:**
+**Como a suíte foi verificada, e uma afirmação que eu tinha escrito errada aqui**
+
+O número que vale é o do comando do CI, em uma tacada:
 
 ```
-mvn test -Dtest='!**/*ContainerTest'   # 682, Skipped: 0
-mvn test -Dtest='**/*ContainerTest'    #  97, Skipped: 0
+mvn -B clean verify   # 705 testes, Failures: 0, Skipped: 0 — 53s
 ```
 
-O Docker Desktop desta máquina sobe um cluster Kubernetes, e a suíte inteira de uma
-vez não deixa memória para o Postgres do Testcontainers subir. Rodando junto, o
-`ContainerTestsHabilitadosTest` quebra o build — **o que é o comportamento certo**, e
-foi por isso que nenhum falso verde passou nesta fase. O glob precisa do `**/`: com
-`-Dtest='!*ContainerTest'` o surefire carrega as classes de container e as pula, e a
-guarda acusa de novo. `Skipped: 0` nas duas é a condição de fechamento.
+Dos 705, **97 são `ContainerTest`** contra Postgres real, mais a guarda
+`ContainerTestsHabilitadosTest`. `Skipped: 0` é a condição de fechamento.
+
+Durante a fase eu rodei em duas metades — `-Dtest='!**/*ContainerTest'` e
+`-Dtest='**/*ContainerTest'` — porque o Testcontainers ficou várias vezes sem achar
+Docker na suíte completa. **Registrei isso aqui como se fosse regra permanente da
+máquina, e não é:** o `clean verify` depois passou com tudo junto, repetidamente. A
+condição era transitória, provavelmente o cluster Kubernetes do Docker Desktop
+disputando memória. A divisão continua sendo um contorno válido quando o sintoma volta,
+mas **a verificação que fecha um passo é o `clean verify` inteiro** — o mesmo que o CI
+roda.
+
+Dois detalhes que custaram tempo e ficam registrados:
+
+- **O glob precisa do `**/`.** Com `-Dtest='!*ContainerTest'` o surefire carrega as
+  classes de container e as *pula* em vez de excluí-las, e a guarda quebra o build — o
+  que é o comportamento certo dela.
+- **Rodada filtrada infla a contagem.** Com `-Dtest=!…` o surefire conta classes
+  `@Nested` duas vezes: a metade não-container aparecia como 682 quando os testes
+  distintos são 607. Os números que ficaram na mensagem do commit `037f789` vêm daí e
+  estão superestimados; 705 é o total real.
 
 ### A regra de saída do `PRODUTO.md` 3.4 — resolvida em 2026-08-06, contra o documento
 
@@ -1059,6 +1075,14 @@ branch sai de base velha e os testes verdes não provam nada.
 
 ## Dívidas com relógio
 
+- **O `README.md` descreve uma API que morreu na Fase 6.** Ele documenta `/vet/pets`,
+  `/vet/clinic-invites`, `ROLE_VET`, `Owner` e `Pet`, e não menciona `Person`,
+  `Animal`, `Custody`, `Grant`, `Organization`, `Membership`, `Timeline`,
+  `CareInstruction` nem `DueItem`. **É a dívida mais urgente das três**, e não por
+  capricho de documentação: o README é o contrato que o cliente lê, e a Fase 5 começa
+  por ele. Quem escrever tela contra o README de hoje escreve contra endpoints que não
+  existem. Inclui reconferir o OpenAPI, que é gerado das anotações e portanto está
+  correto — o que expõe que os dois divergiram.
 - ~~**Spring Boot 2.7.18 saiu do suporte OSS.**~~ Migrado para Boot 3.3.5 em
   2026-08-04 (PR #16).
 - ~~**Actions com Node 20 deprecado.**~~ Bump para v7/v5/v4/v7/v4/v7 feito na
