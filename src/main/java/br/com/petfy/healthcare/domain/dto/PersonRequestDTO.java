@@ -20,7 +20,7 @@ import jakarta.validation.constraints.Size;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class OwnerRequestDTO {
+public class PersonRequestDTO {
 
     @NotBlank(message = "nome e obrigatorio")
     private String name;

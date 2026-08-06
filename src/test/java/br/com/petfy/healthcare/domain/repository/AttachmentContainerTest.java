@@ -4,7 +4,7 @@ import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Attachment;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * Duas coisas que so o banco recusa: o CHECK que impede um anexo de documentar uma
  * vacina <b>e</b> um atendimento ao mesmo tempo, e as quatro chaves estrangeiras que a
- * tabela trouxe. As FKs sao a mesma familia de bug que travou o {@code DELETE /owners/me}
+ * tabela trouxe. As FKs sao a mesma familia de bug que travou o {@code DELETE /persons/me}
  * duas vezes e o {@code DELETE /animals/{id}} desde sempre.
  *
  * E uma que nenhum teste de banco pega sozinho: os <b>bytes</b> saindo junto com o animal.
@@ -52,19 +52,19 @@ class AttachmentContainerTest extends PostgresContainerTest {
 
     @Autowired private AttachmentRepository attachmentRepository;
     @Autowired private AttachmentStorage attachmentStorage;
-    @Autowired private OwnerRepository ownerRepository;
+    @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
     @Autowired private PetTutorRepository petTutorRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
     @Autowired private AnimalService animalService;
 
-    private Owner ulysses;
+    private Person ulysses;
     private Animal rex;
 
     @BeforeEach
     void setUp() {
-        ulysses = ownerRepository.saveAndFlush(Owner.builder()
+        ulysses = personRepository.saveAndFlush(Person.builder()
                 .name("Ulysses")
                 .email("anexos-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash")
@@ -74,7 +74,7 @@ class AttachmentContainerTest extends PostgresContainerTest {
                 .name("Rex").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
 
         petTutorRepository.saveAndFlush(PetTutor.builder()
-                .animal(rex).owner(ulysses).role(PetTutorRole.HOLDER)
+                .animal(rex).person(ulysses).role(PetTutorRole.HOLDER)
                 .creationDate(LocalDateTime.now()).build());
 
         SecurityContextHolder.getContext().setAuthentication(
@@ -245,7 +245,7 @@ class AttachmentContainerTest extends PostgresContainerTest {
         void desassociarMantemOAnexo() {
             var salvo = attachmentRepository.saveAndFlush(anexo().build());
 
-            attachmentRepository.desassociarUploader(ulysses.getOwnerId());
+            attachmentRepository.desassociarUploader(ulysses.getPersonId());
             attachmentRepository.flush();
 
             var recarregado = attachmentRepository.findById(salvo.getAttachmentId());
@@ -259,13 +259,13 @@ class AttachmentContainerTest extends PostgresContainerTest {
         @Transactional
         @DisplayName("nao desassocia o anexo de outro tutor")
         void naoDesassociaDeOutro() {
-            var maria = ownerRepository.saveAndFlush(Owner.builder()
+            var maria = personRepository.saveAndFlush(Person.builder()
                     .name("Maria").email("maria-" + UUID.randomUUID() + "@petfy.com.br")
                     .password("hash").build());
 
             var daMaria = attachmentRepository.saveAndFlush(anexo().uploadedBy(maria).build());
 
-            attachmentRepository.desassociarUploader(ulysses.getOwnerId());
+            attachmentRepository.desassociarUploader(ulysses.getPersonId());
             attachmentRepository.flush();
 
             assertThat(attachmentRepository.findById(daMaria.getAttachmentId()))

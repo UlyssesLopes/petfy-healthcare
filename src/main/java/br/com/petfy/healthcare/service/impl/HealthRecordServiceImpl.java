@@ -9,7 +9,7 @@ import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.HealthRecordService;
@@ -34,7 +34,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
     private final ClinicRepository clinicRepository;
 
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
     private final AnimalAccessGuard animalAccessGuard;
 
     private final HealthRecordCorrectionLog healthRecordCorrectionLog;
@@ -67,7 +67,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     @Override
     public Page<HealthRecordResponseDTO> listAllHealthRecords(Pageable pageable) {
         return healthRecordRepository
-                .findByAnimalTutorsOwnerOwnerIdOrderByEventDateDesc(currentOwnerProvider.require().getOwnerId(), pageable)
+                .findByAnimalTutorsPersonPersonIdOrderByEventDateDesc(currentPersonProvider.require().getPersonId(), pageable)
                 .map(this::toResponse);
     }
 
@@ -95,7 +95,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         // o snapshot sai antes dos setters. O tutor nao tem janela - o historico e
         // do animal dele - mas deixa rastro igual, senao a auditoria contaria meia
         // verdade e daria impressao de completude
-        healthRecordCorrectionLog.recordByOwner(existing, currentOwnerProvider.require());
+        healthRecordCorrectionLog.recordByPerson(existing, currentPersonProvider.require());
 
         if (request.getEventType() != null) existing.setEventType(request.getEventType());
         if (request.getCategory() != null) existing.setCategory(request.getCategory());

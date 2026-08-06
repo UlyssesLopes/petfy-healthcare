@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.notification;
 
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import lombok.RequiredArgsConstructor;
@@ -119,16 +119,16 @@ public class ClinicActivityNotifier {
      * passa por associacoes lazy. So o envio sai para outra thread: e ele que
      * depende de SMTP e que somava latencia a requisicao do veterinario.
      */
-    private void enviar(Animal animal, java.util.function.Function<Owner, Notification> mensagem, String evento) {
+    private void enviar(Animal animal, java.util.function.Function<Person, Notification> mensagem, String evento) {
         // A partir da V15 um animal tem varios tutores, e o aviso vai para todos:
         // quem divide o cuidado do animal precisa saber que a clinica registrou
         // algo nele. O papel nao filtra - quem so le tambem quer saber que
         // apareceu vacina que ninguem da casa reconhece, que e justamente o caso
         // que a orientacao no rodape trata.
-        for (Owner destinatario : animal.getTutorOwners()) {
+        for (Person destinatario : animal.getTutorPersons()) {
             if (!destinatario.podeReceberNotificacao()) {
                 log.info("Tutor {} ainda nao confirmou o e-mail; aviso de {} suprimido",
-                        destinatario.getOwnerId(), evento);
+                        destinatario.getPersonId(), evento);
                 continue;
             }
 
@@ -141,18 +141,18 @@ public class ClinicActivityNotifier {
                 dispatcher.dispatch(mensagem.apply(destinatario), evento);
             } catch (Exception e) {
                 log.error("Falha ao preparar o aviso de {} para o tutor {}",
-                        evento, destinatario.getOwnerId(), e);
+                        evento, destinatario.getPersonId(), e);
             }
         }
     }
 
-    private Notification montar(Owner owner, String assunto, List<String> linhas) {
+    private Notification montar(Person person, String assunto, List<String> linhas) {
         linhas.add("");
         linhas.add(ORIENTACAO);
 
         return Notification.builder()
-                .toEmail(owner.getEmail())
-                .toName(owner.getName())
+                .toEmail(person.getEmail())
+                .toName(person.getName())
                 .subject(assunto)
                 .lines(linhas)
                 .build();

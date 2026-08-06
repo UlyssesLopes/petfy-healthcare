@@ -6,7 +6,7 @@ import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class VaccineCatalogController {
 
     private final VaccineCatalogRepository vaccineCatalogRepository;
     private final AnimalRepository animalRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
     private final AnimalAccessGuard animalAccessGuard;
 
     @GetMapping

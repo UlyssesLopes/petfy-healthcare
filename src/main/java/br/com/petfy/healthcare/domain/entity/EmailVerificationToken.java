@@ -26,8 +26,8 @@ public class EmailVerificationToken {
     private UUID emailVerificationTokenId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private Owner owner;
+    @JoinColumn(name = "person_id", nullable = false)
+    private Person person;
 
     /** Hash do token - ver V12__email_verification.sql. */
     @Column(unique = true, nullable = false)

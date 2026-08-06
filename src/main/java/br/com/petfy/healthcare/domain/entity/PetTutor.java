@@ -10,7 +10,7 @@ import java.util.UUID;
 /**
  * Vinculo entre um animal e quem cuida dele.
  *
- * Substitui o {@code animals.owner_id} que existia ate a V15. A coluna nao foi
+ * Substitui o {@code animals.person_id} que existia ate a V15. A coluna nao foi
  * mantida junto com esta tabela de proposito: com as duas, "quem e o dono" teria
  * duas respostas possiveis, e o dia em que elas divergissem seria um vazamento -
  * alguem enxergando animal que nao e seu, ou deixando de enxergar o proprio.
@@ -42,7 +42,7 @@ public class PetTutor {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
-    private Owner owner;
+    private Person person;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
@@ -54,7 +54,7 @@ public class PetTutor {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invited_by_owner_id")
-    private Owner invitedBy;
+    private Person invitedBy;
 
     private LocalDateTime creationDate;
 

@@ -20,7 +20,7 @@ public interface AnimalWeightHistoryRepository extends JpaRepository<AnimalWeigh
     /**
      * Usado ao apagar o animal - ver {@code AnimalPurger}. Faltava: a serie de peso
      * chegou no passo 9 e nenhuma das duas cascatas foi atualizada, o que travou o
-     * DELETE /owners/me para qualquer animal com pesagem.
+     * DELETE /persons/me para qualquer animal com pesagem.
      */
     void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 

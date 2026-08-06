@@ -5,7 +5,7 @@ import br.com.petfy.healthcare.domain.dto.AntiparasiticRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticCatalog;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticCatalogRepository;
@@ -58,8 +58,8 @@ class AntiparasiticServiceImplTest {
 
     private static final LocalDate APLICACAO = LocalDate.of(2026, 3, 10);
 
-    private Owner owner(UUID id) {
-        return Owner.builder().ownerId(id).name("Ulysses").email("ulysses@petfy.com.br").build();
+    private Person person(UUID id) {
+        return Person.builder().personId(id).name("Ulysses").email("ulysses@petfy.com.br").build();
     }
 
     private Animal animal(Species especie) {
@@ -67,7 +67,7 @@ class AntiparasiticServiceImplTest {
                 .animalId(ANIMAL_ID)
                 .name("Rex")
                 .species(especie)
-                .tutors(PetTutores.titular(owner(OWNER_ID)))
+                .tutors(PetTutores.titular(person(OWNER_ID)))
                 .build();
     }
 
@@ -276,7 +276,7 @@ class AntiparasiticServiceImplTest {
                     .animalId(gatoId)
                     .name("Mia")
                     .species(Species.FELINA)
-                    .tutors(PetTutores.titular(owner(OWNER_ID)))
+                    .tutors(PetTutores.titular(person(OWNER_ID)))
                     .build();
             when(animalAccessGuard.requireEscrita(gatoId)).thenReturn(gato);
 
@@ -515,7 +515,7 @@ class AntiparasiticServiceImplTest {
                     .animalId(destinoId)
                     .name("Bob")
                     .species(Species.CANINA)
-                    .tutors(PetTutores.titular(owner(OWNER_ID)))
+                    .tutors(PetTutores.titular(person(OWNER_ID)))
                     .build());
             when(antiparasiticRepository.save(any(Antiparasitic.class))).thenAnswer(i -> i.getArgument(0));
 

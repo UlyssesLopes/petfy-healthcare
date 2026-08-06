@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare;
 
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
@@ -13,7 +13,7 @@ import java.util.UUID;
 /**
  * Monta os vinculos de tutor nos testes.
  *
- * Ate a V15 bastava {@code Animal.builder().owner(alguem)}. Agora o vinculo e uma
+ * Ate a V15 bastava {@code Animal.builder().person(alguem)}. Agora o vinculo e uma
  * entidade propria, e reanimalir a montagem dela em cada teste deixaria o teste
  * falando de tabela de juncao em vez de falar da regra que ele verifica.
  */
@@ -23,23 +23,23 @@ public final class PetTutores {
     }
 
     /** Lista com um titular so - o equivalente ao dono unico de antes da V15. */
-    public static List<PetTutor> titular(Owner owner) {
+    public static List<PetTutor> titular(Person person) {
         List<PetTutor> tutores = new ArrayList<>();
-        tutores.add(vinculo(owner, PetTutorRole.HOLDER));
+        tutores.add(vinculo(person, PetTutorRole.HOLDER));
         return tutores;
     }
 
     /** Titular mais co-tutores, na ordem informada. */
-    public static List<PetTutor> titularE(Owner titular, PetTutorRole papelDoSegundo, Owner segundo) {
+    public static List<PetTutor> titularE(Person titular, PetTutorRole papelDoSegundo, Person segundo) {
         List<PetTutor> tutores = titular(titular);
         tutores.add(vinculo(segundo, papelDoSegundo));
         return tutores;
     }
 
-    public static PetTutor vinculo(Owner owner, PetTutorRole role) {
+    public static PetTutor vinculo(Person person, PetTutorRole role) {
         return PetTutor.builder()
                 .petTutorId(UUID.randomUUID())
-                .owner(owner)
+                .person(person)
                 .role(role)
                 .creationDate(LocalDateTime.now())
                 .build();

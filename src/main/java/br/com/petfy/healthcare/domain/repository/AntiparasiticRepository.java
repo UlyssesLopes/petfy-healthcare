@@ -11,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface AntiparasiticRepository extends JpaRepository<Antiparasitic, UUID> {
 
-    List<Antiparasitic> findByAnimalTutorsOwnerOwnerId(UUID ownerId);
+    List<Antiparasitic> findByAnimalTutorsPersonPersonId(UUID personId);
 
     List<Antiparasitic> findByAnimalAnimalIdOrderByApplicationDateDesc(UUID animalId);
 

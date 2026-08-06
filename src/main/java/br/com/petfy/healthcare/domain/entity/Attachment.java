@@ -80,8 +80,8 @@ public class Attachment {
      * animal, que sobrevive se houver outro tutor.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploaded_by_owner_id")
-    private Owner uploadedBy;
+    @JoinColumn(name = "uploaded_by_person_id")
+    private Person uploadedBy;
 
     @Column(name = "creation_date", nullable = false)
     private LocalDateTime creationDate;

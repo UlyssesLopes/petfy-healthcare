@@ -2,12 +2,12 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.dto.EmailVerificationConfirmDTO;
 import br.com.petfy.healthcare.domain.dto.EmailVerificationResendDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 
 public interface EmailVerificationService {
 
     /** Chamado no cadastro. Falha de envio nao desfaz a criacao da conta. */
-    void sendVerification(Owner owner);
+    void sendVerification(Person person);
 
     /**
      * Reenvio pedido pelo tutor. Como o de recuperacao de senha, responde igual

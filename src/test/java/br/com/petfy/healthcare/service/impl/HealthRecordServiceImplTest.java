@@ -4,12 +4,12 @@ import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -52,7 +52,7 @@ class HealthRecordServiceImplTest {
     private ClinicRepository clinicRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private CurrentPersonProvider currentPersonProvider;
 
     @Mock
     private HealthRecordCorrectionLog healthRecordCorrectionLog;
@@ -65,12 +65,12 @@ class HealthRecordServiceImplTest {
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
-    private Owner owner(UUID id) {
-        return Owner.builder().ownerId(id).email("ulysses@petfy.com.br").build();
+    private Person person(UUID id) {
+        return Person.builder().personId(id).email("ulysses@petfy.com.br").build();
     }
 
     private Animal animal() {
-        return Animal.builder().animalId(ANIMAL_ID).name("Rex").tutors(PetTutores.titular(owner(OWNER_ID))).build();
+        return Animal.builder().animalId(ANIMAL_ID).name("Rex").tutors(PetTutores.titular(person(OWNER_ID))).build();
     }
 
     private Clinic clinic() {
@@ -89,8 +89,8 @@ class HealthRecordServiceImplTest {
                 .build();
     }
 
-    private void autenticadoComo(UUID ownerId) {
-        when(currentOwnerProvider.require()).thenReturn(owner(ownerId));
+    private void autenticadoComo(UUID personId) {
+        when(currentPersonProvider.require()).thenReturn(person(personId));
     }
 
     /** Se a pessoa autenticada chega ao animal do registro - decisao do guard. */
@@ -282,7 +282,7 @@ class HealthRecordServiceImplTest {
         void deveListarApenasDosAnimalsEmQueETutora() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(healthRecordRepository.findByAnimalTutorsOwnerOwnerIdOrderByEventDateDesc(OWNER_ID, pageable))
+            when(healthRecordRepository.findByAnimalTutorsPersonPersonIdOrderByEventDateDesc(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of(registro())));
 
             assertThat(healthRecordService.listAllHealthRecords(pageable).getContent()).hasSize(1);
@@ -431,7 +431,7 @@ class HealthRecordServiceImplTest {
             when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(registro()));
             alcancaOAnimal(true);
             when(animalAccessGuard.requireEscrita(destinoId)).thenReturn(
-                    Animal.builder().animalId(destinoId).name("Bob").tutors(PetTutores.titular(owner(OWNER_ID))).build());
+                    Animal.builder().animalId(destinoId).name("Bob").tutors(PetTutores.titular(person(OWNER_ID))).build());
             when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
 
             healthRecordService.updateHealthRecord(RECORD_ID,

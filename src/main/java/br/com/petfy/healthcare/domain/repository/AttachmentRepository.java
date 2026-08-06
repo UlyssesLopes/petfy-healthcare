@@ -39,11 +39,11 @@ public interface AttachmentRepository extends JpaRepository<Attachment, UUID> {
      * fechou a conta destruiria dado de saude de um animal que continua tendo quem
      * responda por ele - a mesma regra que a V15 aplicou ao animal inteiro.
      *
-     * Sem isto, a FK {@code uploaded_by_owner_id} segura o delete do owner: mais uma da
-     * familia que travou o {@code DELETE /owners/me} duas vezes.
+     * Sem isto, a FK {@code uploaded_by_person_id} segura o delete do person: mais uma da
+     * familia que travou o {@code DELETE /persons/me} duas vezes.
      */
     @Modifying
-    @Query("update Attachment a set a.uploadedBy = null where a.uploadedBy.ownerId = :ownerId")
-    void desassociarUploader(UUID ownerId);
+    @Query("update Attachment a set a.uploadedBy = null where a.uploadedBy.personId = :personId")
+    void desassociarUploader(UUID personId);
 
 }

@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.HealthRecordCorrection;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.security.UserRole;
@@ -33,8 +33,8 @@ public class HealthRecordCorrectionLog {
         healthRecordCorrectionRepository.save(snapshot(antes).correctedByVet(vet).build());
     }
 
-    public void recordByOwner(HealthRecord antes, Owner owner) {
-        healthRecordCorrectionRepository.save(snapshot(antes).correctedByOwner(owner).build());
+    public void recordByPerson(HealthRecord antes, Person person) {
+        healthRecordCorrectionRepository.save(snapshot(antes).correctedByPerson(person).build());
     }
 
     /** Da correcao mais recente para a mais antiga. */
@@ -74,7 +74,7 @@ public class HealthRecordCorrectionLog {
     }
 
     private String nomeDoTutor(HealthRecordCorrection correction) {
-        return correction.getCorrectedByOwner() != null ? correction.getCorrectedByOwner().getName() : null;
+        return correction.getCorrectedByPerson() != null ? correction.getCorrectedByPerson().getName() : null;
     }
 
 }

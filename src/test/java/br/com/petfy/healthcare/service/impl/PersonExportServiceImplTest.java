@@ -1,10 +1,10 @@
 package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.PetTutores;
-import br.com.petfy.healthcare.domain.dto.OwnerExportDTO;
+import br.com.petfy.healthcare.domain.dto.PersonExportDTO;
 import br.com.petfy.healthcare.domain.entity.*;
 import br.com.petfy.healthcare.domain.repository.*;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,9 +38,9 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class OwnerExportServiceImplTest {
+class PersonExportServiceImplTest {
 
-    @Mock private CurrentOwnerProvider currentOwnerProvider;
+    @Mock private CurrentPersonProvider currentPersonProvider;
     @Mock private ConsentRecordRepository consentRecordRepository;
     @Mock private PetTutorRepository petTutorRepository;
     @Mock private VaccineRepository vaccineRepository;
@@ -56,15 +56,15 @@ class OwnerExportServiceImplTest {
     @Mock private AnimalHealthConditionRepository animalHealthConditionRepository;
 
     @InjectMocks
-    private OwnerExportServiceImpl exportService;
+    private PersonExportServiceImpl exportService;
 
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID MARIA_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
 
-    private Owner ulysses() {
-        return Owner.builder()
-                .ownerId(OWNER_ID).name("Ulysses").email("ulysses@petfy.com.br")
+    private Person ulysses() {
+        return Person.builder()
+                .personId(OWNER_ID).name("Ulysses").email("ulysses@petfy.com.br")
                 .phone("11999999999").address("Rua A, 100")
                 .password("$2a$10$hashQueNaoPodeAparecer")
                 .emailVerifiedAt(LocalDateTime.now().minusDays(10))
@@ -72,8 +72,8 @@ class OwnerExportServiceImplTest {
                 .build();
     }
 
-    private Owner maria() {
-        return Owner.builder().ownerId(MARIA_ID).name("Maria").email("maria@petfy.com.br").build();
+    private Person maria() {
+        return Person.builder().personId(MARIA_ID).name("Maria").email("maria@petfy.com.br").build();
     }
 
     private Animal rex() {
@@ -82,20 +82,20 @@ class OwnerExportServiceImplTest {
                 .creationDate(LocalDateTime.now().minusMonths(5)).build();
     }
 
-    private PetTutor vinculo(Owner owner, PetTutorRole papel) {
-        PetTutor v = PetTutores.vinculo(owner, papel);
+    private PetTutor vinculo(Person person, PetTutorRole papel) {
+        PetTutor v = PetTutores.vinculo(person, papel);
         v.setAnimal(rex());
         return v;
     }
 
     /** O caminho normal: um tutor, um animal, coleções vazias. */
     private void comUmAnimal(PetTutorRole meuPapel) {
-        when(currentOwnerProvider.require()).thenReturn(ulysses());
-        when(petTutorRepository.findByOwnerOwnerId(OWNER_ID))
+        when(currentPersonProvider.require()).thenReturn(ulysses());
+        when(petTutorRepository.findByPersonPersonId(OWNER_ID))
                 .thenReturn(List.of(vinculo(ulysses(), meuPapel)));
         when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
                 .thenReturn(List.of());
-        when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
+        when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                 .thenReturn(List.of());
         when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID)).thenReturn(List.of());
         when(healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(ANIMAL_ID)).thenReturn(List.of());
@@ -133,9 +133,9 @@ class OwnerExportServiceImplTest {
         @DisplayName("os consentimentos, com a versao aceita")
         void consentimentos() {
             comUmAnimal(PetTutorRole.HOLDER);
-            when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
+            when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of(ConsentRecord.builder()
-                            .owner(ulysses())
+                            .person(ulysses())
                             .document(ConsentDocument.PRIVACY_POLICY)
                             .documentVersion("2026-08-05")
                             .acceptedAt(LocalDateTime.now())
@@ -272,7 +272,7 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("a senha nao aparece, nem como hash")
         void senhaNaoAparece() {
-            assertThat(OwnerExportDTO.TutorDTO.class.getRecordComponents())
+            assertThat(PersonExportDTO.TutorDTO.class.getRecordComponents())
                     .extracting(java.lang.reflect.RecordComponent::getName)
                     .doesNotContain("password", "passwordHash", "senha");
         }
@@ -284,10 +284,10 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("o e-mail do co-tutor nao aparece")
         void emailDeCoTutorNaoAparece() {
-            assertThat(OwnerExportDTO.CoTutorDTO.class.getRecordComponents())
+            assertThat(PersonExportDTO.CoTutorDTO.class.getRecordComponents())
                     .extracting(java.lang.reflect.RecordComponent::getName)
                     .contains("name", "role")
-                    .doesNotContain("email", "ownerId");
+                    .doesNotContain("email", "personId");
         }
 
         @Test
@@ -307,7 +307,7 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("o hash do token de compartilhamento nao aparece")
         void hashDoTokenNaoAparece() {
-            assertThat(OwnerExportDTO.LinkCompartilhadoDTO.class.getRecordComponents())
+            assertThat(PersonExportDTO.LinkCompartilhadoDTO.class.getRecordComponents())
                     .extracting(java.lang.reflect.RecordComponent::getName)
                     .doesNotContain("tokenHash", "token");
         }
@@ -316,7 +316,7 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("a chave de storage do anexo nao aparece")
         void chaveDeStorageNaoAparece() {
-            assertThat(OwnerExportDTO.AnexoDTO.class.getRecordComponents())
+            assertThat(PersonExportDTO.AnexoDTO.class.getRecordComponents())
                     .extracting(java.lang.reflect.RecordComponent::getName)
                     .doesNotContain("storageKey");
         }
@@ -328,7 +328,7 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("a evidencia do consentimento nao aparece")
         void evidenciaDoConsentimentoNaoAparece() {
-            assertThat(OwnerExportDTO.ConsentimentoDTO.class.getRecordComponents())
+            assertThat(PersonExportDTO.ConsentimentoDTO.class.getRecordComponents())
                     .extracting(java.lang.reflect.RecordComponent::getName)
                     .doesNotContain("ipAddress", "userAgent");
         }
@@ -341,9 +341,9 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("tutor sem animal exporta o documento com a lista vazia")
         void semAnimalExportaVazio() {
-            when(currentOwnerProvider.require()).thenReturn(ulysses());
-            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of());
-            when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
+            when(currentPersonProvider.require()).thenReturn(ulysses());
+            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of());
+            when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of());
 
             var export = exportService.exportarDoAutenticado();

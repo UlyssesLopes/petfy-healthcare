@@ -94,7 +94,7 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
 
     @Override
     public List<AntiparasiticResponseDTO> listByAnimal(UUID animalId) {
-        // verifica ownership do animal antes de listar
+        // verifica personship do animal antes de listar
         animalAccessGuard.requireLeitura(animalId);
 
         return antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId)

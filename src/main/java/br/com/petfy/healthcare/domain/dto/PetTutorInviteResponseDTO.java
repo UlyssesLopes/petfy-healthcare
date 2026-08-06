@@ -29,7 +29,7 @@ public class PetTutorInviteResponseDTO {
 
     private PetTutorRole role;
 
-    private String createdByOwnerName;
+    private String createdByPersonName;
 
     private LocalDateTime expiresAt;
 

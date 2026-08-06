@@ -10,9 +10,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class OwnerResponseDTO {
+public class PersonResponseDTO {
 
-    private UUID ownerId;
+    private UUID personId;
     private String name;
     private String email;
     private String phone;

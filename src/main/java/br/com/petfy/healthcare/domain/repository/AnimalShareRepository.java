@@ -17,7 +17,7 @@ public interface AnimalShareRepository extends JpaRepository<AnimalShare, UUID> 
 
     List<AnimalShare> findByAnimalOrderByCreationDateDesc(Animal animal);
 
-    List<AnimalShare> findByAnimalTutorsOwnerOwnerId(UUID ownerId);
+    List<AnimalShare> findByAnimalTutorsPersonPersonId(UUID personId);
 
     void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 

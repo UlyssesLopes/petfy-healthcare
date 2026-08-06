@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum ErrorMessageEnum {
 
-    OWNER_NOT_FOUND(101, "Owner not found"),
+    PERSON_NOT_FOUND(101, "Person not found"),
     ANIMAL_NOT_FOUND(102, "Animal not found"),
     CLINIC_NOT_FOUND(103, "Clinic not found"),
     VACCINE_NOT_FOUND(104, "Vaccine not found"),
@@ -31,10 +31,10 @@ public enum ErrorMessageEnum {
     INSUFFICIENT_ANIMAL_ROLE(119, "Your role on this animal does not allow this action"),
     PET_TUTOR_INVITE_NOT_FOUND(120, "Invite not found or no longer valid"),
     ALREADY_A_TUTOR(121, "This person is already a tutor of this animal"),
-    CANNOT_REMOVE_HOLDER(122, "The holder cannot be removed; transfer ownership first"),
+    CANNOT_REMOVE_HOLDER(122, "The holder cannot be removed; transfer personship first"),
     // promover alguem a titular rebaixa o titular atual, entao nao cabe no PATCH
     // de papel: e a transferencia, que tem endpoint proprio
-    TRANSFER_REQUIRED_FOR_HOLDER(123, "Use the ownership transfer endpoint to change the holder"),
+    TRANSFER_REQUIRED_FOR_HOLDER(123, "Use the personship transfer endpoint to change the holder"),
     TUTOR_NOT_FOUND(124, "This person is not a tutor of this animal"),
     ATTACHMENT_NOT_FOUND(125, "Attachment not found"),
     // 415: o formato foi recusado pelo CONTEUDO, e nao pelo Content-Type declarado

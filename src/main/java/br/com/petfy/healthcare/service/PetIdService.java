@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public interface PetIdService {
 
-    /** O animal importado e sempre vinculado ao owner autenticado na requisicao. */
+    /** O animal importado e sempre vinculado ao person autenticado na requisicao. */
     AnimalResponseDTO importAnimalFromIdCard(MultipartFile file) throws IOException, TesseractException;
 
 }

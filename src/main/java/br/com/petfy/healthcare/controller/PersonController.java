@@ -1,11 +1,11 @@
 package br.com.petfy.healthcare.controller;
 
-import br.com.petfy.healthcare.domain.dto.OwnerExportDTO;
-import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
-import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
+import br.com.petfy.healthcare.domain.dto.PersonExportDTO;
+import br.com.petfy.healthcare.domain.dto.PersonRequestDTO;
+import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
-import br.com.petfy.healthcare.service.OwnerExportService;
-import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.PersonExportService;
+import br.com.petfy.healthcare.service.PersonService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,22 +15,22 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/owners")
+@RequestMapping("/persons")
 @RequiredArgsConstructor
-public class OwnerController {
+public class PersonController {
 
-    private final OwnerService ownerService;
-    private final OwnerExportService ownerExportService;
+    private final PersonService personService;
+    private final PersonExportService personExportService;
 
-    /** Unica rota publica de owner: sem ela nao existe o primeiro usuario. */
+    /** Unica rota publica de person: sem ela nao existe o primeiro usuario. */
     @PostMapping
-    public ResponseEntity<OwnerResponseDTO> createOwner(@Valid @RequestBody OwnerRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ownerService.createOwner(request));
+    public ResponseEntity<PersonResponseDTO> createPerson(@Valid @RequestBody PersonRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(personService.createPerson(request));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<OwnerResponseDTO> getCurrentOwner() {
-        return ResponseEntity.ok(ownerService.getCurrentOwner());
+    public ResponseEntity<PersonResponseDTO> getCurrentPerson() {
+        return ResponseEntity.ok(personService.getCurrentPerson());
     }
 
     /**
@@ -44,8 +44,8 @@ public class OwnerController {
                              "Campos ausentes ou nulos preservam o valor existente. " +
                              "Nenhum campo e obrigatorio neste endpoint.")
     @PutMapping("/me")
-    public ResponseEntity<OwnerResponseDTO> updateCurrentOwner(@RequestBody OwnerRequestDTO request) {
-        return ResponseEntity.ok(ownerService.updateCurrentOwner(request));
+    public ResponseEntity<PersonResponseDTO> updateCurrentPerson(@RequestBody PersonRequestDTO request) {
+        return ResponseEntity.ok(personService.updateCurrentPerson(request));
     }
 
     /**
@@ -54,14 +54,14 @@ public class OwnerController {
      */
     @PutMapping("/me/password")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequestDTO request) {
-        ownerService.changePassword(request);
+        personService.changePassword(request);
         return ResponseEntity.noContent().build();
     }
 
     /**
      * Portabilidade, irma da exclusao logo abaixo.
      *
-     * Fica no {@code /owners/me} e nao numa rota propria porque e um dado do titular como
+     * Fica no {@code /persons/me} e nao numa rota propria porque e um dado do titular como
      * qualquer outro - a diferenca e a completude, nao a natureza.
      */
     @Operation(summary = "Exporta todos os dados do tutor autenticado",
@@ -71,13 +71,13 @@ public class OwnerController {
                              + "de terceiros. Dado pessoal de terceiro vem reduzido, e o proprio "
                              + "documento declara o que nao carrega no campo limitacoes.")
     @GetMapping("/me/export")
-    public ResponseEntity<OwnerExportDTO> exportCurrentOwner() {
-        return ResponseEntity.ok(ownerExportService.exportarDoAutenticado());
+    public ResponseEntity<PersonExportDTO> exportCurrentPerson() {
+        return ResponseEntity.ok(personExportService.exportarDoAutenticado());
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteCurrentOwner() {
-        ownerService.deleteCurrentOwner();
+    public ResponseEntity<Void> deleteCurrentPerson() {
+        personService.deleteCurrentPerson();
         return ResponseEntity.noContent().build();
     }
 

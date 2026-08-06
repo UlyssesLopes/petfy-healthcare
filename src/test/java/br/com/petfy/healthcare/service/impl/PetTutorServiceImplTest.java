@@ -3,18 +3,18 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.PetTutorInviteRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PetTutorRoleUpdateRequestDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorInvite;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Species;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.PetTutorActivityNotifier;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -53,10 +53,10 @@ class PetTutorServiceImplTest {
     private PetTutorInviteRepository petTutorInviteRepository;
 
     @Mock
-    private OwnerRepository ownerRepository;
+    private PersonRepository personRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private CurrentPersonProvider currentPersonProvider;
 
     @Mock
     private AnimalAccessGuard animalAccessGuard;
@@ -76,17 +76,17 @@ class PetTutorServiceImplTest {
         // OpaqueTokenService real: o valor do teste esta em o token gerado nao ser
         // o que fica guardado, e um mock devolveria o que mandassem
         petTutorService = new PetTutorServiceImpl(petTutorRepository, petTutorInviteRepository,
-                ownerRepository, currentOwnerProvider, animalAccessGuard, new OpaqueTokenService(),
+                personRepository, currentPersonProvider, animalAccessGuard, new OpaqueTokenService(),
                 petTutorActivityNotifier);
         ReflectionTestUtils.setField(petTutorService, "defaultExpirationDays", 7);
     }
 
-    private Owner ulysses() {
-        return Owner.builder().ownerId(OWNER_ID).name("Ulysses").email("ulysses@petfy.com.br").build();
+    private Person ulysses() {
+        return Person.builder().personId(OWNER_ID).name("Ulysses").email("ulysses@petfy.com.br").build();
     }
 
-    private Owner maria() {
-        return Owner.builder().ownerId(MARIA_ID).name("Maria").email("maria@petfy.com.br").build();
+    private Person maria() {
+        return Person.builder().personId(MARIA_ID).name("Maria").email("maria@petfy.com.br").build();
     }
 
     private Animal animal() {
@@ -94,12 +94,12 @@ class PetTutorServiceImplTest {
                 .tutors(PetTutores.titular(ulysses())).build();
     }
 
-    private void autenticado(Owner owner) {
-        when(currentOwnerProvider.require()).thenReturn(owner);
+    private void autenticado(Person person) {
+        when(currentPersonProvider.require()).thenReturn(person);
     }
 
-    private PetTutor vinculoDe(Owner owner, PetTutorRole papel) {
-        PetTutor vinculo = PetTutores.vinculo(owner, papel);
+    private PetTutor vinculoDe(Person person, PetTutorRole papel) {
+        PetTutor vinculo = PetTutores.vinculo(person, papel);
         vinculo.setAnimal(animal());
         return vinculo;
     }
@@ -117,7 +117,7 @@ class PetTutorServiceImplTest {
         void devolveTokenEGuardaHash() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
             autenticado(ulysses());
-            when(ownerRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
+            when(personRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
             when(petTutorInviteRepository.save(any(PetTutorInvite.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = petTutorService.invite(ANIMAL_ID, paraMaria(PetTutorRole.EDITOR));
@@ -139,7 +139,7 @@ class PetTutorServiceImplTest {
         void conviteHolderSeAnuncia() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
             autenticado(ulysses());
-            when(ownerRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
+            when(personRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
             when(petTutorInviteRepository.save(any(PetTutorInvite.class))).thenAnswer(i -> i.getArgument(0));
 
             assertThat(petTutorService.invite(ANIMAL_ID, paraMaria(PetTutorRole.HOLDER)).isTransfersHolder())
@@ -151,7 +151,7 @@ class PetTutorServiceImplTest {
         void usaValidadePadrao() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
             autenticado(ulysses());
-            when(ownerRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
+            when(personRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
             when(petTutorInviteRepository.save(any(PetTutorInvite.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = petTutorService.invite(ANIMAL_ID, paraMaria(PetTutorRole.VIEWER));
@@ -162,7 +162,7 @@ class PetTutorServiceImplTest {
         }
 
         /**
-         * Quem ja e tutor nao entra de novo: a chave unica (animal, owner) recusaria o
+         * Quem ja e tutor nao entra de novo: a chave unica (animal, person) recusaria o
          * vinculo no aceite, e o erro cairia em quem recebeu o convite em vez de em
          * quem o mandou errado.
          */
@@ -171,8 +171,8 @@ class PetTutorServiceImplTest {
         void naoConvidaQuemJaETutor() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
             autenticado(ulysses());
-            when(ownerRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.of(maria()));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(true);
+            when(personRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.of(maria()));
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(true);
 
             var request = paraMaria(PetTutorRole.EDITOR);
 
@@ -190,12 +190,12 @@ class PetTutorServiceImplTest {
         void convidaQuemNaoTemConta() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
             autenticado(ulysses());
-            when(ownerRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
+            when(personRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
             when(petTutorInviteRepository.save(any(PetTutorInvite.class))).thenAnswer(i -> i.getArgument(0));
 
             assertThat(petTutorService.invite(ANIMAL_ID, paraMaria(PetTutorRole.EDITOR)).getToken()).isNotBlank();
 
-            verify(petTutorRepository, never()).existsByAnimalAnimalIdAndOwnerOwnerId(any(), any());
+            verify(petTutorRepository, never()).existsByAnimalAnimalIdAndPersonPersonId(any(), any());
         }
     }
 
@@ -224,14 +224,14 @@ class PetTutorServiceImplTest {
             autenticado(maria());
             when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
                     .thenReturn(Optional.of(convitePara("maria@petfy.com.br", PetTutorRole.EDITOR, "t")));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = petTutorService.accept("t");
 
             assertThat(result.getRole()).isEqualTo(PetTutorRole.EDITOR);
-            assertThat(result.getOwnerId()).isEqualTo(MARIA_ID);
-            assertThat(result.getInvitedByOwnerName()).isEqualTo("Ulysses");
+            assertThat(result.getPersonId()).isEqualTo(MARIA_ID);
+            assertThat(result.getInvitedByPersonName()).isEqualTo("Ulysses");
         }
 
         @Test
@@ -240,7 +240,7 @@ class PetTutorServiceImplTest {
             var invite = convitePara("maria@petfy.com.br", PetTutorRole.EDITOR, "t");
             autenticado(maria());
             when(petTutorInviteRepository.findByTokenHash(tokens.hash("t"))).thenReturn(Optional.of(invite));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
 
             petTutorService.accept("t");
@@ -248,7 +248,7 @@ class PetTutorServiceImplTest {
             var captor = ArgumentCaptor.forClass(PetTutorInvite.class);
             verify(petTutorInviteRepository).save(captor.capture());
             assertThat(captor.getValue().getAcceptedAt()).isNotNull();
-            assertThat(captor.getValue().getAcceptedBy().getOwnerId()).isEqualTo(MARIA_ID);
+            assertThat(captor.getValue().getAcceptedBy().getPersonId()).isEqualTo(MARIA_ID);
             assertThat(captor.getValue().isUsable(LocalDateTime.now())).isFalse();
         }
 
@@ -265,7 +265,7 @@ class PetTutorServiceImplTest {
             autenticado(maria());
             when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
                     .thenReturn(Optional.of(convitePara("maria@petfy.com.br", PetTutorRole.HOLDER, "t")));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
             when(petTutorRepository.findByAnimalAnimalIdAndRole(ANIMAL_ID, PetTutorRole.HOLDER))
                     .thenReturn(Optional.of(titularAtual));
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
@@ -288,7 +288,7 @@ class PetTutorServiceImplTest {
             autenticado(maria());
             when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
                     .thenReturn(Optional.of(convitePara("maria@petfy.com.br", PetTutorRole.EDITOR, "t")));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
 
             petTutorService.accept("t");
@@ -336,10 +336,10 @@ class PetTutorServiceImplTest {
         @Test
         @DisplayName("o e-mail casa sem diferenciar maiuscula de minuscula")
         void emailCasaIgnorandoCaixa() {
-            autenticado(Owner.builder().ownerId(MARIA_ID).name("Maria").email("MARIA@petfy.com.br").build());
+            autenticado(Person.builder().personId(MARIA_ID).name("Maria").email("MARIA@petfy.com.br").build());
             when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
                     .thenReturn(Optional.of(convitePara("maria@petfy.com.br", PetTutorRole.VIEWER, "t")));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
 
             assertThat(petTutorService.accept("t").getRole()).isEqualTo(PetTutorRole.VIEWER);
@@ -351,7 +351,7 @@ class PetTutorServiceImplTest {
             autenticado(maria());
             when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
                     .thenReturn(Optional.of(convitePara("maria@petfy.com.br", PetTutorRole.EDITOR, "t")));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(true);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(true);
 
             assertThatThrownBy(() -> petTutorService.accept("t"))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -368,7 +368,7 @@ class PetTutorServiceImplTest {
             autenticado(maria());
             when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
                     .thenReturn(Optional.of(convitePara("maria@petfy.com.br", PetTutorRole.EDITOR, "t")));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
 
             petTutorService.accept("t");
@@ -388,7 +388,7 @@ class PetTutorServiceImplTest {
             var destino = vinculoDe(maria(), PetTutorRole.VIEWER);
 
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(destino));
             when(petTutorRepository.findByAnimalAnimalIdAndRole(ANIMAL_ID, PetTutorRole.HOLDER))
                     .thenReturn(Optional.of(titularAtual));
@@ -416,7 +416,7 @@ class PetTutorServiceImplTest {
             var destino = vinculoDe(maria(), PetTutorRole.VIEWER);
 
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(destino));
             when(petTutorRepository.findByAnimalAnimalIdAndRole(ANIMAL_ID, PetTutorRole.HOLDER))
                     .thenReturn(Optional.of(titularAtual));
@@ -434,7 +434,7 @@ class PetTutorServiceImplTest {
             var titularAtual = vinculoDe(ulysses(), PetTutorRole.HOLDER);
 
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, OWNER_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, OWNER_ID))
                     .thenReturn(Optional.of(titularAtual));
 
             var result = petTutorService.transferHolder(ANIMAL_ID, OWNER_ID);
@@ -448,7 +448,7 @@ class PetTutorServiceImplTest {
         @DisplayName("transferir para quem nao e tutor responde 404 sem rebaixar ninguem")
         void transferirParaNaoTutor() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> petTutorService.transferHolder(ANIMAL_ID, MARIA_ID))
@@ -470,7 +470,7 @@ class PetTutorServiceImplTest {
             var destino = vinculoDe(maria(), PetTutorRole.VIEWER);
 
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(destino));
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -494,7 +494,7 @@ class PetTutorServiceImplTest {
                     .containsExactly(ErrorMessageEnum.TRANSFER_REQUIRED_FOR_HOLDER.getCode(),
                             HttpStatus.CONFLICT);
 
-            verify(petTutorRepository, never()).findByAnimalAnimalIdAndOwnerOwnerId(any(), any());
+            verify(petTutorRepository, never()).findByAnimalAnimalIdAndPersonPersonId(any(), any());
         }
 
         /**
@@ -507,7 +507,7 @@ class PetTutorServiceImplTest {
             var titularAtual = vinculoDe(ulysses(), PetTutorRole.HOLDER);
 
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, OWNER_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, OWNER_ID))
                     .thenReturn(Optional.of(titularAtual));
 
             var request = PetTutorRoleUpdateRequestDTO.builder().role(PetTutorRole.VIEWER).build();
@@ -534,7 +534,7 @@ class PetTutorServiceImplTest {
 
             autenticado(ulysses());
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(destino));
 
             petTutorService.removeTutor(ANIMAL_ID, MARIA_ID);
@@ -553,7 +553,7 @@ class PetTutorServiceImplTest {
 
             autenticado(maria());
             when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(meuVinculo));
 
             petTutorService.removeTutor(ANIMAL_ID, MARIA_ID);
@@ -569,7 +569,7 @@ class PetTutorServiceImplTest {
 
             autenticado(ulysses());
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(destino));
 
             petTutorService.removeTutor(ANIMAL_ID, MARIA_ID);
@@ -589,7 +589,7 @@ class PetTutorServiceImplTest {
 
             autenticado(ulysses());
             when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, OWNER_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, OWNER_ID))
                     .thenReturn(Optional.of(meuVinculo));
 
             assertThatThrownBy(() -> petTutorService.removeTutor(ANIMAL_ID, OWNER_ID))
@@ -605,7 +605,7 @@ class PetTutorServiceImplTest {
         void removerNaoTutor() {
             autenticado(ulysses());
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> petTutorService.removeTutor(ANIMAL_ID, MARIA_ID))
@@ -633,7 +633,7 @@ class PetTutorServiceImplTest {
 
             assertThat(result).hasSize(2);
             assertThat(result.get(0).isHolder()).isTrue();
-            assertThat(result.get(1).getOwnerEmail()).isEqualTo("maria@petfy.com.br");
+            assertThat(result.get(1).getPersonEmail()).isEqualTo("maria@petfy.com.br");
             assertThat(result.get(1).isHolder()).isFalse();
         }
 
@@ -730,7 +730,7 @@ class PetTutorServiceImplTest {
         void convidarExigeTitular() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
             autenticado(ulysses());
-            when(ownerRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
+            when(personRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
             when(petTutorInviteRepository.save(any(PetTutorInvite.class))).thenAnswer(i -> i.getArgument(0));
 
             petTutorService.invite(ANIMAL_ID, PetTutorInviteRequestDTO.builder()
@@ -769,7 +769,7 @@ class PetTutorServiceImplTest {
         @DisplayName("transferir titularidade exige titular")
         void transferirExigeTitular() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, OWNER_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, OWNER_ID))
                     .thenReturn(Optional.of(vinculoDe(ulysses(), PetTutorRole.HOLDER)));
 
             petTutorService.transferHolder(ANIMAL_ID, OWNER_ID);
@@ -782,7 +782,7 @@ class PetTutorServiceImplTest {
         @DisplayName("trocar papel exige titular")
         void trocarPapelExigeTitular() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(vinculoDe(maria(), PetTutorRole.VIEWER)));
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -848,20 +848,20 @@ class PetTutorServiceImplTest {
         }
 
         /**
-         * Os destinatarios vem da consulta, e nao de {@code Animal.getTutorOwners()}: a
+         * Os destinatarios vem da consulta, e nao de {@code Animal.getTutorPersons()}: a
          * colecao e lazy e acabou de ser mexida, entao ler dela daria uma lista que
          * pode nao refletir o vinculo que acabou de ser gravado.
          */
         @Test
         @DisplayName("aceitar convite avisa os tutores da consulta, nao a colecao do animal")
         void aceitarAvisaOsTutoresDaConsulta() {
-            var joao = Owner.builder().ownerId(UUID.fromString("55555555-5555-5555-5555-555555555555"))
+            var joao = Person.builder().personId(UUID.fromString("55555555-5555-5555-5555-555555555555"))
                     .name("Joao").email("joao@petfy.com.br").build();
 
             autenticado(maria());
             when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
                     .thenReturn(Optional.of(convite(PetTutorRole.EDITOR, "t")));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
             // a consulta traz os tres, incluindo o vinculo recem-criado
             when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
@@ -873,10 +873,10 @@ class PetTutorServiceImplTest {
 
             var destinatarios = ArgumentCaptor.forClass(List.class);
             verify(petTutorActivityNotifier).tutorEntrou(any(Animal.class), destinatarios.capture(),
-                    any(Owner.class), any(PetTutorRole.class));
+                    any(Person.class), any(PetTutorRole.class));
 
-            assertThat(destinatarios.getValue()).extracting("ownerId")
-                    .containsExactly(OWNER_ID, joao.getOwnerId(), MARIA_ID);
+            assertThat(destinatarios.getValue()).extracting("personId")
+                    .containsExactly(OWNER_ID, joao.getPersonId(), MARIA_ID);
         }
 
         /**
@@ -892,7 +892,7 @@ class PetTutorServiceImplTest {
             autenticado(maria());
             when(petTutorInviteRepository.findByTokenHash(tokens.hash("t")))
                     .thenReturn(Optional.of(convite(PetTutorRole.HOLDER, "t")));
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID)).thenReturn(false);
             when(petTutorRepository.findByAnimalAnimalIdAndRole(ANIMAL_ID, PetTutorRole.HOLDER))
                     .thenReturn(Optional.of(titularAtual));
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
@@ -902,13 +902,13 @@ class PetTutorServiceImplTest {
 
             petTutorService.accept("t");
 
-            var anterior = ArgumentCaptor.forClass(Owner.class);
-            var novo = ArgumentCaptor.forClass(Owner.class);
+            var anterior = ArgumentCaptor.forClass(Person.class);
+            var novo = ArgumentCaptor.forClass(Person.class);
             verify(petTutorActivityNotifier).titularidadeMudou(any(Animal.class), any(List.class),
-                    anterior.capture(), novo.capture(), any(Owner.class));
+                    anterior.capture(), novo.capture(), any(Person.class));
 
-            assertThat(anterior.getValue().getOwnerId()).isEqualTo(OWNER_ID);
-            assertThat(novo.getValue().getOwnerId()).isEqualTo(MARIA_ID);
+            assertThat(anterior.getValue().getPersonId()).isEqualTo(OWNER_ID);
+            assertThat(novo.getValue().getPersonId()).isEqualTo(MARIA_ID);
 
             verify(petTutorActivityNotifier, never())
                     .tutorEntrou(any(), any(), any(), any());
@@ -922,7 +922,7 @@ class PetTutorServiceImplTest {
 
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
             autenticado(ulysses());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(destino));
             when(petTutorRepository.findByAnimalAnimalIdAndRole(ANIMAL_ID, PetTutorRole.HOLDER))
                     .thenReturn(Optional.of(titularAtual));
@@ -932,11 +932,11 @@ class PetTutorServiceImplTest {
 
             petTutorService.transferHolder(ANIMAL_ID, MARIA_ID);
 
-            var quemAgiu = ArgumentCaptor.forClass(Owner.class);
+            var quemAgiu = ArgumentCaptor.forClass(Person.class);
             verify(petTutorActivityNotifier).titularidadeMudou(any(Animal.class), any(List.class),
-                    any(Owner.class), any(Owner.class), quemAgiu.capture());
+                    any(Person.class), any(Person.class), quemAgiu.capture());
 
-            assertThat(quemAgiu.getValue().getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(quemAgiu.getValue().getPersonId()).isEqualTo(OWNER_ID);
         }
 
         /** Transferir para quem ja e titular nao muda nada, entao nao avisa nada. */
@@ -945,7 +945,7 @@ class PetTutorServiceImplTest {
         void transferenciaNoOpNaoAvisa() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
             autenticado(ulysses());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, OWNER_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, OWNER_ID))
                     .thenReturn(Optional.of(vinculoDe(ulysses(), PetTutorRole.HOLDER)));
 
             petTutorService.transferHolder(ANIMAL_ID, OWNER_ID);
@@ -966,7 +966,7 @@ class PetTutorServiceImplTest {
 
             autenticado(ulysses());
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(destino));
             when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
                     .thenReturn(List.of(vinculoDe(ulysses(), PetTutorRole.HOLDER)));
@@ -978,7 +978,7 @@ class PetTutorServiceImplTest {
             ordem.verify(petTutorRepository).flush();
             ordem.verify(petTutorRepository).findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID);
             ordem.verify(petTutorActivityNotifier).tutorSaiu(any(Animal.class), any(List.class),
-                    any(Owner.class), any(Owner.class));
+                    any(Person.class), any(Person.class));
         }
 
         /** Convidar nao avisa: ninguem entrou no animal ainda. */
@@ -987,7 +987,7 @@ class PetTutorServiceImplTest {
         void convidarNaoAvisa() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
             autenticado(ulysses());
-            when(ownerRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
+            when(personRepository.findByEmail("maria@petfy.com.br")).thenReturn(Optional.empty());
             when(petTutorInviteRepository.save(any(PetTutorInvite.class))).thenAnswer(i -> i.getArgument(0));
 
             petTutorService.invite(ANIMAL_ID, PetTutorInviteRequestDTO.builder()
@@ -1001,7 +1001,7 @@ class PetTutorServiceImplTest {
         @DisplayName("trocar papel entre EDITOR e VIEWER nao avisa")
         void trocarPapelNaoAvisa() {
             when(animalAccessGuard.requireTitular(ANIMAL_ID)).thenReturn(animal());
-            when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, MARIA_ID))
+            when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, MARIA_ID))
                     .thenReturn(Optional.of(vinculoDe(maria(), PetTutorRole.VIEWER)));
             when(petTutorRepository.save(any(PetTutor.class))).thenAnswer(i -> i.getArgument(0));
 

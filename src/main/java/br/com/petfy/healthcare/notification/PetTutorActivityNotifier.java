@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.notification;
 
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +41,7 @@ public class PetTutorActivityNotifier {
      * Quem entrou nao recebe o aviso: acabou de aceitar o convite, entao contar-lhe
      * o que ele mesmo fez e ruido. Os outros e que precisam saber.
      */
-    public void tutorEntrou(Animal animal, List<Owner> tutores, Owner novoTutor, PetTutorRole papel) {
+    public void tutorEntrou(Animal animal, List<Person> tutores, Person novoTutor, PetTutorRole papel) {
         enviar(tutores, novoTutor, destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s passou a cuidar do %s com voce.",
@@ -60,8 +60,8 @@ public class PetTutorActivityNotifier {
      * quem cuida do animal, nao dos dois que fizeram a troca. Quem executou a acao
      * fica de fora, por ja saber.
      */
-    public void titularidadeMudou(Animal animal, List<Owner> tutores, Owner titularAnterior,
-                                  Owner novoTitular, Owner quemAgiu) {
+    public void titularidadeMudou(Animal animal, List<Person> tutores, Person titularAnterior,
+                                  Person novoTitular, Person quemAgiu) {
         enviar(tutores, quemAgiu, destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("A titularidade do %s passou de %s para %s.",
@@ -83,8 +83,8 @@ public class PetTutorActivityNotifier {
      * sem receber uma linha sobre isso e a pior versao deste evento - a pessoa
      * descobre tentando abrir a carteira.
      */
-    public void tutorSaiu(Animal animal, List<Owner> tutoresQueFicam, Owner queSaiu, Owner quemAgiu) {
-        boolean removidoPorOutro = !queSaiu.getOwnerId().equals(quemAgiu.getOwnerId());
+    public void tutorSaiu(Animal animal, List<Person> tutoresQueFicam, Person queSaiu, Person quemAgiu) {
+        boolean removidoPorOutro = !queSaiu.getPersonId().equals(quemAgiu.getPersonId());
 
         enviar(tutoresQueFicam, quemAgiu, destinatario -> {
             List<String> linhas = new ArrayList<>();
@@ -125,16 +125,16 @@ public class PetTutorActivityNotifier {
      * Enquanto o e-mail nao for confirmado, nada sai para aquele endereco: o nome do
      * animal e dos tutores nao vai para a caixa de um estranho.
      */
-    private void enviar(List<Owner> destinatarios, Owner excluir, Function<Owner, Notification> mensagem,
+    private void enviar(List<Person> destinatarios, Person excluir, Function<Person, Notification> mensagem,
                         String evento) {
-        for (Owner destinatario : destinatarios) {
-            if (excluir != null && destinatario.getOwnerId().equals(excluir.getOwnerId())) {
+        for (Person destinatario : destinatarios) {
+            if (excluir != null && destinatario.getPersonId().equals(excluir.getPersonId())) {
                 continue;
             }
 
             if (!destinatario.podeReceberNotificacao()) {
                 log.info("Tutor {} ainda nao confirmou o e-mail; aviso de {} suprimido",
-                        destinatario.getOwnerId(), evento);
+                        destinatario.getPersonId(), evento);
                 continue;
             }
 
@@ -142,18 +142,18 @@ public class PetTutorActivityNotifier {
                 dispatcher.dispatch(mensagem.apply(destinatario), evento);
             } catch (Exception e) {
                 log.error("Falha ao preparar o aviso de {} para o tutor {}",
-                        evento, destinatario.getOwnerId(), e);
+                        evento, destinatario.getPersonId(), e);
             }
         }
     }
 
-    private Notification montar(Owner owner, String assunto, List<String> linhas) {
+    private Notification montar(Person person, String assunto, List<String> linhas) {
         linhas.add("");
         linhas.add(ORIENTACAO);
 
         return Notification.builder()
-                .toEmail(owner.getEmail())
-                .toName(owner.getName())
+                .toEmail(person.getEmail())
+                .toName(person.getName())
                 .subject(assunto)
                 .lines(linhas)
                 .build();

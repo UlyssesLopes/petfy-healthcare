@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.security;
 
 import br.com.petfy.healthcare.PetTutores;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
@@ -51,7 +51,7 @@ class AnimalAccessGuardTest {
     private PetTutorRepository petTutorRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private CurrentPersonProvider currentPersonProvider;
 
     @InjectMocks
     private AnimalAccessGuard animalAccessGuard;
@@ -59,15 +59,15 @@ class AnimalAccessGuardTest {
     private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
-    private Owner autenticado() {
-        Owner owner = Owner.builder()
-                .ownerId(OWNER_ID)
+    private Person autenticado() {
+        Person person = Person.builder()
+                .personId(OWNER_ID)
                 .name("Ulysses")
                 .email("ulysses@petfy.com.br")
                 .build();
 
-        when(currentOwnerProvider.require()).thenReturn(owner);
-        return owner;
+        when(currentPersonProvider.require()).thenReturn(person);
+        return person;
     }
 
     private Animal animal() {
@@ -83,7 +83,7 @@ class AnimalAccessGuardTest {
         PetTutor vinculo = PetTutores.vinculo(autenticado(), role);
         vinculo.setAnimal(animal());
 
-        when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, OWNER_ID))
+        when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, OWNER_ID))
                 .thenReturn(Optional.of(vinculo));
 
         return vinculo;
@@ -92,7 +92,7 @@ class AnimalAccessGuardTest {
     /** A pessoa autenticada nao e tutora deste animal - exista ele ou nao. */
     private void semVinculo() {
         autenticado();
-        when(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, OWNER_ID))
+        when(petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, OWNER_ID))
                 .thenReturn(Optional.empty());
     }
 
@@ -277,7 +277,7 @@ class AnimalAccessGuardTest {
         void verdadeiroParaTutor() {
 
             autenticado();
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, OWNER_ID)).thenReturn(true);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, OWNER_ID)).thenReturn(true);
 
             assertThat(animalAccessGuard.alcanca(ANIMAL_ID)).isTrue();
         }
@@ -291,7 +291,7 @@ class AnimalAccessGuardTest {
         void falsoParaNaoTutor() {
 
             autenticado();
-            when(petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(ANIMAL_ID, OWNER_ID)).thenReturn(false);
+            when(petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(ANIMAL_ID, OWNER_ID)).thenReturn(false);
 
             assertThat(animalAccessGuard.alcanca(ANIMAL_ID)).isFalse();
         }
@@ -302,10 +302,10 @@ class AnimalAccessGuardTest {
     class SemAutenticacao {
 
         @Test
-        @DisplayName("propaga o 401 do CurrentOwnerProvider sem consultar vinculo")
+        @DisplayName("propaga o 401 do CurrentPersonProvider sem consultar vinculo")
         void propaga401() {
 
-            when(currentOwnerProvider.require()).thenThrow(new PetfyHealthcareException(
+            when(currentPersonProvider.require()).thenThrow(new PetfyHealthcareException(
                     ErrorMessageEnum.INVALID_CREDENTIALS.getMessage(),
                     ErrorMessageEnum.INVALID_CREDENTIALS.getCode(),
                     HttpStatus.UNAUTHORIZED));

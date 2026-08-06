@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -12,7 +12,7 @@ import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
@@ -58,7 +58,7 @@ class VaccineServiceImplTest {
     private VaccineCatalogRepository vaccineCatalogRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private CurrentPersonProvider currentPersonProvider;
 
     @Mock
     private AnimalAccessGuard animalAccessGuard;
@@ -74,7 +74,7 @@ class VaccineServiceImplTest {
         // entao mocka-los esvaziaria o teste. Construido aqui, e nao por
         // @InjectMocks, porque a factory depende de um mock que so existe agora
         vaccineService = new VaccineServiceImpl(vaccineRepository, clinicRepository,
-                currentOwnerProvider, animalAccessGuard, new VaccineStatusCalculator(),
+                currentPersonProvider, animalAccessGuard, new VaccineStatusCalculator(),
                 new VaccineFactory(vaccineCatalogRepository), vaccineCorrectionLog);
     }
 
@@ -95,13 +95,13 @@ class VaccineServiceImplTest {
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
-    private Owner owner(UUID id) {
-        return Owner.builder().ownerId(id).email("ulysses@petfy.com.br").build();
+    private Person person(UUID id) {
+        return Person.builder().personId(id).email("ulysses@petfy.com.br").build();
     }
 
     private Animal animal() {
         return Animal.builder().animalId(ANIMAL_ID).name("Rex").species(Species.CANINA)
-                .tutors(PetTutores.titular(owner(OWNER_ID))).build();
+                .tutors(PetTutores.titular(person(OWNER_ID))).build();
     }
 
     private Clinic clinic() {
@@ -121,8 +121,8 @@ class VaccineServiceImplTest {
                 .build();
     }
 
-    private void autenticadoComo(UUID ownerId) {
-        when(currentOwnerProvider.require()).thenReturn(owner(ownerId));
+    private void autenticadoComo(UUID personId) {
+        when(currentPersonProvider.require()).thenReturn(person(personId));
     }
 
     /** Se a pessoa autenticada chega ao animal da vacina - decisao do guard. */
@@ -253,7 +253,7 @@ class VaccineServiceImplTest {
         void deveRecusarQuandoEspecieNaoBate() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(
                     Animal.builder().animalId(ANIMAL_ID).name("Mia").species(Species.FELINA)
-                            .tutors(PetTutores.titular(owner(OWNER_ID))).build());
+                            .tutors(PetTutores.titular(person(OWNER_ID))).build());
             when(vaccineCatalogRepository.findById(CATALOG_ID)).thenReturn(Optional.of(catalogoV10()));  // CANINA
 
             assertThatThrownBy(() -> vaccineService.createVaccine(
@@ -365,9 +365,9 @@ class VaccineServiceImplTest {
 
             vaccineService.updateVaccine(VACCINE_ID, VaccineRequestDTO.builder().description("Reforco").build());
 
-            var captor = ArgumentCaptor.forClass(Owner.class);
-            verify(vaccineCorrectionLog).recordByOwner(same(existente), captor.capture());
-            assertThat(captor.getValue().getOwnerId()).isEqualTo(OWNER_ID);
+            var captor = ArgumentCaptor.forClass(Person.class);
+            verify(vaccineCorrectionLog).recordByPerson(same(existente), captor.capture());
+            assertThat(captor.getValue().getPersonId()).isEqualTo(OWNER_ID);
         }
 
         @Test
@@ -465,7 +465,7 @@ class VaccineServiceImplTest {
         void deveListarApenasDosAnimalsEmQueETutora() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(vaccineRepository.findByAnimalTutorsOwnerOwnerId(OWNER_ID, pageable))
+            when(vaccineRepository.findByAnimalTutorsPersonPersonId(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of(vacina())));
 
             assertThat(vaccineService.listAllVaccines(pageable).getContent()).hasSize(1);
@@ -534,7 +534,7 @@ class VaccineServiceImplTest {
             alcancaOAnimal(true);
             when(animalAccessGuard.requireEscrita(destinoId)).thenReturn(Animal.builder()
                     .animalId(destinoId).name("Bob").species(Species.CANINA)
-                    .tutors(PetTutores.titular(owner(OWNER_ID))).build());
+                    .tutors(PetTutores.titular(person(OWNER_ID))).build());
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
             vaccineService.updateVaccine(VACCINE_ID, VaccineRequestDTO.builder().animalId(destinoId).build());
@@ -551,7 +551,7 @@ class VaccineServiceImplTest {
         void listagemGeralNaoConsultaOGuard() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(vaccineRepository.findByAnimalTutorsOwnerOwnerId(OWNER_ID, pageable))
+            when(vaccineRepository.findByAnimalTutorsPersonPersonId(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of()));
 
             vaccineService.listAllVaccines(pageable);

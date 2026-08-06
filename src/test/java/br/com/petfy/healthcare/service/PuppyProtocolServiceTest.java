@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service;
 
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -52,7 +52,7 @@ class PuppyProtocolServiceTest {
                 .name("Rex")
                 .bornDate(LocalDate.now().minusDays(dias))
                 .species(species)
-                .tutors(br.com.petfy.healthcare.PetTutores.titular(Owner.builder().ownerId(UUID.randomUUID()).build()))
+                .tutors(br.com.petfy.healthcare.PetTutores.titular(Person.builder().personId(UUID.randomUUID()).build()))
                 .build();
     }
 
@@ -155,7 +155,7 @@ class PuppyProtocolServiceTest {
                     .animalId(ANIMAL_ID)
                     .name("Rex")
                     .species(Species.CANINA)
-                    .tutors(br.com.petfy.healthcare.PetTutores.titular(Owner.builder().ownerId(UUID.randomUUID()).build()))
+                    .tutors(br.com.petfy.healthcare.PetTutores.titular(Person.builder().personId(UUID.randomUUID()).build()))
                     .build();
 
             puppyProtocolService.gerarEsquemaInicialSePuppy(animal);

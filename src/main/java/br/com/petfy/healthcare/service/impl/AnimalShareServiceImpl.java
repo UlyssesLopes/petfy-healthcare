@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.AnimalShareRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalShareResponseDTO;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -128,7 +128,7 @@ public class AnimalShareServiceImpl implements AnimalShareService {
                 .animalBreed(animal.getBreed())
                 .animalBornDate(animal.getBornDate())
                 .animalGender(animal.getGender())
-                .ownerName(animal.getHolder().map(Owner::getName).orElse(null))
+                .personName(animal.getHolder().map(Person::getName).orElse(null))
                 .referenceDate(hoje)
                 .expiresAt(share.getExpiresAt())
                 .vaccines(vacinas)

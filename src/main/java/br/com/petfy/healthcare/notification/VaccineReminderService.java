@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.notification;
 
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
@@ -92,18 +92,18 @@ public class VaccineReminderService {
         // saber da vacina vencendo, e nao so quem cadastrou o animal. Por isso o
         // agrupamento **explode** cada dose pelos tutores do animal, em vez de
         // indexar por um dono unico que nao existe mais.
-        Map<Owner, List<Vaccine>> vacinasPorTutor = new LinkedHashMap<>();
+        Map<Person, List<Vaccine>> vacinasPorTutor = new LinkedHashMap<>();
         for (Vaccine v : vacinasPendentes) {
-            for (Owner tutor : v.getAnimal().getTutorOwners()) {
+            for (Person tutor : v.getAnimal().getTutorPersons()) {
                 if (tutor.podeReceberNotificacao()) {
                     vacinasPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(v);
                 }
             }
         }
 
-        Map<Owner, List<Antiparasitic>> antisPorTutor = new LinkedHashMap<>();
+        Map<Person, List<Antiparasitic>> antisPorTutor = new LinkedHashMap<>();
         for (Antiparasitic a : antisPendentes) {
-            for (Owner tutor : a.getAnimal().getTutorOwners()) {
+            for (Person tutor : a.getAnimal().getTutorPersons()) {
                 if (tutor.podeReceberNotificacao()) {
                     antisPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(a);
                 }
@@ -111,13 +111,13 @@ public class VaccineReminderService {
         }
 
         // uniao dos tutores que tem ao menos um item (vacina ou antiparasitario)
-        java.util.Set<Owner> tutores = new java.util.LinkedHashSet<>();
+        java.util.Set<Person> tutores = new java.util.LinkedHashSet<>();
         tutores.addAll(vacinasPorTutor.keySet());
         tutores.addAll(antisPorTutor.keySet());
 
         int notificados = 0;
 
-        for (Owner tutor : tutores) {
+        for (Person tutor : tutores) {
             notifier.send(montarLembrete(
                     tutor,
                     vacinasPorTutor.getOrDefault(tutor, List.of()),
@@ -153,10 +153,10 @@ public class VaccineReminderService {
      * na primeira varredura depois da confirmacao em vez de se perder.
      */
     private boolean temTutorNotificavel(Animal animal) {
-        return animal.getTutorOwners().stream().anyMatch(Owner::podeReceberNotificacao);
+        return animal.getTutorPersons().stream().anyMatch(Person::podeReceberNotificacao);
     }
 
-    private Notification montarLembrete(Owner owner, List<Vaccine> vacinas, List<Antiparasitic> antis, LocalDate hoje) {
+    private Notification montarLembrete(Person person, List<Vaccine> vacinas, List<Antiparasitic> antis, LocalDate hoje) {
         List<String> linhas = new ArrayList<>();
 
         vacinas.stream()
@@ -173,8 +173,8 @@ public class VaccineReminderService {
                 || antis.stream().anyMatch(a -> a.getNextDoseDate().isBefore(hoje));
 
         return Notification.builder()
-                .toEmail(owner.getEmail())
-                .toName(owner.getName())
+                .toEmail(person.getEmail())
+                .toName(person.getName())
                 .subject(temVencida ? "Aplicacao em atraso no Petfy" : "Aplicacao chegando no Petfy")
                 .lines(linhas)
                 .build();

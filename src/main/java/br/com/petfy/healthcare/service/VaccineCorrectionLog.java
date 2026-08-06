@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
 import br.com.petfy.healthcare.domain.entity.Vet;
@@ -36,8 +36,8 @@ public class VaccineCorrectionLog {
         vaccineCorrectionRepository.save(snapshot(antes).correctedByVet(vet).build());
     }
 
-    public void recordByOwner(Vaccine antes, Owner owner) {
-        vaccineCorrectionRepository.save(snapshot(antes).correctedByOwner(owner).build());
+    public void recordByPerson(Vaccine antes, Person person) {
+        vaccineCorrectionRepository.save(snapshot(antes).correctedByPerson(person).build());
     }
 
     /** Da correcao mais recente para a mais antiga. */
@@ -78,7 +78,7 @@ public class VaccineCorrectionLog {
     }
 
     private String nomeDoTutor(VaccineCorrection correction) {
-        return correction.getCorrectedByOwner() != null ? correction.getCorrectedByOwner().getName() : null;
+        return correction.getCorrectedByPerson() != null ? correction.getCorrectedByPerson().getName() : null;
     }
 
 }

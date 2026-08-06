@@ -6,7 +6,7 @@ import br.com.petfy.healthcare.domain.dto.VetPetDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -105,7 +105,7 @@ class VetPetServiceImplTest {
 
     private Animal animal() {
         return Animal.builder().animalId(ANIMAL_ID).name("Rex").type("Cachorro").weight(12.5)
-                .tutors(br.com.petfy.healthcare.PetTutores.titular(Owner.builder().ownerId(UUID.randomUUID()).name("Ulysses").email("ulysses@petfy.com.br").phone("11999999999").build()))
+                .tutors(br.com.petfy.healthcare.PetTutores.titular(Person.builder().personId(UUID.randomUUID()).name("Ulysses").email("ulysses@petfy.com.br").phone("11999999999").build()))
                 .build();
     }
 
@@ -140,7 +140,7 @@ class VetPetServiceImplTest {
             assertThat(result).singleElement().satisfies(p -> {
                 assertThat(p.getAnimalId()).isEqualTo(ANIMAL_ID);
                 assertThat(p.getName()).isEqualTo("Rex");
-                assertThat(p.getOwnerName()).isEqualTo("Ulysses");
+                assertThat(p.getPersonName()).isEqualTo("Ulysses");
                 assertThat(p.getAccessGrantedAt()).isNotNull();
             });
         }
@@ -150,8 +150,8 @@ class VetPetServiceImplTest {
         void naoDeveExporContatoDoTutor() {
             assertThat(VetPetDTO.class.getDeclaredFields())
                     .extracting(Field::getName)
-                    .contains("ownerName")
-                    .doesNotContain("ownerEmail", "ownerPhone", "ownerAddress", "ownerId");
+                    .contains("personName")
+                    .doesNotContain("personEmail", "personPhone", "personAddress", "personId");
         }
 
         @Test

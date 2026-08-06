@@ -1,13 +1,13 @@
 package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.ClinicResponseDTO;
-import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
+import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PetTutorResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.service.ClinicService;
-import br.com.petfy.healthcare.service.OwnerExportService;
-import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.PersonExportService;
+import br.com.petfy.healthcare.service.PersonService;
 import br.com.petfy.healthcare.service.AnimalService;
 import br.com.petfy.healthcare.service.PetTutorService;
 import br.com.petfy.healthcare.service.VaccineService;
@@ -82,52 +82,52 @@ class ControllerPathVariableTest {
     }
 
     @Nested
-    @DisplayName("OwnerController")
-    class OwnerControllerTest {
+    @DisplayName("PersonController")
+    class PersonControllerTest {
 
         @Mock
-        private OwnerService ownerService;
+        private PersonService personService;
 
         @Mock
-        private OwnerExportService ownerExportService;
+        private PersonExportService personExportService;
 
         private MockMvc mockMvc;
 
         private MockMvc mockMvc() {
             if (mockMvc == null) {
-                mockMvc = MockMvcBuilders.standaloneSetup(new OwnerController(ownerService, ownerExportService)).build();
+                mockMvc = MockMvcBuilders.standaloneSetup(new PersonController(personService, personExportService)).build();
             }
             return mockMvc;
         }
 
-        // owner nao tem rota por id: um usuario so acessa a si mesmo, entao o id
+        // person nao tem rota por id: um usuario so acessa a si mesmo, entao o id
         // vem do token. Sobra o /me, que nao tem path variable para errar.
 
         @Test
-        @DisplayName("GET /owners/me deve resolver o owner pelo token, sem id na rota")
+        @DisplayName("GET /persons/me deve resolver o person pelo token, sem id na rota")
         void getMeDeveResolverPeloToken() throws Exception {
-            when(ownerService.getCurrentOwner()).thenReturn(OwnerResponseDTO.builder().ownerId(ID).name("Ulysses").build());
+            when(personService.getCurrentPerson()).thenReturn(PersonResponseDTO.builder().personId(ID).name("Ulysses").build());
 
-            mockMvc().perform(get("/owners/me"))
+            mockMvc().perform(get("/persons/me"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.ownerId").value(ID.toString()));
+                    .andExpect(jsonPath("$.personId").value(ID.toString()));
 
-            verify(ownerService).getCurrentOwner();
+            verify(personService).getCurrentPerson();
         }
 
         @Test
-        @DisplayName("DELETE /owners/me deve responder 204")
+        @DisplayName("DELETE /persons/me deve responder 204")
         void deleteMeDeveResponder204() throws Exception {
-            mockMvc().perform(delete("/owners/me"))
+            mockMvc().perform(delete("/persons/me"))
                     .andExpect(status().isNoContent());
 
-            verify(ownerService).deleteCurrentOwner();
+            verify(personService).deleteCurrentPerson();
         }
 
         @Test
-        @DisplayName("nao deve existir rota de listagem de todos os owners")
-        void naoDeveExistirListagemDeOwners() throws Exception {
-            mockMvc().perform(get("/owners/all"))
+        @DisplayName("nao deve existir rota de listagem de todos os persons")
+        void naoDeveExistirListagemDePersons() throws Exception {
+            mockMvc().perform(get("/persons/all"))
                     .andExpect(status().isNotFound());
         }
     }
@@ -212,8 +212,8 @@ class ControllerPathVariableTest {
 
     /**
      * As rotas de tutor sao as unicas com <b>duas</b> path variables do mesmo tipo.
-     * Trocar animalId por ownerId compila e passa por revisao sem chamar atencao, e o
-     * efeito em producao seria mexer no tutor errado - ou tratar um ownerId como
+     * Trocar animalId por personId compila e passa por revisao sem chamar atencao, e o
+     * efeito em producao seria mexer no tutor errado - ou tratar um personId como
      * animal, que o guard recusaria com 404 e faria parecer bug de dado.
      *
      * Por isso os dois ids aqui sao valores diferentes: com o mesmo UUID nos dois,
@@ -243,19 +243,19 @@ class ControllerPathVariableTest {
         @DisplayName("GET /animals/{animalId}/tutors deve repassar o id da rota")
         void listarTutoresRepassaOId() throws Exception {
             when(petTutorService.listTutors(ANIMAL_ID)).thenReturn(java.util.List.of(
-                    PetTutorResponseDTO.builder().animalId(ANIMAL_ID).ownerId(OWNER_ID).holder(true).build()));
+                    PetTutorResponseDTO.builder().animalId(ANIMAL_ID).personId(OWNER_ID).holder(true).build()));
 
             mockMvc().perform(get("/animals/{animalId}/tutors", ANIMAL_ID))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$[0].ownerId").value(OWNER_ID.toString()));
+                    .andExpect(jsonPath("$[0].personId").value(OWNER_ID.toString()));
 
             verify(petTutorService).listTutors(ANIMAL_ID);
         }
 
         @Test
-        @DisplayName("DELETE /animals/{animalId}/tutors/{ownerId} nao pode trocar os dois ids")
+        @DisplayName("DELETE /animals/{animalId}/tutors/{personId} nao pode trocar os dois ids")
         void removerTutorNaoTrocaOsIds() throws Exception {
-            mockMvc().perform(delete("/animals/{animalId}/tutors/{ownerId}", ANIMAL_ID, OWNER_ID))
+            mockMvc().perform(delete("/animals/{animalId}/tutors/{personId}", ANIMAL_ID, OWNER_ID))
                     .andExpect(status().isNoContent());
 
             verify(petTutorService).removeTutor(ANIMAL_ID, OWNER_ID);
@@ -274,9 +274,9 @@ class ControllerPathVariableTest {
         @DisplayName("POST de transferencia nao pode trocar os dois ids")
         void transferirNaoTrocaOsIds() throws Exception {
             when(petTutorService.transferHolder(ANIMAL_ID, OWNER_ID)).thenReturn(
-                    PetTutorResponseDTO.builder().animalId(ANIMAL_ID).ownerId(OWNER_ID).holder(true).build());
+                    PetTutorResponseDTO.builder().animalId(ANIMAL_ID).personId(OWNER_ID).holder(true).build());
 
-            mockMvc().perform(post("/animals/{animalId}/tutors/{ownerId}/transfer-holder", ANIMAL_ID, OWNER_ID))
+            mockMvc().perform(post("/animals/{animalId}/tutors/{personId}/transfer-holder", ANIMAL_ID, OWNER_ID))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.holder").value(true));
 

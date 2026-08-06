@@ -12,15 +12,15 @@ import java.util.UUID;
 @Repository
 public interface PetTutorRepository extends JpaRepository<PetTutor, UUID> {
 
-    Optional<PetTutor> findByAnimalAnimalIdAndOwnerOwnerId(UUID animalId, UUID ownerId);
+    Optional<PetTutor> findByAnimalAnimalIdAndPersonPersonId(UUID animalId, UUID personId);
 
     List<PetTutor> findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(UUID animalId);
 
-    List<PetTutor> findByOwnerOwnerId(UUID ownerId);
+    List<PetTutor> findByPersonPersonId(UUID personId);
 
     Optional<PetTutor> findByAnimalAnimalIdAndRole(UUID animalId, PetTutorRole role);
 
-    boolean existsByAnimalAnimalIdAndOwnerOwnerId(UUID animalId, UUID ownerId);
+    boolean existsByAnimalAnimalIdAndPersonPersonId(UUID animalId, UUID personId);
 
     /**
      * Usado ao apagar a conta: um animal do qual esta pessoa e a unica tutora morre
@@ -28,7 +28,7 @@ public interface PetTutorRepository extends JpaRepository<PetTutor, UUID> {
      */
     long countByAnimalAnimalId(UUID animalId);
 
-    void deleteByOwnerOwnerId(UUID ownerId);
+    void deleteByPersonPersonId(UUID personId);
 
     /** Usado ao apagar o animal - ver {@code AnimalPurger}. */
     void deleteByAnimalAnimalIdIn(List<UUID> animalIds);

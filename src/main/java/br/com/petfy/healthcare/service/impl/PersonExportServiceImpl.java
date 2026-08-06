@@ -1,10 +1,10 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.dto.OwnerExportDTO;
+import br.com.petfy.healthcare.domain.dto.PersonExportDTO;
 import br.com.petfy.healthcare.domain.entity.*;
 import br.com.petfy.healthcare.domain.repository.*;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
-import br.com.petfy.healthcare.service.OwnerExportService;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
+import br.com.petfy.healthcare.service.PersonExportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class OwnerExportServiceImpl implements OwnerExportService {
+public class PersonExportServiceImpl implements PersonExportService {
 
     /**
      * Muda quando o formato do documento mudar de forma - campo removido ou renomeado,
@@ -34,7 +34,7 @@ public class OwnerExportServiceImpl implements OwnerExportService {
      */
     private static final int MAX_ACESSOS_POR_PET = 500;
 
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
     private final ConsentRecordRepository consentRecordRepository;
     private final PetTutorRepository petTutorRepository;
     private final VaccineRepository vaccineRepository;
@@ -63,28 +63,28 @@ public class OwnerExportServiceImpl implements OwnerExportService {
      */
     @Override
     @Transactional(readOnly = true)
-    public OwnerExportDTO exportarDoAutenticado() {
-        Owner owner = currentOwnerProvider.require();
+    public PersonExportDTO exportarDoAutenticado() {
+        Person person = currentPersonProvider.require();
 
-        List<PetTutor> vinculos = petTutorRepository.findByOwnerOwnerId(owner.getOwnerId());
+        List<PetTutor> vinculos = petTutorRepository.findByPersonPersonId(person.getPersonId());
 
-        return OwnerExportDTO.builder()
+        return PersonExportDTO.builder()
                 .generatedAt(LocalDateTime.now())
                 .formatVersion(FORMATO)
-                .tutor(OwnerExportDTO.TutorDTO.builder()
-                        .ownerId(owner.getOwnerId())
-                        .name(owner.getName())
-                        .email(owner.getEmail())
-                        .phone(owner.getPhone())
-                        .address(owner.getAddress())
-                        .emailVerifiedAt(owner.getEmailVerifiedAt())
-                        .creationDate(owner.getCreationDate())
-                        .updateDate(owner.getUpdateDate())
+                .tutor(PersonExportDTO.TutorDTO.builder()
+                        .personId(person.getPersonId())
+                        .name(person.getName())
+                        .email(person.getEmail())
+                        .phone(person.getPhone())
+                        .address(person.getAddress())
+                        .emailVerifiedAt(person.getEmailVerifiedAt())
+                        .creationDate(person.getCreationDate())
+                        .updateDate(person.getUpdateDate())
                         .build())
                 .consentimentos(consentRecordRepository
-                        .findByOwnerOwnerIdOrderByAcceptedAtDesc(owner.getOwnerId())
+                        .findByPersonPersonIdOrderByAcceptedAtDesc(person.getPersonId())
                         .stream()
-                        .map(c -> OwnerExportDTO.ConsentimentoDTO.builder()
+                        .map(c -> PersonExportDTO.ConsentimentoDTO.builder()
                                 .document(c.getDocument())
                                 .documentVersion(c.getDocumentVersion())
                                 .acceptedAt(c.getAcceptedAt())
@@ -95,11 +95,11 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .build();
     }
 
-    private OwnerExportDTO.AnimalExportDTO exportarAnimal(PetTutor meuVinculo) {
+    private PersonExportDTO.AnimalExportDTO exportarAnimal(PetTutor meuVinculo) {
         Animal animal = meuVinculo.getAnimal();
         UUID animalId = animal.getAnimalId();
 
-        return OwnerExportDTO.AnimalExportDTO.builder()
+        return PersonExportDTO.AnimalExportDTO.builder()
                 .animalId(animalId)
                 .name(animal.getName())
                 .type(animal.getType())
@@ -136,12 +136,12 @@ public class OwnerExportServiceImpl implements OwnerExportService {
      * endereco de contato da outra pessoa nao. O proprio vinculo sai da lista - ele ja
      * esta em {@code meuPapel}, e reanimalir daria a impressao de haver um tutor a mais.
      */
-    private List<OwnerExportDTO.CoTutorDTO> coTutores(UUID animalId, PetTutor meuVinculo) {
+    private List<PersonExportDTO.CoTutorDTO> coTutores(UUID animalId, PetTutor meuVinculo) {
         return petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(animalId)
                 .stream()
                 .filter(t -> !t.getPetTutorId().equals(meuVinculo.getPetTutorId()))
-                .map(t -> OwnerExportDTO.CoTutorDTO.builder()
-                        .name(t.getOwner().getName())
+                .map(t -> PersonExportDTO.CoTutorDTO.builder()
+                        .name(t.getPerson().getName())
                         .role(t.getRole())
                         .desde(t.getCreationDate())
                         .build())
@@ -155,10 +155,10 @@ public class OwnerExportServiceImpl implements OwnerExportService {
      * historico: quem importa o prontuario deste animal tem de saber a que ele e alergico
      * antes de ler o que ja aconteceu com ele.
      */
-    private List<OwnerExportDTO.CondicaoDTO> condicoes(UUID animalId) {
+    private List<PersonExportDTO.CondicaoDTO> condicoes(UUID animalId) {
         return animalHealthConditionRepository.findByAnimalOrdenadasPorRelevancia(animalId)
                 .stream()
-                .map(c -> OwnerExportDTO.CondicaoDTO.builder()
+                .map(c -> PersonExportDTO.CondicaoDTO.builder()
                         .kind(c.getKind())
                         .description(c.getDescription())
                         .severity(c.getSeverity())
@@ -170,10 +170,10 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.VacinaDTO> vacinas(UUID animalId) {
+    private List<PersonExportDTO.VacinaDTO> vacinas(UUID animalId) {
         return vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId)
                 .stream()
-                .map(v -> OwnerExportDTO.VacinaDTO.builder()
+                .map(v -> PersonExportDTO.VacinaDTO.builder()
                         .vaccineId(v.getVaccineId())
                         .vaccineName(v.getVaccineName())
                         .applicationDate(v.getApplicationDate())
@@ -193,21 +193,21 @@ public class OwnerExportServiceImpl implements OwnerExportService {
      * alterado, por quem e quando. Um prontuario portado sem isso conta a versao final
      * como se sempre tivesse sido aquela.
      */
-    private List<OwnerExportDTO.CorrecaoDTO> correcoesDeVacina(UUID vaccineId) {
+    private List<PersonExportDTO.CorrecaoDTO> correcoesDeVacina(UUID vaccineId) {
         return vaccineCorrectionRepository.findByVaccineVaccineIdOrderByCorrectedAtDesc(vaccineId)
                 .stream()
-                .map(c -> OwnerExportDTO.CorrecaoDTO.builder()
-                        .corrigidoPor(quemCorrigiu(c.getCorrectedByOwner(), c.getCorrectedByVet()))
+                .map(c -> PersonExportDTO.CorrecaoDTO.builder()
+                        .corrigidoPor(quemCorrigiu(c.getCorrectedByPerson(), c.getCorrectedByVet()))
                         .valorAnterior(c.getPreviousVaccineName())
                         .corrigidoEm(c.getCorrectedAt())
                         .build())
                 .toList();
     }
 
-    private List<OwnerExportDTO.AtendimentoDTO> atendimentos(UUID animalId) {
+    private List<PersonExportDTO.AtendimentoDTO> atendimentos(UUID animalId) {
         return healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(animalId)
                 .stream()
-                .map(r -> OwnerExportDTO.AtendimentoDTO.builder()
+                .map(r -> PersonExportDTO.AtendimentoDTO.builder()
                         .healthRecordId(r.getHealthRecordId())
                         .category(r.getCategory())
                         .eventType(r.getEventType())
@@ -221,12 +221,12 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.CorrecaoDTO> correcoesDeAtendimento(UUID healthRecordId) {
+    private List<PersonExportDTO.CorrecaoDTO> correcoesDeAtendimento(UUID healthRecordId) {
         return healthRecordCorrectionRepository
                 .findByHealthRecordHealthRecordIdOrderByCorrectedAtDesc(healthRecordId)
                 .stream()
-                .map(c -> OwnerExportDTO.CorrecaoDTO.builder()
-                        .corrigidoPor(quemCorrigiu(c.getCorrectedByOwner(), c.getCorrectedByVet()))
+                .map(c -> PersonExportDTO.CorrecaoDTO.builder()
+                        .corrigidoPor(quemCorrigiu(c.getCorrectedByPerson(), c.getCorrectedByVet()))
                         .valorAnterior(c.getPreviousEventType())
                         .corrigidoEm(c.getCorrectedAt())
                         .build())
@@ -234,7 +234,7 @@ public class OwnerExportServiceImpl implements OwnerExportService {
     }
 
     /** Nome de quem corrigiu, seja tutor ou veterinario. Nulo se a conta ja saiu. */
-    private String quemCorrigiu(Owner porTutor, Vet porVet) {
+    private String quemCorrigiu(Person porTutor, Vet porVet) {
         if (porTutor != null) {
             return porTutor.getName();
         }
@@ -242,10 +242,10 @@ public class OwnerExportServiceImpl implements OwnerExportService {
         return porVet != null ? porVet.getName() : null;
     }
 
-    private List<OwnerExportDTO.AntiparasiticoDTO> antiparasitarios(UUID animalId) {
+    private List<PersonExportDTO.AntiparasiticoDTO> antiparasitarios(UUID animalId) {
         return antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId)
                 .stream()
-                .map(a -> OwnerExportDTO.AntiparasiticoDTO.builder()
+                .map(a -> PersonExportDTO.AntiparasiticoDTO.builder()
                         .antiparasiticId(a.getAntiparasiticId())
                         .name(a.getName())
                         .kind(a.getKind())
@@ -256,10 +256,10 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.PesagemDTO> pesagens(UUID animalId) {
+    private List<PersonExportDTO.PesagemDTO> pesagens(UUID animalId) {
         return animalWeightHistoryRepository.findByAnimalAnimalIdOrderByMeasuredAtDesc(animalId)
                 .stream()
-                .map(p -> OwnerExportDTO.PesagemDTO.builder()
+                .map(p -> PersonExportDTO.PesagemDTO.builder()
                         .weight(p.getWeight())
                         .measuredAt(p.getMeasuredAt())
                         .note(p.getNote())
@@ -275,10 +275,10 @@ public class OwnerExportServiceImpl implements OwnerExportService {
      * limitacao esta declarada no documento - o que nao pode acontecer e o titular
      * concluir que levou os arquivos quando levou a lista deles.
      */
-    private List<OwnerExportDTO.AnexoDTO> anexos(UUID animalId) {
+    private List<PersonExportDTO.AnexoDTO> anexos(UUID animalId) {
         return attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(animalId)
                 .stream()
-                .map(a -> OwnerExportDTO.AnexoDTO.builder()
+                .map(a -> PersonExportDTO.AnexoDTO.builder()
                         .attachmentId(a.getAttachmentId())
                         .originalFilename(a.getOriginalFilename())
                         .contentType(a.getContentType())
@@ -291,12 +291,12 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.LinkCompartilhadoDTO> links(Animal animal) {
+    private List<PersonExportDTO.LinkCompartilhadoDTO> links(Animal animal) {
         LocalDateTime agora = LocalDateTime.now();
 
         return animalShareRepository.findByAnimalOrderByCreationDateDesc(animal)
                 .stream()
-                .map(s -> OwnerExportDTO.LinkCompartilhadoDTO.builder()
+                .map(s -> PersonExportDTO.LinkCompartilhadoDTO.builder()
                         .animalShareId(s.getAnimalShareId())
                         .expiresAt(s.getExpiresAt())
                         .revokedAt(s.getRevokedAt())
@@ -306,10 +306,10 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.AcessoDeClinicaDTO> acessosDeClinica(UUID animalId) {
+    private List<PersonExportDTO.AcessoDeClinicaDTO> acessosDeClinica(UUID animalId) {
         return petClinicAccessRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animalId)
                 .stream()
-                .map(a -> OwnerExportDTO.AcessoDeClinicaDTO.builder()
+                .map(a -> PersonExportDTO.AcessoDeClinicaDTO.builder()
                         .clinicName(a.getClinic().getName())
                         .grantedAt(a.getGrantedAt())
                         .revokedAt(a.getRevokedAt())
@@ -318,12 +318,12 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.AcessoRegistradoDTO> acessosDeTerceiros(UUID animalId) {
+    private List<PersonExportDTO.AcessoRegistradoDTO> acessosDeTerceiros(UUID animalId) {
         return sensitiveAccessLogRepository
                 .findByAnimalAnimalIdOrderByAccessedAtDesc(animalId, PageRequest.of(0, MAX_ACESSOS_POR_PET))
                 .getContent()
                 .stream()
-                .map(l -> OwnerExportDTO.AcessoRegistradoDTO.builder()
+                .map(l -> PersonExportDTO.AcessoRegistradoDTO.builder()
                         .actorType(l.getActorType())
                         .actorName(l.getActorName())
                         .clinicName(l.getClinicName())

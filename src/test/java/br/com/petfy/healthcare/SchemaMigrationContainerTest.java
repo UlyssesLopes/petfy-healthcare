@@ -76,7 +76,7 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 String.class);
 
         assertThat(tabelas).contains(
-                "owners", "clinics", "animals", "vaccines", "health_records",
+                "persons", "clinics", "animals", "vaccines", "health_records",
                 "vaccine_catalog", "animal_shares", "vets", "pet_clinic_access",
                 "clinic_invites", "vaccine_corrections",
                 "pet_tutors", "pet_tutor_invites", "consent_records", "sensitive_access_log",
@@ -120,14 +120,14 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 "fk_vets_clinic", "fk_pet_clinic_access_pet", "fk_clinic_invites_clinic",
                 "fk_vaccine_corrections_vaccine",
                 "fk_pet_tutors_pet", "fk_pet_tutors_owner", "fk_pet_tutor_invites_pet",
-                "fk_consent_records_owner", "fk_sensitive_access_log_animal");
+                "fk_consent_records_person", "fk_sensitive_access_log_animal");
     }
 
     /**
      * O que a V15 promete, conferido contra o banco e nao contra o mapeamento.
      *
      * A parte perigosa dessa migration nao e criar tabela: e trocar a fonte de
-     * verdade sobre quem manda no animal. Se {@code animals.owner_id} sobrevivesse, ou
+     * verdade sobre quem manda no animal. Se {@code animals.person_id} sobrevivesse, ou
      * se o banco aceitasse dois titulares, a regra de acesso passaria a ter duas
      * respostas possiveis para a mesma pergunta.
      */
@@ -141,14 +141,14 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
          * enxergando animal que nao e seu.
          */
         @Test
-        @DisplayName("animals.owner_id nao pode mais existir")
-        void ownerIdDeveTerSaidoDeAnimals() {
+        @DisplayName("animals.person_id nao pode mais existir")
+        void personIdDeveTerSaidoDeAnimals() {
             List<String> colunas = jdbcTemplate.queryForList(
                     "select column_name from information_schema.columns "
                             + "where table_schema = 'public' and table_name = 'animals'",
                     String.class);
 
-            assertThat(colunas).isNotEmpty().doesNotContain("owner_id");
+            assertThat(colunas).isNotEmpty().doesNotContain("person_id");
         }
 
         /**
@@ -207,8 +207,8 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("o banco recusa um segundo titular no mesmo animal")
         void bancoRecusaSegundoTitular() {
-            UUID donoA = inserirOwner("titular-a");
-            UUID donoB = inserirOwner("titular-b");
+            UUID donoA = inserirPerson("titular-a");
+            UUID donoB = inserirPerson("titular-b");
             UUID animalId = inserirAnimal();
 
             inserirTutor(animalId, donoA, "HOLDER");
@@ -228,7 +228,7 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("o banco recusa a mesma pessoa duas vezes no mesmo animal")
         void bancoRecusaTutorDuplicado() {
-            UUID dono = inserirOwner("tutor-reanimalido");
+            UUID dono = inserirPerson("tutor-reanimalido");
             UUID animalId = inserirAnimal();
 
             inserirTutor(animalId, dono, "HOLDER");
@@ -239,10 +239,10 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
             limpar(animalId);
         }
 
-        private UUID inserirOwner(String prefixo) {
+        private UUID inserirPerson(String prefixo) {
             UUID id = UUID.randomUUID();
             jdbcTemplate.update(
-                    "insert into owners (owner_id, name, email, password) values (?, ?, ?, ?)",
+                    "insert into persons (person_id, name, email, password) values (?, ?, ?, ?)",
                     id, "Teste", prefixo + "-" + id + "@petfy.com.br", "hash");
             return id;
         }
@@ -255,11 +255,11 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
             return id;
         }
 
-        private void inserirTutor(UUID animalId, UUID ownerId, String role) {
+        private void inserirTutor(UUID animalId, UUID personId, String role) {
             jdbcTemplate.update(
                     "insert into pet_tutors (pet_tutor_id, pet_id, owner_id, role, creation_date) "
                             + "values (?, ?, ?, ?, ?)",
-                    UUID.randomUUID(), animalId, ownerId, role, Timestamp.valueOf(LocalDateTime.now()));
+                    UUID.randomUUID(), animalId, personId, role, Timestamp.valueOf(LocalDateTime.now()));
         }
 
         private Integer contarTutores(UUID animalId) {

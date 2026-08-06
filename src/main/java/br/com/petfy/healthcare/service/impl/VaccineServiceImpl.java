@@ -14,7 +14,7 @@ import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
@@ -46,7 +46,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     private final ClinicRepository clinicRepository;
 
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
     private final AnimalAccessGuard animalAccessGuard;
 
     private final VaccineStatusCalculator vaccineStatusCalculator;
@@ -74,7 +74,7 @@ public class VaccineServiceImpl implements VaccineService {
         // o snapshot sai antes dos setters. O tutor nao tem janela de correcao -
         // a carteira e dele - mas deixa rastro igual: se so o veterinario
         // registrasse, o historico contaria meia verdade
-        vaccineCorrectionLog.recordByOwner(existing, currentOwnerProvider.require());
+        vaccineCorrectionLog.recordByPerson(existing, currentPersonProvider.require());
 
         if (request.getVaccineName() != null) existing.setVaccineName(request.getVaccineName());
         if (request.getApplicationDate() != null) existing.setApplicationDate(request.getApplicationDate());
@@ -117,7 +117,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public Page<VaccineResponseDTO> listAllVaccines(Pageable pageable) {
-        return vaccineRepository.findByAnimalTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
+        return vaccineRepository.findByAnimalTutorsPersonPersonId(currentPersonProvider.require().getPersonId(), pageable)
                 .map(this::toResponse);
     }
 
@@ -127,7 +127,7 @@ public class VaccineServiceImpl implements VaccineService {
 
         // filtra em memoria de proposito: a agenda cobre as vacinas de um tutor,
         // que sao poucas, e assim a classificacao inteira fica testavel sem banco
-        List<Vaccine> doTutor = vaccineRepository.findByAnimalTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId());
+        List<Vaccine> doTutor = vaccineRepository.findByAnimalTutorsPersonPersonId(currentPersonProvider.require().getPersonId());
 
         Map<VaccineStatus, List<VaccineAgendaItemDTO>> porStatus = doTutor.stream()
                 .map(vaccine -> toAgendaItem(vaccine, hoje, windowDays))

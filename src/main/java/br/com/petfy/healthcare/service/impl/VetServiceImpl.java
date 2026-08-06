@@ -6,7 +6,7 @@ import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.ClinicInvite;
 import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
@@ -29,7 +29,7 @@ public class VetServiceImpl implements VetService {
 
     private final VetRepository vetRepository;
     private final ClinicRepository clinicRepository;
-    private final OwnerRepository ownerRepository;
+    private final PersonRepository personRepository;
     private final ClinicService clinicService;
     private final ClinicInviteService clinicInviteService;
     private final PasswordEncoder passwordEncoder;
@@ -88,12 +88,12 @@ public class VetServiceImpl implements VetService {
     }
 
     /**
-     * Owner e vet vivem em tabelas separadas, entao a unicidade de email entre
+     * Person e vet vivem em tabelas separadas, entao a unicidade de email entre
      * as duas nao e garantida pelo banco. Sem esta checagem, o mesmo email nos
      * dois lados tornaria o login ambiguo.
      */
     private void garantirEmailLivre(String email) {
-        boolean jaUsado = vetRepository.existsByEmail(email) || ownerRepository.findByEmail(email).isPresent();
+        boolean jaUsado = vetRepository.existsByEmail(email) || personRepository.findByEmail(email).isPresent();
 
         if (jaUsado) {
             throw new PetfyHealthcareException(

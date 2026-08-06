@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
 import br.com.petfy.healthcare.domain.entity.Vet;
@@ -52,8 +52,8 @@ class VaccineCorrectionLogTest {
                 .build();
     }
 
-    private Owner owner() {
-        return Owner.builder().ownerId(UUID.randomUUID()).name("Ulysses").build();
+    private Person person() {
+        return Person.builder().personId(UUID.randomUUID()).name("Ulysses").build();
     }
 
     @Nested
@@ -81,11 +81,11 @@ class VaccineCorrectionLogTest {
             vaccineCorrectionLog.recordByVet(vacina(), vet());
             var porVet = capturar();
             assertThat(porVet.getCorrectedByVet()).isNotNull();
-            assertThat(porVet.getCorrectedByOwner()).isNull();
+            assertThat(porVet.getCorrectedByPerson()).isNull();
 
-            vaccineCorrectionLog.recordByOwner(vacina(), owner());
+            vaccineCorrectionLog.recordByPerson(vacina(), person());
             var porTutor = capturar();
-            assertThat(porTutor.getCorrectedByOwner()).isNotNull();
+            assertThat(porTutor.getCorrectedByPerson()).isNotNull();
             assertThat(porTutor.getCorrectedByVet()).isNull();
         }
 
@@ -100,12 +100,12 @@ class VaccineCorrectionLogTest {
     @DisplayName("leitura")
     class Leitura {
 
-        private VaccineCorrection correcao(Vet vet, Owner owner) {
+        private VaccineCorrection correcao(Vet vet, Person person) {
             return VaccineCorrection.builder()
                     .vaccineCorrectionId(UUID.randomUUID())
                     .vaccine(vacina())
                     .correctedByVet(vet)
-                    .correctedByOwner(owner)
+                    .correctedByPerson(person)
                     .previousVaccineName("V8")
                     .previousApplicationDate(LocalDate.of(2026, 7, 1))
                     .previousDescription("texto antigo")
@@ -130,7 +130,7 @@ class VaccineCorrectionLogTest {
         @DisplayName("deve identificar correcao feita pelo tutor, sem clinica")
         void deveIdentificarCorrecaoDoTutor() {
             when(vaccineCorrectionRepository.findByVaccineVaccineIdOrderByCorrectedAtDesc(VACCINE_ID))
-                    .thenReturn(List.of(correcao(null, owner())));
+                    .thenReturn(List.of(correcao(null, person())));
 
             assertThat(vaccineCorrectionLog.list(VACCINE_ID)).singleElement().satisfies(c -> {
                 assertThat(c.getCorrectedByRole()).isEqualTo("OWNER");

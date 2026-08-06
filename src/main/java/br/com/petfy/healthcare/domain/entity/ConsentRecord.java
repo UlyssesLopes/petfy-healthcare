@@ -33,8 +33,8 @@ public class ConsentRecord {
     private UUID consentRecordId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private Owner owner;
+    @JoinColumn(name = "person_id", nullable = false)
+    private Person person;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)

@@ -6,7 +6,7 @@ import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
 import br.com.petfy.healthcare.domain.entity.ConsentDocument;
 import br.com.petfy.healthcare.domain.entity.ConsentRecord;
 import br.com.petfy.healthcare.domain.entity.EmailVerificationToken;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
@@ -14,7 +14,7 @@ import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.PasswordResetToken;
-import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.PersonService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,9 +37,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Exclusao de conta contra Postgres de verdade.
  *
  * Existe porque este bug passou por teste unitario sem ser notado: com
- * repositorio mockado, apagar o owner "funciona" - quem recusa e a chave
+ * repositorio mockado, apagar o person "funciona" - quem recusa e a chave
  * estrangeira, que so existe no banco. As tabelas de token de recuperacao e de
- * confirmacao apontam para owners, e como todo cadastro gera um token de
+ * confirmacao apontam para persons, e como todo cadastro gera um token de
  * confirmacao, a partir da V12 nenhuma conta conseguia mais ser apagada.
  *
  * O H2 tambem nao serviria aqui: as consultas por UUID que sustentam a limpeza
@@ -47,17 +47,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @DisplayName("exclusao de conta contra Postgres real")
-class OwnerDeletionContainerTest extends PostgresContainerTest {
+class PersonDeletionContainerTest extends PostgresContainerTest {
 
-    @Autowired private OwnerRepository ownerRepository;
+    @Autowired private PersonRepository personRepository;
     @Autowired private PasswordResetTokenRepository passwordResetTokenRepository;
     @Autowired private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
-    private Owner owner;
+    private Person person;
 
     @BeforeEach
     void setUp() {
-        owner = ownerRepository.save(Owner.builder()
+        person = personRepository.save(Person.builder()
                 .name("Ulysses")
                 .email("exclusao-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash")
@@ -66,7 +66,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
 
     private void comTokenDeConfirmacao() {
         emailVerificationTokenRepository.save(EmailVerificationToken.builder()
-                .owner(owner)
+                .person(person)
                 .tokenHash("hash-confirmacao-" + UUID.randomUUID())
                 .expiresAt(LocalDateTime.now().plusHours(24))
                 .creationDate(LocalDateTime.now())
@@ -75,7 +75,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
 
     private void comTokenDeRecuperacao() {
         passwordResetTokenRepository.save(PasswordResetToken.builder()
-                .owner(owner)
+                .person(person)
                 .tokenHash("hash-recuperacao-" + UUID.randomUUID())
                 .expiresAt(LocalDateTime.now().plusMinutes(30))
                 .creationDate(LocalDateTime.now())
@@ -92,11 +92,11 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
     void deveApagarContaComTokenDeConfirmacao() {
         comTokenDeConfirmacao();
 
-        emailVerificationTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
-        ownerRepository.delete(owner);
-        ownerRepository.flush();
+        emailVerificationTokenRepository.deleteByPersonPersonId(person.getPersonId());
+        personRepository.delete(person);
+        personRepository.flush();
 
-        assertThat(ownerRepository.findById(owner.getOwnerId())).isEmpty();
+        assertThat(personRepository.findById(person.getPersonId())).isEmpty();
     }
 
     @Test
@@ -105,11 +105,11 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
     void deveApagarContaComTokenDeRecuperacao() {
         comTokenDeRecuperacao();
 
-        passwordResetTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
-        ownerRepository.delete(owner);
-        ownerRepository.flush();
+        passwordResetTokenRepository.deleteByPersonPersonId(person.getPersonId());
+        personRepository.delete(person);
+        personRepository.flush();
 
-        assertThat(ownerRepository.findById(owner.getOwnerId())).isEmpty();
+        assertThat(personRepository.findById(person.getPersonId())).isEmpty();
     }
 
     @Test
@@ -119,12 +119,12 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
         comTokenDeConfirmacao();
         comTokenDeRecuperacao();
 
-        passwordResetTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
-        emailVerificationTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
-        ownerRepository.delete(owner);
-        ownerRepository.flush();
+        passwordResetTokenRepository.deleteByPersonPersonId(person.getPersonId());
+        emailVerificationTokenRepository.deleteByPersonPersonId(person.getPersonId());
+        personRepository.delete(person);
+        personRepository.flush();
 
-        assertThat(ownerRepository.findById(owner.getOwnerId())).isEmpty();
+        assertThat(personRepository.findById(person.getPersonId())).isEmpty();
     }
 
     /**
@@ -137,22 +137,22 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
     void limpezaDeveAtingirApenasOProprioDono() {
         comTokenDeConfirmacao();
 
-        Owner outro = ownerRepository.save(Owner.builder()
+        Person outro = personRepository.save(Person.builder()
                 .name("Maria")
                 .email("outra-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash")
                 .build());
 
         emailVerificationTokenRepository.save(EmailVerificationToken.builder()
-                .owner(outro)
+                .person(outro)
                 .tokenHash("hash-da-outra-" + UUID.randomUUID())
                 .expiresAt(LocalDateTime.now().plusHours(24))
                 .creationDate(LocalDateTime.now())
                 .build());
 
-        emailVerificationTokenRepository.deleteByOwnerOwnerId(owner.getOwnerId());
+        emailVerificationTokenRepository.deleteByPersonPersonId(person.getPersonId());
 
-        assertThat(emailVerificationTokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(outro.getOwnerId()))
+        assertThat(emailVerificationTokenRepository.findByPersonPersonIdAndUsedAtIsNull(outro.getPersonId()))
                 .hasSize(1);
     }
 
@@ -160,7 +160,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
      * O ramo multi-tutor da exclusao, exercitando o servico de verdade.
      *
      * Os casos acima replicam as chamadas de repositorio; estes chamam
-     * {@code deleteCurrentOwner()}, porque o que esta em jogo aqui e a <b>ordem</b>
+     * {@code deleteCurrentPerson()}, porque o que esta em jogo aqui e a <b>ordem</b>
      * em que ele emite os comandos. A V15 exige exatamente um HOLDER por animal via
      * indice unico parcial, e a heranca de titularidade promove o sucessor antes de
      * o vinculo de quem sai ter saido - dois HOLDER no mesmo animal. Se o Postgres
@@ -171,7 +171,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
     @DisplayName("exclusao com animal compartilhado")
     class AnimalCompartilhado {
 
-        @Autowired private OwnerService ownerService;
+        @Autowired private PersonService personService;
         @Autowired private AnimalRepository animalRepository;
         @Autowired private PetTutorRepository petTutorRepository;
         @Autowired private VaccineRepository vaccineRepository;
@@ -179,12 +179,12 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
         @Autowired private AntiparasiticRepository antiparasiticRepository;
         @Autowired private ConsentRecordRepository consentRecordRepository;
 
-        private Owner maria;
+        private Person maria;
         private Animal rex;
 
         @BeforeEach
         void compartilhaRexComMaria() {
-            maria = ownerRepository.save(Owner.builder()
+            maria = personRepository.save(Person.builder()
                     .name("Maria")
                     .email("maria-" + UUID.randomUUID() + "@petfy.com.br")
                     .password("hash")
@@ -193,17 +193,17 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
             rex = animalRepository.save(Animal.builder().name("Rex").species(Species.CANINA)
                     .creationDate(LocalDateTime.now()).build());
 
-            // owner e o titular; maria entrou depois como co-tutora
-            vinculo(owner, PetTutorRole.HOLDER, LocalDateTime.now().minusDays(10));
+            // person e o titular; maria entrou depois como co-tutora
+            vinculo(person, PetTutorRole.HOLDER, LocalDateTime.now().minusDays(10));
             vinculo(maria, PetTutorRole.EDITOR, LocalDateTime.now().minusDays(2));
         }
 
-        private void vinculo(Owner de, PetTutorRole papel, LocalDateTime quando) {
+        private void vinculo(Person de, PetTutorRole papel, LocalDateTime quando) {
             petTutorRepository.saveAndFlush(PetTutor.builder()
-                    .animal(rex).owner(de).role(papel).creationDate(quando).build());
+                    .animal(rex).person(de).role(papel).creationDate(quando).build());
         }
 
-        private void autenticar(Owner como) {
+        private void autenticar(Person como) {
             SecurityContextHolder.getContext().setAuthentication(
                     new UsernamePasswordAuthenticationToken(como.getEmail(), "n/a", List.of()));
         }
@@ -220,15 +220,15 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("titular sai, animal sobrevive e a titularidade passa ao co-tutor")
         void titularSaiEAnimalSobrevive() {
-            autenticar(owner);
+            autenticar(person);
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
             assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
             assertThat(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(rex.getAnimalId()))
                     .singleElement()
                     .satisfies(restante -> {
-                        assertThat(restante.getOwner().getOwnerId()).isEqualTo(maria.getOwnerId());
+                        assertThat(restante.getPerson().getPersonId()).isEqualTo(maria.getPersonId());
                         assertThat(restante.getRole()).isEqualTo(PetTutorRole.HOLDER);
                     });
         }
@@ -247,7 +247,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
             Animal nina = animalRepository.saveAndFlush(Animal.builder()
                     .name("Nina").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
             petTutorRepository.saveAndFlush(PetTutor.builder()
-                    .animal(nina).owner(owner).role(PetTutorRole.HOLDER)
+                    .animal(nina).person(person).role(PetTutorRole.HOLDER)
                     .creationDate(LocalDateTime.now()).build());
 
             vaccineRepository.saveAndFlush(Vaccine.builder()
@@ -261,11 +261,11 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
                     .applicationDate(LocalDate.now().minusMonths(1))
                     .creationDate(LocalDateTime.now()).updateDate(LocalDateTime.now()).build());
 
-            autenticar(owner);
+            autenticar(person);
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
-            assertThat(ownerRepository.findById(owner.getOwnerId())).isEmpty();
+            assertThat(personRepository.findById(person.getPersonId())).isEmpty();
             assertThat(animalRepository.findById(nina.getAnimalId())).isEmpty();
             assertThat(animalWeightHistoryRepository.findByAnimalAnimalIdOrderByMeasuredAtDesc(nina.getAnimalId())).isEmpty();
             assertThat(antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(nina.getAnimalId())).isEmpty();
@@ -275,7 +275,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
         }
 
         /**
-         * O registro de consentimento aponta para owners, e o schema nao tem
+         * O registro de consentimento aponta para persons, e o schema nao tem
          * ON DELETE CASCADE: sem sair antes, a FK segura o delete da conta - a mesma
          * familia de bug que travou a exclusao na V12 e na V15.
          *
@@ -286,7 +286,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
         @DisplayName("conta com consentimento registrado e apagada, e o registro sai junto")
         void contaComConsentimentoEApagada() {
             consentRecordRepository.saveAndFlush(ConsentRecord.builder()
-                    .owner(owner)
+                    .person(person)
                     .document(ConsentDocument.PRIVACY_POLICY)
                     .documentVersion("2026-08-05")
                     .acceptedAt(LocalDateTime.now())
@@ -294,13 +294,13 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
                     .userAgent("Mozilla/5.0")
                     .build());
 
-            autenticar(owner);
+            autenticar(person);
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
-            assertThat(ownerRepository.findById(owner.getOwnerId())).isEmpty();
+            assertThat(personRepository.findById(person.getPersonId())).isEmpty();
             assertThat(consentRecordRepository
-                    .findByOwnerOwnerIdOrderByAcceptedAtDesc(owner.getOwnerId())).isEmpty();
+                    .findByPersonPersonIdOrderByAcceptedAtDesc(person.getPersonId())).isEmpty();
         }
 
         /** Co-tutor sai: o animal nao muda de titular e continua de pe. */
@@ -309,13 +309,13 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
         void coTutorSaiSemMexerNoTitular() {
             autenticar(maria);
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
             assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
             assertThat(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(rex.getAnimalId()))
                     .singleElement()
                     .satisfies(restante -> {
-                        assertThat(restante.getOwner().getOwnerId()).isEqualTo(owner.getOwnerId());
+                        assertThat(restante.getPerson().getPersonId()).isEqualTo(person.getPersonId());
                         assertThat(restante.getRole()).isEqualTo(PetTutorRole.HOLDER);
                     });
         }

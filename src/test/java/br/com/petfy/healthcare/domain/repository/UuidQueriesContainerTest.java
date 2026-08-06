@@ -4,7 +4,7 @@ import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class UuidQueriesContainerTest extends PostgresContainerTest {
 
-    @Autowired private OwnerRepository ownerRepository;
+    @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
     @Autowired private PetTutorRepository petTutorRepository;
     @Autowired private ClinicRepository clinicRepository;
@@ -55,8 +55,8 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     @Autowired private ClinicInviteRepository clinicInviteRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
 
-    private Owner ulysses;
-    private Owner maria;
+    private Person ulysses;
+    private Person maria;
     private Animal rex;
     private Animal nina;
     private Clinic bichoFeliz;
@@ -64,10 +64,10 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
 
     @BeforeEach
     void setUp() {
-        ulysses = ownerRepository.save(Owner.builder()
+        ulysses = personRepository.save(Person.builder()
                 .name("Ulysses").email("ulysses-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash").build());
-        maria = ownerRepository.save(Owner.builder()
+        maria = personRepository.save(Person.builder()
                 .name("Maria").email("maria-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash").build());
 
@@ -85,16 +85,16 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
      * O animal e o vinculo sao gravados em duas chamadas, como em
      * {@code AnimalServiceImpl.createAnimal}: {@code Animal.tutors} e {@code mappedBy} sem
      * cascade, entao salvar o animal nao grava tutor nenhum. Montar o vinculo so em
-     * memoria - o que a suite fazia enquanto {@code Animal} tinha {@code owner} -
+     * memoria - o que a suite fazia enquanto {@code Animal} tinha {@code person} -
      * deixaria toda consulta por tutor voltando vazia, e o teste diria que o
      * escopo por dono nao traz nada quando o que falta e a linha no banco.
      */
-    private Animal animalComTitular(String nome, Owner titular) {
+    private Animal animalComTitular(String nome, Person titular) {
         Animal animal = animalRepository.save(Animal.builder().name(nome).species(Species.CANINA).build());
 
         PetTutor vinculo = petTutorRepository.save(PetTutor.builder()
                 .animal(animal)
-                .owner(titular)
+                .person(titular)
                 .role(PetTutorRole.HOLDER)
                 .creationDate(LocalDateTime.now())
                 .build());
@@ -117,10 +117,10 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("animals devem ser filtrados pelo dono, sem vazar os do outro")
         void animalsFiltradosPeloDono() {
-            var doUlysses = animalRepository.findByTutorsOwnerOwnerId(ulysses.getOwnerId());
+            var doUlysses = animalRepository.findByTutorsPersonPersonId(ulysses.getPersonId());
 
             assertThat(doUlysses).extracting(Animal::getName).containsExactly("Rex");
-            assertThat(animalRepository.findByTutorsOwnerOwnerId(maria.getOwnerId()))
+            assertThat(animalRepository.findByTutorsPersonPersonId(maria.getPersonId()))
                     .extracting(Animal::getName).containsExactly("Nina");
         }
 
@@ -133,18 +133,18 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @DisplayName("animal com dois tutores aparece para os dois, e para mais ninguem")
         void animalCompartilhadoApareceParaOsDoisTutores() {
             petTutorRepository.save(PetTutor.builder()
-                    .animal(rex).owner(maria).role(PetTutorRole.EDITOR)
+                    .animal(rex).person(maria).role(PetTutorRole.EDITOR)
                     .invitedBy(ulysses).creationDate(LocalDateTime.now()).build());
 
-            assertThat(animalRepository.findByTutorsOwnerOwnerId(ulysses.getOwnerId()))
+            assertThat(animalRepository.findByTutorsPersonPersonId(ulysses.getPersonId()))
                     .extracting(Animal::getName).containsExactly("Rex");
-            assertThat(animalRepository.findByTutorsOwnerOwnerId(maria.getOwnerId()))
+            assertThat(animalRepository.findByTutorsPersonPersonId(maria.getPersonId()))
                     .extracting(Animal::getName).containsExactlyInAnyOrder("Rex", "Nina");
 
-            var estranho = ownerRepository.save(Owner.builder()
+            var estranho = personRepository.save(Person.builder()
                     .name("Estranho").email("estranho-" + UUID.randomUUID() + "@petfy.com.br")
                     .password("hash").build());
-            assertThat(animalRepository.findByTutorsOwnerOwnerId(estranho.getOwnerId())).isEmpty();
+            assertThat(animalRepository.findByTutorsPersonPersonId(estranho.getPersonId())).isEmpty();
         }
 
         /** O co-tutor EDITOR ve a carteira do animal compartilhado, nao so o cadastro. */
@@ -152,11 +152,11 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @DisplayName("vacinas do animal compartilhado aparecem para o co-tutor")
         void vacinasDoAnimalCompartilhadoAparecemParaOCoTutor() {
             petTutorRepository.save(PetTutor.builder()
-                    .animal(rex).owner(maria).role(PetTutorRole.EDITOR)
+                    .animal(rex).person(maria).role(PetTutorRole.EDITOR)
                     .invitedBy(ulysses).creationDate(LocalDateTime.now()).build());
             vacina(rex, "V10", LocalDate.now().plusDays(10));
 
-            assertThat(vaccineRepository.findByAnimalTutorsOwnerOwnerId(maria.getOwnerId()))
+            assertThat(vaccineRepository.findByAnimalTutorsPersonPersonId(maria.getPersonId()))
                     .extracting(Vaccine::getVaccineName).containsExactly("V10");
         }
 
@@ -166,7 +166,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
             vacina(rex, "V10", LocalDate.now().plusDays(10));
             vacina(nina, "V8", LocalDate.now().plusDays(10));
 
-            assertThat(vaccineRepository.findByAnimalTutorsOwnerOwnerId(ulysses.getOwnerId()))
+            assertThat(vaccineRepository.findByAnimalTutorsPersonPersonId(ulysses.getPersonId()))
                     .extracting(Vaccine::getVaccineName).containsExactly("V10");
         }
 
@@ -183,7 +183,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
                     .category(HealthEventCategory.CONSULTA)
                     .animal(nina).eventType("De outro dono").eventDate(LocalDate.now()).build());
 
-            assertThat(healthRecordRepository.findByAnimalTutorsOwnerOwnerIdOrderByEventDateDesc(ulysses.getOwnerId()))
+            assertThat(healthRecordRepository.findByAnimalTutorsPersonPersonIdOrderByEventDateDesc(ulysses.getPersonId()))
                     .extracting(HealthRecord::getEventType)
                     .containsExactly("Recente", "Antiga");
         }
@@ -295,10 +295,10 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("tutor e veterinario devem ser encontrados por email - a base do login")
         void loginEncontraTutorEVeterinario() {
-            assertThat(ownerRepository.findByEmail(ulysses.getEmail())).isPresent();
+            assertThat(personRepository.findByEmail(ulysses.getEmail())).isPresent();
             assertThat(vetRepository.findByEmail(marina.getEmail())).isPresent();
             assertThat(vetRepository.existsByEmail(marina.getEmail())).isTrue();
-            assertThat(ownerRepository.findByEmail("ninguem@petfy.com.br")).isEmpty();
+            assertThat(personRepository.findByEmail("ninguem@petfy.com.br")).isEmpty();
         }
     }
 
@@ -325,13 +325,13 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
             var outra = vacina(rex, "V8", LocalDate.now().plusDays(10));
 
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(vacina).correctedByOwner(ulysses).previousVaccineName("Antiga")
+                    .vaccine(vacina).correctedByPerson(ulysses).previousVaccineName("Antiga")
                     .correctedAt(LocalDateTime.now().minusDays(2)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
                     .vaccine(vacina).correctedByVet(marina).previousVaccineName("Recente")
                     .correctedAt(LocalDateTime.now().minusHours(1)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(outra).correctedByOwner(ulysses).previousVaccineName("De outra vacina")
+                    .vaccine(outra).correctedByPerson(ulysses).previousVaccineName("De outra vacina")
                     .correctedAt(LocalDateTime.now()).build());
 
             assertThat(vaccineCorrectionRepository

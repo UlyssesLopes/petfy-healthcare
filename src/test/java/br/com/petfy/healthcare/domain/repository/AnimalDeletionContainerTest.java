@@ -7,7 +7,7 @@ import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.HealthRecordCorrection;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.AnimalShare;
@@ -54,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AnimalDeletionContainerTest extends PostgresContainerTest {
 
     @Autowired private AnimalService animalService;
-    @Autowired private OwnerRepository ownerRepository;
+    @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
     @Autowired private PetTutorRepository petTutorRepository;
     @Autowired private ClinicRepository clinicRepository;
@@ -68,13 +68,13 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
     @Autowired private AnimalWeightHistoryRepository animalWeightHistoryRepository;
     @Autowired private AntiparasiticRepository antiparasiticRepository;
 
-    private Owner ulysses;
+    private Person ulysses;
     private Animal rex;
     private Clinic bichoFeliz;
 
     @BeforeEach
     void setUp() {
-        ulysses = ownerRepository.saveAndFlush(Owner.builder()
+        ulysses = personRepository.saveAndFlush(Person.builder()
                 .name("Ulysses")
                 .email("ulysses-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash")
@@ -84,7 +84,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
                 .name("Rex").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
 
         petTutorRepository.saveAndFlush(PetTutor.builder()
-                .animal(rex).owner(ulysses).role(PetTutorRole.HOLDER)
+                .animal(rex).person(ulysses).role(PetTutorRole.HOLDER)
                 .creationDate(LocalDateTime.now()).build());
 
         bichoFeliz = clinicRepository.saveAndFlush(Clinic.builder().name("Clinica Bicho Feliz").build());
@@ -107,7 +107,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
                 .creationDate(LocalDateTime.now()).build());
 
         vaccineCorrectionRepository.saveAndFlush(VaccineCorrection.builder()
-                .vaccine(vacina).correctedByOwner(ulysses).previousVaccineName("Antirabica")
+                .vaccine(vacina).correctedByPerson(ulysses).previousVaccineName("Antirabica")
                 .correctedAt(LocalDateTime.now()).build());
 
         HealthRecord atendimento = healthRecordRepository.saveAndFlush(HealthRecord.builder()
@@ -117,7 +117,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
                 .creationDate(LocalDateTime.now()).build());
 
         healthRecordCorrectionRepository.saveAndFlush(HealthRecordCorrection.builder()
-                .healthRecord(atendimento).correctedByOwner(ulysses).previousEventType("Retorno")
+                .healthRecord(atendimento).correctedByPerson(ulysses).previousEventType("Retorno")
                 .correctedAt(LocalDateTime.now()).build());
 
         animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
@@ -162,7 +162,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
 
     /**
      * O tutor continua de pe: apagar o animal nao e apagar a conta. Vale dizer porque
-     * a limpeza passa por owners nas correcoes, e um delete a mais ali levaria a
+     * a limpeza passa por persons nas correcoes, e um delete a mais ali levaria a
      * conta junto.
      */
     @Test
@@ -173,7 +173,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
         animalService.deleteAnimal(rex.getAnimalId());
         animalRepository.flush();
 
-        assertThat(ownerRepository.findById(ulysses.getOwnerId())).isPresent();
+        assertThat(personRepository.findById(ulysses.getPersonId())).isPresent();
         assertThat(clinicRepository.findById(bichoFeliz.getClinicId())).isPresent();
     }
 
@@ -200,7 +200,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
         Animal nina = animalRepository.saveAndFlush(Animal.builder()
                 .name("Nina").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
         petTutorRepository.saveAndFlush(PetTutor.builder()
-                .animal(nina).owner(ulysses).role(PetTutorRole.HOLDER)
+                .animal(nina).person(ulysses).role(PetTutorRole.HOLDER)
                 .creationDate(LocalDateTime.now()).build());
         vaccineRepository.saveAndFlush(Vaccine.builder()
                 .animal(nina).vaccineName("V10").applicationDate(LocalDate.now())

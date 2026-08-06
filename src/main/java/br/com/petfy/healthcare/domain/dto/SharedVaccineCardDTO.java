@@ -33,7 +33,7 @@ public class SharedVaccineCardDTO {
 
     private String animalGender;
 
-    private String ownerName;
+    private String personName;
 
     private LocalDate referenceDate;
 

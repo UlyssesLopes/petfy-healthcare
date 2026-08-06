@@ -45,7 +45,7 @@ public class AnimalResponseDTO {
 
     private Species species;
 
-    private UUID ownerId;
+    private UUID personId;
 
     private LocalDateTime creationDate;
 

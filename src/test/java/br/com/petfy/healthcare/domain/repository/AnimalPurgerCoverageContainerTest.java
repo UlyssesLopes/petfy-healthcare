@@ -150,7 +150,7 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
 
         assertThat(comCascade)
                 .as("a limpeza do animal e feita em codigo, no AnimalPurger, para ficar "
-                        + "visivel e testavel - ver o javadoc do OwnerServiceImpl")
+                        + "visivel e testavel - ver o javadoc do PersonServiceImpl")
                 .isEmpty();
     }
 

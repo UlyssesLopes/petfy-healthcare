@@ -124,7 +124,7 @@ class AnimalPurgerTest {
 
         /**
          * Peso e antiparasitario chegaram no passo 9 e ficaram de fora das duas
-         * cascatas, o que travou o DELETE /owners/me para qualquer animal com pesagem.
+         * cascatas, o que travou o DELETE /persons/me para qualquer animal com pesagem.
          * Ficam nomeados num caso proprio para que remove-los seja uma decisao, e
          * nao um esquecimento silencioso.
          */

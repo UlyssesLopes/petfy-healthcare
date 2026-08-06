@@ -17,7 +17,7 @@ public interface VetRepository extends JpaRepository<Vet, UUID> {
 
     boolean existsByEmail(String email);
 
-    /** Ver o equivalente em OwnerRepository: o filtro trata os dois papeis igual. */
+    /** Ver o equivalente em PersonRepository: o filtro trata os dois papeis igual. */
     @Query("select v.passwordChangedAt from Vet v where v.email = :email")
     Optional<LocalDateTime> findPasswordChangedAtByEmail(@Param("email") String email);
 

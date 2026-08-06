@@ -8,13 +8,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "owners")
+@Table(name = "persons")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Owner {
+public class Person {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -23,7 +23,7 @@ public class Owner {
             strategy = "org.hibernate.id.UUIDGenerator"
     )
     @Column(updatable = false, nullable = false)
-    private UUID ownerId;
+    private UUID personId;
 
     private String name;
 

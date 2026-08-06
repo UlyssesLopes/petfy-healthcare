@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.config.PetfyMetrics;
 import br.com.petfy.healthcare.domain.dto.LoginRequestDTO;
 import br.com.petfy.healthcare.domain.dto.LoginResponseDTO;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.JwtService;
@@ -22,7 +22,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final OwnerRepository ownerRepository;
+    private final PersonRepository personRepository;
     private final VetRepository vetRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -38,9 +38,9 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public LoginResponseDTO login(LoginRequestDTO request) {
-        Optional<Credenciais> encontrado = ownerRepository.findByEmail(request.getEmail())
-                .map(owner -> new Credenciais(owner.getOwnerId(), owner.getEmail(),
-                        owner.getPassword(), UserRole.OWNER))
+        Optional<Credenciais> encontrado = personRepository.findByEmail(request.getEmail())
+                .map(person -> new Credenciais(person.getPersonId(), person.getEmail(),
+                        person.getPassword(), UserRole.OWNER))
                 .or(() -> vetRepository.findByEmail(request.getEmail())
                         .map(vet -> new Credenciais(vet.getVetId(), vet.getEmail(),
                                 vet.getPassword(), UserRole.VET)));
@@ -66,12 +66,12 @@ public class AuthServiceImpl implements AuthService {
                 .tokenType("Bearer")
                 .expiresInMinutes(jwtService.getExpirationMinutes())
                 .role(credenciais.role.name())
-                .ownerId(credenciais.role == UserRole.OWNER ? credenciais.id : null)
+                .personId(credenciais.role == UserRole.OWNER ? credenciais.id : null)
                 .vetId(credenciais.role == UserRole.VET ? credenciais.id : null)
                 .build();
     }
 
-    /** Achata owner e vet no que o login precisa, para o fluxo nao se ramificar. */
+    /** Achata person e vet no que o login precisa, para o fluxo nao se ramificar. */
     private static final class Credenciais {
         private final UUID id;
         private final String email;

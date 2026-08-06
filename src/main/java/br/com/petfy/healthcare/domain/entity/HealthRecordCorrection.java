@@ -43,8 +43,8 @@ public class HealthRecordCorrection {
 
     /** Preenchido quando quem corrigiu foi o tutor. Exclusivo com o outro. */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "corrected_by_owner_id")
-    private Owner correctedByOwner;
+    @JoinColumn(name = "corrected_by_person_id")
+    private Person correctedByPerson;
 
     private String previousEventType;
 

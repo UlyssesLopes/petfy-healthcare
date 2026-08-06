@@ -2,13 +2,13 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.AnimalRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.AnimalPurger;
 import br.com.petfy.healthcare.service.AnimalService;
@@ -30,7 +30,7 @@ public class AnimalServiceImpl implements AnimalService {
 
     private final AnimalRepository animalRepository;
     private final PetTutorRepository petTutorRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
     private final AnimalAccessGuard animalAccessGuard;
     private final PuppyProtocolService puppyProtocolService;
     private final AnimalPurger animalPurger;
@@ -44,7 +44,7 @@ public class AnimalServiceImpl implements AnimalService {
     @Override
     @Transactional
     public AnimalResponseDTO createAnimal(AnimalRequestDTO dto) {
-        Owner owner = currentOwnerProvider.require();
+        Person person = currentPersonProvider.require();
 
         Animal animal = Animal.builder()
                 .name(dto.getName())
@@ -67,7 +67,7 @@ public class AnimalServiceImpl implements AnimalService {
 
         petTutorRepository.save(PetTutor.builder()
                 .animal(salvo)
-                .owner(owner)
+                .person(person)
                 .role(PetTutorRole.HOLDER)
                 .creationDate(LocalDateTime.now())
                 .build());
@@ -76,7 +76,7 @@ public class AnimalServiceImpl implements AnimalService {
         // para adulto: continua registrando vacina caso a caso.
         puppyProtocolService.gerarEsquemaInicialSePuppy(salvo);
 
-        return toResponse(salvo, owner.getOwnerId());
+        return toResponse(salvo, person.getPersonId());
     }
 
     @Override
@@ -89,7 +89,7 @@ public class AnimalServiceImpl implements AnimalService {
     @Override
     @Transactional(readOnly = true)
     public Page<AnimalResponseDTO> listAllAnimals(Pageable pageable) {
-        return animalRepository.findByTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
+        return animalRepository.findByTutorsPersonPersonId(currentPersonProvider.require().getPersonId(), pageable)
                 .map(this::toResponse);
     }
 
@@ -162,11 +162,11 @@ public class AnimalServiceImpl implements AnimalService {
     }
 
     private AnimalResponseDTO toResponse(Animal animal) {
-        return toResponse(animal, animal.getHolder().map(Owner::getOwnerId).orElse(null));
+        return toResponse(animal, animal.getHolder().map(Person::getPersonId).orElse(null));
     }
 
     /**
-     * {@code ownerId} na resposta passou a significar **o titular**, e nao "o
+     * {@code personId} na resposta passou a significar **o titular**, e nao "o
      * dono", que deixou de existir como conceito unico. O nome ficou por
      * compatibilidade do contrato ja publicado.
      */
@@ -184,7 +184,7 @@ public class AnimalServiceImpl implements AnimalService {
                 .microchip(animal.getMicrochip())
                 .castrated(animal.getCastrated())
                 .castratedAt(animal.getCastratedAt())
-                .ownerId(holderId)
+                .personId(holderId)
                 .creationDate(animal.getCreationDate())
                 .updateDate(animal.getUpdateDate())
                 .build();

@@ -10,7 +10,7 @@ import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.AttachmentContent;
 import br.com.petfy.healthcare.service.AttachmentService;
@@ -41,7 +41,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     private final HealthRecordRepository healthRecordRepository;
     private final AttachmentStorage attachmentStorage;
     private final AnimalAccessGuard animalAccessGuard;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
 
     @Value("${petfy.attachments.max-size-bytes:10485760}")
     private long maxSizeBytes;
@@ -93,7 +93,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 .checksumSha256(armazenado.checksumSha256())
                 .storageKey(armazenado.storageKey())
                 .description(description)
-                .uploadedBy(currentOwnerProvider.require())
+                .uploadedBy(currentPersonProvider.require())
                 .creationDate(LocalDateTime.now())
                 .build());
 
@@ -280,7 +280,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 .sizeBytes(anexo.getSizeBytes())
                 .checksumSha256(anexo.getChecksumSha256())
                 .description(anexo.getDescription())
-                .uploadedByOwnerName(anexo.getUploadedBy() != null ? anexo.getUploadedBy().getName() : null)
+                .uploadedByPersonName(anexo.getUploadedBy() != null ? anexo.getUploadedBy().getName() : null)
                 .creationDate(anexo.getCreationDate())
                 .build();
     }

@@ -40,7 +40,7 @@ import java.util.UUID;
  * legitimo aquele animal, e omiti-lo daria um export que contradiz o que o app mostra.
  */
 @Builder
-public record OwnerExportDTO(
+public record PersonExportDTO(
 
         /** Quando o documento foi gerado. E o que datar uma copia guardada. */
         LocalDateTime generatedAt,
@@ -64,7 +64,7 @@ public record OwnerExportDTO(
 
     @Builder
     public record TutorDTO(
-            UUID ownerId,
+            UUID personId,
             String name,
             String email,
             String phone,
@@ -150,7 +150,7 @@ public record OwnerExportDTO(
             String name,
             PetTutorRole role,
             LocalDateTime desde
-            // sem ownerId e sem e-mail: identificam outra pessoa fora deste documento
+            // sem personId e sem e-mail: identificam outra pessoa fora deste documento
     ) {
     }
 

@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.notification;
 
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Species;
@@ -39,16 +39,16 @@ class PetTutorActivityNotifierTest {
     private static final UUID MARIA_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
     private static final UUID JOAO_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
 
-    private Owner confirmado(UUID id, String nome) {
-        return Owner.builder()
-                .ownerId(id).name(nome).email(nome.toLowerCase() + "@petfy.com.br")
+    private Person confirmado(UUID id, String nome) {
+        return Person.builder()
+                .personId(id).name(nome).email(nome.toLowerCase() + "@petfy.com.br")
                 .emailVerifiedAt(LocalDateTime.now().minusDays(1))
                 .build();
     }
 
-    private Owner naoConfirmado(UUID id, String nome) {
-        return Owner.builder()
-                .ownerId(id).name(nome).email(nome.toLowerCase() + "@petfy.com.br")
+    private Person naoConfirmado(UUID id, String nome) {
+        return Person.builder()
+                .personId(id).name(nome).email(nome.toLowerCase() + "@petfy.com.br")
                 .build();
     }
 

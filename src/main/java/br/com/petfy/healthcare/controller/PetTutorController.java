@@ -54,19 +54,19 @@ public class PetTutorController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{animalId}/tutors/{ownerId}")
+    @PatchMapping("/{animalId}/tutors/{personId}")
     public ResponseEntity<PetTutorResponseDTO> changeRole(
             @PathVariable UUID animalId,
-            @PathVariable UUID ownerId,
+            @PathVariable UUID personId,
             @Valid @RequestBody PetTutorRoleUpdateRequestDTO request) {
-        return ResponseEntity.ok(petTutorService.changeRole(animalId, ownerId, request));
+        return ResponseEntity.ok(petTutorService.changeRole(animalId, personId, request));
     }
 
-    @DeleteMapping("/{animalId}/tutors/{ownerId}")
+    @DeleteMapping("/{animalId}/tutors/{personId}")
     public ResponseEntity<Void> removeTutor(
             @PathVariable UUID animalId,
-            @PathVariable UUID ownerId) {
-        petTutorService.removeTutor(animalId, ownerId);
+            @PathVariable UUID personId) {
+        petTutorService.removeTutor(animalId, personId);
         return ResponseEntity.noContent().build();
     }
 
@@ -74,11 +74,11 @@ public class PetTutorController {
      * POST, e nao PATCH no papel: a transferencia mexe em dois vinculos ao mesmo
      * tempo - promove um e rebaixa o outro - entao nao e a edicao de um recurso.
      */
-    @PostMapping("/{animalId}/tutors/{ownerId}/transfer-holder")
+    @PostMapping("/{animalId}/tutors/{personId}/transfer-holder")
     public ResponseEntity<PetTutorResponseDTO> transferHolder(
             @PathVariable UUID animalId,
-            @PathVariable UUID ownerId) {
-        return ResponseEntity.ok(petTutorService.transferHolder(animalId, ownerId));
+            @PathVariable UUID personId) {
+        return ResponseEntity.ok(petTutorService.transferHolder(animalId, personId));
     }
 
 }

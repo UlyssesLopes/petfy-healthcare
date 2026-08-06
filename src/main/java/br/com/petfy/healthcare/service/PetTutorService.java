@@ -31,12 +31,12 @@ public interface PetTutorService {
     void revokeInvite(UUID animalId, UUID petTutorInviteId);
 
     /** O titular remove um co-tutor; um co-tutor remove a si mesmo. */
-    void removeTutor(UUID animalId, UUID ownerId);
+    void removeTutor(UUID animalId, UUID personId);
 
     /** Titular troca o papel de um co-tutor entre EDITOR e VIEWER. */
-    PetTutorResponseDTO changeRole(UUID animalId, UUID ownerId, PetTutorRoleUpdateRequestDTO request);
+    PetTutorResponseDTO changeRole(UUID animalId, UUID personId, PetTutorRoleUpdateRequestDTO request);
 
     /** Titular passa a titularidade a quem ja e tutor do animal. */
-    PetTutorResponseDTO transferHolder(UUID animalId, UUID toOwnerId);
+    PetTutorResponseDTO transferHolder(UUID animalId, UUID toPersonId);
 
 }

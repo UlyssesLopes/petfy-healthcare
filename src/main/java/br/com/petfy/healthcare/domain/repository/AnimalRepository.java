@@ -13,10 +13,10 @@ import java.util.UUID;
 public interface AnimalRepository extends JpaRepository<Animal, UUID> {
 
     /** Usado internamente (agenda, lembretes) onde paginacao nao se aplica. */
-    List<Animal> findByTutorsOwnerOwnerId(UUID ownerId);
+    List<Animal> findByTutorsPersonPersonId(UUID personId);
 
     /** Usado pela listagem paginada do controller. */
-    Page<Animal> findByTutorsOwnerOwnerId(UUID ownerId, Pageable pageable);
+    Page<Animal> findByTutorsPersonPersonId(UUID personId, Pageable pageable);
 
     void deleteByAnimalIdIn(List<UUID> animalIds);
 

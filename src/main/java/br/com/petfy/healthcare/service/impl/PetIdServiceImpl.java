@@ -1,14 +1,14 @@
 package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.PetIdService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +37,7 @@ public class PetIdServiceImpl implements PetIdService {
     private final ImageProcessorService imageProcessorService;
     private final AnimalRepository animalRepository;
     private final PetTutorRepository petTutorRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -50,7 +50,7 @@ public class PetIdServiceImpl implements PetIdService {
     @Override
     public AnimalResponseDTO importAnimalFromIdCard(MultipartFile file) throws IOException, TesseractException {
 
-        Owner ownerById = currentOwnerProvider.require();
+        Person personById = currentPersonProvider.require();
 
         BufferedImage imageFile = ImageIO.read(file.getInputStream());
         BufferedImage bufferedImage = imageProcessorService.preProcess(imageFile);
@@ -80,7 +80,7 @@ public class PetIdServiceImpl implements PetIdService {
         // pela API - a partir da V15 o vinculo e explicito, nao um campo no animal
         petTutorRepository.save(PetTutor.builder()
                 .animal(saved)
-                .owner(ownerById)
+                .person(personById)
                 .role(PetTutorRole.HOLDER)
                 .creationDate(LocalDateTime.now())
                 .build());
@@ -208,7 +208,7 @@ public class PetIdServiceImpl implements PetIdService {
                 .bornDate(animal.getBornDate())
                 .weight(animal.getWeight())
                 .gender(animal.getGender())
-                .ownerId(animal.getHolder().map(Owner::getOwnerId).orElse(null))
+                .personId(animal.getHolder().map(Person::getPersonId).orElse(null))
                 .creationDate(animal.getCreationDate())
                 .updateDate(animal.getUpdateDate())
                 .build();

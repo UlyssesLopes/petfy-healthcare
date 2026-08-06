@@ -43,7 +43,7 @@ public class PetTutorInvite {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_owner_id", nullable = false)
-    private Owner createdBy;
+    private Person createdBy;
 
     /** Hash do token. O token em si nao e guardado - ver V15. */
     @Column(unique = true, nullable = false)
@@ -73,7 +73,7 @@ public class PetTutorInvite {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accepted_by_owner_id")
-    private Owner acceptedBy;
+    private Person acceptedBy;
 
     private LocalDateTime revokedAt;
 

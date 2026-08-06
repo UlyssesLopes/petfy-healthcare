@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.domain.repository;
 
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import org.junit.jupiter.api.DisplayName;
@@ -47,18 +47,18 @@ class HealthRecordRepositoryTest {
     private AnimalRepository animalRepository;
 
     @Autowired
-    private OwnerRepository ownerRepository;
+    private PersonRepository personRepository;
 
     @Test
     @DisplayName("a query derivada por animal deve ser traduzida pelo Spring Data e executar sem erro")
     void queryDerivadaDeveSerTraduzidaEExecutar() {
-        Owner owner = ownerRepository.save(Owner.builder()
+        Person person = personRepository.save(Person.builder()
                 .name("Ulysses")
                 .email("ulysses@petfy.com.br")
                 .password("hash")
                 .build());
 
-        Animal rex = animalRepository.save(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
+        Animal rex = animalRepository.save(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(person)).species(Species.CANINA).build());
 
         healthRecordRepository.save(HealthRecord.builder()
                 .category(HealthEventCategory.CONSULTA)
@@ -74,13 +74,13 @@ class HealthRecordRepositoryTest {
     @Test
     @DisplayName("o mapeamento das entidades deve gerar um schema valido")
     void mapeamentoDeveGerarSchemaValido() {
-        Owner owner = ownerRepository.save(Owner.builder()
+        Person person = personRepository.save(Person.builder()
                 .name("Ulysses")
                 .email("outro@petfy.com.br")
                 .password("hash")
                 .build());
 
-        Animal animal = animalRepository.save(Animal.builder().name("Mia").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
+        Animal animal = animalRepository.save(Animal.builder().name("Mia").tutors(br.com.petfy.healthcare.PetTutores.titular(person)).species(Species.CANINA).build());
 
         HealthRecord salvo = healthRecordRepository.save(HealthRecord.builder()
                 .category(HealthEventCategory.CONSULTA)

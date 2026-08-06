@@ -6,10 +6,10 @@ import br.com.petfy.healthcare.domain.dto.VetRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VetResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.ClinicInvite;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentVetProvider;
@@ -48,7 +48,7 @@ class VetServiceImplTest {
     private ClinicRepository clinicRepository;
 
     @Mock
-    private OwnerRepository ownerRepository;
+    private PersonRepository personRepository;
 
     @Mock
     private ClinicService clinicService;
@@ -97,7 +97,7 @@ class VetServiceImplTest {
 
     private void emailLivre() {
         when(vetRepository.existsByEmail(EMAIL)).thenReturn(false);
-        when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+        when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
     }
 
     @Nested
@@ -262,8 +262,8 @@ class VetServiceImplTest {
         @DisplayName("deve recusar email ja usado por um tutor - senao o login fica ambiguo")
         void deveRecusarEmailJaUsadoPorTutor() {
             when(vetRepository.existsByEmail(EMAIL)).thenReturn(false);
-            when(ownerRepository.findByEmail(EMAIL))
-                    .thenReturn(Optional.of(Owner.builder().ownerId(UUID.randomUUID()).email(EMAIL).build()));
+            when(personRepository.findByEmail(EMAIL))
+                    .thenReturn(Optional.of(Person.builder().personId(UUID.randomUUID()).email(EMAIL).build()));
 
             assertThatThrownBy(() -> vetService.register(comConvite()))
                     .isInstanceOf(PetfyHealthcareException.class)

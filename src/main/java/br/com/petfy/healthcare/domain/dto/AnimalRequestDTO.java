@@ -14,7 +14,7 @@ import java.time.LocalDate;
  * controller marca @Valid - hoje apenas no POST, porque o PUT e parcial de
  * proposito e preserva os campos nao enviados.
  *
- * Nao ha ownerId: o dono do animal e sempre o autenticado na requisicao. Aceitar o
+ * Nao ha personId: o dono do animal e sempre o autenticado na requisicao. Aceitar o
  * campo do cliente deixaria criar animal no nome de outra pessoa.
  */
 @Getter

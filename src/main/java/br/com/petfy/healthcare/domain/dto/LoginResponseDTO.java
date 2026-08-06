@@ -21,7 +21,7 @@ public class LoginResponseDTO {
     private String role;
 
     /** Preenchido apenas quando role e OWNER. */
-    private UUID ownerId;
+    private UUID personId;
 
     /** Preenchido apenas quando role e VET. */
     private UUID vetId;

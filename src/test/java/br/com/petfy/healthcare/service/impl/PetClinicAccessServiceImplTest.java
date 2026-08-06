@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.ClinicAccessRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
@@ -52,12 +52,12 @@ class PetClinicAccessServiceImplTest {
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
-    private Owner owner(UUID id) {
-        return Owner.builder().ownerId(id).name("Ulysses").build();
+    private Person person(UUID id) {
+        return Person.builder().personId(id).name("Ulysses").build();
     }
 
     private Animal animal() {
-        return Animal.builder().animalId(ANIMAL_ID).name("Rex").tutors(PetTutores.titular(owner(OWNER_ID))).build();
+        return Animal.builder().animalId(ANIMAL_ID).name("Rex").tutors(PetTutores.titular(person(OWNER_ID))).build();
     }
 
     private Clinic clinic() {

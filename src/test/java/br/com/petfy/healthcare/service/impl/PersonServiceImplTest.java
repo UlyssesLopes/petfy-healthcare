@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
-import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
+import br.com.petfy.healthcare.domain.dto.PersonRequestDTO;
+import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.entity.Animal;
@@ -9,13 +9,13 @@ import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
@@ -24,7 +24,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.AnimalPurger;
@@ -53,10 +53,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OwnerServiceImplTest {
+class PersonServiceImplTest {
 
     @Mock
-    private OwnerRepository ownerRepository;
+    private PersonRepository personRepository;
 
     @Mock
     private VetRepository vetRepository;
@@ -65,7 +65,7 @@ class OwnerServiceImplTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private CurrentPersonProvider currentPersonProvider;
 
     @Mock
     private EmailVerificationService emailVerificationService;
@@ -95,16 +95,16 @@ class OwnerServiceImplTest {
     private PetTutorInviteRepository petTutorInviteRepository;
 
     @InjectMocks
-    private OwnerServiceImpl ownerService;
+    private PersonServiceImpl personService;
 
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID OUTRO_OWNER_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
     private static final String HASH = "$2a$10$hashDeMentiraParaOTeste";
 
-    private Owner existingOwner() {
-        return Owner.builder()
-                .ownerId(OWNER_ID)
+    private Person existingPerson() {
+        return Person.builder()
+                .personId(OWNER_ID)
                 .name("Ulysses")
                 .email("ulysses@petfy.com.br")
                 .password("senha-atual")
@@ -115,23 +115,23 @@ class OwnerServiceImplTest {
     }
 
     @Nested
-    @DisplayName("createOwner")
-    class CreateOwner {
+    @DisplayName("createPerson")
+    class CreatePerson {
 
         @Test
-        @DisplayName("deve persistir o owner com os dados do request e data de criacao")
-        void devePersistirOwnerComDadosDoRequest() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", "11999999999", "Rua A, 100", true);
+        @DisplayName("deve persistir o person com os dados do request e data de criacao")
+        void devePersistirPersonComDadosDoRequest() {
+            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", "11999999999", "Rua A, 100", true);
             when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
-            when(ownerRepository.save(any(Owner.class))).thenReturn(existingOwner());
+            when(personRepository.save(any(Person.class))).thenReturn(existingPerson());
 
-            var result = ownerService.createOwner(request);
+            var result = personService.createPerson(request);
 
-            assertThat(result.getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(result.getPersonId()).isEqualTo(OWNER_ID);
             assertThat(result.getEmail()).isEqualTo("ulysses@petfy.com.br");
 
-            var captor = ArgumentCaptor.forClass(Owner.class);
-            verify(ownerRepository).save(captor.capture());
+            var captor = ArgumentCaptor.forClass(Person.class);
+            verify(personRepository).save(captor.capture());
             assertThat(captor.getValue().getName()).isEqualTo("Ulysses");
             assertThat(captor.getValue().getCreationDate()).isNotNull();
         }
@@ -139,14 +139,14 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("nao deve persistir a senha em texto puro")
         void naoDevePersistirSenhaEmTextoPuro() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
+            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
             when(passwordEncoder.encode("s3nhaForte")).thenReturn(HASH);
-            when(ownerRepository.save(any(Owner.class))).thenReturn(existingOwner());
+            when(personRepository.save(any(Person.class))).thenReturn(existingPerson());
 
-            ownerService.createOwner(request);
+            personService.createPerson(request);
 
-            var captor = ArgumentCaptor.forClass(Owner.class);
-            verify(ownerRepository).save(captor.capture());
+            var captor = ArgumentCaptor.forClass(Person.class);
+            verify(personRepository).save(captor.capture());
             assertThat(captor.getValue().getPassword())
                     .isEqualTo(HASH)
                     .isNotEqualTo("s3nhaForte");
@@ -154,9 +154,9 @@ class OwnerServiceImplTest {
         }
 
         @Test
-        @DisplayName("o response de owner nao deve carregar o campo password")
+        @DisplayName("o response de person nao deve carregar o campo password")
         void responseNaoDeveCarregarPassword() {
-            assertThat(OwnerResponseDTO.class.getDeclaredFields())
+            assertThat(PersonResponseDTO.class.getDeclaredFields())
                     .extracting(Field::getName)
                     .doesNotContain("password");
         }
@@ -166,63 +166,63 @@ class OwnerServiceImplTest {
          * como 500 opaco, escondendo do cliente que o problema e o e-mail.
          */
         @Test
-        @DisplayName("deve recusar com 409 quando o e-mail ja pertence a outro owner")
-        void deveRecusarQuandoEmailJaUsadoPorOwner() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
-            when(ownerRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
+        @DisplayName("deve recusar com 409 quando o e-mail ja pertence a outro person")
+        void deveRecusarQuandoEmailJaUsadoPorPerson() {
+            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
+            when(personRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
 
-            assertThatThrownBy(() -> ownerService.createOwner(request))
+            assertThatThrownBy(() -> personService.createPerson(request))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage(ErrorMessageEnum.EMAIL_ALREADY_USED.getMessage());
 
-            verify(ownerRepository, org.mockito.Mockito.never()).save(any());
+            verify(personRepository, org.mockito.Mockito.never()).save(any());
             verify(emailVerificationService, org.mockito.Mockito.never()).sendVerification(any());
         }
 
-        /** Owner e vet compartilham o mesmo namespace de e-mail. */
+        /** Person e vet compartilham o mesmo namespace de e-mail. */
         @Test
         @DisplayName("deve recusar quando o e-mail ja pertence a um vet")
         void deveRecusarQuandoEmailJaUsadoPorVet() {
-            var request = new OwnerRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
-            when(ownerRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(false);
+            var request = new PersonRequestDTO("Ulysses", "ulysses@petfy.com.br", "s3nhaForte", null, null, true);
+            when(personRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(false);
             when(vetRepository.existsByEmail("ulysses@petfy.com.br")).thenReturn(true);
 
-            assertThatThrownBy(() -> ownerService.createOwner(request))
+            assertThatThrownBy(() -> personService.createPerson(request))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage(ErrorMessageEnum.EMAIL_ALREADY_USED.getMessage());
 
-            verify(ownerRepository, org.mockito.Mockito.never()).save(any());
+            verify(personRepository, org.mockito.Mockito.never()).save(any());
         }
     }
 
     @Nested
-    @DisplayName("getCurrentOwner")
-    class GetCurrentOwner {
+    @DisplayName("getCurrentPerson")
+    class GetCurrentPerson {
 
         @Test
-        @DisplayName("deve devolver o owner autenticado, sem receber id de fora")
-        void deveDevolverOwnerAutenticado() {
-            when(currentOwnerProvider.require()).thenReturn(existingOwner());
+        @DisplayName("deve devolver o person autenticado, sem receber id de fora")
+        void deveDevolverPersonAutenticado() {
+            when(currentPersonProvider.require()).thenReturn(existingPerson());
 
-            var result = ownerService.getCurrentOwner();
+            var result = personService.getCurrentPerson();
 
-            assertThat(result.getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(result.getPersonId()).isEqualTo(OWNER_ID);
             assertThat(result.getName()).isEqualTo("Ulysses");
         }
     }
 
     @Nested
-    @DisplayName("updateCurrentOwner")
-    class UpdateCurrentOwner {
+    @DisplayName("updateCurrentPerson")
+    class UpdateCurrentPerson {
 
         @Test
         @DisplayName("deve preservar os campos nao enviados no request")
         void devePreservarCamposNaoEnviados() {
-            when(currentOwnerProvider.require()).thenReturn(existingOwner());
-            when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
+            when(currentPersonProvider.require()).thenReturn(existingPerson());
+            when(personRepository.save(any(Person.class))).thenAnswer(i -> i.getArgument(0));
 
-            var request = new OwnerRequestDTO(null, null, null, "11888888888", null, true);
-            var result = ownerService.updateCurrentOwner(request);
+            var request = new PersonRequestDTO(null, null, null, "11888888888", null, true);
+            var result = personService.updateCurrentPerson(request);
 
             assertThat(result.getPhone()).isEqualTo("11888888888");
             assertThat(result.getName()).isEqualTo("Ulysses");
@@ -234,29 +234,29 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("nao deve alterar a senha - troca de senha pede endpoint proprio")
         void naoDeveAlterarSenha() {
-            when(currentOwnerProvider.require()).thenReturn(existingOwner());
-            when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
+            when(currentPersonProvider.require()).thenReturn(existingPerson());
+            when(personRepository.save(any(Person.class))).thenAnswer(i -> i.getArgument(0));
 
-            ownerService.updateCurrentOwner(new OwnerRequestDTO(null, null, "nova-senha", null, null, true));
+            personService.updateCurrentPerson(new PersonRequestDTO(null, null, "nova-senha", null, null, true));
 
-            var captor = ArgumentCaptor.forClass(Owner.class);
-            verify(ownerRepository).save(captor.capture());
+            var captor = ArgumentCaptor.forClass(Person.class);
+            verify(personRepository).save(captor.capture());
             assertThat(captor.getValue().getPassword()).isEqualTo("senha-atual");
             verify(passwordEncoder, org.mockito.Mockito.never()).encode(any());
         }
 
         @Test
-        @DisplayName("deve atualizar sempre o owner do token, nunca um id vindo do payload")
-        void deveAtualizarSempreOOwnerDoToken() {
-            var autenticado = existingOwner();
-            when(currentOwnerProvider.require()).thenReturn(autenticado);
-            when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
+        @DisplayName("deve atualizar sempre o person do token, nunca um id vindo do payload")
+        void deveAtualizarSempreOPersonDoToken() {
+            var autenticado = existingPerson();
+            when(currentPersonProvider.require()).thenReturn(autenticado);
+            when(personRepository.save(any(Person.class))).thenAnswer(i -> i.getArgument(0));
 
-            ownerService.updateCurrentOwner(new OwnerRequestDTO("Outro Nome", null, null, null, null, true));
+            personService.updateCurrentPerson(new PersonRequestDTO("Outro Nome", null, null, null, null, true));
 
-            var captor = ArgumentCaptor.forClass(Owner.class);
-            verify(ownerRepository).save(captor.capture());
-            assertThat(captor.getValue().getOwnerId()).isEqualTo(OWNER_ID);
+            var captor = ArgumentCaptor.forClass(Person.class);
+            verify(personRepository).save(captor.capture());
+            assertThat(captor.getValue().getPersonId()).isEqualTo(OWNER_ID);
         }
     }
 
@@ -267,17 +267,17 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve gravar o hash da nova senha quando a atual confere")
         void deveGravarHashDaNovaSenha() {
-            var autenticado = existingOwner();
-            when(currentOwnerProvider.require()).thenReturn(autenticado);
+            var autenticado = existingPerson();
+            when(currentPersonProvider.require()).thenReturn(autenticado);
             when(passwordEncoder.matches("senha-atual-em-claro", "senha-atual")).thenReturn(true);
             when(passwordEncoder.matches("s3nhaNova", "senha-atual")).thenReturn(false);
             when(passwordEncoder.encode("s3nhaNova")).thenReturn(HASH);
-            when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
+            when(personRepository.save(any(Person.class))).thenAnswer(i -> i.getArgument(0));
 
-            ownerService.changePassword(new PasswordChangeRequestDTO("senha-atual-em-claro", "s3nhaNova"));
+            personService.changePassword(new PasswordChangeRequestDTO("senha-atual-em-claro", "s3nhaNova"));
 
-            var captor = ArgumentCaptor.forClass(Owner.class);
-            verify(ownerRepository).save(captor.capture());
+            var captor = ArgumentCaptor.forClass(Person.class);
+            verify(personRepository).save(captor.capture());
             assertThat(captor.getValue().getPassword()).isEqualTo(HASH);
             assertThat(captor.getValue().getUpdateDate()).isNotNull();
         }
@@ -289,15 +289,15 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve recusar quando a senha atual nao confere, sem gravar nada")
         void deveRecusarQuandoSenhaAtualNaoConfere() {
-            when(currentOwnerProvider.require()).thenReturn(existingOwner());
+            when(currentPersonProvider.require()).thenReturn(existingPerson());
             when(passwordEncoder.matches("chute", "senha-atual")).thenReturn(false);
 
-            assertThatThrownBy(() -> ownerService.changePassword(
+            assertThatThrownBy(() -> personService.changePassword(
                     new PasswordChangeRequestDTO("chute", "s3nhaNova")))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage(ErrorMessageEnum.CURRENT_PASSWORD_DOES_NOT_MATCH.getMessage());
 
-            verify(ownerRepository, org.mockito.Mockito.never()).save(any());
+            verify(personRepository, org.mockito.Mockito.never()).save(any());
             verify(passwordEncoder, org.mockito.Mockito.never()).encode(any());
         }
 
@@ -308,60 +308,60 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("deve recusar quando a nova senha e igual a atual")
         void deveRecusarQuandoNovaSenhaEIgualAAtual() {
-            when(currentOwnerProvider.require()).thenReturn(existingOwner());
+            when(currentPersonProvider.require()).thenReturn(existingPerson());
             when(passwordEncoder.matches("senha-atual-em-claro", "senha-atual")).thenReturn(true, true);
 
-            assertThatThrownBy(() -> ownerService.changePassword(
+            assertThatThrownBy(() -> personService.changePassword(
                     new PasswordChangeRequestDTO("senha-atual-em-claro", "senha-atual-em-claro")))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage(ErrorMessageEnum.NEW_PASSWORD_MUST_DIFFER.getMessage());
 
-            verify(ownerRepository, org.mockito.Mockito.never()).save(any());
+            verify(personRepository, org.mockito.Mockito.never()).save(any());
         }
 
         @Test
-        @DisplayName("deve trocar sempre a senha do owner do token")
-        void deveTrocarSempreSenhaDoOwnerDoToken() {
-            when(currentOwnerProvider.require()).thenReturn(existingOwner());
+        @DisplayName("deve trocar sempre a senha do person do token")
+        void deveTrocarSempreSenhaDoPersonDoToken() {
+            when(currentPersonProvider.require()).thenReturn(existingPerson());
             when(passwordEncoder.matches("senha-atual-em-claro", "senha-atual")).thenReturn(true);
             when(passwordEncoder.matches("s3nhaNova", "senha-atual")).thenReturn(false);
             when(passwordEncoder.encode("s3nhaNova")).thenReturn(HASH);
-            when(ownerRepository.save(any(Owner.class))).thenAnswer(i -> i.getArgument(0));
+            when(personRepository.save(any(Person.class))).thenAnswer(i -> i.getArgument(0));
 
-            ownerService.changePassword(new PasswordChangeRequestDTO("senha-atual-em-claro", "s3nhaNova"));
+            personService.changePassword(new PasswordChangeRequestDTO("senha-atual-em-claro", "s3nhaNova"));
 
-            var captor = ArgumentCaptor.forClass(Owner.class);
-            verify(ownerRepository).save(captor.capture());
-            assertThat(captor.getValue().getOwnerId()).isEqualTo(OWNER_ID);
+            var captor = ArgumentCaptor.forClass(Person.class);
+            verify(personRepository).save(captor.capture());
+            assertThat(captor.getValue().getPersonId()).isEqualTo(OWNER_ID);
         }
     }
 
     @Nested
-    @DisplayName("deleteCurrentOwner")
-    class DeleteCurrentOwner {
+    @DisplayName("deleteCurrentPerson")
+    class DeleteCurrentPerson {
 
         /**
          * A ordem importa e nao e detalhe de implementacao: as correcoes apontam
-         * para vacina e historico, esses apontam para animal, animal aponta para owner,
-         * e os tokens apontam para owner tambem. Apagar fora da ordem faz o banco
+         * para vacina e historico, esses apontam para animal, animal aponta para person,
+         * e os tokens apontam para person tambem. Apagar fora da ordem faz o banco
          * recusar por violacao de chave estrangeira. Este teste com mock nao pega
-         * isso sozinho - quem pega e o OwnerDeletionContainerTest, contra Postgres
+         * isso sozinho - quem pega e o PersonDeletionContainerTest, contra Postgres
          * de verdade - mas garante que a sequencia nao seja alterada por engano.
          */
         @Test
         @DisplayName("animal sem outro tutor morre junto, na ordem netas -> filhas -> animals")
         void animalSemOutroTutorMorreJunto() {
-            var autenticado = existingOwner();
-            when(currentOwnerProvider.require()).thenReturn(autenticado);
+            var autenticado = existingPerson();
+            when(currentPersonProvider.require()).thenReturn(autenticado);
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
             var vinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
             vinculo.setAnimal(animal);
 
-            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(vinculo));
+            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(vinculo));
             when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(1L);
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
             // A sequencia de deletes do animal saiu daqui para o AnimalPurger, porque ela
             // era identica a do DELETE /animals/{id} e as duas divergiram. O que este
@@ -369,14 +369,14 @@ class OwnerServiceImplTest {
             // dele esta no AnimalPurgerTest, e a recusa do banco no
             // AnimalDeletionContainerTest.
             var ordem = inOrder(petTutorRepository, animalPurger,
-                    passwordResetTokenRepository, emailVerificationTokenRepository, ownerRepository);
+                    passwordResetTokenRepository, emailVerificationTokenRepository, personRepository);
 
-            // os vinculos saem primeiro: seguram animal e owner ao mesmo tempo
-            ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            // os vinculos saem primeiro: seguram animal e person ao mesmo tempo
+            ordem.verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
             ordem.verify(animalPurger).purge(List.of(ANIMAL_ID));
-            ordem.verify(passwordResetTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
-            ordem.verify(emailVerificationTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
-            ordem.verify(ownerRepository).delete(autenticado);
+            ordem.verify(passwordResetTokenRepository).deleteByPersonPersonId(OWNER_ID);
+            ordem.verify(emailVerificationTokenRepository).deleteByPersonPersonId(OWNER_ID);
+            ordem.verify(personRepository).delete(autenticado);
         }
 
         /**
@@ -386,23 +386,23 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("animal com outro tutor sobrevive: nada dele e apagado")
         void animalComOutroTutorSobrevive() {
-            var autenticado = existingOwner();
-            when(currentOwnerProvider.require()).thenReturn(autenticado);
+            var autenticado = existingPerson();
+            when(currentPersonProvider.require()).thenReturn(autenticado);
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
             var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.EDITOR);
             meuVinculo.setAnimal(animal);
 
-            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
             when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
-            verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
             // o purge roda com lista vazia: nenhum animal morre, e o convite de
             // terceiro para este animal nao e desta conta - segue valendo para quem ficou
             verify(animalPurger).purge(List.of());
-            verify(ownerRepository).delete(autenticado);
+            verify(personRepository).delete(autenticado);
         }
 
         /**
@@ -410,29 +410,29 @@ class OwnerServiceImplTest {
          * schema nao tem ON DELETE CASCADE, cada uma dessas tres FKs segura um dos
          * deletes seguintes - e nenhuma delas aparece em teste de mock por si. O que
          * este caso trava e a ordem; a recusa de verdade esta no
-         * OwnerDeletionContainerTest.
+         * PersonDeletionContainerTest.
          */
         @Test
         @DisplayName("os convites da conta saem antes dos vinculos e dos animals")
         void convitesSaemAntesDosVinculosEDosAnimals() {
-            var autenticado = existingOwner();
-            when(currentOwnerProvider.require()).thenReturn(autenticado);
+            var autenticado = existingPerson();
+            when(currentPersonProvider.require()).thenReturn(autenticado);
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
             var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
             meuVinculo.setAnimal(animal);
 
-            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
             when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(1L);
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
-            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, animalPurger, ownerRepository);
-            ordem.verify(petTutorInviteRepository).deleteByCreatedByOwnerId(OWNER_ID);
-            ordem.verify(petTutorInviteRepository).deleteByAcceptedByOwnerId(OWNER_ID);
-            ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, animalPurger, personRepository);
+            ordem.verify(petTutorInviteRepository).deleteByCreatedByPersonId(OWNER_ID);
+            ordem.verify(petTutorInviteRepository).deleteByAcceptedByPersonId(OWNER_ID);
+            ordem.verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
             ordem.verify(animalPurger).purge(List.of(ANIMAL_ID));
-            ordem.verify(ownerRepository).delete(autenticado);
+            ordem.verify(personRepository).delete(autenticado);
         }
 
         /**
@@ -442,8 +442,8 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("titular que sai passa a titularidade ao tutor mais antigo")
         void titularQueSaiPassaATitularidade() {
-            var autenticado = existingOwner();
-            when(currentOwnerProvider.require()).thenReturn(autenticado);
+            var autenticado = existingPerson();
+            when(currentPersonProvider.require()).thenReturn(autenticado);
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
 
@@ -451,25 +451,25 @@ class OwnerServiceImplTest {
             meuVinculo.setAnimal(animal);
             meuVinculo.setCreationDate(LocalDateTime.of(2026, 1, 1, 10, 0));
 
-            var maria = Owner.builder().ownerId(OUTRO_OWNER_ID).name("Maria").build();
+            var maria = Person.builder().personId(OUTRO_OWNER_ID).name("Maria").build();
             var vinculoDaMaria = PetTutores.vinculo(maria, PetTutorRole.VIEWER);
             vinculoDaMaria.setAnimal(animal);
             vinculoDaMaria.setCreationDate(LocalDateTime.of(2026, 2, 1, 10, 0));
 
-            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
             when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
             // devolve so quem fica: a consulta acontece depois de o vinculo de quem
             // sai ter sido apagado e descarregado, entao o banco nao teria como
             // trazer o proprio. Stubar os dois aqui foi o que deixou passar a
-            // violacao do indice unico - ver OwnerDeletionContainerTest
+            // violacao do indice unico - ver PersonDeletionContainerTest
             when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
                     .thenReturn(List.of(vinculoDaMaria));
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
             var captor = ArgumentCaptor.forClass(PetTutor.class);
             verify(petTutorRepository).save(captor.capture());
-            assertThat(captor.getValue().getOwner().getOwnerId()).isEqualTo(OUTRO_OWNER_ID);
+            assertThat(captor.getValue().getPerson().getPersonId()).isEqualTo(OUTRO_OWNER_ID);
             assertThat(captor.getValue().getRole()).isEqualTo(PetTutorRole.HOLDER);
         }
 
@@ -482,8 +482,8 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("o vinculo de quem sai e apagado antes de o sucessor ser promovido")
         void apagaOVinculoAntesDePromover() {
-            var autenticado = existingOwner();
-            when(currentOwnerProvider.require()).thenReturn(autenticado);
+            var autenticado = existingPerson();
+            when(currentPersonProvider.require()).thenReturn(autenticado);
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
 
@@ -491,20 +491,20 @@ class OwnerServiceImplTest {
             meuVinculo.setAnimal(animal);
             meuVinculo.setCreationDate(LocalDateTime.of(2026, 1, 1, 10, 0));
 
-            var maria = Owner.builder().ownerId(OUTRO_OWNER_ID).name("Maria").build();
+            var maria = Person.builder().personId(OUTRO_OWNER_ID).name("Maria").build();
             var vinculoDaMaria = PetTutores.vinculo(maria, PetTutorRole.VIEWER);
             vinculoDaMaria.setAnimal(animal);
             vinculoDaMaria.setCreationDate(LocalDateTime.of(2026, 2, 1, 10, 0));
 
-            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
             when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
             when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
                     .thenReturn(List.of(vinculoDaMaria));
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
             var ordem = inOrder(petTutorRepository);
-            ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            ordem.verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
             ordem.verify(petTutorRepository).flush();
             ordem.verify(petTutorRepository).save(any(PetTutor.class));
         }
@@ -513,19 +513,19 @@ class OwnerServiceImplTest {
         @Test
         @DisplayName("co-tutor que sai nao promove ninguem")
         void coTutorQueSaiNaoPromoveNinguem() {
-            var autenticado = existingOwner();
-            when(currentOwnerProvider.require()).thenReturn(autenticado);
+            var autenticado = existingPerson();
+            when(currentPersonProvider.require()).thenReturn(autenticado);
 
             var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
             var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.EDITOR);
             meuVinculo.setAnimal(animal);
 
-            when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
+            when(petTutorRepository.findByPersonPersonId(OWNER_ID)).thenReturn(List.of(meuVinculo));
             when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
 
-            ownerService.deleteCurrentOwner();
+            personService.deleteCurrentPerson();
 
-            verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
+            verify(petTutorRepository).deleteByPersonPersonId(OWNER_ID);
             verify(petTutorRepository, never()).save(any(PetTutor.class));
             verify(petTutorRepository, never()).findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(any());
         }

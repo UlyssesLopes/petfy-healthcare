@@ -21,7 +21,7 @@ public class CurrentVetProvider {
      *
      * Nao basta o token ser valido: um token de tutor nao resolve para vet aqui,
      * mesmo que a rota so exija autenticacao. A busca e na tabela de vets, entao
-     * um email de owner simplesmente nao encontra.
+     * um email de person simplesmente nao encontra.
      */
     public Vet require() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

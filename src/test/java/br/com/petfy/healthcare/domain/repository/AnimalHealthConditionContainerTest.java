@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.domain.repository;
 
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthCondition;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionKind;
@@ -41,7 +41,7 @@ class AnimalHealthConditionContainerTest extends PostgresContainerTest {
 
     @Autowired private AnimalHealthConditionRepository animalHealthConditionRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
-    @Autowired private OwnerRepository ownerRepository;
+    @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
     @Autowired private PetTutorRepository petTutorRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
@@ -50,7 +50,7 @@ class AnimalHealthConditionContainerTest extends PostgresContainerTest {
 
     @BeforeEach
     void setUp() {
-        Owner ulysses = ownerRepository.saveAndFlush(Owner.builder()
+        Person ulysses = personRepository.saveAndFlush(Person.builder()
                 .name("Ulysses")
                 .email("prontuario-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash")
@@ -60,7 +60,7 @@ class AnimalHealthConditionContainerTest extends PostgresContainerTest {
                 .name("Rex").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
 
         petTutorRepository.saveAndFlush(PetTutor.builder()
-                .animal(rex).owner(ulysses).role(PetTutorRole.HOLDER)
+                .animal(rex).person(ulysses).role(PetTutorRole.HOLDER)
                 .creationDate(LocalDateTime.now()).build());
     }
 

@@ -2,9 +2,9 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.PasswordResetConfirmDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordResetRequestDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.PasswordResetToken;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.Notification;
@@ -29,7 +29,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PasswordResetServiceImpl implements PasswordResetService {
 
-    private final OwnerRepository ownerRepository;
+    private final PersonRepository personRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final OpaqueTokenService opaqueTokenService;
     private final PasswordEncoder passwordEncoder;
@@ -54,32 +54,32 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Override
     @Transactional
     public void requestReset(PasswordResetRequestDTO request) {
-        Optional<Owner> talvezOwner = ownerRepository.findByEmail(request.getEmail());
+        Optional<Person> talvezPerson = personRepository.findByEmail(request.getEmail());
 
-        if (talvezOwner.isEmpty()) {
+        if (talvezPerson.isEmpty()) {
             log.info("Pedido de recuperacao para e-mail sem conta; respondendo igual a um pedido valido");
             return;
         }
 
-        Owner owner = talvezOwner.get();
+        Person person = talvezPerson.get();
         LocalDateTime agora = LocalDateTime.now();
 
-        if (dentroDoCooldown(owner, agora)) {
-            log.info("Pedido de recuperacao dentro do cooldown para o owner {}; nada enviado", owner.getOwnerId());
+        if (dentroDoCooldown(person, agora)) {
+            log.info("Pedido de recuperacao dentro do cooldown para o person {}; nada enviado", person.getPersonId());
             return;
         }
 
         // pedir de novo invalida o pedido anterior: dois links vivos ao mesmo
         // tempo dobram a janela de quem interceptou o e-mail antigo, sem dar nada
         // em troca a quem esqueceu a senha
-        List<PasswordResetToken> emAberto = tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(owner.getOwnerId());
+        List<PasswordResetToken> emAberto = tokenRepository.findByPersonPersonIdAndUsedAtIsNull(person.getPersonId());
         emAberto.forEach(anterior -> anterior.setUsedAt(agora));
         tokenRepository.saveAll(emAberto);
 
         String token = opaqueTokenService.generate();
 
         tokenRepository.save(PasswordResetToken.builder()
-                .owner(owner)
+                .person(person)
                 .tokenHash(opaqueTokenService.hash(token))
                 .expiresAt(agora.plusMinutes(expirationMinutes))
                 .creationDate(agora)
@@ -92,9 +92,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         // desconhecido entregaria exatamente a informacao que o silencio esconde.
         // Quem pediu tenta de novo depois do cooldown
         try {
-            notifier.send(mensagem(owner, token));
+            notifier.send(mensagem(person, token));
         } catch (Exception e) {
-            log.error("Falha ao enviar a recuperacao de senha do owner {}", owner.getOwnerId(), e);
+            log.error("Falha ao enviar a recuperacao de senha do person {}", person.getPersonId(), e);
         }
     }
 
@@ -115,22 +115,22 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                         ErrorMessageEnum.RESET_TOKEN_NOT_FOUND.getCode(),
                         HttpStatus.BAD_REQUEST));
 
-        Owner owner = token.getOwner();
-        owner.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        Person person = token.getPerson();
+        person.setPassword(passwordEncoder.encode(request.getNewPassword()));
 
         // derruba as sessoes abertas. Aqui importa ainda mais que na troca comum:
         // se a conta foi tomada, quem esta recuperando precisa expulsar quem
         // entrou, e nao apenas voltar a conseguir entrar junto
-        owner.setPasswordChangedAt(agora);
-        owner.setUpdateDate(agora);
-        ownerRepository.save(owner);
+        person.setPasswordChangedAt(agora);
+        person.setUpdateDate(agora);
+        personRepository.save(person);
 
         token.setUsedAt(agora);
         tokenRepository.save(token);
     }
 
-    private boolean dentroDoCooldown(Owner owner, LocalDateTime agora) {
-        return tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(owner.getOwnerId())
+    private boolean dentroDoCooldown(Person person, LocalDateTime agora) {
+        return tokenRepository.findFirstByPersonPersonIdOrderByCreationDateDesc(person.getPersonId())
                 .map(ultimo -> ultimo.getCreationDate().plusMinutes(cooldownMinutes).isAfter(agora))
                 .orElse(false);
     }
@@ -140,10 +140,10 @@ public class PasswordResetServiceImpl implements PasswordResetService {
      * inventar uma URL agora seria fixar um endereco que ninguem serve. Quando o
      * cliente existir, e aqui que o link e montado.
      */
-    private Notification mensagem(Owner owner, String token) {
+    private Notification mensagem(Person person, String token) {
         return Notification.builder()
-                .toEmail(owner.getEmail())
-                .toName(owner.getName())
+                .toEmail(person.getEmail())
+                .toName(person.getName())
                 .subject("Recuperacao de senha - Petfy")
                 .lines(List.of(
                         "Recebemos um pedido para redefinir a sua senha.",

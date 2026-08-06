@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.notification;
 
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import org.junit.jupiter.api.DisplayName;
@@ -35,16 +35,16 @@ class ClinicActivityNotifierTest {
     @InjectMocks
     private ClinicActivityNotifier notifier;
 
-    private Owner tutor(boolean emailConfirmado) {
-        return Owner.builder()
-                .ownerId(UUID.randomUUID())
+    private Person tutor(boolean emailConfirmado) {
+        return Person.builder()
+                .personId(UUID.randomUUID())
                 .name("Ulysses")
                 .email("ulysses@petfy.com.br")
                 .emailVerifiedAt(emailConfirmado ? LocalDateTime.now().minusDays(1) : null)
                 .build();
     }
 
-    private Vaccine vacina(Owner dono) {
+    private Vaccine vacina(Person dono) {
         return Vaccine.builder()
                 .vaccineId(UUID.randomUUID())
                 .vaccineName("V10")
@@ -55,7 +55,7 @@ class ClinicActivityNotifierTest {
                 .build();
     }
 
-    private HealthRecord atendimento(Owner dono) {
+    private HealthRecord atendimento(Person dono) {
         return HealthRecord.builder()
                 .eventType("Consulta")
                 .eventDate(LocalDate.of(2026, 8, 1))

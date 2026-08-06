@@ -42,7 +42,7 @@ public class AttachmentResponseDTO {
 
     private String description;
 
-    private String uploadedByOwnerName;
+    private String uploadedByPersonName;
 
     private LocalDateTime creationDate;
 

@@ -5,7 +5,7 @@ import br.com.petfy.healthcare.domain.dto.AnimalShareRequestDTO;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineStatus;
 import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -76,14 +76,14 @@ class AnimalShareServiceImplTest {
         ReflectionTestUtils.setField(service, "windowDays", 30);
     }
 
-    private Owner owner(UUID id) {
-        return Owner.builder().ownerId(id).name("Ulysses").email("ulysses@petfy.com.br")
+    private Person person(UUID id) {
+        return Person.builder().personId(id).name("Ulysses").email("ulysses@petfy.com.br")
                 .phone("11999999999").address("Rua A, 100").password("hash").build();
     }
 
     private Animal animal() {
         return Animal.builder().animalId(ANIMAL_ID).name("Rex").type("Cachorro").breed("Vira-lata")
-                .bornDate(LocalDate.of(2021, 3, 15)).gender("Macho").tutors(PetTutores.titular(owner(OWNER_ID))).build();
+                .bornDate(LocalDate.of(2021, 3, 15)).gender("Macho").tutors(PetTutores.titular(person(OWNER_ID))).build();
     }
 
     private PetfyHealthcareException animalNaoEncontrado() {
@@ -313,7 +313,7 @@ class AnimalShareServiceImplTest {
             var card = service.viewSharedCard("token-qualquer");
 
             assertThat(card.getAnimalName()).isEqualTo("Rex");
-            assertThat(card.getOwnerName()).isEqualTo("Ulysses");
+            assertThat(card.getPersonName()).isEqualTo("Ulysses");
             assertThat(card.getVaccines()).hasSize(1);
             // o link vale por si: nao ha pessoa autenticada sobre quem perguntar,
             // entao o guard nao pode entrar nesse caminho
@@ -342,8 +342,8 @@ class AnimalShareServiceImplTest {
         void naoDeveExporContatoDoTutor() {
             assertThat(SharedVaccineCardDTO.class.getDeclaredFields())
                     .extracting(Field::getName)
-                    .contains("ownerName")
-                    .doesNotContain("ownerEmail", "ownerPhone", "ownerAddress", "ownerId");
+                    .contains("personName")
+                    .doesNotContain("personEmail", "personPhone", "personAddress", "personId");
         }
 
         @Test

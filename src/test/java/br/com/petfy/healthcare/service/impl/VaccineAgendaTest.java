@@ -1,11 +1,11 @@
 package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.VaccineStatus;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,7 +36,7 @@ class VaccineAgendaTest {
     private VaccineRepository vaccineRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private CurrentPersonProvider currentPersonProvider;
 
     // calculator real: a classificacao e justamente o que este teste verifica,
     // entao mocka-la esvaziaria o teste
@@ -60,8 +60,8 @@ class VaccineAgendaTest {
     }
 
     private void tutorTem(Vaccine... vacinas) {
-        when(currentOwnerProvider.require()).thenReturn(Owner.builder().ownerId(OWNER_ID).build());
-        when(vaccineRepository.findByAnimalTutorsOwnerOwnerId(OWNER_ID)).thenReturn(List.of(vacinas));
+        when(currentPersonProvider.require()).thenReturn(Person.builder().personId(OWNER_ID).build());
+        when(vaccineRepository.findByAnimalTutorsPersonPersonId(OWNER_ID)).thenReturn(List.of(vacinas));
     }
 
     @Nested

@@ -1,24 +1,24 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
-import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
+import br.com.petfy.healthcare.domain.dto.PersonRequestDTO;
+import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
-import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.PersonService;
 import br.com.petfy.healthcare.service.AnimalPurger;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -35,16 +35,16 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class OwnerServiceImpl implements OwnerService {
+public class PersonServiceImpl implements PersonService {
 
-    private final OwnerRepository ownerRepository;
+    private final PersonRepository personRepository;
     private final VetRepository vetRepository;
     private final PetTutorRepository petTutorRepository;
     private final PetTutorInviteRepository petTutorInviteRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
     private final EmailVerificationService emailVerificationService;
     private final AnimalPurger animalPurger;
     private final ConsentService consentService;
@@ -52,11 +52,11 @@ public class OwnerServiceImpl implements OwnerService {
     private final AttachmentRepository attachmentRepository;
 
     @Override
-    public OwnerResponseDTO createOwner(OwnerRequestDTO request) {
+    public PersonResponseDTO createPerson(PersonRequestDTO request) {
 
         garantirEmailLivre(request.getEmail());
 
-        Owner owner = Owner.builder()
+        Person person = Person.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -66,7 +66,7 @@ public class OwnerServiceImpl implements OwnerService {
                 .updateDate(LocalDateTime.now())
                 .build();
 
-        Owner salvo = ownerRepository.save(owner);
+        Person salvo = personRepository.save(person);
 
         // O consentimento e gravado na mesma transacao do cadastro, e antes do
         // envio de e-mail: conta que existisse sem aceite registrado seria
@@ -84,44 +84,44 @@ public class OwnerServiceImpl implements OwnerService {
     }
 
     @Override
-    public OwnerResponseDTO getCurrentOwner() {
-        return toResponseDTO(currentOwnerProvider.require());
+    public PersonResponseDTO getCurrentPerson() {
+        return toResponseDTO(currentPersonProvider.require());
     }
 
     @Override
-    public OwnerResponseDTO updateCurrentOwner(OwnerRequestDTO request) {
-        Owner existingOwner = currentOwnerProvider.require();
+    public PersonResponseDTO updateCurrentPerson(PersonRequestDTO request) {
+        Person existingPerson = currentPersonProvider.require();
 
         if (request.getName() != null) {
-            existingOwner.setName(request.getName());
+            existingPerson.setName(request.getName());
         }
 
         if (request.getEmail() != null) {
-            existingOwner.setEmail(request.getEmail());
+            existingPerson.setEmail(request.getEmail());
         }
 
         if (request.getPhone() != null) {
-            existingOwner.setPhone(request.getPhone());
+            existingPerson.setPhone(request.getPhone());
         }
 
         if (request.getAddress() != null) {
-            existingOwner.setAddress(request.getAddress());
+            existingPerson.setAddress(request.getAddress());
         }
 
         // password fica de fora de proposito: troca de senha pede endpoint
         // proprio, com confirmacao da senha atual
-        existingOwner.setUpdateDate(LocalDateTime.now());
+        existingPerson.setUpdateDate(LocalDateTime.now());
 
-        return toResponseDTO(ownerRepository.save(existingOwner));
+        return toResponseDTO(personRepository.save(existingPerson));
     }
 
     @Override
     public void changePassword(PasswordChangeRequestDTO request) {
-        Owner owner = currentOwnerProvider.require();
+        Person person = currentPersonProvider.require();
 
         // exigir a senha atual e o que impede que um token roubado, sozinho,
         // troque a senha e tome a conta em definitivo
-        if (!passwordEncoder.matches(request.getCurrentPassword(), owner.getPassword())) {
+        if (!passwordEncoder.matches(request.getCurrentPassword(), person.getPassword())) {
             throw new PetfyHealthcareException(
                     ErrorMessageEnum.CURRENT_PASSWORD_DOES_NOT_MATCH.getMessage(),
                     ErrorMessageEnum.CURRENT_PASSWORD_DOES_NOT_MATCH.getCode(),
@@ -130,21 +130,21 @@ public class OwnerServiceImpl implements OwnerService {
 
         // sem isso, quem troca a senha depois de um vazamento acha que rodou a
         // credencial quando na pratica nao mudou nada
-        if (passwordEncoder.matches(request.getNewPassword(), owner.getPassword())) {
+        if (passwordEncoder.matches(request.getNewPassword(), person.getPassword())) {
             throw new PetfyHealthcareException(
                     ErrorMessageEnum.NEW_PASSWORD_MUST_DIFFER.getMessage(),
                     ErrorMessageEnum.NEW_PASSWORD_MUST_DIFFER.getCode(),
                     HttpStatus.BAD_REQUEST);
         }
 
-        owner.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        person.setPassword(passwordEncoder.encode(request.getNewPassword()));
 
         // e isto que derruba as sessoes abertas: o filtro recusa token emitido
         // antes deste instante. Sem o carimbo, trocar a senha nao expulsaria
         // quem ja estava dentro, que e justamente o motivo de trocar
-        owner.setPasswordChangedAt(LocalDateTime.now());
-        owner.setUpdateDate(LocalDateTime.now());
-        ownerRepository.save(owner);
+        person.setPasswordChangedAt(LocalDateTime.now());
+        person.setUpdateDate(LocalDateTime.now());
+        personRepository.save(person);
     }
 
     /**
@@ -153,9 +153,9 @@ public class OwnerServiceImpl implements OwnerService {
      * exclusao pela LGPD.
      *
      * Ordem obrigatoria: filhas antes das pais. As correcoes apontam para vacina e
-     * historico; vacina/historico apontam para animal; animal aponta para owner. Sem
+     * historico; vacina/historico apontam para animal; animal aponta para person. Sem
      * essa ordem o banco recusa cada delete com violacao de chave estrangeira - o
-     * DELETE /owners/me estava quebrado desde a V12 exatamente por isso, so
+     * DELETE /persons/me estava quebrado desde a V12 exatamente por isso, so
      * apagava a conta sem animal.
      *
      * <b>Com multi-tutor, a cascata deixou de ser cega.</b> Antes da V15 todo animal
@@ -180,11 +180,11 @@ public class OwnerServiceImpl implements OwnerService {
      */
     @Override
     @Transactional
-    public void deleteCurrentOwner() {
-        Owner owner = currentOwnerProvider.require();
-        UUID ownerId = owner.getOwnerId();
+    public void deleteCurrentPerson() {
+        Person person = currentPersonProvider.require();
+        UUID personId = person.getPersonId();
 
-        List<PetTutor> vinculos = petTutorRepository.findByOwnerOwnerId(ownerId);
+        List<PetTutor> vinculos = petTutorRepository.findByPersonPersonId(personId);
 
         List<UUID> animalsQueMorrem = new ArrayList<>();
         List<UUID> animalsQuePrecisamDeSucessor = new ArrayList<>();
@@ -206,12 +206,12 @@ public class OwnerServiceImpl implements OwnerService {
         // deletes seguintes. Convite e credencial de uso unico com validade curta,
         // nao historico de saude - apagar segue a mesma politica que o passo 10
         // escolheu para o resto da conta.
-        petTutorInviteRepository.deleteByCreatedByOwnerId(ownerId);
-        petTutorInviteRepository.deleteByAcceptedByOwnerId(ownerId);
+        petTutorInviteRepository.deleteByCreatedByPersonId(personId);
+        petTutorInviteRepository.deleteByAcceptedByPersonId(personId);
 
-        // Os vinculos saem primeiro: sao filhos de animal e de owner ao mesmo tempo,
+        // Os vinculos saem primeiro: sao filhos de animal e de person ao mesmo tempo,
         // entao segurariam os dois deletes seguintes
-        petTutorRepository.deleteByOwnerOwnerId(ownerId);
+        petTutorRepository.deleteByPersonPersonId(personId);
 
         // E saem tambem antes de promover o sucessor, nao depois. O indice unico
         // parcial da V15 exige exatamente um HOLDER por animal: promover com o
@@ -229,7 +229,7 @@ public class OwnerServiceImpl implements OwnerService {
         //
         // Nos animals que morrem, o purge apaga o anexo e o arquivo de qualquer forma; este
         // update passa por eles antes sem prejuizo.
-        attachmentRepository.desassociarUploader(ownerId);
+        attachmentRepository.desassociarUploader(personId);
 
         // Os animals que morrem, com tudo que pende deles. A sequencia mora no
         // AnimalPurger, compartilhada com o DELETE /animals/{id}: eram duas listas
@@ -239,17 +239,17 @@ public class OwnerServiceImpl implements OwnerService {
         animalPurger.purge(animalsQueMorrem);
 
         // Tokens da conta
-        passwordResetTokenRepository.deleteByOwnerOwnerId(ownerId);
-        emailVerificationTokenRepository.deleteByOwnerOwnerId(ownerId);
+        passwordResetTokenRepository.deleteByPersonPersonId(personId);
+        emailVerificationTokenRepository.deleteByPersonPersonId(personId);
 
         // O registro de consentimento sai junto. A evidencia do aceite - IP, user
         // agent, data - e dado pessoal do titular, e guardar prova de consentimento
         // de quem pediu para ser esquecido inverteria o proposito da prova. Nao ha o
         // que demonstrar sobre um titular que nao existe mais.
-        consentRecordRepository.deleteByOwnerOwnerId(ownerId);
+        consentRecordRepository.deleteByPersonPersonId(personId);
 
-        // Finalmente o owner
-        ownerRepository.delete(owner);
+        // Finalmente o person
+        personRepository.delete(person);
     }
 
     /**
@@ -273,7 +273,7 @@ public class OwnerServiceImpl implements OwnerService {
     }
 
     private void garantirEmailLivre(String email) {
-        boolean jaUsado = ownerRepository.existsByEmail(email) || vetRepository.existsByEmail(email);
+        boolean jaUsado = personRepository.existsByEmail(email) || vetRepository.existsByEmail(email);
 
         if (jaUsado) {
             throw new PetfyHealthcareException(
@@ -283,15 +283,15 @@ public class OwnerServiceImpl implements OwnerService {
         }
     }
 
-    private OwnerResponseDTO toResponseDTO(Owner owner) {
-        return OwnerResponseDTO.builder()
-                .ownerId(owner.getOwnerId())
-                .name(owner.getName())
-                .email(owner.getEmail())
-                .phone(owner.getPhone())
-                .address(owner.getAddress())
-                .creationDate(owner.getCreationDate())
-                .updateDate(owner.getUpdateDate())
+    private PersonResponseDTO toResponseDTO(Person person) {
+        return PersonResponseDTO.builder()
+                .personId(person.getPersonId())
+                .name(person.getName())
+                .email(person.getEmail())
+                .phone(person.getPhone())
+                .address(person.getAddress())
+                .creationDate(person.getCreationDate())
+                .updateDate(person.getUpdateDate())
                 .build();
     }
 

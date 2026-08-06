@@ -25,18 +25,18 @@ public class PetTutorResponseDTO {
 
     private UUID animalId;
 
-    private UUID ownerId;
+    private UUID personId;
 
-    private String ownerName;
+    private String personName;
 
-    private String ownerEmail;
+    private String personEmail;
 
     private PetTutorRole role;
 
     private boolean holder;
 
     /** Quem convidou. Nulo nos vinculos que a V15 criou no backfill. */
-    private String invitedByOwnerName;
+    private String invitedByPersonName;
 
     private LocalDateTime creationDate;
 

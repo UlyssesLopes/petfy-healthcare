@@ -30,7 +30,7 @@ import java.util.UUID;
  * existir -, mas cada um mantinha sua propria sequencia de deletes. Quando o passo
  * 9 trouxe peso e antiparasitario, nenhuma das duas foi atualizada: o
  * {@code DELETE /animals/{id}} passou a falhar para qualquer animal com vacina, e o
- * {@code DELETE /owners/me} para qualquer animal com pesagem. Os dois respondiam 500,
+ * {@code DELETE /persons/me} para qualquer animal com pesagem. Os dois respondiam 500,
  * e nenhum teste de mock viu - quem recusa e a chave estrangeira, que so existe no
  * banco.
  *

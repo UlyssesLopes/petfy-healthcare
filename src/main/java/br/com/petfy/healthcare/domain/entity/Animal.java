@@ -55,7 +55,7 @@ public class Animal {
     private Species species;
 
     /**
-     * Quem cuida deste animal. Substituiu o {@code owner} unico na V15 - ver
+     * Quem cuida deste animal. Substituiu o {@code person} unico na V15 - ver
      * {@link PetTutor} para por que a coluna antiga nao foi mantida ao lado.
      *
      * Nao ha cascade: vinculo se cria e se apaga pelos fluxos de convite e de
@@ -70,16 +70,16 @@ public class Animal {
      * garante que ha exatamente um - mas devolve Optional porque a colecao e
      * lazy e chamar isto fora de transacao e um erro de uso, nao um animal sem dono.
      */
-    public Optional<Owner> getHolder() {
+    public Optional<Person> getHolder() {
         return tutors.stream()
                 .filter(PetTutor::isHolder)
-                .map(PetTutor::getOwner)
+                .map(PetTutor::getPerson)
                 .findFirst();
     }
 
     /** Todos os tutores, em qualquer papel. Usado por quem notifica. */
-    public List<Owner> getTutorOwners() {
-        return tutors.stream().map(PetTutor::getOwner).toList();
+    public List<Person> getTutorPersons() {
+        return tutors.stream().map(PetTutor::getPerson).toList();
     }
 
     private String generalRegistry;

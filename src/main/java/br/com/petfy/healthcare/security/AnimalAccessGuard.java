@@ -17,7 +17,7 @@ import java.util.UUID;
  * Decide se a pessoa autenticada alcanca um animal, e em que nivel.
  *
  * Existe como peca unica porque antes da V15 essa decisao estava reanimalida em
- * duas dezenas de lugares como {@code animal.getOwner().getOwnerId().equals(...)}.
+ * duas dezenas de lugares como {@code animal.getPerson().getPersonId().equals(...)}.
  * Enquanto a regra era "dono unico", reanimalir era so feio; com tres papeis e
  * varios tutores, cada copia vira uma chance de alguem esquecer um caso e
  * transformar leitura em escrita - ou pior, deixar passar animal de terceiro.
@@ -33,7 +33,7 @@ public class AnimalAccessGuard {
 
     private final AnimalRepository animalRepository;
     private final PetTutorRepository petTutorRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
 
     /** Le a carteira: qualquer papel serve. */
     public Animal requireLeitura(UUID animalId) {
@@ -51,15 +51,15 @@ public class AnimalAccessGuard {
     }
 
     public PetTutor vinculoDoAutenticado(UUID animalId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
+        UUID personId = currentPersonProvider.require().getPersonId();
 
-        return petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(animalId, ownerId)
+        return petTutorRepository.findByAnimalAnimalIdAndPersonPersonId(animalId, personId)
                 .orElseThrow(AnimalAccessGuard::animalNaoEncontrado);
     }
 
     public boolean alcanca(UUID animalId) {
-        UUID ownerId = currentOwnerProvider.require().getOwnerId();
-        return petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(animalId, ownerId);
+        UUID personId = currentPersonProvider.require().getPersonId();
+        return petTutorRepository.existsByAnimalAnimalIdAndPersonPersonId(animalId, personId);
     }
 
     private Animal require(UUID animalId, PetTutorRole nivelExigido) {

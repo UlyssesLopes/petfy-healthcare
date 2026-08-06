@@ -18,7 +18,7 @@ import java.util.UUID;
  * chave estrangeira para {@code vets}. Duas razoes: o veterinario pode fechar a conta
  * depois, e o registro de que ele leu o historico nao pode virar linha sem nome; e
  * uma FK faria a exclusao de conta de veterinario esbarrar neste log, que e a mesma
- * familia de bug que travou o {@code DELETE /owners/me} duas vezes.
+ * familia de bug que travou o {@code DELETE /persons/me} duas vezes.
  */
 @Entity
 @Table(name = "sensitive_access_log")

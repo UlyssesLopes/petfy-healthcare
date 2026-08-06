@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.domain.repository;
 
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -40,7 +40,7 @@ class VaccineRepositoryTest {
     private AnimalRepository animalRepository;
 
     @Autowired
-    private OwnerRepository ownerRepository;
+    private PersonRepository personRepository;
 
     private static final LocalDate HOJE = LocalDate.now();
 
@@ -48,10 +48,10 @@ class VaccineRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        Owner owner = ownerRepository.save(Owner.builder()
+        Person person = personRepository.save(Person.builder()
                 .name("Ulysses").email("ulysses@petfy.com.br").password("hash").build());
 
-        rex = animalRepository.save(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
+        rex = animalRepository.save(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(person)).species(Species.CANINA).build());
     }
 
     private void gravarVacina(String nome, LocalDate proximaDose) {

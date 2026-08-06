@@ -6,11 +6,11 @@ import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.AnimalPurger;
 import br.com.petfy.healthcare.service.PuppyProtocolService;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +46,7 @@ class AnimalServiceImplTest {
     private PetTutorRepository petTutorRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private CurrentPersonProvider currentPersonProvider;
 
     @Mock
     private AnimalAccessGuard animalAccessGuard;
@@ -64,11 +64,11 @@ class AnimalServiceImplTest {
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final UUID OUTRO_OWNER_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
 
-    private Owner owner(UUID id) {
-        return Owner.builder().ownerId(id).name("Ulysses").email("ulysses@petfy.com.br").build();
+    private Person person(UUID id) {
+        return Person.builder().personId(id).name("Ulysses").email("ulysses@petfy.com.br").build();
     }
 
-    private Animal animalDe(UUID ownerId) {
+    private Animal animalDe(UUID personId) {
         return Animal.builder()
                 .animalId(ANIMAL_ID)
                 .name("Rex")
@@ -78,7 +78,7 @@ class AnimalServiceImplTest {
                 .weight(12.5)
                 .gender("Macho")
                 .species(Species.CANINA)
-                .tutors(PetTutores.titular(owner(ownerId)))
+                .tutors(PetTutores.titular(person(personId)))
                 .creationDate(LocalDateTime.of(2025, 1, 1, 10, 0))
                 .build();
     }
@@ -95,8 +95,8 @@ class AnimalServiceImplTest {
                 .build();
     }
 
-    private void autenticadoComo(UUID ownerId) {
-        when(currentOwnerProvider.require()).thenReturn(owner(ownerId));
+    private void autenticadoComo(UUID personId) {
+        when(currentPersonProvider.require()).thenReturn(person(personId));
     }
 
     @Nested
@@ -104,24 +104,24 @@ class AnimalServiceImplTest {
     class CreateAnimal {
 
         @Test
-        @DisplayName("deve vincular o animal ao owner autenticado")
-        void deveVincularAnimalAoOwnerAutenticado() {
+        @DisplayName("deve vincular o animal ao person autenticado")
+        void deveVincularAnimalAoPersonAutenticado() {
             autenticadoComo(OWNER_ID);
             when(animalRepository.save(any(Animal.class))).thenReturn(animalDe(OWNER_ID));
 
             var result = animalService.createAnimal(request());
 
-            assertThat(result.getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(result.getPersonId()).isEqualTo(OWNER_ID);
 
             var captor = ArgumentCaptor.forClass(Animal.class);
             verify(animalRepository).save(captor.capture());
             assertThat(captor.getValue().getCreationDate()).isNotNull();
 
             // o vinculo e o que diz quem manda no animal, e nasce como HOLDER: a
-            // partir da V15 nao ha campo owner no animal para conferir
+            // partir da V15 nao ha campo person no animal para conferir
             var vinculo = ArgumentCaptor.forClass(PetTutor.class);
             verify(petTutorRepository).save(vinculo.capture());
-            assertThat(vinculo.getValue().getOwner().getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(vinculo.getValue().getPerson().getPersonId()).isEqualTo(OWNER_ID);
             assertThat(vinculo.getValue().getRole()).isEqualTo(PetTutorRole.HOLDER);
         }
 
@@ -130,7 +130,7 @@ class AnimalServiceImplTest {
         void requestNaoDeveEscolherODono() {
             assertThat(AnimalRequestDTO.class.getDeclaredFields())
                     .extracting(java.lang.reflect.Field::getName)
-                    .doesNotContain("ownerId");
+                    .doesNotContain("personId");
         }
     }
 
@@ -150,13 +150,13 @@ class AnimalServiceImplTest {
         }
 
         @Test
-        @DisplayName("ownerId na resposta e o titular, e nao quem esta lendo")
-        void ownerIdNaRespostaEOTitular() {
+        @DisplayName("personId na resposta e o titular, e nao quem esta lendo")
+        void personIdNaRespostaEOTitular() {
             var animal = animalDe(OWNER_ID);
-            animal.getTutors().add(PetTutores.vinculo(owner(OUTRO_OWNER_ID), PetTutorRole.EDITOR));
+            animal.getTutors().add(PetTutores.vinculo(person(OUTRO_OWNER_ID), PetTutorRole.EDITOR));
             when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenReturn(animal);
 
-            assertThat(animalService.getAnimalById(ANIMAL_ID).getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(animalService.getAnimalById(ANIMAL_ID).getPersonId()).isEqualTo(OWNER_ID);
         }
     }
 
@@ -165,17 +165,17 @@ class AnimalServiceImplTest {
     class ListAllAnimals {
 
         @Test
-        @DisplayName("deve listar apenas os animals do owner autenticado")
-        void deveListarApenasAnimalsDoOwnerAutenticado() {
+        @DisplayName("deve listar apenas os animals do person autenticado")
+        void deveListarApenasAnimalsDoPersonAutenticado() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(0, 20);
-            when(animalRepository.findByTutorsOwnerOwnerId(OWNER_ID, pageable))
+            when(animalRepository.findByTutorsPersonPersonId(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of(animalDe(OWNER_ID))));
 
             var result = animalService.listAllAnimals(pageable);
 
             assertThat(result.getContent()).hasSize(1);
-            assertThat(result.getContent().get(0).getOwnerId()).isEqualTo(OWNER_ID);
+            assertThat(result.getContent().get(0).getPersonId()).isEqualTo(OWNER_ID);
             verify(animalRepository, never()).findAll();
         }
 
@@ -184,7 +184,7 @@ class AnimalServiceImplTest {
         void listagemPaginadaNaoUsaFindAll() {
             autenticadoComo(OWNER_ID);
             var pageable = PageRequest.of(3, 50);
-            when(animalRepository.findByTutorsOwnerOwnerId(OWNER_ID, pageable))
+            when(animalRepository.findByTutorsPersonPersonId(OWNER_ID, pageable))
                     .thenReturn(new PageImpl<>(List.of()));
 
             animalService.listAllAnimals(pageable);

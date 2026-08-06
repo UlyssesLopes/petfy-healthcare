@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.config;
 
 import br.com.petfy.healthcare.controller.AuthController;
-import br.com.petfy.healthcare.controller.OwnerController;
+import br.com.petfy.healthcare.controller.PersonController;
 import br.com.petfy.healthcare.controller.AnimalController;
 import br.com.petfy.healthcare.controller.AnimalShareController;
 import br.com.petfy.healthcare.controller.SharedCardController;
@@ -13,8 +13,8 @@ import br.com.petfy.healthcare.security.TokenFreshness;
 import br.com.petfy.healthcare.security.UserRole;
 import br.com.petfy.healthcare.service.AuthService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
-import br.com.petfy.healthcare.service.OwnerExportService;
-import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.PersonExportService;
+import br.com.petfy.healthcare.service.PersonService;
 import br.com.petfy.healthcare.service.PasswordResetService;
 import br.com.petfy.healthcare.service.AnimalService;
 import org.junit.jupiter.api.DisplayName;
@@ -45,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * SecurityFilterChain de verdade para conferir o que e publico e o que exige
  * token.
  */
-@WebMvcTest(controllers = {AuthController.class, AnimalController.class, OwnerController.class,
+@WebMvcTest(controllers = {AuthController.class, AnimalController.class, PersonController.class,
         SharedCardController.class, AnimalShareController.class})
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
 @TestPropertySource(properties = {
@@ -67,10 +67,10 @@ class SecurityFilterChainTest {
     private AnimalService animalService;
 
     @MockBean
-    private OwnerService ownerService;
+    private PersonService personService;
 
     @MockBean
-    private OwnerExportService ownerExportService;
+    private PersonExportService personExportService;
 
     @MockBean
     private AnimalShareService animalShareService;
@@ -141,14 +141,14 @@ class SecurityFilterChainTest {
     }
 
     @Test
-    @DisplayName("o cadastro de owner deve ser publico, senao nao existe primeiro usuario")
-    void cadastroDeOwnerDeveSerPublico() throws Exception {
-        mockMvc.perform(post("/owners")
+    @DisplayName("o cadastro de person deve ser publico, senao nao existe primeiro usuario")
+    void cadastroDePersonDeveSerPublico() throws Exception {
+        mockMvc.perform(post("/persons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Ulysses\",\"email\":\"ulysses@petfy.com.br\",\"password\":\"s3nhaForte\",\"acceptedTerms\":true}"))
                 .andExpect(status().isCreated());
 
-        verify(ownerService).createOwner(any());
+        verify(personService).createPerson(any());
     }
 
     @Test
@@ -173,12 +173,12 @@ class SecurityFilterChainTest {
     }
 
     @Test
-    @DisplayName("as demais rotas de owner devem continuar exigindo token")
-    void demaisRotasDeOwnerDevemExigirToken() throws Exception {
-        mockMvc.perform(get("/owners/me"))
+    @DisplayName("as demais rotas de person devem continuar exigindo token")
+    void demaisRotasDePersonDevemExigirToken() throws Exception {
+        mockMvc.perform(get("/persons/me"))
                 .andExpect(status().isUnauthorized());
 
-        verify(ownerService, never()).getCurrentOwner();
+        verify(personService, never()).getCurrentPerson();
     }
 
     /**

@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.entity.Attachment;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -11,7 +11,7 @@ import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import br.com.petfy.healthcare.storage.AttachmentStorage;
@@ -53,7 +53,7 @@ class AttachmentServiceImplTest {
     @Mock private HealthRecordRepository healthRecordRepository;
     @Mock private AttachmentStorage attachmentStorage;
     @Mock private AnimalAccessGuard animalAccessGuard;
-    @Mock private CurrentOwnerProvider currentOwnerProvider;
+    @Mock private CurrentPersonProvider currentPersonProvider;
 
     private AttachmentServiceImpl attachmentService;
 
@@ -66,12 +66,12 @@ class AttachmentServiceImplTest {
     @BeforeEach
     void setUp() {
         attachmentService = new AttachmentServiceImpl(attachmentRepository, vaccineRepository,
-                healthRecordRepository, attachmentStorage, animalAccessGuard, currentOwnerProvider);
+                healthRecordRepository, attachmentStorage, animalAccessGuard, currentPersonProvider);
         ReflectionTestUtils.setField(attachmentService, "maxSizeBytes", 1024L);
     }
 
-    private Owner ulysses() {
-        return Owner.builder().ownerId(OWNER_ID).name("Ulysses").email("ulysses@petfy.com.br").build();
+    private Person ulysses() {
+        return Person.builder().personId(OWNER_ID).name("Ulysses").email("ulysses@petfy.com.br").build();
     }
 
     private Animal animal() {
@@ -110,7 +110,7 @@ class AttachmentServiceImplTest {
         @DisplayName("guarda o arquivo e devolve o metadado")
         void guardaEDevolveMetadado() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(currentOwnerProvider.require()).thenReturn(ulysses());
+            when(currentPersonProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -120,7 +120,7 @@ class AttachmentServiceImplTest {
             assertThat(result.getOriginalFilename()).isEqualTo("laudo.pdf");
             assertThat(result.getContentType()).isEqualTo("application/pdf");
             assertThat(result.getDescription()).isEqualTo("exame de sangue");
-            assertThat(result.getUploadedByOwnerName()).isEqualTo("Ulysses");
+            assertThat(result.getUploadedByPersonName()).isEqualTo("Ulysses");
         }
 
         /**
@@ -134,7 +134,7 @@ class AttachmentServiceImplTest {
                     "%PDF-1.7 conteudo".getBytes(StandardCharsets.US_ASCII));
 
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(currentOwnerProvider.require()).thenReturn(ulysses());
+            when(currentPersonProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -204,7 +204,7 @@ class AttachmentServiceImplTest {
         @DisplayName("grava no storage antes do banco")
         void storageAntesDoBanco() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(currentOwnerProvider.require()).thenReturn(ulysses());
+            when(currentPersonProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -221,7 +221,7 @@ class AttachmentServiceImplTest {
             var vacina = Vaccine.builder().vaccineId(VACCINE_ID).animal(animal()).vaccineName("V10").build();
 
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(currentOwnerProvider.require()).thenReturn(ulysses());
+            when(currentPersonProvider.require()).thenReturn(ulysses());
             when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(vacina));
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
@@ -289,7 +289,7 @@ class AttachmentServiceImplTest {
                     "application/pdf", "%PDF-1.7 x".getBytes(StandardCharsets.US_ASCII));
 
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(currentOwnerProvider.require()).thenReturn(ulysses());
+            when(currentPersonProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -458,7 +458,7 @@ class AttachmentServiceImplTest {
         @DisplayName("anexar exige escrita")
         void anexarExigeEscrita() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(currentOwnerProvider.require()).thenReturn(ulysses());
+            when(currentPersonProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 

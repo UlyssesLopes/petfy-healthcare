@@ -44,7 +44,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/email-verification/resend").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/email-verification/confirm").permitAll()
                         // cadastro precisa ser publico, senao nao existe primeiro usuario
-                        .requestMatchers(HttpMethod.POST, "/owners").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/persons").permitAll()
                         .requestMatchers(HttpMethod.POST, "/vets").permitAll()
                         // documentacao da API: o Swagger UI e a spec OpenAPI devem
                         // abrir sem token, senao nao servem para explorar a API

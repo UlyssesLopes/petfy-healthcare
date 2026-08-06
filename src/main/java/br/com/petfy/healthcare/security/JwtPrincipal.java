@@ -12,7 +12,7 @@ import java.time.Instant;
  * Implementa AuthenticatedPrincipal para que o principal possa ser este objeto,
  * e nao a string do email, sem quebrar quem le authentication.getName(): o
  * Spring usa o getName() abaixo nesse caso. Foi o que permitiu carregar o
- * issuedAt ate o filtro sem mexer nos CurrentOwnerProvider e CurrentVetProvider.
+ * issuedAt ate o filtro sem mexer nos CurrentPersonProvider e CurrentVetProvider.
  */
 @Getter
 @RequiredArgsConstructor

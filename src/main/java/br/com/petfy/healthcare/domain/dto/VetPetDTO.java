@@ -34,7 +34,7 @@ public class VetPetDTO {
 
     private Double weight;
 
-    private String ownerName;
+    private String personName;
 
     private LocalDateTime accessGrantedAt;
 
