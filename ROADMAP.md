@@ -80,6 +80,15 @@ mostra está fechada, e **a Fase 5 abre**.
 backend está em *Fica para depois do frontend*, mais abaixo, e é deliberado: são itens
 que a tela define melhor do que o modelo.
 
+**Corrigido em 2026-08-06: a Fase 6 entra na frente.** O `PRODUTO.md` fechou nesta
+data e reabriu o backend por um motivo que não era visível quando a frase acima foi
+escrita — a forma do dado estava fechada, mas o **modelo por trás dela** não era o do
+produto que se decidiu construir. Pessoa única sem tipo, custódia separada de acesso e
+organização por capacidades mudam o que a tela mostra tanto quanto anexo e prontuário
+mudaram. A decisão 14 do `PRODUTO.md` é explícita: fundação inteira antes de qualquer
+tela. **É a terceira vez que este documento descobre que "falta frontend" estava
+adiantado**, e as três descobertas vieram do mesmo lugar: inventariar antes de afirmar.
+
 **Ordem em que a Fase 4 foi fechada, e por quê.** A sequência não foi por facilidade:
 
 | # | Passo | Veio nesta posição porque |
@@ -718,6 +727,256 @@ API, em `dev` e `stg`.
 
 **Pronto quando:** alguém que nunca viu `curl` cadastra um pet e vê a próxima
 dose.
+
+## Fase 6 — a remodelagem que o `PRODUTO.md` cobra
+
+**Aberta em 2026-08-06.** O número vem depois da Fase 5, mas **a execução vem
+antes**: o `PRODUTO.md` fechou com a decisão 14 — *fundação inteira antes de
+qualquer tela* —, e renumerar um documento cheio de referência cruzada custaria
+mais do que esta frase. A Fase 5 continua sendo a próxima a **entregar valor**; a
+Fase 6 é a que precisa estar de pé embaixo dela.
+
+**O argumento que sustenta a ordem é a janela**, e o precedente está neste
+documento: a paginação mudou `List` para `Page` no dia seguinte ao contrato ser
+publicado, e *"como não existe cliente ainda, a mudança saiu de graça"*. Cada
+linha desta fase é a mesma coisa, multiplicada. Com cliente existindo, deixam de
+ser refatoração e viram migração com dois lados para coordenar.
+
+**Isto é refatoração do núcleo, não incremento.** Não vai parecer progresso
+enquanto acontece.
+
+### O levantamento, feito contra o código em 2026-08-06
+
+Antes de fatiar, o raio de alcance real de cada mudança de fundação — é ele que
+decidiu a ordem, e não a preferência:
+
+| Ponto de acoplamento | Arquivos em `src/main` |
+|---|---|
+| `Pet` | 54 |
+| `Owner` | 31 |
+| `PetTutor*` | 28 |
+| `PetAccessGuard` | 17 |
+| `Vet` | 16 |
+| `Clinic` | 14 |
+| `CurrentOwnerProvider` | 14 |
+| `UserRole` / `ROLE_VET` | 8 |
+| `CurrentVetProvider` | 7 |
+| **Owner/Vet/PetTutor em teste** | **46 dos 54 arquivos de teste** |
+
+**Quatro achados que mudaram o plano em relação ao que o `PRODUTO.md` supunha:**
+
+1. **`pets.owner_id` já não existe** — a V15 removeu. Animal sem tutor humano é
+   mais barato do que o documento previa: falta a custódia poder apontar para uma
+   organização, não desatar chave estrangeira.
+2. **`Vet.clinic` é `nullable = false` no banco.** O veterinário autônomo é
+   impossível hoje por *constraint*, não por regra de serviço — o que muda onde a
+   correção mora.
+3. **Nenhum evento sabe quem o registrou.** Só `Attachment` tem `uploadedBy`.
+   `Vaccine` e `HealthRecord` têm `clinic` nullable, que é um contexto
+   embrionário sem pessoa dentro.
+4. **A separação fato/registro já existe, sem nome.** `applicationDate`,
+   `eventDate` e `measuredAt` são o fato; `creationDate` é o registro. O núcleo
+   comum uniformiza e nomeia o que já está lá — não inventa.
+
+**E um buraco que nenhum documento tinha registrado:** `Vet` não tem
+`emailVerifiedAt`. A guarda de notificação vive em `Owner.podeReceberNotificacao()`,
+então o veterinário está fora dela por acidente de modelagem, e não por decisão.
+Some sozinho no P1.
+
+### Regra de fatiamento
+
+**Nenhum passo deixa o sistema em estado que precise do passo seguinte para
+compilar.** Cada um é um PR que fecha verde, com os `ContainerTest` executando de
+verdade — não pulados.
+
+| # | Passo | Migration | Bloqueia o frontend? |
+|---|---|---|---|
+| P0 | Rename `Pet` → `Animal` | V20 | sim, só por vocabulário |
+| P1 | Pessoa única, sem tipo, e credencial profissional | V21 | **sim** |
+| P2 | Custódia separada de acesso, com escopo | V22 | **sim** |
+| P3 | Organização com capacidades, e membro | V23 | **sim** |
+| P4 | Núcleo de evento e linha do tempo | V24 | **sim** |
+| P5 | Orientação e pendência unificada | V25 | não — é v1, anda ao lado da tela |
+
+**P0 a P4 são o Horizonte 1 do `PRODUTO.md`.** P5 já é v1.
+
+**A base de `dev` é descartável, e isso é decisão registrada:** enquanto não
+houver produto homologado em `stg`, nenhuma migration desta fase precisa de
+backfill inteligente. É a mesma escolha do passo 12, e é o que torna os seis
+passos viáveis — reescrever schema custa uma migration, não um projeto de
+migração de dado.
+
+### P0 — `Pet` vira `Animal`, e nada mais muda
+
+**Zero comportamento.** Diff enorme, revisão de dois minutos, justamente porque
+não há uma linha de regra dentro dele.
+
+**Por que renomear, já que nome não é comportamento:** o precedente é o 8a, que
+matou `buscarDoOwnerAutenticado` porque o nome *"mentia depois que o dono único
+deixou de existir"*. `Pet` é a mesma mentira uma camada acima — a classe se chama
+"animal de estimação de alguém" num modelo onde o animal do abrigo não é de
+ninguém. Nome que mente não é dívida de estilo: é a próxima pessoa lendo `Pet` e
+assumindo que existe dono.
+
+**Por que primeiro, e não junto do P2:** hoje a suíte está verde e o código
+estável. Um rename mecânico agora é risco zero. Junto de outro passo, ele vira
+diff misto — e a parte que precisa de revisão cuidadosa fica escondida no meio de
+cinquenta arquivos renomeados. É o mesmo motivo que fatiou o 8 em 8a e 8b.
+
+- [ ] `Pet`→`Animal`, `PetAccessGuard`→`AnimalAccessGuard`,
+      `PetPurger`→`AnimalPurger`, `PetWeightHistory`, `PetHealthCondition`,
+      `PetShare` e os repositórios, serviços e controllers correspondentes.
+- [ ] `/pets` → `/animals`, e `petId` → `animalId` nos path variables. O
+      `ControllerPathVariableTest` é a rede aqui: nome de path variable divergindo
+      do parâmetro quebra em runtime e compila.
+- [ ] `V20`: `ALTER TABLE ... RENAME`. **`V1`–`V19` não se reescrevem** — são log
+      do que aconteceu, não descrição do estado atual.
+- [ ] **Não renomear** `PetTutor`, `PetTutorRole`, `PetTutorInvite` e
+      `PetClinicAccess`: os quatro se dissolvem no P2, e renomeá-los agora é
+      trabalho que se joga fora.
+- [ ] **Não renomear** `/pet-id`: é o OCR do RG animal, e "carteira de identidade
+      do pet" é o nome da coisa no mundo real.
+
+**Pronto quando:** a suíte inteira passa sem nenhuma alteração de asserção de
+comportamento, e o `SchemaMigrationContainerTest` valida a V20 num Postgres real.
+
+### P1 — Pessoa única, sem tipo
+
+`owners` e `vets` viram `persons`. Acaba o papel derivado de qual tabela o e-mail
+aparece.
+
+- [ ] `V21`: funde as duas tabelas. O e-mail passa a ser `UNIQUE` **no banco** —
+      hoje a unicidade entre os dois lados é conferida no serviço de cadastro de
+      vet, porque não havia como o banco garanti-la. Uma constraint substitui uma
+      checagem que podia ser esquecida.
+- [ ] `emailVerifiedAt` e `passwordChangedAt` passam a valer para toda pessoa.
+      Fecha de graça duas limitações do `README`: o vet que não recupera senha e o
+      vet que estava fora da guarda de notificação.
+- [ ] **CRMV vira tabela própria** (`professional_credentials`), e não coluna:
+      5.10 diz que uma pessoa pode ter mais de um registro, e que cada um tem
+      estado — *informado*, *verificado*, *suspenso*. Coluna única não comporta
+      nenhuma das duas coisas.
+- [ ] `UserRole` e `ROLE_VET` saem do token e da `SecurityFilterChain`.
+
+**A decisão difícil deste passo, registrada:** matar o papel deixa `/vet/**` sem
+guarda, e a substituição definitiva — contexto e membro — só chega no P3. A ponte
+**não é andaime**: `/vet/**` passa a exigir **credencial profissional na pessoa**,
+que é exatamente o que 5.10 diz governar ato clínico. O P3 só troca de onde vem o
+alcance; a regra que entra aqui é a regra final.
+
+**Pronto quando:** a mesma conta faz login, cadastra um animal como tutora e
+registra um ato clínico como profissional, sem duas contas e sem dois e-mails.
+
+### P2 — Custódia separada de acesso
+
+`PetTutor` se parte em dois, e é o passo que mexe em privacidade — o mais sensível
+dos seis, como o 8b foi da Fase 4.
+
+- [ ] `Custody`: animal, quem responde (**pessoa ou organização**), início, fim
+      previsto, fim real, natureza (`DEFINITIVA`, `TRANSITORIA`, `INSTITUCIONAL`,
+      `RESGATE`), motivo de encerramento e **sucessor**.
+- [ ] `Grant`: animal, a quem, nível, **escopo**, quem concedeu, expiração e
+      revogação.
+- [ ] `HOLDER` migra para custódia; `EDITOR` e `VIEWER` viram níveis de acesso.
+- [ ] `PetClinicAccess` e `PetShare` deixam de ser tabelas próprias e viram
+      `Grant` — a de clínica com beneficiário organização, a de link com token e
+      escopo. **É aqui que nasce o cartão de emergência da decisão 13**, e não
+      num passo futuro: ele é a compensação de não existir quebra-vidro, e o
+      `PRODUTO.md` o declara item de v1.
+- [ ] **O escopo entra neste passo, não no seguinte.** Adicionar escopo a um
+      `Grant` já em uso é reescrever o `AnimalAccessGuard` duas vezes.
+- [ ] **O quarto invariante vira constraint:** nenhuma custódia termina sem
+      sucessor. `CHECK` no banco *e* validação no serviço — o mesmo par já usado
+      em `severity` de alergia, pelo mesmo motivo: o banco impede insert direto, o
+      serviço impede que o cliente receba erro de integridade como 500.
+- [ ] **Acessos não são herdados na transferência** (4.3). A revogação em cascata
+      é regra de privacidade, não limpeza: sem ela o novo tutor herda uma plateia
+      que não escolheu.
+
+**Pronto quando:** uma clínica com acesso concedido enxerga o animal no escopo
+concedido e nada além dele; e uma transferência de custódia derruba os acessos do
+antecessor sem tocar na linha do tempo.
+
+### P3 — Organização com capacidades, e membro
+
+- [ ] `Clinic` → `Organization`, com **tabela de capacidades** — registrar ato
+      clínico, registrar observação, comunicar-se com o tutor, deter custódia,
+      gerir turma e vaga, manter rede de lares transitórios. Clínica, creche e
+      abrigo passam a ser conjuntos de capacidades, não três entidades.
+- [ ] `Membership` mata `Vet.clinic` singular, e com ele a `nullable = false` que
+      torna o veterinário autônomo impossível hoje. Resolve de uma vez o vet em
+      duas clínicas — dívida já registrada em *Ainda não levantado com você*.
+- [ ] `ClinicInvite` vira convite de membro, com função.
+- [ ] `/vet/**` se dissolve: o alcance passa a vir de contexto ativo + capacidade
+      da organização + credencial da pessoa.
+- [ ] **Organização é opcional para atuar** (3.7). O autônomo é pessoa com
+      credencial que recebe acesso direto de quem tem custódia.
+
+### P4 — Núcleo de evento e linha do tempo
+
+- [ ] As seis tabelas de evento ganham o núcleo comum por `@MappedSuperclass`:
+      `occurredAt`, `recordedAt`, `recordedByPersonId`, `recordedInOrganizationId`
+      e `isHealthData`. **Nenhuma cirurgia de chave primária** — a especialização
+      é o que preserva o valor clínico, e o `PRODUTO.md` recusa explicitamente a
+      tabela genérica com JSON.
+- [ ] **A linha do tempo é uma view SQL `UNION ALL`** sobre as seis tabelas,
+      mapeada como entidade imutável de leitura. O motivo é o histórico desta
+      base: uma tabela-índice paralela pode divergir da fonte, e divergência
+      silenciosa foi a família dos seis bugs da Fase 4. **Uma view não tem como
+      divergir** — não existe segunda escrita. Se o volume um dia cobrar, vira
+      materializada sem mudar o contrato.
+- [ ] `GET /animals/{animalId}/timeline`, ordenada por **quando aconteceu**, e
+      filtrada pelo escopo de quem lê. A cronologia é regra de domínio, não
+      formatação de tela — encerra a ideia de o cliente chamar seis endpoints e
+      ordenar em memória.
+- [ ] **Óbito e animal perdido** como estado do animal, com evento
+      correspondente. Óbito encerra a linha do tempo sem apagá-la e cessa os
+      lembretes; perdido é estado distinto de custódia encerrada, e é onde o
+      microchip vale mais.
+- [ ] **Classificação de dado de saúde** por evento, pelo critério de 3.11 — ato
+      clínico sempre é, observação quase sempre é, recado e foto não são. É o que
+      dá regra clara ao `SensitiveAccessLog`, que hoje cobre por convenção.
+
+### P5 — Orientação e pendência
+
+Já é v1, não fundação. Não bloqueia a tela, e provavelmente é desenhado com ela.
+
+- [ ] `CareInstruction` — quem emitiu (pessoa + contexto), o que fazer,
+      frequência, até quando, e o registro de cada confirmação. Unifica prescrição
+      do veterinário, medicação contínua (hoje parada em *Fica para depois do
+      frontend*) e tema de casa da creche.
+- [ ] **A orientação segue a custódia, não a pessoa** (3.12). Animal que volta do
+      lar transitório no meio de um tratamento de 21 dias continua o remédio, com
+      o já cumprido preservado.
+- [ ] `DueItem` generaliza a agenda de vacinas — hoje a única parte do sistema que
+      produz informação em vez de devolver o que foi gravado.
+- [ ] **Cumprir é evento**, e entra na linha do tempo: é o que transforma
+      orientação em histórico de aderência, o dado que o veterinário nunca tem
+      quando o tratamento não funciona.
+
+### O que esta fase não faz
+
+Vínculo, turma, lotação, check-in, conteúdo, disponibilidade e percepção **não
+entram**. Cabem no vocabulário da seção 3 do `PRODUTO.md` sem entidade nova — é o
+teste do modelo se pagando — e são os Horizontes 3 e 4. Construí-los agora seria
+modelar para um ator que ainda não existe.
+
+### A rede de segurança desta fase
+
+O que impede um passo de passar verde sem ter rodado:
+
+- **`SchemaMigrationContainerTest`** valida cada migration nova contra Postgres.
+- **`AnimalPurgerCoverageContainerTest`** (hoje `PetPurgerCoverageContainerTest`)
+  pergunta ao próprio schema quem alcança `animals` e quebra o build se uma tabela
+  nova ficar fora da exclusão. Ele já pegou duas em flagrante na Fase 4, e esta
+  fase cria pelo menos cinco tabelas.
+- **`ContainerTestsHabilitadosTest`** falha em vez de deixar passar, porque a rede
+  já foi desligada em silêncio duas vezes neste projeto.
+
+**Rebasear na `main` e rodar `mvn test` de verdade antes de dar qualquer passo por
+fechado.** É a lição das branches WIP de 2026-08-04, e ela vale em dobro aqui:
+seis PRs em sequência sobre o mesmo núcleo é exatamente a situação em que uma
+branch sai de base velha e os testes verdes não provam nada.
 
 ## Dívidas com relógio
 
