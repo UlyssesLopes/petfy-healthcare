@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionSeverity;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.AnimalHealthConditionService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class AnimalHealthConditionServiceImpl implements AnimalHealthConditionSe
 
     private final AnimalHealthConditionRepository animalHealthConditionRepository;
     private final AnimalAccessGuard animalAccessGuard;
+    private final CurrentPersonProvider currentPersonProvider;
 
     /**
      * Registrar condicao e escrita: entra no prontuario e muda a leitura de todo o resto
@@ -41,6 +43,7 @@ public class AnimalHealthConditionServiceImpl implements AnimalHealthConditionSe
 
         return toResponse(animalHealthConditionRepository.save(AnimalHealthCondition.builder()
                 .animal(animal)
+                .recordedBy(currentPersonProvider.require())
                 .kind(request.getKind())
                 .description(request.getDescription())
                 .severity(request.getSeverity())

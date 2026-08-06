@@ -4,6 +4,7 @@ import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -98,6 +100,30 @@ public class AnimalAccessGuard {
     public Optional<Custody> custodiaDoAutenticado(UUID animalId) {
         UUID personId = currentPersonProvider.require().getPersonId();
         return custodyRepository.findEmCursoDaPessoa(animalId, personId);
+    }
+
+    /**
+     * O escopo com que a pessoa autenticada alcanca o animal.
+     *
+     * <b>Devolve nulo para quem responde pelo animal</b>, e nulo aqui significa "sem
+     * limite" - nao "sem acesso". Quem responde nao alcanca por concessao, entao nao ha
+     * escopo a consultar: inventar um conjunto completo devolveria a mesma coisa com
+     * mais linhas, e esconderia a diferenca entre as duas origens de alcance.
+     *
+     * <b>Conjunto vazio, por outro lado, e negativa.</b> Ele so aparece se alguem
+     * gravar concessao sem escopo, o que a entidade e o servico tratam como acesso que
+     * nao alcanca nada.
+     */
+    public Set<GrantScope> escopoDoAutenticado(UUID animalId) {
+        UUID personId = currentPersonProvider.require().getPersonId();
+
+        if (custodyRepository.findEmCursoDaPessoa(animalId, personId).isPresent()) {
+            return null;
+        }
+
+        return concessaoVigente(animalId, personId)
+                .map(Grant::getScopes)
+                .orElseGet(java.util.Set::of);
     }
 
     /** Alcanca de qualquer forma - por responder pelo animal ou por concessao. */

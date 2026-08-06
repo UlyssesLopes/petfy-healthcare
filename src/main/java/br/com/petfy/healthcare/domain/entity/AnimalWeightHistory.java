@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.domain.entity;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.*;
@@ -19,10 +20,10 @@ import java.util.UUID;
 @Table(name = "animal_weight_history")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
-public class AnimalWeightHistory {
+
+public class AnimalWeightHistory extends AnimalEvent {
 
     @Id
     @GeneratedValue(generator = "UUID")

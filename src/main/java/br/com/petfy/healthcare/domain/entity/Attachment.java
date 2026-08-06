@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.domain.entity;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.*;
@@ -24,10 +25,10 @@ import java.util.UUID;
 @Table(name = "attachments")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
-public class Attachment {
+
+public class Attachment extends AnimalEvent {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -79,10 +80,6 @@ public class Attachment {
      * Quem subiu. Nulo se essa pessoa apagou a conta depois - o arquivo pertence ao
      * animal, que sobrevive se houver outro tutor.
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploaded_by_person_id")
-    private Person uploadedBy;
-
     @Column(name = "creation_date", nullable = false)
     private LocalDateTime creationDate;
 

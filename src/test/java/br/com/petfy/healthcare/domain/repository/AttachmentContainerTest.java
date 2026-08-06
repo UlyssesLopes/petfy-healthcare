@@ -86,7 +86,7 @@ class AttachmentContainerTest extends PostgresContainerTest {
         SecurityContextHolder.clearContext();
     }
 
-    private Attachment.AttachmentBuilder anexo() {
+    private Attachment.AttachmentBuilder<?, ?> anexo() {
         var armazenado = attachmentStorage.store(rex.getAnimalId(),
                 new ByteArrayInputStream("%PDF-1.7 laudo".getBytes(StandardCharsets.US_ASCII)));
 
@@ -97,7 +97,7 @@ class AttachmentContainerTest extends PostgresContainerTest {
                 .sizeBytes(armazenado.sizeBytes())
                 .checksumSha256(armazenado.checksumSha256())
                 .storageKey(armazenado.storageKey())
-                .uploadedBy(ulysses)
+                .recordedBy(ulysses)
                 .creationDate(LocalDateTime.now());
     }
 
@@ -263,7 +263,7 @@ class AttachmentContainerTest extends PostgresContainerTest {
                     .name("Maria").email("maria-" + UUID.randomUUID() + "@petfy.com.br")
                     .password("hash").build());
 
-            var daMaria = attachmentRepository.saveAndFlush(anexo().uploadedBy(maria).build());
+            var daMaria = attachmentRepository.saveAndFlush(anexo().recordedBy(maria).build());
 
             attachmentRepository.desassociarUploader(ulysses.getPersonId());
             attachmentRepository.flush();

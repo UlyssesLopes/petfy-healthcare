@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalWeightHistoryRepository;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.AnimalWeightService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class AnimalWeightServiceImpl implements AnimalWeightService {
     private final AnimalWeightHistoryRepository weightHistoryRepository;
     private final AnimalRepository animalRepository;
     private final AnimalAccessGuard animalAccessGuard;
+    private final CurrentPersonProvider currentPersonProvider;
 
     @Override
     @Transactional
@@ -32,6 +34,7 @@ public class AnimalWeightServiceImpl implements AnimalWeightService {
 
         AnimalWeightHistory entry = AnimalWeightHistory.builder()
                 .animal(animal)
+                .recordedBy(currentPersonProvider.require())
                 .weight(request.getWeight())
                 .measuredAt(request.getMeasuredAt())
                 .note(request.getNote())

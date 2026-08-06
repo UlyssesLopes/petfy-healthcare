@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.domain.entity;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.*;
@@ -12,10 +13,10 @@ import java.util.UUID;
 @Table(name = "health_records")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
-public class HealthRecord {
+
+public class HealthRecord extends AnimalEvent {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -47,10 +48,6 @@ public class HealthRecord {
     private String diagnosis;
 
     private String eventType;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organization_id")
-    private Organization organization;
 
     private LocalDateTime creationDate;
 

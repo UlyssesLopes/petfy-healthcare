@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalWeightHistoryRepository;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,9 @@ class AnimalWeightServiceImplTest {
 
     @Mock
     private AnimalAccessGuard animalAccessGuard;
+
+    @Mock
+    private CurrentPersonProvider currentPersonProvider;
 
     @InjectMocks
     private AnimalWeightServiceImpl animalWeightService;

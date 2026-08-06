@@ -85,7 +85,7 @@ public class VetPetServiceImpl implements VetPetService {
 
         // a clinica vem do vet autenticado, nunca do payload: aceitar organizationId do
         // cliente deixaria um vet registrar vacina em nome de outra clinica
-        Vaccine vaccine = vaccineRepository.save(vaccineFactory.build(animal, contexto.organization(), request));
+        Vaccine vaccine = vaccineRepository.save(vaccineFactory.build(animal, contexto.organization(), vet, request));
 
         // o tutor precisa saber o que a clinica escreveu no animal dele
         organizationActivityNotifier.vaccineRecorded(vaccine);
@@ -174,6 +174,7 @@ public class VetPetServiceImpl implements VetPetService {
         HealthRecord record = healthRecordRepository.save(HealthRecord.builder()
                 .animal(animal)
                 .organization(contexto.organization())
+                .recordedBy(vet)
                 .eventType(request.getEventType())
                 .category(request.getCategory())
                 .diagnosis(request.getDiagnosis())

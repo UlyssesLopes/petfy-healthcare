@@ -64,7 +64,7 @@ public class VaccineServiceImpl implements VaccineService {
                 .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(), ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND))
                 : null;
 
-        return toResponse(vaccineRepository.save(vaccineFactory.build(animal, organization, request)));
+        return toResponse(vaccineRepository.save(vaccineFactory.build(animal, organization, currentPersonProvider.require(), request)));
     }
 
     @Override

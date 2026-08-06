@@ -11,6 +11,7 @@ import br.com.petfy.healthcare.domain.repository.AntiparasiticCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.AntiparasiticService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
     private final AntiparasiticRepository antiparasiticRepository;
     private final AntiparasiticCatalogRepository catalogRepository;
     private final AnimalAccessGuard animalAccessGuard;
+    private final CurrentPersonProvider currentPersonProvider;
 
     @Override
     public AntiparasiticResponseDTO create(AntiparasiticRequestDTO request) {
@@ -46,6 +48,7 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
 
         Antiparasitic entity = Antiparasitic.builder()
                 .animal(animal)
+                .recordedBy(currentPersonProvider.require())
                 .name(name)
                 .kind(kind)
                 .catalog(catalog)

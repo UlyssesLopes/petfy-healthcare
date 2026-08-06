@@ -12,6 +12,7 @@ import br.com.petfy.healthcare.domain.repository.AntiparasiticCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -47,6 +48,9 @@ class AntiparasiticServiceImplTest {
 
     @Mock
     private AnimalAccessGuard animalAccessGuard;
+
+    @Mock
+    private CurrentPersonProvider currentPersonProvider;
 
     @InjectMocks
     private AntiparasiticServiceImpl antiparasiticService;

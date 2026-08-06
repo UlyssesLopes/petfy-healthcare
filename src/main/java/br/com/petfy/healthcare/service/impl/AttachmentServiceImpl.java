@@ -93,7 +93,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 .checksumSha256(armazenado.checksumSha256())
                 .storageKey(armazenado.storageKey())
                 .description(description)
-                .uploadedBy(currentPersonProvider.require())
+                .recordedBy(currentPersonProvider.require())
                 .creationDate(LocalDateTime.now())
                 .build());
 
@@ -280,7 +280,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 .sizeBytes(anexo.getSizeBytes())
                 .checksumSha256(anexo.getChecksumSha256())
                 .description(anexo.getDescription())
-                .uploadedByPersonName(anexo.getUploadedBy() != null ? anexo.getUploadedBy().getName() : null)
+                .uploadedByPersonName(anexo.getRecordedBy() != null ? anexo.getRecordedBy().getName() : null)
                 .creationDate(anexo.getCreationDate())
                 .build();
     }

@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Organization;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
@@ -29,7 +30,8 @@ public class VaccineFactory {
 
     private final VaccineCatalogRepository vaccineCatalogRepository;
 
-    public Vaccine build(Animal animal, Organization organization, VaccineRequestDTO request) {
+    public Vaccine build(Animal animal, Organization organization, Person recordedBy,
+                         VaccineRequestDTO request) {
         VaccineCatalog catalog = request.getVaccineCatalogId() != null
                 ? buscarNoCatalogo(request.getVaccineCatalogId())
                 : null;
@@ -48,6 +50,7 @@ public class VaccineFactory {
         return Vaccine.builder()
                 .animal(animal)
                 .organization(organization)
+                .recordedBy(recordedBy)
                 .catalog(catalog)
                 .vaccineName(resolverNome(request, catalog))
                 .applicationDate(request.getApplicationDate())

@@ -43,7 +43,7 @@ public interface AttachmentRepository extends JpaRepository<Attachment, UUID> {
      * familia que travou o {@code DELETE /persons/me} duas vezes.
      */
     @Modifying
-    @Query("update Attachment a set a.uploadedBy = null where a.uploadedBy.personId = :personId")
+    @Query("update Attachment a set a.recordedBy = null where a.recordedBy.personId = :personId")
     void desassociarUploader(UUID personId);
 
 }
