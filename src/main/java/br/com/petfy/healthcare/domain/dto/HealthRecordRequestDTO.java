@@ -45,6 +45,6 @@ public class HealthRecordRequestDTO {
 
     private String description;
 
-    private UUID clinicId;
+    private UUID organizationId;
 
 }

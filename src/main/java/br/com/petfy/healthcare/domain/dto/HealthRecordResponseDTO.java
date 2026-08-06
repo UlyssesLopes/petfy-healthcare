@@ -28,7 +28,7 @@ public class HealthRecordResponseDTO {
 
     private UUID animalId;
 
-    private UUID clinicId;
+    private UUID organizationId;
 
     private LocalDateTime creationDate;
 

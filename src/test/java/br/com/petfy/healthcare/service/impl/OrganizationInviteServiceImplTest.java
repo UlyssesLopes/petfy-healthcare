@@ -1,10 +1,10 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.dto.ClinicInviteRequestDTO;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.dto.OrganizationInviteRequestDTO;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
-import br.com.petfy.healthcare.domain.entity.ClinicInvite;
-import br.com.petfy.healthcare.domain.repository.ClinicInviteRepository;
+import br.com.petfy.healthcare.domain.entity.OrganizationInvite;
+import br.com.petfy.healthcare.domain.repository.OrganizationInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
@@ -34,10 +34,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ClinicInviteServiceImplTest {
+class OrganizationInviteServiceImplTest {
 
     @Mock
-    private ClinicInviteRepository clinicInviteRepository;
+    private OrganizationInviteRepository organizationInviteRepository;
 
     @Mock
     private PersonRepository personRepository;
@@ -45,7 +45,7 @@ class ClinicInviteServiceImplTest {
     @Mock
     private CurrentProfessionalProvider currentProfessionalProvider;
 
-    private ClinicInviteServiceImpl service;
+    private OrganizationInviteServiceImpl service;
 
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OUTRA_CLINIC_ID = UUID.fromString("aaaaaaaa-5555-5555-5555-555555555555");
@@ -56,28 +56,28 @@ class ClinicInviteServiceImplTest {
     void setUp() {
         // token service real: o valor do teste esta em conferir que o token nao e
         // guardado em claro, e nao em repetir o hash num mock
-        service = new ClinicInviteServiceImpl(clinicInviteRepository, personRepository,
+        service = new OrganizationInviteServiceImpl(organizationInviteRepository, personRepository,
                 currentProfessionalProvider, new OpaqueTokenService());
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 7);
     }
 
-    private Clinic clinic(UUID id) {
-        return Clinic.builder().clinicId(id).name("Clinica Bicho Feliz").build();
+    private Organization organization(UUID id) {
+        return Organization.builder().organizationId(id).name("Clinica Bicho Feliz").build();
     }
 
-    private Person vetDa(UUID clinicId) {
-        return Person.builder().personId(VET_ID).name("Dra. Marina").clinic(clinic(clinicId)).build();
+    private Person vetDa(UUID organizationId) {
+        return Person.builder().personId(VET_ID).name("Dra. Marina").organization(organization(organizationId)).build();
     }
 
-    private void autenticadoComoVetDa(UUID clinicId) {
-        when(currentProfessionalProvider.require()).thenReturn(vetDa(clinicId));
+    private void autenticadoComoVetDa(UUID organizationId) {
+        when(currentProfessionalProvider.require()).thenReturn(vetDa(organizationId));
     }
 
-    private ClinicInvite convite(String email, LocalDateTime expiresAt,
+    private OrganizationInvite convite(String email, LocalDateTime expiresAt,
                                  LocalDateTime acceptedAt, LocalDateTime revokedAt) {
-        return ClinicInvite.builder()
-                .clinicInviteId(INVITE_ID)
-                .clinic(clinic(CLINIC_ID))
+        return OrganizationInvite.builder()
+                .organizationInviteId(INVITE_ID)
+                .organization(organization(CLINIC_ID))
                 .createdBy(vetDa(CLINIC_ID))
                 .tokenHash("hash")
                 .email(email)
@@ -88,7 +88,7 @@ class ClinicInviteServiceImplTest {
                 .build();
     }
 
-    private ClinicInvite conviteAberto() {
+    private OrganizationInvite conviteAberto() {
         return convite(null, LocalDateTime.now().plusDays(7), null, null);
     }
 
@@ -100,11 +100,11 @@ class ClinicInviteServiceImplTest {
         @DisplayName("deve emitir o convite para a clinica de quem esta autenticado")
         void deveEmitirParaAClinicaDoEmissor() {
             autenticadoComoVetDa(CLINIC_ID);
-            when(clinicInviteRepository.save(any(ClinicInvite.class))).thenAnswer(i -> i.getArgument(0));
+            when(organizationInviteRepository.save(any(OrganizationInvite.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = service.create(ClinicInviteRequestDTO.builder().build());
+            var result = service.create(OrganizationInviteRequestDTO.builder().build());
 
-            assertThat(result.getClinicId()).isEqualTo(CLINIC_ID);
+            assertThat(result.getOrganizationId()).isEqualTo(CLINIC_ID);
             assertThat(result.getCreatedByVetName()).isEqualTo("Dra. Marina");
             assertThat(result.isUsable()).isTrue();
         }
@@ -113,21 +113,21 @@ class ClinicInviteServiceImplTest {
         @DisplayName("deve devolver o token apenas na criacao, e guardar so o hash")
         void deveDevolverTokenApenasNaCriacao() {
             autenticadoComoVetDa(CLINIC_ID);
-            when(clinicInviteRepository.save(any(ClinicInvite.class))).thenAnswer(i -> i.getArgument(0));
+            when(organizationInviteRepository.save(any(OrganizationInvite.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.create(null);
 
             assertThat(result.getToken()).isNotBlank();
 
-            var captor = ArgumentCaptor.forClass(ClinicInvite.class);
-            verify(clinicInviteRepository).save(captor.capture());
+            var captor = ArgumentCaptor.forClass(OrganizationInvite.class);
+            verify(organizationInviteRepository).save(captor.capture());
             assertThat(captor.getValue().getTokenHash()).isNotEqualTo(result.getToken());
         }
 
         @Test
         @DisplayName("a entidade de convite nao deve ter campo para o token em claro")
         void entidadeNaoDeveGuardarTokenEmClaro() {
-            assertThat(ClinicInvite.class.getDeclaredFields())
+            assertThat(OrganizationInvite.class.getDeclaredFields())
                     .extracting(Field::getName)
                     .contains("tokenHash")
                     .doesNotContain("token");
@@ -137,9 +137,9 @@ class ClinicInviteServiceImplTest {
         @DisplayName("deve respeitar a validade informada")
         void deveRespeitarValidadeInformada() {
             autenticadoComoVetDa(CLINIC_ID);
-            when(clinicInviteRepository.save(any(ClinicInvite.class))).thenAnswer(i -> i.getArgument(0));
+            when(organizationInviteRepository.save(any(OrganizationInvite.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = service.create(ClinicInviteRequestDTO.builder().expiresInDays(2).build());
+            var result = service.create(OrganizationInviteRequestDTO.builder().expiresInDays(2).build());
 
             assertThat(result.getExpiresAt()).isBefore(LocalDateTime.now().plusDays(3));
         }
@@ -149,8 +149,8 @@ class ClinicInviteServiceImplTest {
     @DisplayName("validate")
     class Validate {
 
-        private void baseTem(ClinicInvite invite) {
-            when(clinicInviteRepository.findByTokenHash(any())).thenReturn(Optional.ofNullable(invite));
+        private void baseTem(OrganizationInvite invite) {
+            when(organizationInviteRepository.findByTokenHash(any())).thenReturn(Optional.ofNullable(invite));
         }
 
         @Test
@@ -158,7 +158,7 @@ class ClinicInviteServiceImplTest {
         void deveAceitarConviteAberto() {
             baseTem(conviteAberto());
 
-            assertThat(service.validate("qualquer-token", "novo@vet.com.br").getClinic().getClinicId())
+            assertThat(service.validate("qualquer-token", "novo@vet.com.br").getOrganization().getOrganizationId())
                     .isEqualTo(CLINIC_ID);
         }
 
@@ -230,8 +230,8 @@ class ClinicInviteServiceImplTest {
             assertThat(mensagens).containsOnly("Invite not found or no longer valid");
         }
 
-        private String capturaMensagem(ClinicInvite invite) {
-            when(clinicInviteRepository.findByTokenHash(any())).thenReturn(Optional.ofNullable(invite));
+        private String capturaMensagem(OrganizationInvite invite) {
+            when(organizationInviteRepository.findByTokenHash(any())).thenReturn(Optional.ofNullable(invite));
             try {
                 service.validate("qualquer-token", "novo@vet.com.br");
                 throw new AssertionError("deveria ter lancado PetfyHealthcareException");
@@ -257,22 +257,22 @@ class ClinicInviteServiceImplTest {
             assertThat(invite.getAcceptedAt()).isNotNull();
             assertThat(invite.getAcceptedBy()).isEqualTo(novoVet);
             assertThat(invite.isUsable(LocalDateTime.now())).isFalse();
-            verify(clinicInviteRepository).save(invite);
+            verify(organizationInviteRepository).save(invite);
         }
     }
 
     @Nested
-    @DisplayName("listFromMyClinic e revoke")
+    @DisplayName("listFromMyOrganization e revoke")
     class ListarERevogar {
 
         @Test
         @DisplayName("deve listar apenas os convites da clinica do vet autenticado")
         void deveListarApenasDaPropriaClinica() {
             autenticadoComoVetDa(CLINIC_ID);
-            when(clinicInviteRepository.findByClinicClinicIdOrderByCreationDateDesc(CLINIC_ID))
+            when(organizationInviteRepository.findByOrganizationOrganizationIdOrderByCreationDateDesc(CLINIC_ID))
                     .thenReturn(List.of(conviteAberto()));
 
-            var result = service.listFromMyClinic();
+            var result = service.listFromMyOrganization();
 
             assertThat(result).singleElement()
                     .satisfies(i -> assertThat(i.getToken()).isNull());
@@ -283,26 +283,26 @@ class ClinicInviteServiceImplTest {
         void deveRevogarDaPropriaClinica() {
             var invite = conviteAberto();
             autenticadoComoVetDa(CLINIC_ID);
-            when(clinicInviteRepository.findById(INVITE_ID)).thenReturn(Optional.of(invite));
+            when(organizationInviteRepository.findById(INVITE_ID)).thenReturn(Optional.of(invite));
 
             service.revoke(INVITE_ID);
 
             assertThat(invite.getRevokedAt()).isNotNull();
-            verify(clinicInviteRepository).save(invite);
+            verify(organizationInviteRepository).save(invite);
         }
 
         @Test
         @DisplayName("nao deve revogar convite de outra clinica")
         void naoDeveRevogarDeOutraClinica() {
             autenticadoComoVetDa(OUTRA_CLINIC_ID);
-            when(clinicInviteRepository.findById(INVITE_ID)).thenReturn(Optional.of(conviteAberto()));
+            when(organizationInviteRepository.findById(INVITE_ID)).thenReturn(Optional.of(conviteAberto()));
 
             assertThatThrownBy(() -> service.revoke(INVITE_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code")
                     .isEqualTo(111);
 
-            verify(clinicInviteRepository, never()).save(any());
+            verify(organizationInviteRepository, never()).save(any());
         }
 
         @Test
@@ -312,12 +312,12 @@ class ClinicInviteServiceImplTest {
             var jaRevogado = convite(null, LocalDateTime.now().plusDays(7), null, original);
 
             autenticadoComoVetDa(CLINIC_ID);
-            when(clinicInviteRepository.findById(INVITE_ID)).thenReturn(Optional.of(jaRevogado));
+            when(organizationInviteRepository.findById(INVITE_ID)).thenReturn(Optional.of(jaRevogado));
 
             service.revoke(INVITE_ID);
 
             assertThat(jaRevogado.getRevokedAt()).isEqualTo(original);
-            verify(clinicInviteRepository, never()).save(any());
+            verify(organizationInviteRepository, never()).save(any());
         }
     }
 }

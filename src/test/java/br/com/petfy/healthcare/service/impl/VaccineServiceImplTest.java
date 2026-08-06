@@ -2,13 +2,13 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
-import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
@@ -53,7 +53,7 @@ class VaccineServiceImplTest {
     private VaccineRepository vaccineRepository;
 
     @Mock
-    private ClinicRepository clinicRepository;
+    private OrganizationRepository organizationRepository;
 
     @Mock
     private VaccineCatalogRepository vaccineCatalogRepository;
@@ -74,7 +74,7 @@ class VaccineServiceImplTest {
         // factory e calculator reais: sao a regra que estes testes verificam,
         // entao mocka-los esvaziaria o teste. Construido aqui, e nao por
         // @InjectMocks, porque a factory depende de um mock que so existe agora
-        vaccineService = new VaccineServiceImpl(vaccineRepository, clinicRepository,
+        vaccineService = new VaccineServiceImpl(vaccineRepository, organizationRepository,
                 currentPersonProvider, animalAccessGuard, new VaccineStatusCalculator(),
                 new VaccineFactory(vaccineCatalogRepository), vaccineCorrectionLog);
     }
@@ -105,15 +105,15 @@ class VaccineServiceImplTest {
                 .custodies(Custodias.titular(person(OWNER_ID))).build();
     }
 
-    private Clinic clinic() {
-        return Clinic.builder().clinicId(CLINIC_ID).name("Clinica Bicho Feliz").build();
+    private Organization organization() {
+        return Organization.builder().organizationId(CLINIC_ID).name("Clinica Bicho Feliz").build();
     }
 
     private Vaccine vacina() {
         return Vaccine.builder()
                 .vaccineId(VACCINE_ID)
                 .animal(animal())
-                .clinic(clinic())
+                .organization(organization())
                 .vaccineName("Antirrabica")
                 .applicationDate(LocalDate.of(2025, 6, 1))
                 .nextDoseDate(LocalDate.of(2026, 6, 1))
@@ -146,22 +146,22 @@ class VaccineServiceImplTest {
         @DisplayName("deve vincular a vacina ao animal e a clinica informados")
         void deveVincularAoAnimalEClinica() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
+            when(organizationRepository.findById(CLINIC_ID)).thenReturn(Optional.of(organization()));
             when(vaccineRepository.save(any(Vaccine.class))).thenReturn(vacina());
 
             var request = VaccineRequestDTO.builder()
-                    .animalId(ANIMAL_ID).clinicId(CLINIC_ID).vaccineName("Antirrabica")
+                    .animalId(ANIMAL_ID).organizationId(CLINIC_ID).vaccineName("Antirrabica")
                     .applicationDate(LocalDate.of(2025, 6, 1)).build();
 
             var result = vaccineService.createVaccine(request);
 
             assertThat(result.getVaccineId()).isEqualTo(VACCINE_ID);
             assertThat(result.getAnimalId()).isEqualTo(ANIMAL_ID);
-            assertThat(result.getClinicId()).isEqualTo(CLINIC_ID);
+            assertThat(result.getOrganizationId()).isEqualTo(CLINIC_ID);
         }
 
         @Test
-        @DisplayName("deve criar a vacina sem clinica quando clinicId nao e informado")
+        @DisplayName("deve criar a vacina sem clinica quando organizationId nao e informado")
         void deveCriarSemClinica() {
             var semClinica = Vaccine.builder()
                     .vaccineId(VACCINE_ID).animal(animal()).vaccineName("Antirrabica").build();
@@ -172,12 +172,12 @@ class VaccineServiceImplTest {
             var result = vaccineService.createVaccine(
                     VaccineRequestDTO.builder().animalId(ANIMAL_ID).vaccineName("Antirrabica").build());
 
-            assertThat(result.getClinicId()).isNull();
-            verifyNoInteractions(clinicRepository);
+            assertThat(result.getOrganizationId()).isNull();
+            verifyNoInteractions(organizationRepository);
 
             var captor = ArgumentCaptor.forClass(Vaccine.class);
             verify(vaccineRepository).save(captor.capture());
-            assertThat(captor.getValue().getClinic()).isNull();
+            assertThat(captor.getValue().getOrganization()).isNull();
         }
 
         @Test
@@ -320,12 +320,12 @@ class VaccineServiceImplTest {
         @DisplayName("deve lancar CLINIC_NOT_FOUND sem salvar quando a clinica informada nao existe")
         void deveLancarQuandoClinicaNaoExiste() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
+            when(organizationRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> vaccineService.createVaccine(
-                    VaccineRequestDTO.builder().animalId(ANIMAL_ID).clinicId(CLINIC_ID).build()))
+                    VaccineRequestDTO.builder().animalId(ANIMAL_ID).organizationId(CLINIC_ID).build()))
                     .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Clinic not found")
+                    .hasMessage("Organization not found")
                     .extracting("code", "httpStatus")
                     .containsExactly(103, HttpStatus.NOT_FOUND);
 

@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.domain.repository;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.PostgresContainerTest;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
@@ -47,18 +47,18 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
     @Autowired private CustodyRepository custodyRepository;
-    @Autowired private ClinicRepository clinicRepository;
+    @Autowired private OrganizationRepository organizationRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
     @Autowired private GrantRepository grantRepository;
-    @Autowired private ClinicInviteRepository clinicInviteRepository;
+    @Autowired private OrganizationInviteRepository organizationInviteRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
 
     private Person ulysses;
     private Person maria;
     private Animal rex;
     private Animal nina;
-    private Clinic bichoFeliz;
+    private Organization bichoFeliz;
 
     /**
      * Escopo minimo para as concessoes deste teste.
@@ -84,11 +84,11 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         rex = animalComTitular("Rex", ulysses);
         nina = animalComTitular("Nina", maria);
 
-        bichoFeliz = clinicRepository.save(Clinic.builder().name("Clinica Bicho Feliz").build());
+        bichoFeliz = organizationRepository.save(Organization.builder().name("Clinica Bicho Feliz").build());
 
         marina = personRepository.save(Person.builder()
                 .name("Dra. Marina").email("marina-" + UUID.randomUUID() + "@vet.com.br")
-                .password("hash").clinic(bichoFeliz).build());
+                .password("hash").organization(bichoFeliz).build());
     }
 
     /**
@@ -239,14 +239,14 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @DisplayName("concessao deve ser encontrada pelo par animal e clinica")
         void concessaoEncontradaPeloPar() {
             grantRepository.save(Grant.builder()
-                    .animal(rex).granteeClinic(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
+                    .animal(rex).granteeOrganization(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
 
             assertThat(grantRepository
-                    .findVigenteDaClinicaNoAnimal(rex.getAnimalId(), bichoFeliz.getClinicId(), LocalDateTime.now()))
+                    .findVigenteDaClinicaNoAnimal(rex.getAnimalId(), bichoFeliz.getOrganizationId(), LocalDateTime.now()))
                     .isPresent();
 
             assertThat(grantRepository
-                    .findVigenteDaClinicaNoAnimal(nina.getAnimalId(), bichoFeliz.getClinicId(), LocalDateTime.now()))
+                    .findVigenteDaClinicaNoAnimal(nina.getAnimalId(), bichoFeliz.getOrganizationId(), LocalDateTime.now()))
                     .isEmpty();
         }
 
@@ -254,13 +254,13 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @DisplayName("a clinica deve enxergar so os animals com concessao ativa")
         void clinicaEnxergaApenasConcessoesAtivas() {
             grantRepository.save(Grant.builder()
-                    .animal(rex).granteeClinic(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
+                    .animal(rex).granteeOrganization(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
             grantRepository.save(Grant.builder()
-                    .animal(nina).granteeClinic(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now())
+                    .animal(nina).granteeOrganization(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now())
                     .revokedAt(LocalDateTime.now()).build());
 
             assertThat(grantRepository
-                    .findVigentesDaClinica(bichoFeliz.getClinicId(), LocalDateTime.now()))
+                    .findVigentesDaClinica(bichoFeliz.getOrganizationId(), LocalDateTime.now()))
                     .extracting(a -> a.getAnimal().getName())
                     .containsExactly("Rex");
         }
@@ -268,13 +268,13 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("convites devem ser filtrados pela clinica")
         void convitesFiltradosPelaClinica() {
-            clinicInviteRepository.save(br.com.petfy.healthcare.domain.entity.ClinicInvite.builder()
-                    .clinic(bichoFeliz).createdBy(marina).tokenHash("hash-" + UUID.randomUUID())
+            organizationInviteRepository.save(br.com.petfy.healthcare.domain.entity.OrganizationInvite.builder()
+                    .organization(bichoFeliz).createdBy(marina).tokenHash("hash-" + UUID.randomUUID())
                     .expiresAt(LocalDateTime.now().plusDays(7))
                     .build());
 
-            assertThat(clinicInviteRepository
-                    .findByClinicClinicIdOrderByCreationDateDesc(bichoFeliz.getClinicId()))
+            assertThat(organizationInviteRepository
+                    .findByOrganizationOrganizationIdOrderByCreationDateDesc(bichoFeliz.getOrganizationId()))
                     .hasSize(1);
         }
     }
@@ -344,7 +344,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
                     .vaccine(vacina).correctedBy(ulysses).previousVaccineName("Antiga")
                     .correctedAt(LocalDateTime.now().minusDays(2)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(vacina).correctedBy(marina).correctedInClinic(marina.getClinic()).previousVaccineName("Recente")
+                    .vaccine(vacina).correctedBy(marina).correctedInOrganization(marina.getOrganization()).previousVaccineName("Recente")
                     .correctedAt(LocalDateTime.now().minusHours(1)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
                     .vaccine(outra).correctedBy(ulysses).previousVaccineName("De outra vacina")

@@ -6,11 +6,11 @@ import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineStatus;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
-import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
@@ -44,7 +44,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     private final VaccineRepository vaccineRepository;
 
-    private final ClinicRepository clinicRepository;
+    private final OrganizationRepository organizationRepository;
 
     private final CurrentPersonProvider currentPersonProvider;
     private final AnimalAccessGuard animalAccessGuard;
@@ -59,12 +59,12 @@ public class VaccineServiceImpl implements VaccineService {
     public VaccineResponseDTO createVaccine(VaccineRequestDTO request) {
         Animal animal = animalAccessGuard.requireEscrita(request.getAnimalId());
 
-        Clinic clinic = request.getClinicId() != null
-                ? clinicRepository.findById(request.getClinicId())
+        Organization organization = request.getOrganizationId() != null
+                ? organizationRepository.findById(request.getOrganizationId())
                 .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(), ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND))
                 : null;
 
-        return toResponse(vaccineRepository.save(vaccineFactory.build(animal, clinic, request)));
+        return toResponse(vaccineRepository.save(vaccineFactory.build(animal, organization, request)));
     }
 
     @Override
@@ -85,10 +85,10 @@ public class VaccineServiceImpl implements VaccineService {
             existing.setAnimal(animalAccessGuard.requireEscrita(request.getAnimalId()));
         }
 
-        if (request.getClinicId() != null) {
-            Clinic clinic = clinicRepository.findById(request.getClinicId())
+        if (request.getOrganizationId() != null) {
+            Organization organization = organizationRepository.findById(request.getOrganizationId())
                     .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(), ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
-            existing.setClinic(clinic);
+            existing.setOrganization(organization);
         }
 
         existing.setUpdateDate(LocalDateTime.now());
@@ -189,7 +189,7 @@ public class VaccineServiceImpl implements VaccineService {
                 .nextDoseDate(vaccine.getNextDoseDate())
                 .description(vaccine.getDescription())
                 .animalId(vaccine.getAnimal().getAnimalId())
-                .clinicId(vaccine.getClinic() != null ? vaccine.getClinic().getClinicId() : null)
+                .organizationId(vaccine.getOrganization() != null ? vaccine.getOrganization().getOrganizationId() : null)
                 .vaccineCatalogId(vaccine.getCatalog() != null ? vaccine.getCatalog().getVaccineCatalogId() : null)
                 .creationDate(vaccine.getCreationDate())
                 .updateDate(vaccine.getUpdateDate())

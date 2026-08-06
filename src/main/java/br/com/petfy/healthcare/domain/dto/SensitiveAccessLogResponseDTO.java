@@ -34,7 +34,7 @@ public class SensitiveAccessLogResponseDTO {
     /** Nome de quem acessou, ou nulo quando foi pelo link publico. */
     private String actorName;
 
-    private String clinicName;
+    private String organizationName;
 
     private AccessedResource resource;
 

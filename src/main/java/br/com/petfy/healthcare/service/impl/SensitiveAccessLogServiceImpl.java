@@ -44,7 +44,7 @@ public class SensitiveAccessLogServiceImpl implements SensitiveAccessLogService 
                 .animalId(log.getAnimal().getAnimalId())
                 .actorType(log.getActorType())
                 .actorName(log.getActorName())
-                .clinicName(log.getClinicName())
+                .organizationName(log.getOrganizationName())
                 .resource(log.getResource())
                 .accessedAt(log.getAccessedAt())
                 .ipAddress(log.getIpAddress())

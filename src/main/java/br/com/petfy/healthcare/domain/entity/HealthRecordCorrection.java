@@ -50,8 +50,8 @@ public class HealthRecordCorrection {
      * ela agiu por si. Substituiu o papel - ver VaccineCorrection para o porque.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "corrected_in_clinic_id")
-    private Clinic correctedInClinic;
+    @JoinColumn(name = "corrected_in_organization_id")
+    private Organization correctedInOrganization;
 
     private String previousEventType;
 

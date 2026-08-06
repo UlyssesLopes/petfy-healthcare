@@ -194,7 +194,7 @@ public class AnimalShareServiceImpl implements AnimalShareService {
                 .applicationDate(vaccine.getApplicationDate())
                 .nextDoseDate(vaccine.getNextDoseDate())
                 .status(vaccineStatusCalculator.classify(vaccine.getNextDoseDate(), hoje, windowDays))
-                .clinicName(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null)
+                .organizationName(vaccine.getOrganization() != null ? vaccine.getOrganization().getName() : null)
                 .build();
     }
 

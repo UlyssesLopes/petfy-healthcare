@@ -1,15 +1,15 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.dto.ClinicInviteRequestDTO;
-import br.com.petfy.healthcare.domain.dto.ClinicInviteResponseDTO;
-import br.com.petfy.healthcare.domain.entity.ClinicInvite;
+import br.com.petfy.healthcare.domain.dto.OrganizationInviteRequestDTO;
+import br.com.petfy.healthcare.domain.dto.OrganizationInviteResponseDTO;
+import br.com.petfy.healthcare.domain.entity.OrganizationInvite;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
-import br.com.petfy.healthcare.domain.repository.ClinicInviteRepository;
+import br.com.petfy.healthcare.domain.repository.OrganizationInviteRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
-import br.com.petfy.healthcare.service.ClinicInviteService;
+import br.com.petfy.healthcare.service.OrganizationInviteService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,18 +23,18 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ClinicInviteServiceImpl implements ClinicInviteService {
+public class OrganizationInviteServiceImpl implements OrganizationInviteService {
 
-    private final ClinicInviteRepository clinicInviteRepository;
+    private final OrganizationInviteRepository organizationInviteRepository;
     private final PersonRepository personRepository;
     private final CurrentProfessionalProvider currentProfessionalProvider;
     private final OpaqueTokenService opaqueTokenService;
 
-    @Value("${petfy.clinic-invite.default-expiration-days:7}")
+    @Value("${petfy.organization-invite.default-expiration-days:7}")
     private int defaultExpirationDays;
 
     @Override
-    public ClinicInviteResponseDTO create(ClinicInviteRequestDTO request) {
+    public OrganizationInviteResponseDTO create(OrganizationInviteRequestDTO request) {
         Person emissor = currentProfessionalProvider.require();
 
         int validade = request != null && request.getExpiresInDays() != null
@@ -43,8 +43,8 @@ public class ClinicInviteServiceImpl implements ClinicInviteService {
 
         String token = opaqueTokenService.generate();
 
-        ClinicInvite invite = clinicInviteRepository.save(ClinicInvite.builder()
-                .clinic(emissor.getClinic())
+        OrganizationInvite invite = organizationInviteRepository.save(OrganizationInvite.builder()
+                .organization(emissor.getOrganization())
                 .createdBy(emissor)
                 .tokenHash(opaqueTokenService.hash(token))
                 .email(request != null ? request.getEmail() : null)
@@ -57,27 +57,27 @@ public class ClinicInviteServiceImpl implements ClinicInviteService {
     }
 
     @Override
-    public List<ClinicInviteResponseDTO> listFromMyClinic() {
-        UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
+    public List<OrganizationInviteResponseDTO> listFromMyOrganization() {
+        UUID organizationId = currentProfessionalProvider.require().getOrganization().getOrganizationId();
 
-        return clinicInviteRepository.findByClinicClinicIdOrderByCreationDateDesc(clinicId)
+        return organizationInviteRepository.findByOrganizationOrganizationIdOrderByCreationDateDesc(organizationId)
                 .stream()
                 .map(invite -> toResponse(invite, null))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void revoke(UUID clinicInviteId) {
-        UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
+    public void revoke(UUID organizationInviteId) {
+        UUID organizationId = currentProfessionalProvider.require().getOrganization().getOrganizationId();
 
-        ClinicInvite invite = clinicInviteRepository.findById(clinicInviteId)
-                .filter(i -> i.getClinic().getClinicId().equals(clinicId))
+        OrganizationInvite invite = organizationInviteRepository.findById(organizationInviteId)
+                .filter(i -> i.getOrganization().getOrganizationId().equals(organizationId))
                 .orElseThrow(this::inviteInvalido);
 
         // revogar duas vezes nao e erro, mas a primeira data e que vale
         if (invite.getRevokedAt() == null) {
             invite.setRevokedAt(LocalDateTime.now());
-            clinicInviteRepository.save(invite);
+            organizationInviteRepository.save(invite);
         }
     }
 
@@ -87,26 +87,26 @@ public class ClinicInviteServiceImpl implements ClinicInviteService {
      * e o convite e o que separa um estranho dos animals de uma clinica inteira.
      */
     @Override
-    public ClinicInvite validate(String token, String email) {
-        return clinicInviteRepository.findByTokenHash(opaqueTokenService.hash(token))
+    public OrganizationInvite validate(String token, String email) {
+        return organizationInviteRepository.findByTokenHash(opaqueTokenService.hash(token))
                 .filter(invite -> invite.isUsable(LocalDateTime.now()))
                 .filter(invite -> aceitaEmail(invite, email))
                 .orElseThrow(this::inviteInvalido);
     }
 
     @Override
-    public void markAccepted(ClinicInvite invite, UUID acceptedByVetId) {
+    public void markAccepted(OrganizationInvite invite, UUID acceptedByVetId) {
         Person aceitante = personRepository.findById(acceptedByVetId)
                 .orElseThrow(this::inviteInvalido);
 
         invite.setAcceptedAt(LocalDateTime.now());
         invite.setAcceptedBy(aceitante);
 
-        clinicInviteRepository.save(invite);
+        organizationInviteRepository.save(invite);
     }
 
     /** Convite sem email e aberto a quem tiver o link; com email, so aquele. */
-    private boolean aceitaEmail(ClinicInvite invite, String email) {
+    private boolean aceitaEmail(OrganizationInvite invite, String email) {
         return invite.getEmail() == null || invite.getEmail().equalsIgnoreCase(email);
     }
 
@@ -117,11 +117,11 @@ public class ClinicInviteServiceImpl implements ClinicInviteService {
                 HttpStatus.NOT_FOUND);
     }
 
-    private ClinicInviteResponseDTO toResponse(ClinicInvite invite, String token) {
-        return ClinicInviteResponseDTO.builder()
-                .clinicInviteId(invite.getClinicInviteId())
-                .clinicId(invite.getClinic().getClinicId())
-                .clinicName(invite.getClinic().getName())
+    private OrganizationInviteResponseDTO toResponse(OrganizationInvite invite, String token) {
+        return OrganizationInviteResponseDTO.builder()
+                .organizationInviteId(invite.getOrganizationInviteId())
+                .organizationId(invite.getOrganization().getOrganizationId())
+                .organizationName(invite.getOrganization().getName())
                 .token(token)
                 .email(invite.getEmail())
                 .createdByVetName(invite.getCreatedBy().getName())

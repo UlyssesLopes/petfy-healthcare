@@ -9,7 +9,7 @@ import br.com.petfy.healthcare.domain.entity.GrantLevel;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
@@ -312,7 +312,7 @@ class AnimalShareServiceImplTest {
                     .vaccineName(nome)
                     .applicationDate(HOJE.minusYears(1))
                     .nextDoseDate(proximaDose)
-                    .clinic(Clinic.builder().clinicId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
+                    .organization(Organization.builder().organizationId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
                     .animal(animal())
                     .build();
         }

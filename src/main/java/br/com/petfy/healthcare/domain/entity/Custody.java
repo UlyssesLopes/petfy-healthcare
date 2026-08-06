@@ -45,7 +45,7 @@ public class Custody {
     @JoinColumn(name = "animal_id", nullable = false)
     private Animal animal;
 
-    /** Quem responde, quando e uma pessoa. Exclusivo com {@link #holderClinic}. */
+    /** Quem responde, quando e uma pessoa. Exclusivo com {@link #holderOrganization}. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "holder_person_id")
     private Person holderPerson;
@@ -53,14 +53,14 @@ public class Custody {
     /**
      * Quem responde, quando e uma organizacao - abrigo ou ONG.
      *
-     * Hoje aponta para {@code Clinic} porque {@code Organization} so nasce no P3. O
-     * slot existe desde ja para o guard nao precisar ser reescrito duas vezes: e
+     * Aponta para {@code Organization} desde o P3. O
+     * slot ja existia no P2b para o guard nao precisar ser reescrito duas vezes: e
      * ele que decide quem alcanca o animal, e e a peca que menos deve mudar por
      * mes.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "holder_clinic_id")
-    private Clinic holderClinic;
+    @JoinColumn(name = "holder_organization_id")
+    private Organization holderOrganization;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)

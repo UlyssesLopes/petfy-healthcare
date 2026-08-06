@@ -1,11 +1,11 @@
 package br.com.petfy.healthcare.controller;
 
-import br.com.petfy.healthcare.domain.dto.ClinicResponseDTO;
+import br.com.petfy.healthcare.domain.dto.OrganizationResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PetTutorResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
-import br.com.petfy.healthcare.service.ClinicService;
+import br.com.petfy.healthcare.service.OrganizationService;
 import br.com.petfy.healthcare.service.PersonExportService;
 import br.com.petfy.healthcare.service.PersonService;
 import br.com.petfy.healthcare.service.AnimalService;
@@ -172,41 +172,41 @@ class ControllerPathVariableTest {
     }
 
     @Nested
-    @DisplayName("ClinicController")
-    class ClinicControllerTest {
+    @DisplayName("OrganizationController")
+    class OrganizationControllerTest {
 
         @Mock
-        private ClinicService clinicService;
+        private OrganizationService organizationService;
 
         private MockMvc mockMvc;
 
         private MockMvc mockMvc() {
             if (mockMvc == null) {
-                mockMvc = MockMvcBuilders.standaloneSetup(new ClinicController(clinicService)).build();
+                mockMvc = MockMvcBuilders.standaloneSetup(new OrganizationController(organizationService)).build();
             }
             return mockMvc;
         }
 
         @Test
-        @DisplayName("GET /clinics/{clinicId} deve repassar o id da rota para o service")
+        @DisplayName("GET /organizations/{organizationId} deve repassar o id da rota para o service")
         void getDeveRepassarIdDaRota() throws Exception {
-            when(clinicService.getClinicById(ID))
-                    .thenReturn(ClinicResponseDTO.builder().clinicId(ID).name("Clinica Bicho Feliz").build());
+            when(organizationService.getOrganizationById(ID))
+                    .thenReturn(OrganizationResponseDTO.builder().organizationId(ID).name("Clinica Bicho Feliz").build());
 
-            mockMvc().perform(get("/clinics/{clinicId}", ID))
+            mockMvc().perform(get("/organizations/{organizationId}", ID))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.clinicId").value(ID.toString()));
+                    .andExpect(jsonPath("$.organizationId").value(ID.toString()));
 
-            verify(clinicService).getClinicById(ID);
+            verify(organizationService).getOrganizationById(ID);
         }
 
         @Test
-        @DisplayName("DELETE /clinics/{clinicId} deve repassar o id da rota e responder 204")
+        @DisplayName("DELETE /organizations/{organizationId} deve repassar o id da rota e responder 204")
         void deleteDeveRepassarIdDaRota() throws Exception {
-            mockMvc().perform(delete("/clinics/{clinicId}", ID))
+            mockMvc().perform(delete("/organizations/{organizationId}", ID))
                     .andExpect(status().isNoContent());
 
-            verify(clinicService).deleteClinic(ID);
+            verify(organizationService).deleteOrganization(ID);
         }
     }
 

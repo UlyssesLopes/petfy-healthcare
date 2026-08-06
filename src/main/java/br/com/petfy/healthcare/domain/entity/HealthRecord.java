@@ -49,8 +49,8 @@ public class HealthRecord {
     private String eventType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id")
-    private Clinic clinic;
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
 
     private LocalDateTime creationDate;
 

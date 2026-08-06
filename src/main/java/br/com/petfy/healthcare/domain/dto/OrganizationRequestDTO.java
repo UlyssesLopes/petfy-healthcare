@@ -15,7 +15,7 @@ import jakarta.validation.constraints.NotBlank;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClinicRequestDTO {
+public class OrganizationRequestDTO {
 
     @NotBlank(message = "nome e obrigatorio")
     private String name;

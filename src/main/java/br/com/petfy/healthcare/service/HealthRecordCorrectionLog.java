@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.HealthRecordCorrection;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +29,10 @@ public class HealthRecordCorrectionLog {
     private final HealthRecordCorrectionRepository healthRecordCorrectionRepository;
 
     /** Correcao feita por alguem agindo em nome de uma organizacao. */
-    public void recordByProfessional(HealthRecord antes, Person profissional, Clinic clinic) {
+    public void recordByProfessional(HealthRecord antes, Person profissional, Organization organization) {
         healthRecordCorrectionRepository.save(snapshot(antes)
                 .correctedBy(profissional)
-                .correctedInClinic(clinic)
+                .correctedInOrganization(organization)
                 .build());
     }
 
@@ -68,8 +68,8 @@ public class HealthRecordCorrectionLog {
                 .correctedByName(correction.getCorrectedBy() != null
                         ? correction.getCorrectedBy().getName()
                         : null)
-                .correctedByClinicName(correction.getCorrectedInClinic() != null
-                        ? correction.getCorrectedInClinic().getName()
+                .correctedByOrganizationName(correction.getCorrectedInOrganization() != null
+                        ? correction.getCorrectedInOrganization().getName()
                         : null)
                 .previousEventType(correction.getPreviousEventType())
                 .previousEventDate(correction.getPreviousEventDate())

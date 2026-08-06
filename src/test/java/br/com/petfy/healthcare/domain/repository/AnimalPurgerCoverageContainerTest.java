@@ -54,7 +54,7 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             "health_record_corrections",
             "animal_weight_history",
             "antiparasitics",
-            // as duas anteriores - animal_shares e pet_clinic_access - se dissolveram
+            // as duas anteriores - animal_shares e pet_organization_access - se dissolveram
             // em grants no P2a. grant_scopes entra porque alcanca animals pela neta:
             // aponta para grants, que aponta para animals
             "grants",

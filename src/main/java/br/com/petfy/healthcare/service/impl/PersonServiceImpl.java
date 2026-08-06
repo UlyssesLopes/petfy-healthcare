@@ -3,8 +3,8 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.PersonRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
-import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.ClinicInvite;
+import br.com.petfy.healthcare.domain.entity.Organization;
+import br.com.petfy.healthcare.domain.entity.OrganizationInvite;
 import br.com.petfy.healthcare.domain.entity.CredentialStatus;
 import br.com.petfy.healthcare.domain.entity.ProfessionalCredential;
 import br.com.petfy.healthcare.domain.entity.Person;
@@ -14,7 +14,7 @@ import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
-import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
@@ -23,8 +23,8 @@ import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
-import br.com.petfy.healthcare.service.ClinicInviteService;
-import br.com.petfy.healthcare.service.ClinicService;
+import br.com.petfy.healthcare.service.OrganizationInviteService;
+import br.com.petfy.healthcare.service.OrganizationService;
 import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.PersonService;
@@ -50,9 +50,9 @@ public class PersonServiceImpl implements PersonService {
 
     private final PersonRepository personRepository;
     private final ProfessionalCredentialRepository credentialRepository;
-    private final ClinicRepository clinicRepository;
-    private final ClinicService clinicService;
-    private final ClinicInviteService clinicInviteService;
+    private final OrganizationRepository organizationRepository;
+    private final OrganizationService organizationService;
+    private final OrganizationInviteService organizationInviteService;
     private final CustodyRepository custodyRepository;
     private final GrantRepository grantRepository;
     private final PetTutorInviteRepository petTutorInviteRepository;
@@ -73,11 +73,11 @@ public class PersonServiceImpl implements PersonService {
 
         // valida o convite antes de criar a pessoa: nao faz sentido gravar a conta
         // para depois descobrir que o convite nao servia
-        ClinicInvite invite = temTexto(request.getInviteToken())
-                ? clinicInviteService.validate(request.getInviteToken(), request.getEmail())
+        OrganizationInvite invite = temTexto(request.getInviteToken())
+                ? organizationInviteService.validate(request.getInviteToken(), request.getEmail())
                 : null;
 
-        Clinic clinic = resolverClinica(request, invite);
+        Organization organization = resolverOrganizacao(request, invite);
 
         Person person = Person.builder()
                 .name(request.getName())
@@ -85,7 +85,7 @@ public class PersonServiceImpl implements PersonService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .address(request.getAddress())
-                .clinic(clinic)
+                .organization(organization)
                 .creationDate(LocalDateTime.now())
                 .updateDate(LocalDateTime.now())
                 .build();
@@ -97,7 +97,7 @@ public class PersonServiceImpl implements PersonService {
         // consome o convite: e de uso unico, senao o mesmo link serviria a
         // qualquer numero de pessoas
         if (invite != null) {
-            clinicInviteService.markAccepted(invite, salvo.getPersonId());
+            organizationInviteService.markAccepted(invite, salvo.getPersonId());
         }
 
         // O consentimento e gravado na mesma transacao do cadastro, e antes do
@@ -355,25 +355,25 @@ public class PersonServiceImpl implements PersonService {
      * antes o cadastro obrigava a inventar uma. Quem atende e o profissional; a
      * clinica e onde ele atende.
      */
-    private Clinic resolverClinica(PersonRequestDTO request, ClinicInvite invite) {
-        if (invite != null && request.getClinic() != null) {
+    private Organization resolverOrganizacao(PersonRequestDTO request, OrganizationInvite invite) {
+        if (invite != null && request.getOrganization() != null) {
             throw new PetfyHealthcareException(
-                    "informe inviteToken para entrar numa clinica existente, ou clinic para cadastrar uma nova",
+                    "informe inviteToken para entrar numa clinica existente, ou organization para cadastrar uma nova",
                     ErrorMessageEnum.INVALID_REQUEST.getCode(),
                     HttpStatus.BAD_REQUEST);
         }
 
         if (invite != null) {
-            return invite.getClinic();
+            return invite.getOrganization();
         }
 
-        if (request.getClinic() == null) {
+        if (request.getOrganization() == null) {
             return null;
         }
 
-        UUID clinicId = clinicService.createClinic(request.getClinic()).getClinicId();
+        UUID organizationId = organizationService.createOrganization(request.getOrganization()).getOrganizationId();
 
-        return clinicRepository.findById(clinicId)
+        return organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(),

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  * fechadas, e o aviso morreria com LazyInitializationException. Entao o que sai
  * da requisicao e apenas o envio, que e a parte lenta.
  *
- * Vale so para os avisos do ClinicActivityNotifier. O lembrete de vacina continua
+ * Vale so para os avisos do OrganizationActivityNotifier. O lembrete de vacina continua
  * sincrono de proposito: la a excecao precisa subir para o rollback desmarcar a
  * dose, senao ficaria registrada como avisada uma dose que ninguem recebeu.
  */

@@ -1,9 +1,9 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.dto.ClinicRequestDTO;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.dto.OrganizationRequestDTO;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
-import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -31,31 +31,31 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ClinicServiceImplTest {
+class OrganizationServiceImplTest {
 
     @Mock
-    private ClinicRepository clinicRepository;
+    private OrganizationRepository organizationRepository;
 
     @Mock
     private CurrentProfessionalProvider currentProfessionalProvider;
 
     @InjectMocks
-    private ClinicServiceImpl clinicService;
+    private OrganizationServiceImpl organizationService;
 
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OUTRA_CLINIC_ID = UUID.fromString("aaaaaaaa-5555-5555-5555-555555555555");
 
     /** Person cuja clinica e a informada - quem tem permissao de manter o cadastro. */
-    private void autenticadoComoVetDa(UUID clinicId) {
+    private void autenticadoComoVetDa(UUID organizationId) {
         when(currentProfessionalProvider.require()).thenReturn(Person.builder()
                 .personId(UUID.randomUUID())
-                .clinic(Clinic.builder().clinicId(clinicId).build())
+                .organization(Organization.builder().organizationId(organizationId).build())
                 .build());
     }
 
-    private Clinic existingClinic() {
-        return Clinic.builder()
-                .clinicId(CLINIC_ID)
+    private Organization existingOrganization() {
+        return Organization.builder()
+                .organizationId(CLINIC_ID)
                 .name("Clinica Bicho Feliz")
                 .ownerVetName("Dra. Marina")
                 .phone("1133334444")
@@ -71,15 +71,15 @@ class ClinicServiceImplTest {
     }
 
     @Nested
-    @DisplayName("createClinic")
-    class CreateClinic {
+    @DisplayName("createOrganization")
+    class CreateOrganization {
 
         @Test
         @DisplayName("criar clinica nao deve exigir ser veterinario - o tutor precisa registrar onde vacinou")
         void criarNaoDeveExigirSerVeterinario() {
-            when(clinicRepository.save(any(Clinic.class))).thenReturn(existingClinic());
+            when(organizationRepository.save(any(Organization.class))).thenReturn(existingOrganization());
 
-            clinicService.createClinic(ClinicRequestDTO.builder().name("Clinica Bicho Feliz").build());
+            organizationService.createOrganization(OrganizationRequestDTO.builder().name("Clinica Bicho Feliz").build());
 
             verify(currentProfessionalProvider, never()).require();
         }
@@ -87,82 +87,82 @@ class ClinicServiceImplTest {
         @Test
         @DisplayName("deve persistir a clinica com os dados do request e data de criacao")
         void devePersistirClinica() {
-            var request = ClinicRequestDTO.builder()
+            var request = OrganizationRequestDTO.builder()
                     .name("Clinica Bicho Feliz")
                     .ownerVetName("Dra. Marina")
                     .cnpj("12345678000199")
                     .city("Sao Paulo")
                     .build();
-            when(clinicRepository.save(any(Clinic.class))).thenReturn(existingClinic());
+            when(organizationRepository.save(any(Organization.class))).thenReturn(existingOrganization());
 
-            var result = clinicService.createClinic(request);
+            var result = organizationService.createOrganization(request);
 
-            assertThat(result.getClinicId()).isEqualTo(CLINIC_ID);
+            assertThat(result.getOrganizationId()).isEqualTo(CLINIC_ID);
             assertThat(result.getName()).isEqualTo("Clinica Bicho Feliz");
 
-            var captor = ArgumentCaptor.forClass(Clinic.class);
-            verify(clinicRepository).save(captor.capture());
+            var captor = ArgumentCaptor.forClass(Organization.class);
+            verify(organizationRepository).save(captor.capture());
             assertThat(captor.getValue().getCnpj()).isEqualTo("12345678000199");
             assertThat(captor.getValue().getCreationDate()).isNotNull();
         }
     }
 
     @Nested
-    @DisplayName("getClinicById")
-    class GetClinicById {
+    @DisplayName("getOrganizationById")
+    class GetOrganizationById {
 
         @Test
         @DisplayName("deve retornar a clinica quando existe")
         void deveRetornarClinicaQuandoExiste() {
-            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(existingClinic()));
+            when(organizationRepository.findById(CLINIC_ID)).thenReturn(Optional.of(existingOrganization()));
 
-            var result = clinicService.getClinicById(CLINIC_ID);
+            var result = organizationService.getOrganizationById(CLINIC_ID);
 
-            assertThat(result.getClinicId()).isEqualTo(CLINIC_ID);
+            assertThat(result.getOrganizationId()).isEqualTo(CLINIC_ID);
             assertThat(result.getOwnerVetName()).isEqualTo("Dra. Marina");
         }
 
         @Test
         @DisplayName("deve lancar CLINIC_NOT_FOUND com 404 quando nao existe")
         void deveLancarQuandoNaoExiste() {
-            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
+            when(organizationRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> clinicService.getClinicById(CLINIC_ID))
+            assertThatThrownBy(() -> organizationService.getOrganizationById(CLINIC_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Clinic not found")
+                    .hasMessage("Organization not found")
                     .extracting("code", "httpStatus")
                     .containsExactly(103, HttpStatus.NOT_FOUND);
         }
     }
 
     @Nested
-    @DisplayName("listAllClinics")
-    class ListAllClinics {
+    @DisplayName("listAllOrganizations")
+    class ListAllOrganizations {
 
         @Test
         @DisplayName("deve mapear todas as clinicas retornadas pelo repositorio")
         void deveMapearTodasAsClinicas() {
             var pageable = PageRequest.of(0, 20);
-            when(clinicRepository.findAll(pageable))
-                    .thenReturn(new PageImpl<>(List.of(existingClinic())));
+            when(organizationRepository.findAll(pageable))
+                    .thenReturn(new PageImpl<>(List.of(existingOrganization())));
 
-            assertThat(clinicService.listAllClinics(pageable).getContent()).hasSize(1);
+            assertThat(organizationService.listAllOrganizations(pageable).getContent()).hasSize(1);
         }
     }
 
     @Nested
-    @DisplayName("updateClinic")
-    class UpdateClinic {
+    @DisplayName("updateOrganization")
+    class UpdateOrganization {
 
         @Test
         @DisplayName("deve preservar os campos nao enviados no request")
         void devePreservarCamposNaoEnviados() {
-            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(existingClinic()));
+            when(organizationRepository.findById(CLINIC_ID)).thenReturn(Optional.of(existingOrganization()));
             autenticadoComoVetDa(CLINIC_ID);
-            when(clinicRepository.save(any(Clinic.class))).thenAnswer(i -> i.getArgument(0));
+            when(organizationRepository.save(any(Organization.class))).thenAnswer(i -> i.getArgument(0));
 
-            var request = ClinicRequestDTO.builder().phone("1155556666").build();
-            var result = clinicService.updateClinic(CLINIC_ID, request);
+            var request = OrganizationRequestDTO.builder().phone("1155556666").build();
+            var result = organizationService.updateOrganization(CLINIC_ID, request);
 
             assertThat(result.getPhone()).isEqualTo("1155556666");
             assertThat(result.getName()).isEqualTo("Clinica Bicho Feliz");
@@ -173,71 +173,71 @@ class ClinicServiceImplTest {
         @Test
         @DisplayName("deve responder 403 quando quem altera e vet de outra clinica")
         void deveResponder403QuandoVetDeOutraClinica() {
-            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(existingClinic()));
+            when(organizationRepository.findById(CLINIC_ID)).thenReturn(Optional.of(existingOrganization()));
             autenticadoComoVetDa(OUTRA_CLINIC_ID);
 
-            assertThatThrownBy(() -> clinicService.updateClinic(CLINIC_ID,
-                    ClinicRequestDTO.builder().name("Invadida").build()))
+            assertThatThrownBy(() -> organizationService.updateOrganization(CLINIC_ID,
+                    OrganizationRequestDTO.builder().name("Invadida").build()))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
                     .containsExactly(109, HttpStatus.FORBIDDEN);
 
-            verify(clinicRepository, never()).save(any());
+            verify(organizationRepository, never()).save(any());
         }
 
         @Test
         @DisplayName("deve lancar CLINIC_NOT_FOUND sem salvar quando nao existe")
         void deveLancarSemSalvarQuandoNaoExiste() {
-            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
+            when(organizationRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> clinicService.updateClinic(CLINIC_ID, ClinicRequestDTO.builder().build()))
+            assertThatThrownBy(() -> organizationService.updateOrganization(CLINIC_ID, OrganizationRequestDTO.builder().build()))
                     .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Clinic not found");
+                    .hasMessage("Organization not found");
 
-            verify(clinicRepository, never()).save(any());
+            verify(organizationRepository, never()).save(any());
         }
     }
 
     @Nested
-    @DisplayName("deleteClinic")
-    class DeleteClinic {
+    @DisplayName("deleteOrganization")
+    class DeleteOrganization {
 
         @Test
         @DisplayName("deve remover a clinica quando o vet e dela")
         void deveRemoverQuandoExiste() {
-            when(clinicRepository.existsById(CLINIC_ID)).thenReturn(true);
+            when(organizationRepository.existsById(CLINIC_ID)).thenReturn(true);
             autenticadoComoVetDa(CLINIC_ID);
 
-            clinicService.deleteClinic(CLINIC_ID);
+            organizationService.deleteOrganization(CLINIC_ID);
 
-            verify(clinicRepository).deleteById(CLINIC_ID);
+            verify(organizationRepository).deleteById(CLINIC_ID);
         }
 
         @Test
         @DisplayName("deve responder 403 quando o vet e de outra clinica")
         void deveResponder403QuandoVetDeOutraClinica() {
-            when(clinicRepository.existsById(CLINIC_ID)).thenReturn(true);
+            when(organizationRepository.existsById(CLINIC_ID)).thenReturn(true);
             autenticadoComoVetDa(OUTRA_CLINIC_ID);
 
-            assertThatThrownBy(() -> clinicService.deleteClinic(CLINIC_ID))
+            assertThatThrownBy(() -> organizationService.deleteOrganization(CLINIC_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Only a vet from this clinic can do that")
+                    .hasMessage("Only a vet from this organization can do that")
                     .extracting("code", "httpStatus")
                     .containsExactly(109, HttpStatus.FORBIDDEN);
 
-            verify(clinicRepository, never()).deleteById(any());
+            verify(organizationRepository, never()).deleteById(any());
         }
 
         @Test
         @DisplayName("deve lancar CLINIC_NOT_FOUND sem remover quando nao existe")
         void deveLancarSemRemoverQuandoNaoExiste() {
-            when(clinicRepository.existsById(CLINIC_ID)).thenReturn(false);
+            when(organizationRepository.existsById(CLINIC_ID)).thenReturn(false);
 
-            assertThatThrownBy(() -> clinicService.deleteClinic(CLINIC_ID))
+            assertThatThrownBy(() -> organizationService.deleteOrganization(CLINIC_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Clinic not found");
+                    .hasMessage("Organization not found");
 
-            verify(clinicRepository, never()).deleteById(any());
+            verify(organizationRepository, never()).deleteById(any());
         }
     }
 }

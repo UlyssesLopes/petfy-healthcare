@@ -74,13 +74,13 @@ public class PersonRequestDTO {
 
     /**
      * Convite de uma clinica existente. Continua sendo a unica porta para entrar
-     * numa clinica que ja existe: antes bastava saber o clinicId, que aparece em
+     * numa clinica que ja existe: antes bastava saber o organizationId, que aparece em
      * qualquer listagem, e quem entra numa clinica alcanca todos os animais que
      * ela ja foi autorizada a atender.
      */
     private String inviteToken;
 
     /** Cadastrar uma clinica nova e ser o primeiro membro dela. */
-    private ClinicRequestDTO clinic;
+    private OrganizationRequestDTO organization;
 
 }

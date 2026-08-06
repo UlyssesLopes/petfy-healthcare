@@ -56,8 +56,8 @@ public class VaccineCorrection {
      * pessoa e com em nome de quem ela agiu.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "corrected_in_clinic_id")
-    private Clinic correctedInClinic;
+    @JoinColumn(name = "corrected_in_organization_id")
+    private Organization correctedInOrganization;
 
     private String previousVaccineName;
 

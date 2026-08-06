@@ -7,7 +7,7 @@ import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.HealthRecordCorrection;
 import br.com.petfy.healthcare.domain.entity.Person;
@@ -58,7 +58,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
     @Autowired private PersonRepository personRepository;
     @Autowired private AnimalRepository animalRepository;
     @Autowired private CustodyRepository custodyRepository;
-    @Autowired private ClinicRepository clinicRepository;
+    @Autowired private OrganizationRepository organizationRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
@@ -69,7 +69,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
 
     private Person ulysses;
     private Animal rex;
-    private Clinic bichoFeliz;
+    private Organization bichoFeliz;
 
     @BeforeEach
     void setUp() {
@@ -86,7 +86,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
                 .animal(rex).holderPerson(ulysses).nature(CustodyNature.DEFINITIVA)
                 .startedAt(LocalDateTime.now()).build());
 
-        bichoFeliz = clinicRepository.saveAndFlush(Clinic.builder().name("Clinica Bicho Feliz").build());
+        bichoFeliz = organizationRepository.saveAndFlush(Organization.builder().name("Clinica Bicho Feliz").build());
 
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(ulysses.getEmail(), "n/a", List.of()));
@@ -100,7 +100,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
     /** A carteira que qualquer animal com algum uso tem. */
     private void comHistoricoCompleto() {
         Vaccine vacina = vaccineRepository.saveAndFlush(Vaccine.builder()
-                .animal(rex).clinic(bichoFeliz).vaccineName("Antirrabica")
+                .animal(rex).organization(bichoFeliz).vaccineName("Antirrabica")
                 .applicationDate(LocalDate.now().minusMonths(6))
                 .nextDoseDate(LocalDate.now().plusMonths(6))
                 .creationDate(LocalDateTime.now()).build());
@@ -111,7 +111,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
 
         HealthRecord atendimento = healthRecordRepository.saveAndFlush(HealthRecord.builder()
                 .category(HealthEventCategory.CONSULTA)
-                    .animal(rex).clinic(bichoFeliz).eventType("Consulta")
+                    .animal(rex).organization(bichoFeliz).eventType("Consulta")
                 .eventDate(LocalDate.now().minusMonths(2))
                 .creationDate(LocalDateTime.now()).build());
 
@@ -137,7 +137,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
                 .build());
 
         grantRepository.saveAndFlush(Grant.builder()
-                .animal(rex).granteeClinic(bichoFeliz).level(GrantLevel.EDITOR)
+                .animal(rex).granteeOrganization(bichoFeliz).level(GrantLevel.EDITOR)
                 .scopes(new java.util.LinkedHashSet<>(java.util.Set.of(GrantScope.CARTEIRA)))
                 .grantedAt(LocalDateTime.now()).build());
     }
@@ -178,7 +178,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
         animalRepository.flush();
 
         assertThat(personRepository.findById(ulysses.getPersonId())).isPresent();
-        assertThat(clinicRepository.findById(bichoFeliz.getClinicId())).isPresent();
+        assertThat(organizationRepository.findById(bichoFeliz.getOrganizationId())).isPresent();
     }
 
     /** Animal recem-cadastrado, sem nada pendurado: o caso que ja funcionava. */

@@ -40,8 +40,8 @@ public class Vaccine {
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id")
-    private Clinic clinic;
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
 
     /** Nulo para vacina digitada em texto livre e para os registros anteriores ao catalogo. */
     @ManyToOne(fetch = FetchType.LAZY)

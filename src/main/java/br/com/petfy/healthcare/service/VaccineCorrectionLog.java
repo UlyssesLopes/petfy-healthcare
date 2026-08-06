@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
@@ -37,10 +37,10 @@ public class VaccineCorrectionLog {
      * A clinica nao e um detalhe da resposta: e ela que o tutor autorizou, e e ela
      * que responde institucionalmente pelo que foi escrito.
      */
-    public void recordByProfessional(Vaccine antes, Person profissional, Clinic clinic) {
+    public void recordByProfessional(Vaccine antes, Person profissional, Organization organization) {
         vaccineCorrectionRepository.save(snapshot(antes)
                 .correctedBy(profissional)
-                .correctedInClinic(clinic)
+                .correctedInOrganization(organization)
                 .build());
     }
 
@@ -75,7 +75,7 @@ public class VaccineCorrectionLog {
      * duas colunas estava preenchida. Papel deixou de existir, e o que separa os
      * dois casos e outra coisa: em nome de quem a pessoa agiu. Quem le distingue
      * "a Ana corrigiu" de "a Ana, pela Clinica Norte, corrigiu" por
-     * {@code correctedByClinicName} vir ou nao vazio.
+     * {@code correctedByOrganizationName} vir ou nao vazio.
      */
     private VaccineCorrectionResponseDTO toResponse(VaccineCorrection correction) {
         return VaccineCorrectionResponseDTO.builder()
@@ -84,8 +84,8 @@ public class VaccineCorrectionLog {
                 .correctedByName(correction.getCorrectedBy() != null
                         ? correction.getCorrectedBy().getName()
                         : null)
-                .correctedByClinicName(correction.getCorrectedInClinic() != null
-                        ? correction.getCorrectedInClinic().getName()
+                .correctedByOrganizationName(correction.getCorrectedInOrganization() != null
+                        ? correction.getCorrectedInOrganization().getName()
                         : null)
                 .previousVaccineName(correction.getPreviousVaccineName())
                 .previousApplicationDate(correction.getPreviousApplicationDate())

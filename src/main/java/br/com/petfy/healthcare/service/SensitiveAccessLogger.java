@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * Registra que um terceiro leu dado de saude de um animal.
  *
  * <b>Falha aqui derruba a leitura, de proposito.</b> E o oposto da politica do
- * {@link br.com.petfy.healthcare.notification.ClinicActivityNotifier}, e a diferenca
+ * {@link br.com.petfy.healthcare.notification.OrganizationActivityNotifier}, e a diferenca
  * nao e descuido: la o efeito principal era o registro no historico e o aviso era
  * acessorio, entao perder o efeito por causa do acessorio seria trocar um problema
  * pequeno por um grande. Aqui o log <b>e</b> a garantia. Servir historico de saude
@@ -51,7 +51,7 @@ public class SensitiveAccessLogger {
                 .actorType(AccessActorType.VET)
                 .actorId(vet.getPersonId())
                 .actorName(vet.getName())
-                .clinicName(vet.getClinic() != null ? vet.getClinic().getName() : null)
+                .organizationName(vet.getOrganization() != null ? vet.getOrganization().getName() : null)
                 .resource(recurso));
     }
 

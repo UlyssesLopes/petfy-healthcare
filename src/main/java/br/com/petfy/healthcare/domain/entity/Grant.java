@@ -62,8 +62,8 @@ public class Grant {
     private Person granteePerson;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "grantee_clinic_id")
-    private Clinic granteeClinic;
+    @JoinColumn(name = "grantee_organization_id")
+    private Organization granteeOrganization;
 
     /**
      * Hash do token do link, quando o beneficiario nao tem conta.

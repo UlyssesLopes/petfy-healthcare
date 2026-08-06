@@ -3,10 +3,10 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
@@ -32,7 +32,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
     private final HealthRecordRepository healthRecordRepository;
 
-    private final ClinicRepository clinicRepository;
+    private final OrganizationRepository organizationRepository;
 
     private final CurrentPersonProvider currentPersonProvider;
     private final AnimalAccessGuard animalAccessGuard;
@@ -43,11 +43,11 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     public HealthRecordResponseDTO createHealthRecord(HealthRecordRequestDTO request) {
         Animal animal = findAnimal(request.getAnimalId());
 
-        Clinic clinic = request.getClinicId() != null ? findClinic(request.getClinicId()) : null;
+        Organization organization = request.getOrganizationId() != null ? findOrganization(request.getOrganizationId()) : null;
 
         HealthRecord healthRecord = HealthRecord.builder()
                 .animal(animal)
-                .clinic(clinic)
+                .organization(organization)
                 .eventType(request.getEventType())
                 .category(request.getCategory())
                 .diagnosis(request.getDiagnosis())
@@ -107,8 +107,8 @@ public class HealthRecordServiceImpl implements HealthRecordService {
             existing.setAnimal(findAnimal(request.getAnimalId()));
         }
 
-        if (request.getClinicId() != null) {
-            existing.setClinic(findClinic(request.getClinicId()));
+        if (request.getOrganizationId() != null) {
+            existing.setOrganization(findOrganization(request.getOrganizationId()));
         }
 
         existing.setUpdateDate(LocalDateTime.now());
@@ -150,8 +150,8 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         return animalAccessGuard.requireEscrita(animalId);
     }
 
-    private Clinic findClinic(UUID clinicId) {
-        return clinicRepository.findById(clinicId)
+    private Organization findOrganization(UUID organizationId) {
+        return organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(), ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
     }
 
@@ -168,7 +168,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 .eventDate(healthRecord.getEventDate())
                 .description(healthRecord.getDescription())
                 .animalId(healthRecord.getAnimal().getAnimalId())
-                .clinicId(healthRecord.getClinic() != null ? healthRecord.getClinic().getClinicId() : null)
+                .organizationId(healthRecord.getOrganization() != null ? healthRecord.getOrganization().getOrganizationId() : null)
                 .creationDate(healthRecord.getCreationDate())
                 .updateDate(healthRecord.getUpdateDate())
                 .build();

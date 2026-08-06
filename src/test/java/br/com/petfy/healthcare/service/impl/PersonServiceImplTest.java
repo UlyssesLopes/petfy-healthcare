@@ -19,7 +19,7 @@ import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
-import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
@@ -28,8 +28,8 @@ import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
-import br.com.petfy.healthcare.service.ClinicInviteService;
-import br.com.petfy.healthcare.service.ClinicService;
+import br.com.petfy.healthcare.service.OrganizationInviteService;
+import br.com.petfy.healthcare.service.OrganizationService;
 import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.AnimalPurger;
@@ -68,13 +68,13 @@ class PersonServiceImplTest {
     private ProfessionalCredentialRepository credentialRepository;
 
     @Mock
-    private ClinicRepository clinicRepository;
+    private OrganizationRepository organizationRepository;
 
     @Mock
-    private ClinicService clinicService;
+    private OrganizationService organizationService;
 
     @Mock
-    private ClinicInviteService clinicInviteService;
+    private OrganizationInviteService organizationInviteService;
 
     @Mock
     private PasswordEncoder passwordEncoder;

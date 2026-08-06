@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.notification;
 
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ClinicActivityNotifierTest {
+class OrganizationActivityNotifierTest {
 
     @Mock
     private AsyncNotificationDispatcher dispatcher;
@@ -42,7 +42,7 @@ class ClinicActivityNotifierTest {
     private br.com.petfy.healthcare.service.AnimalReach animalReach;
 
     @InjectMocks
-    private ClinicActivityNotifier notifier;
+    private OrganizationActivityNotifier notifier;
 
     private Person tutor(boolean emailConfirmado) {
         return Person.builder()
@@ -59,7 +59,7 @@ class ClinicActivityNotifierTest {
                 .vaccineName("V10")
                 .applicationDate(LocalDate.of(2026, 8, 1))
                 .nextDoseDate(LocalDate.of(2027, 8, 1))
-                .clinic(Clinic.builder().name("Clinica Animal Feliz").build())
+                .organization(Organization.builder().name("Clinica Animal Feliz").build())
                 .animal(Animal.builder().name("Rex").custodies(br.com.petfy.healthcare.Custodias.titular(dono)).build())
                 .build();
     }
@@ -69,7 +69,7 @@ class ClinicActivityNotifierTest {
                 .eventType("Consulta")
                 .eventDate(LocalDate.of(2026, 8, 1))
                 .description("Checkup anual")
-                .clinic(Clinic.builder().name("Clinica Animal Feliz").build())
+                .organization(Organization.builder().name("Clinica Animal Feliz").build())
                 .animal(Animal.builder().name("Rex").custodies(br.com.petfy.healthcare.Custodias.titular(dono)).build())
                 .build();
     }

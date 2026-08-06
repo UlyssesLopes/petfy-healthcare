@@ -1,18 +1,18 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.dto.ClinicAccessRequestDTO;
-import br.com.petfy.healthcare.domain.dto.ClinicAccessResponseDTO;
+import br.com.petfy.healthcare.domain.dto.OrganizationAccessRequestDTO;
+import br.com.petfy.healthcare.domain.dto.OrganizationAccessResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
-import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
-import br.com.petfy.healthcare.service.ClinicAccessService;
+import br.com.petfy.healthcare.service.OrganizationAccessService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,13 +28,13 @@ import java.util.stream.Collectors;
 /**
  * O tutor concede, lista e revoga o acesso de uma clinica.
  *
- * Substituiu o PetClinicAccessServiceImpl: a tabela propria virou um Grant com
+ * Substituiu o PetOrganizationAccessServiceImpl: a tabela propria virou um Grant com
  * beneficiario do tipo clinica. O comportamento externo continua o mesmo, com uma
  * adicao - o tutor escolhe o escopo.
  */
 @Service
 @RequiredArgsConstructor
-public class ClinicAccessServiceImpl implements ClinicAccessService {
+public class OrganizationAccessServiceImpl implements OrganizationAccessService {
 
     /**
      * O que uma clinica recebe quando o tutor nao diz nada.
@@ -48,14 +48,14 @@ public class ClinicAccessServiceImpl implements ClinicAccessService {
             GrantScope.PESO, GrantScope.ANEXOS, GrantScope.CONTATO);
 
     private final GrantRepository grantRepository;
-    private final ClinicRepository clinicRepository;
+    private final OrganizationRepository organizationRepository;
     private final AnimalAccessGuard animalAccessGuard;
     private final CurrentPersonProvider currentPersonProvider;
 
     @Override
-    public ClinicAccessResponseDTO grant(UUID animalId, ClinicAccessRequestDTO request) {
+    public OrganizationAccessResponseDTO grant(UUID animalId, OrganizationAccessRequestDTO request) {
         Animal animal = animalAccessGuard.requireEscrita(animalId);
-        Clinic clinic = buscarClinica(request.getClinicId());
+        Organization organization = buscarClinica(request.getOrganizationId());
 
         LocalDateTime agora = LocalDateTime.now();
 
@@ -63,10 +63,10 @@ public class ClinicAccessServiceImpl implements ClinicAccessService {
         // que revogou e mudou de ideia espera voltar a ter acesso liberado, nao
         // ganhar uma segunda concessao ao lado da primeira
         Grant grant = grantRepository
-                .findVigenteDaClinicaNoAnimal(animalId, request.getClinicId(), agora)
+                .findVigenteDaClinicaNoAnimal(animalId, request.getOrganizationId(), agora)
                 .orElseGet(() -> Grant.builder()
                         .animal(animal)
-                        .granteeClinic(clinic)
+                        .granteeOrganization(organization)
                         .level(GrantLevel.EDITOR)
                         .grantedBy(currentPersonProvider.require())
                         .build());
@@ -80,25 +80,25 @@ public class ClinicAccessServiceImpl implements ClinicAccessService {
     }
 
     @Override
-    public List<ClinicAccessResponseDTO> list(UUID animalId) {
+    public List<OrganizationAccessResponseDTO> list(UUID animalId) {
         animalAccessGuard.requireEscrita(animalId);
 
         return grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animalId)
                 .stream()
-                .filter(g -> g.getGranteeClinic() != null)
+                .filter(g -> g.getGranteeOrganization() != null)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void revoke(UUID animalId, UUID clinicId) {
+    public void revoke(UUID animalId, UUID organizationId) {
         animalAccessGuard.requireEscrita(animalId);
 
         // busca sem filtro de vigencia de proposito: revogar duas vezes nao e erro, e
         // com a consulta de vigentes a segunda chamada responderia 404 em vez de nao
         // fazer nada
         Grant grant = grantRepository
-                .findFirstByAnimalAnimalIdAndGranteeClinicClinicIdOrderByGrantedAtDesc(animalId, clinicId)
+                .findFirstByAnimalAnimalIdAndGranteeOrganizationOrganizationIdOrderByGrantedAtDesc(animalId, organizationId)
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.CLINIC_ACCESS_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.CLINIC_ACCESS_NOT_FOUND.getCode(),
@@ -115,7 +115,7 @@ public class ClinicAccessServiceImpl implements ClinicAccessService {
      * Escopo vazio nao e "sem restricao": e um acesso que nao alcanca nada, e
      * gravar assim seria negar em silencio. Sem pedido explicito, vale o default.
      */
-    private Set<GrantScope> escopoPedido(ClinicAccessRequestDTO request) {
+    private Set<GrantScope> escopoPedido(OrganizationAccessRequestDTO request) {
         if (request.getScopes() == null || request.getScopes().isEmpty()) {
             return new LinkedHashSet<>(ESCOPO_CLINICO);
         }
@@ -123,20 +123,20 @@ public class ClinicAccessServiceImpl implements ClinicAccessService {
         return new LinkedHashSet<>(request.getScopes());
     }
 
-    private Clinic buscarClinica(UUID clinicId) {
-        return clinicRepository.findById(clinicId)
+    private Organization buscarClinica(UUID organizationId) {
+        return organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(),
                         HttpStatus.NOT_FOUND));
     }
 
-    private ClinicAccessResponseDTO toResponse(Grant grant) {
-        return ClinicAccessResponseDTO.builder()
+    private OrganizationAccessResponseDTO toResponse(Grant grant) {
+        return OrganizationAccessResponseDTO.builder()
                 .grantId(grant.getGrantId())
                 .animalId(grant.getAnimal().getAnimalId())
-                .clinicId(grant.getGranteeClinic().getClinicId())
-                .clinicName(grant.getGranteeClinic().getName())
+                .organizationId(grant.getGranteeOrganization().getOrganizationId())
+                .organizationName(grant.getGranteeOrganization().getName())
                 .scopes(grant.getScopes())
                 .grantedAt(grant.getGrantedAt())
                 .expiresAt(grant.getExpiresAt())

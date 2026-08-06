@@ -14,10 +14,10 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClinicAccessRequestDTO {
+public class OrganizationAccessRequestDTO {
 
-    @NotNull(message = "clinicId e obrigatorio")
-    private UUID clinicId;
+    @NotNull(message = "organizationId e obrigatorio")
+    private UUID organizationId;
 
     /**
      * O quanto a clinica alcanca. Ausente ou vazio recebe o escopo clinico

@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Min;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClinicInviteRequestDTO {
+public class OrganizationInviteRequestDTO {
 
     /**
      * Quando informado, so esse email aceita o convite. Vale a pena preencher:

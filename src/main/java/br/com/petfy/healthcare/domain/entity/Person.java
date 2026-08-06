@@ -68,16 +68,16 @@ public class Person {
      * do P3.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id")
-    private Clinic clinic;
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
 
     public boolean podeReceberNotificacao() {
         return emailVerifiedAt != null;
     }
 
     /** Atua em nome de uma organizacao, e nao por si. E o contexto da secao 3.2. */
-    public boolean atuaPorClinica() {
-        return clinic != null;
+    public boolean atuaPorOrganizacao() {
+        return organization != null;
     }
 
 }

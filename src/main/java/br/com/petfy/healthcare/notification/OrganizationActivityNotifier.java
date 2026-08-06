@@ -24,7 +24,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ClinicActivityNotifier {
+public class OrganizationActivityNotifier {
 
     private static final String ORIENTACAO = "Se nao reconhece este registro, revogue o acesso da clinica no Petfy.";
 
@@ -35,7 +35,7 @@ public class ClinicActivityNotifier {
         enviar(vaccine.getAnimal(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s registrou uma vacina no %s:",
-                    clinica(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null),
+                    clinica(vaccine.getOrganization() != null ? vaccine.getOrganization().getName() : null),
                     vaccine.getAnimal().getName()));
             linhas.add(String.format("- %s, aplicada em %s",
                     vaccine.getVaccineName(), vaccine.getApplicationDate()));
@@ -53,7 +53,7 @@ public class ClinicActivityNotifier {
         enviar(vaccine.getAnimal(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s corrigiu um registro de vacina do %s.",
-                    clinica(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null),
+                    clinica(vaccine.getOrganization() != null ? vaccine.getOrganization().getName() : null),
                     vaccine.getAnimal().getName()));
             linhas.add(String.format("Como esta agora: %s, aplicada em %s",
                     vaccine.getVaccineName(), vaccine.getApplicationDate()));
@@ -71,7 +71,7 @@ public class ClinicActivityNotifier {
         enviar(record.getAnimal(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s registrou um atendimento do %s:",
-                    clinica(record.getClinic() != null ? record.getClinic().getName() : null),
+                    clinica(record.getOrganization() != null ? record.getOrganization().getName() : null),
                     record.getAnimal().getName()));
             linhas.add(String.format("- %s em %s", record.getEventType(), record.getEventDate()));
 
@@ -88,7 +88,7 @@ public class ClinicActivityNotifier {
         enviar(record.getAnimal(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s corrigiu um atendimento do %s.",
-                    clinica(record.getClinic() != null ? record.getClinic().getName() : null),
+                    clinica(record.getOrganization() != null ? record.getOrganization().getName() : null),
                     record.getAnimal().getName()));
             linhas.add(String.format("Como esta agora: %s em %s",
                     record.getEventType(), record.getEventDate()));

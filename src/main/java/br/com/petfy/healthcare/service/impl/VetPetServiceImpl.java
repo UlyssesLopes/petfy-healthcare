@@ -17,7 +17,7 @@ import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.notification.ClinicActivityNotifier;
+import br.com.petfy.healthcare.notification.OrganizationActivityNotifier;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
@@ -43,7 +43,7 @@ public class VetPetServiceImpl implements VetPetService {
     private final VaccineRepository vaccineRepository;
     private final CurrentProfessionalProvider currentProfessionalProvider;
     private final VaccineFactory vaccineFactory;
-    private final ClinicActivityNotifier clinicActivityNotifier;
+    private final OrganizationActivityNotifier organizationActivityNotifier;
     private final VaccineCorrectionLog vaccineCorrectionLog;
     private final HealthRecordRepository healthRecordRepository;
     private final HealthRecordCorrectionLog healthRecordCorrectionLog;
@@ -79,12 +79,12 @@ public class VetPetServiceImpl implements VetPetService {
         Person vet = currentProfessionalProvider.require();
         Animal animal = exigirAcessoAoAnimal(animalId).getAnimal();
 
-        // a clinica vem do vet autenticado, nunca do payload: aceitar clinicId do
+        // a clinica vem do vet autenticado, nunca do payload: aceitar organizationId do
         // cliente deixaria um vet registrar vacina em nome de outra clinica
-        Vaccine vaccine = vaccineRepository.save(vaccineFactory.build(animal, vet.getClinic(), request));
+        Vaccine vaccine = vaccineRepository.save(vaccineFactory.build(animal, vet.getOrganization(), request));
 
         // o tutor precisa saber o que a clinica escreveu no animal dele
-        clinicActivityNotifier.vaccineRecorded(vaccine);
+        organizationActivityNotifier.vaccineRecorded(vaccine);
 
         return toResponse(vaccine);
     }
@@ -111,7 +111,7 @@ public class VetPetServiceImpl implements VetPetService {
         exigirJanelaAberta(vaccine.getCreationDate());
 
         // o snapshot precisa sair antes dos setters, senao grava o estado novo
-        vaccineCorrectionLog.recordByProfessional(vaccine, vet, vet.getClinic());
+        vaccineCorrectionLog.recordByProfessional(vaccine, vet, vet.getOrganization());
 
         if (request.getVaccineName() != null) vaccine.setVaccineName(request.getVaccineName());
         if (request.getApplicationDate() != null) vaccine.setApplicationDate(request.getApplicationDate());
@@ -122,7 +122,7 @@ public class VetPetServiceImpl implements VetPetService {
         Vaccine salva = vaccineRepository.save(vaccine);
 
         // o tutor precisa saber que a clinica mexeu no que ja estava la
-        clinicActivityNotifier.vaccineCorrected(salva);
+        organizationActivityNotifier.vaccineCorrected(salva);
 
         return toResponse(salva);
     }
@@ -165,7 +165,7 @@ public class VetPetServiceImpl implements VetPetService {
         // payload, e o animalId vem do path
         HealthRecord record = healthRecordRepository.save(HealthRecord.builder()
                 .animal(animal)
-                .clinic(vet.getClinic())
+                .organization(vet.getOrganization())
                 .eventType(request.getEventType())
                 .category(request.getCategory())
                 .diagnosis(request.getDiagnosis())
@@ -174,7 +174,7 @@ public class VetPetServiceImpl implements VetPetService {
                 .creationDate(LocalDateTime.now())
                 .build());
 
-        clinicActivityNotifier.healthRecordRecorded(record);
+        organizationActivityNotifier.healthRecordRecorded(record);
 
         return toResponse(record);
     }
@@ -188,14 +188,14 @@ public class VetPetServiceImpl implements VetPetService {
 
         HealthRecord record = healthRecordRepository.findById(healthRecordId)
                 .filter(r -> r.getAnimal().getAnimalId().equals(animalId))
-                .filter(r -> r.getClinic() != null
-                        && vet.getClinic().getClinicId().equals(r.getClinic().getClinicId()))
+                .filter(r -> r.getOrganization() != null
+                        && vet.getOrganization().getOrganizationId().equals(r.getOrganization().getOrganizationId()))
                 .orElseThrow(this::registroNaoEncontrado);
 
         exigirJanelaAberta(record.getCreationDate());
 
         // o snapshot precisa sair antes dos setters, senao grava o estado novo
-        healthRecordCorrectionLog.recordByProfessional(record, vet, vet.getClinic());
+        healthRecordCorrectionLog.recordByProfessional(record, vet, vet.getOrganization());
 
         if (request.getEventType() != null) record.setEventType(request.getEventType());
         if (request.getCategory() != null) record.setCategory(request.getCategory());
@@ -206,7 +206,7 @@ public class VetPetServiceImpl implements VetPetService {
 
         HealthRecord salvo = healthRecordRepository.save(record);
 
-        clinicActivityNotifier.healthRecordCorrected(salvo);
+        organizationActivityNotifier.healthRecordCorrected(salvo);
 
         return toResponse(salvo);
     }
@@ -238,7 +238,7 @@ public class VetPetServiceImpl implements VetPetService {
                 .eventDate(record.getEventDate())
                 .description(record.getDescription())
                 .animalId(record.getAnimal().getAnimalId())
-                .clinicId(record.getClinic() != null ? record.getClinic().getClinicId() : null)
+                .organizationId(record.getOrganization() != null ? record.getOrganization().getOrganizationId() : null)
                 .creationDate(record.getCreationDate())
                 .updateDate(record.getUpdateDate())
                 .build();
@@ -253,8 +253,8 @@ public class VetPetServiceImpl implements VetPetService {
      * de permissao.
      */
     private boolean registradaPelaClinica(Vaccine vaccine, Person vet) {
-        return vaccine.getClinic() != null
-                && vet.getClinic().getClinicId().equals(vaccine.getClinic().getClinicId());
+        return vaccine.getOrganization() != null
+                && vet.getOrganization().getOrganizationId().equals(vaccine.getOrganization().getOrganizationId());
     }
 
     private void exigirJanelaAberta(LocalDateTime registro) {
@@ -267,8 +267,8 @@ public class VetPetServiceImpl implements VetPetService {
     }
 
     private List<Grant> acessosAtivosDaClinica() {
-        UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
-        return grantRepository.findVigentesDaClinica(clinicId, LocalDateTime.now());
+        UUID organizationId = currentProfessionalProvider.require().getOrganization().getOrganizationId();
+        return grantRepository.findVigentesDaClinica(organizationId, LocalDateTime.now());
     }
 
     /**
@@ -288,9 +288,9 @@ public class VetPetServiceImpl implements VetPetService {
     }
 
     private Grant exigirAcessoAoAnimal(UUID animalId) {
-        UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
+        UUID organizationId = currentProfessionalProvider.require().getOrganization().getOrganizationId();
 
-        return grantRepository.findVigenteDaClinicaNoAnimal(animalId, clinicId, LocalDateTime.now())
+        return grantRepository.findVigenteDaClinicaNoAnimal(animalId, organizationId, LocalDateTime.now())
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.ANIMAL_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.ANIMAL_NOT_FOUND.getCode(),
@@ -321,7 +321,7 @@ public class VetPetServiceImpl implements VetPetService {
                 .nextDoseDate(vaccine.getNextDoseDate())
                 .description(vaccine.getDescription())
                 .animalId(vaccine.getAnimal().getAnimalId())
-                .clinicId(vaccine.getClinic() != null ? vaccine.getClinic().getClinicId() : null)
+                .organizationId(vaccine.getOrganization() != null ? vaccine.getOrganization().getOrganizationId() : null)
                 .vaccineCatalogId(vaccine.getCatalog() != null ? vaccine.getCatalog().getVaccineCatalogId() : null)
                 .creationDate(vaccine.getCreationDate())
                 .updateDate(vaccine.getUpdateDate())

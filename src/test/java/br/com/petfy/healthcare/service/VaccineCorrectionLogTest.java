@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service;
 
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
@@ -47,7 +47,7 @@ class VaccineCorrectionLogTest {
 
     private Person vet() {
         return Person.builder().personId(UUID.randomUUID()).name("Dra. Marina")
-                .clinic(Clinic.builder().clinicId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
+                .organization(Organization.builder().organizationId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
                 .build();
     }
 
@@ -62,7 +62,7 @@ class VaccineCorrectionLogTest {
         @Test
         @DisplayName("deve guardar o estado ANTERIOR, e nao o novo")
         void deveGuardarOEstadoAnterior() {
-            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), vet().getClinic());
+            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), vet().getOrganization());
 
             var captor = ArgumentCaptor.forClass(VaccineCorrection.class);
             verify(vaccineCorrectionRepository).save(captor.capture());
@@ -86,15 +86,15 @@ class VaccineCorrectionLogTest {
         @Test
         @DisplayName("o autor e sempre uma pessoa; a clinica so aparece quando houve contexto")
         void autorSempreExisteEClinicaSoQuandoHouveContexto() {
-            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), vet().getClinic());
+            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), vet().getOrganization());
             var comContexto = capturar();
             assertThat(comContexto.getCorrectedBy()).isNotNull();
-            assertThat(comContexto.getCorrectedInClinic()).isNotNull();
+            assertThat(comContexto.getCorrectedInOrganization()).isNotNull();
 
             vaccineCorrectionLog.recordByPerson(vacina(), person());
             var semContexto = capturar();
             assertThat(semContexto.getCorrectedBy()).isNotNull();
-            assertThat(semContexto.getCorrectedInClinic()).isNull();
+            assertThat(semContexto.getCorrectedInOrganization()).isNull();
         }
 
         private VaccineCorrection capturar() {
@@ -108,12 +108,12 @@ class VaccineCorrectionLogTest {
     @DisplayName("leitura")
     class Leitura {
 
-        private VaccineCorrection correcao(Person autor, br.com.petfy.healthcare.domain.entity.Clinic clinic) {
+        private VaccineCorrection correcao(Person autor, br.com.petfy.healthcare.domain.entity.Organization organization) {
             return VaccineCorrection.builder()
                     .vaccineCorrectionId(UUID.randomUUID())
                     .vaccine(vacina())
                     .correctedBy(autor)
-                    .correctedInClinic(clinic)
+                    .correctedInOrganization(organization)
                     .previousVaccineName("V8")
                     .previousApplicationDate(LocalDate.of(2026, 7, 1))
                     .previousDescription("texto antigo")
@@ -129,11 +129,11 @@ class VaccineCorrectionLogTest {
         @DisplayName("correcao feita em nome de uma clinica deve trazer a clinica")
         void correcaoComContextoDeveTrazerAClinica() {
             when(vaccineCorrectionRepository.findByVaccineVaccineIdOrderByCorrectedAtDesc(VACCINE_ID))
-                    .thenReturn(List.of(correcao(vet(), vet().getClinic())));
+                    .thenReturn(List.of(correcao(vet(), vet().getOrganization())));
 
             assertThat(vaccineCorrectionLog.list(VACCINE_ID)).singleElement().satisfies(c -> {
                 assertThat(c.getCorrectedByName()).isEqualTo("Dra. Marina");
-                assertThat(c.getCorrectedByClinicName()).isEqualTo("Clinica Bicho Feliz");
+                assertThat(c.getCorrectedByOrganizationName()).isEqualTo("Clinica Bicho Feliz");
             });
         }
 
@@ -145,7 +145,7 @@ class VaccineCorrectionLogTest {
 
             assertThat(vaccineCorrectionLog.list(VACCINE_ID)).singleElement().satisfies(c -> {
                 assertThat(c.getCorrectedByName()).isEqualTo("Ulysses");
-                assertThat(c.getCorrectedByClinicName()).isNull();
+                assertThat(c.getCorrectedByOrganizationName()).isNull();
             });
         }
 

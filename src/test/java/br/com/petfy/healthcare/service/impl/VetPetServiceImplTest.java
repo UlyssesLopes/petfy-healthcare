@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Person;
@@ -16,7 +16,7 @@ import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.notification.ClinicActivityNotifier;
+import br.com.petfy.healthcare.notification.OrganizationActivityNotifier;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
@@ -66,7 +66,7 @@ class VetPetServiceImplTest {
     private VaccineCatalogRepository vaccineCatalogRepository;
 
     @Mock
-    private ClinicActivityNotifier clinicActivityNotifier;
+    private OrganizationActivityNotifier organizationActivityNotifier;
 
     @Mock
     private VaccineCorrectionLog vaccineCorrectionLog;
@@ -94,13 +94,13 @@ class VetPetServiceImplTest {
         // clinica certa, e nao repetir a regra de montagem num mock
         service = new VetPetServiceImpl(grantRepository, vaccineRepository,
                 currentProfessionalProvider, new VaccineFactory(vaccineCatalogRepository),
-                clinicActivityNotifier, vaccineCorrectionLog,
+                organizationActivityNotifier, vaccineCorrectionLog,
                 healthRecordRepository, healthRecordCorrectionLog, sensitiveAccessLogger);
         ReflectionTestUtils.setField(service, "correctionWindowDays", 7);
     }
 
-    private Clinic clinic(UUID id) {
-        return Clinic.builder().clinicId(id).name("Clinica Bicho Feliz").build();
+    private Organization organization(UUID id) {
+        return Organization.builder().organizationId(id).name("Clinica Bicho Feliz").build();
     }
 
     private Animal animal() {
@@ -113,16 +113,16 @@ class VetPetServiceImplTest {
         return Grant.builder()
                 .grantId(UUID.randomUUID())
                 .animal(animal())
-                .granteeClinic(clinic(CLINIC_ID))
+                .granteeOrganization(organization(CLINIC_ID))
                 .level(GrantLevel.EDITOR)
                 .grantedAt(LocalDateTime.now().minusDays(3))
                 .revokedAt(revokedAt)
                 .build();
     }
 
-    private void vetDaClinica(UUID clinicId) {
+    private void vetDaClinica(UUID organizationId) {
         when(currentProfessionalProvider.require()).thenReturn(Person.builder()
-                .personId(UUID.randomUUID()).name("Dra. Marina").clinic(clinic(clinicId)).build());
+                .personId(UUID.randomUUID()).name("Dra. Marina").organization(organization(organizationId)).build());
     }
 
     @Nested
@@ -201,7 +201,7 @@ class VetPetServiceImplTest {
 
             var comOutraClinicaNoCorpo = VaccineRequestDTO.builder()
                     .vaccineName("V10")
-                    .clinicId(OUTRA_CLINIC_ID)
+                    .organizationId(OUTRA_CLINIC_ID)
                     .applicationDate(LocalDate.of(2026, 8, 1))
                     .build();
 
@@ -209,7 +209,7 @@ class VetPetServiceImplTest {
 
             var captor = ArgumentCaptor.forClass(Vaccine.class);
             verify(vaccineRepository).save(captor.capture());
-            assertThat(captor.getValue().getClinic().getClinicId()).isEqualTo(CLINIC_ID);
+            assertThat(captor.getValue().getOrganization().getOrganizationId()).isEqualTo(CLINIC_ID);
         }
 
         @Test
@@ -243,7 +243,7 @@ class VetPetServiceImplTest {
             service.registerVaccine(ANIMAL_ID, request());
 
             var captor = ArgumentCaptor.forClass(Vaccine.class);
-            verify(clinicActivityNotifier).vaccineRecorded(captor.capture());
+            verify(organizationActivityNotifier).vaccineRecorded(captor.capture());
             assertThat(captor.getValue().getVaccineName()).isEqualTo("V10");
         }
 
@@ -257,7 +257,7 @@ class VetPetServiceImplTest {
             assertThatThrownBy(() -> service.registerVaccine(ANIMAL_ID, request()))
                     .isInstanceOf(PetfyHealthcareException.class);
 
-            verify(clinicActivityNotifier, never()).vaccineRecorded(any());
+            verify(organizationActivityNotifier, never()).vaccineRecorded(any());
         }
 
         @Test
@@ -297,14 +297,14 @@ class VetPetServiceImplTest {
     @DisplayName("correctVaccine")
     class CorrectVaccine {
 
-        private Vaccine registrada(UUID clinicId, LocalDateTime registradaEm) {
+        private Vaccine registrada(UUID organizationId, LocalDateTime registradaEm) {
             return Vaccine.builder()
                     .vaccineId(VACCINE_ID)
                     .vaccineName("V10")
                     .applicationDate(LocalDate.of(2026, 8, 1))
                     .description("original")
-                    // clinicId nulo significa vacina lancada pelo tutor, sem clinica
-                    .clinic(clinicId != null ? clinic(clinicId) : null)
+                    // organizationId nulo significa vacina lancada pelo tutor, sem clinica
+                    .organization(organizationId != null ? organization(organizationId) : null)
                     .animal(animal())
                     .creationDate(registradaEm)
                     .build();
@@ -372,7 +372,7 @@ class VetPetServiceImplTest {
             service.correctVaccine(ANIMAL_ID, VACCINE_ID,
                     VaccineRequestDTO.builder().vaccineName("V8").build());
 
-            verify(clinicActivityNotifier).vaccineCorrected(any(Vaccine.class));
+            verify(organizationActivityNotifier).vaccineCorrected(any(Vaccine.class));
         }
 
         @Test
@@ -486,11 +486,11 @@ class VetPetServiceImplTest {
     @DisplayName("historico de saude")
     class HistoricoDeSaude {
 
-        private HealthRecord registro(UUID clinicId, LocalDateTime registradoEm) {
+        private HealthRecord registro(UUID organizationId, LocalDateTime registradoEm) {
             return HealthRecord.builder()
                     .healthRecordId(RECORD_ID)
                     .animal(animal())
-                    .clinic(clinicId != null ? clinic(clinicId) : null)
+                    .organization(organizationId != null ? organization(organizationId) : null)
                     .eventType("Consulta")
                     .eventDate(LocalDate.of(2026, 8, 1))
                     .description("original")
@@ -511,7 +511,7 @@ class VetPetServiceImplTest {
             when(healthRecordRepository.save(any(HealthRecord.class))).thenAnswer(i -> i.getArgument(0));
 
             var comOutraClinicaNoCorpo = HealthRecordRequestDTO.builder()
-                    .clinicId(OUTRA_CLINIC_ID)
+                    .organizationId(OUTRA_CLINIC_ID)
                     .eventType("Cirurgia")
                     .eventDate(LocalDate.of(2026, 8, 1))
                     .build();
@@ -519,7 +519,7 @@ class VetPetServiceImplTest {
             var result = service.registerHealthRecord(ANIMAL_ID, comOutraClinicaNoCorpo);
 
             assertThat(result.getEventType()).isEqualTo("Cirurgia");
-            assertThat(result.getClinicId()).isEqualTo(CLINIC_ID);
+            assertThat(result.getOrganizationId()).isEqualTo(CLINIC_ID);
         }
 
         @Test
@@ -531,7 +531,7 @@ class VetPetServiceImplTest {
             service.registerHealthRecord(ANIMAL_ID,
                     HealthRecordRequestDTO.builder().eventType("Consulta").build());
 
-            verify(clinicActivityNotifier).healthRecordRecorded(any(HealthRecord.class));
+            verify(organizationActivityNotifier).healthRecordRecorded(any(HealthRecord.class));
         }
 
         @Test
@@ -563,7 +563,7 @@ class VetPetServiceImplTest {
             assertThat(result.getDescription()).isEqualTo("corrigido");
             assertThat(result.getEventType()).isEqualTo("Consulta");
             verify(healthRecordCorrectionLog).recordByProfessional(any(HealthRecord.class), any(), any());
-            verify(clinicActivityNotifier).healthRecordCorrected(any(HealthRecord.class));
+            verify(organizationActivityNotifier).healthRecordCorrected(any(HealthRecord.class));
         }
 
         @Test

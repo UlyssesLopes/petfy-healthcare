@@ -10,13 +10,13 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClinicInviteResponseDTO {
+public class OrganizationInviteResponseDTO {
 
-    private UUID clinicInviteId;
+    private UUID organizationInviteId;
 
-    private UUID clinicId;
+    private UUID organizationId;
 
-    private String clinicName;
+    private String organizationName;
 
     /**
      * Preenchido apenas na criacao. Nas listagens vem nulo, porque so o hash e

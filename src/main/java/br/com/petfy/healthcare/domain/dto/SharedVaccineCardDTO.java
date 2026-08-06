@@ -81,7 +81,7 @@ public class SharedVaccineCardDTO {
 
         private VaccineStatus status;
 
-        private String clinicName;
+        private String organizationName;
 
     }
 

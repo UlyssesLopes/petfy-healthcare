@@ -20,7 +20,7 @@ import java.util.function.Function;
  * aviso, a unica forma de descobrir e abrir o app e comparar a lista de tutores
  * com o que se lembrava dela.
  *
- * <b>E o irmao do {@link ClinicActivityNotifier}:</b> la o aviso e sobre o que uma
+ * <b>E o irmao do {@link OrganizationActivityNotifier}:</b> la o aviso e sobre o que uma
  * clinica escreveu no animal, aqui e sobre quem passou a poder escrever. Mesma
  * politica de falha, mesmo respeito ao e-mail nao confirmado, mesma orientacao no
  * rodape.
@@ -113,7 +113,7 @@ public class PetTutorActivityNotifier {
     }
 
     /**
-     * Mesma politica do {@link ClinicActivityNotifier}, pelas mesmas razoes.
+     * Mesma politica do {@link OrganizationActivityNotifier}, pelas mesmas razoes.
      *
      * A mensagem e montada aqui, ainda na transacao de quem chamou, porque monta-la
      * passa por associacoes lazy - o animal, o tutor. So o envio sai para outra thread.

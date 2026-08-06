@@ -392,7 +392,7 @@ class PersonExportServiceImplTest {
                             .animal(rex())
                             .actorType(AccessActorType.VET)
                             .actorName("Dra. Marina")
-                            .clinicName("Clinica Bicho Feliz")
+                            .organizationName("Clinica Bicho Feliz")
                             .resource(AccessedResource.HEALTH_RECORDS)
                             .accessedAt(LocalDateTime.now())
                             .ipAddress("203.0.113.7")

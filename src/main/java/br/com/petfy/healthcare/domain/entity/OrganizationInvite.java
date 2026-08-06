@@ -8,13 +8,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "clinic_invites")
+@Table(name = "organization_invites")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClinicInvite {
+public class OrganizationInvite {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -23,17 +23,17 @@ public class ClinicInvite {
             strategy = "org.hibernate.id.UUIDGenerator"
     )
     @Column(updatable = false, nullable = false)
-    private UUID clinicInviteId;
+    private UUID organizationInviteId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id", nullable = false)
-    private Clinic clinic;
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_vet_id", nullable = false)
     private Person createdBy;
 
-    /** Hash do token. O token em si nao e guardado - ver V7__clinic_invite.sql. */
+    /** Hash do token. O token em si nao e guardado - ver V7__organization_invite.sql. */
     @Column(unique = true, nullable = false)
     private String tokenHash;
 

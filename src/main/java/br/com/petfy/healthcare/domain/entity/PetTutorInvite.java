@@ -10,7 +10,7 @@ import java.util.UUID;
 /**
  * Convite para entrar num animal, emitido pelo titular.
  *
- * Mesmo desenho do {@link ClinicInvite}: token guardado como hash, uso unico,
+ * Mesmo desenho do {@link OrganizationInvite}: token guardado como hash, uso unico,
  * expiracao curta e e-mail travando o destinatario. Existe convite em vez de
  * vinculo direto porque o caso comum e o conjuge que **ainda nao tem conta** -
  * exigir cadastro previo mataria o fluxo justamente onde ele comeca. E vincular

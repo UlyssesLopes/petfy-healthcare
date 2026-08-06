@@ -168,7 +168,7 @@ public record PersonExportDTO(
             LocalDate applicationDate,
             LocalDate nextDoseDate,
             String description,
-            String clinicName,
+            String organizationName,
             LocalDateTime creationDate,
             List<CorrecaoDTO> correcoes
     ) {
@@ -202,7 +202,7 @@ public record PersonExportDTO(
             String diagnosis,
             LocalDate eventDate,
             String description,
-            String clinicName,
+            String organizationName,
             LocalDateTime creationDate,
             List<CorrecaoDTO> correcoes
     ) {
@@ -257,7 +257,7 @@ public record PersonExportDTO(
 
     @Builder
     public record AcessoDeClinicaDTO(
-            String clinicName,
+            String organizationName,
             Set<GrantScope> scopes,
             LocalDateTime grantedAt,
             LocalDateTime revokedAt,
@@ -269,7 +269,7 @@ public record PersonExportDTO(
     public record AcessoRegistradoDTO(
             AccessActorType actorType,
             String actorName,
-            String clinicName,
+            String organizationName,
             AccessedResource resource,
             LocalDateTime accessedAt,
             String ipAddress

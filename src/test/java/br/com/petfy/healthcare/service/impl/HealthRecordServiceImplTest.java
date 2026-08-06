@@ -2,11 +2,11 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.Custodias;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
@@ -50,7 +50,7 @@ class HealthRecordServiceImplTest {
     private AnimalAccessGuard animalAccessGuard;
 
     @Mock
-    private ClinicRepository clinicRepository;
+    private OrganizationRepository organizationRepository;
 
     @Mock
     private CurrentPersonProvider currentPersonProvider;
@@ -74,15 +74,15 @@ class HealthRecordServiceImplTest {
         return Animal.builder().animalId(ANIMAL_ID).name("Rex").custodies(Custodias.titular(person(OWNER_ID))).build();
     }
 
-    private Clinic clinic() {
-        return Clinic.builder().clinicId(CLINIC_ID).name("Clinica Bicho Feliz").build();
+    private Organization organization() {
+        return Organization.builder().organizationId(CLINIC_ID).name("Clinica Bicho Feliz").build();
     }
 
     private HealthRecord registro() {
         return HealthRecord.builder()
                 .healthRecordId(RECORD_ID)
                 .animal(animal())
-                .clinic(clinic())
+                .organization(organization())
                 .eventType("Consulta")
                 .eventDate(LocalDate.of(2025, 6, 1))
                 .description("Retorno de rotina")
@@ -114,18 +114,18 @@ class HealthRecordServiceImplTest {
         @DisplayName("deve vincular o registro ao animal e a clinica informados")
         void deveVincularAoAnimalEClinica() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.of(clinic()));
+            when(organizationRepository.findById(CLINIC_ID)).thenReturn(Optional.of(organization()));
             when(healthRecordRepository.save(any(HealthRecord.class))).thenReturn(registro());
 
             var request = HealthRecordRequestDTO.builder()
-                    .animalId(ANIMAL_ID).clinicId(CLINIC_ID).eventType("Consulta")
+                    .animalId(ANIMAL_ID).organizationId(CLINIC_ID).eventType("Consulta")
                     .eventDate(LocalDate.of(2025, 6, 1)).build();
 
             var result = healthRecordService.createHealthRecord(request);
 
             assertThat(result.getHealthRecordId()).isEqualTo(RECORD_ID);
             assertThat(result.getAnimalId()).isEqualTo(ANIMAL_ID);
-            assertThat(result.getClinicId()).isEqualTo(CLINIC_ID);
+            assertThat(result.getOrganizationId()).isEqualTo(CLINIC_ID);
 
             var captor = ArgumentCaptor.forClass(HealthRecord.class);
             verify(healthRecordRepository).save(captor.capture());
@@ -133,7 +133,7 @@ class HealthRecordServiceImplTest {
         }
 
         @Test
-        @DisplayName("deve criar o registro sem clinica quando clinicId nao e informado")
+        @DisplayName("deve criar o registro sem clinica quando organizationId nao e informado")
         void deveCriarSemClinica() {
             var semClinica = HealthRecord.builder()
                     .healthRecordId(RECORD_ID).animal(animal()).eventType("Consulta").build();
@@ -144,8 +144,8 @@ class HealthRecordServiceImplTest {
             var result = healthRecordService.createHealthRecord(
                     HealthRecordRequestDTO.builder().animalId(ANIMAL_ID).eventType("Consulta").build());
 
-            assertThat(result.getClinicId()).isNull();
-            verifyNoInteractions(clinicRepository);
+            assertThat(result.getOrganizationId()).isNull();
+            verifyNoInteractions(organizationRepository);
         }
 
         /**
@@ -170,12 +170,12 @@ class HealthRecordServiceImplTest {
         @DisplayName("deve lancar CLINIC_NOT_FOUND sem salvar quando a clinica informada nao existe")
         void deveLancarQuandoClinicaNaoExiste() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(clinicRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
+            when(organizationRepository.findById(CLINIC_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> healthRecordService.createHealthRecord(
-                    HealthRecordRequestDTO.builder().animalId(ANIMAL_ID).clinicId(CLINIC_ID).eventType("Consulta").build()))
+                    HealthRecordRequestDTO.builder().animalId(ANIMAL_ID).organizationId(CLINIC_ID).eventType("Consulta").build()))
                     .isInstanceOf(PetfyHealthcareException.class)
-                    .hasMessage("Clinic not found");
+                    .hasMessage("Organization not found");
 
             verify(healthRecordRepository, never()).save(any());
         }

@@ -19,20 +19,20 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
     /**
      * Os animais que uma clinica alcanca agora.
      *
-     * Substitui {@code findByClinicClinicIdAndRevokedAtIsNull} do PetClinicAccess, e
+     * Substitui {@code findByOrganizationOrganizationIdAndRevokedAtIsNull} do PetOrganizationAccess, e
      * acrescenta a expiracao: acesso de clinica passou a poder ter prazo, e um
      * acesso vencido nao pode continuar aparecendo em "meus pacientes".
      */
-    @Query("select g from Grant g where g.granteeClinic.clinicId = :clinicId "
+    @Query("select g from Grant g where g.granteeOrganization.organizationId = :organizationId "
             + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
-    List<Grant> findVigentesDaClinica(@Param("clinicId") UUID clinicId,
+    List<Grant> findVigentesDaClinica(@Param("organizationId") UUID organizationId,
                                       @Param("agora") LocalDateTime agora);
 
     @Query("select g from Grant g where g.animal.animalId = :animalId "
-            + "and g.granteeClinic.clinicId = :clinicId "
+            + "and g.granteeOrganization.organizationId = :organizationId "
             + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
     Optional<Grant> findVigenteDaClinicaNoAnimal(@Param("animalId") UUID animalId,
-                                                 @Param("clinicId") UUID clinicId,
+                                                 @Param("organizationId") UUID organizationId,
                                                  @Param("agora") LocalDateTime agora);
 
     @Query("select g from Grant g where g.animal.animalId = :animalId "
@@ -50,8 +50,8 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
      * segunda chamada nao encontraria nada e responderia 404 - trocando um no-op por
      * um erro, o que quebraria um cliente que reenvia a requisicao.
      */
-    Optional<Grant> findFirstByAnimalAnimalIdAndGranteeClinicClinicIdOrderByGrantedAtDesc(
-            UUID animalId, UUID clinicId);
+    Optional<Grant> findFirstByAnimalAnimalIdAndGranteeOrganizationOrganizationIdOrderByGrantedAtDesc(
+            UUID animalId, UUID organizationId);
 
     /**
      * As pessoas que alcancam o animal por concessao agora.

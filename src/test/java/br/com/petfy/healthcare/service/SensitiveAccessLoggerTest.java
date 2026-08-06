@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.entity.AccessActorType;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.Person;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.SensitiveAccessLog;
 import br.com.petfy.healthcare.domain.entity.Species;
@@ -49,7 +49,7 @@ class SensitiveAccessLoggerTest {
     private Person marina() {
         return Person.builder()
                 .personId(VET_ID).name("Dra. Marina").email("marina@vet.com.br")
-                .clinic(Clinic.builder().clinicId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
+                .organization(Organization.builder().organizationId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
                 .build();
     }
 
@@ -94,7 +94,7 @@ class SensitiveAccessLoggerTest {
         void guardaAClinica() {
             logger.vetLeu(marina(), rex(), AccessedResource.VACCINES);
 
-            assertThat(gravado().getClinicName()).isEqualTo("Clinica Bicho Feliz");
+            assertThat(gravado().getOrganizationName()).isEqualTo("Clinica Bicho Feliz");
         }
 
         /** Person sem clinica nao deveria existir, mas o log nao e o lugar de estourar por isso. */
@@ -105,7 +105,7 @@ class SensitiveAccessLoggerTest {
 
             logger.vetLeu(semClinica, rex(), AccessedResource.VACCINES);
 
-            assertThat(gravado().getClinicName()).isNull();
+            assertThat(gravado().getOrganizationName()).isNull();
         }
 
         @Test
@@ -142,7 +142,7 @@ class SensitiveAccessLoggerTest {
             assertThat(log.getActorType()).isEqualTo(AccessActorType.SHARE_LINK);
             assertThat(log.getActorId()).isNull();
             assertThat(log.getActorName()).isNull();
-            assertThat(log.getClinicName()).isNull();
+            assertThat(log.getOrganizationName()).isNull();
             assertThat(log.getResource()).isEqualTo(AccessedResource.SHARED_CARD);
             assertThat(log.getIpAddress()).isEqualTo("198.51.100.4");
         }
@@ -153,7 +153,7 @@ class SensitiveAccessLoggerTest {
     class PoliticaDeFalha {
 
         /**
-         * <b>Falha propaga, de proposito.</b> E o oposto do ClinicActivityNotifier, e
+         * <b>Falha propaga, de proposito.</b> E o oposto do OrganizationActivityNotifier, e
          * a diferenca nao e descuido: la o efeito principal era o registro e o aviso
          * era acessorio; aqui o log <b>e</b> a garantia. Servir historico de saude sem
          * conseguir registrar quem leu entrega o dado e perde a unica prova de que

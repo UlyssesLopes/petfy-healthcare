@@ -37,6 +37,6 @@ public class VaccineRequestDTO {
 
     private String description;
 
-    private UUID clinicId;
+    private UUID organizationId;
 
 }

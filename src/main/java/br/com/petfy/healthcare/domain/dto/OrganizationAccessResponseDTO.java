@@ -13,15 +13,15 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClinicAccessResponseDTO {
+public class OrganizationAccessResponseDTO {
 
     private UUID grantId;
 
     private UUID animalId;
 
-    private UUID clinicId;
+    private UUID organizationId;
 
-    private String clinicName;
+    private String organizationName;
 
     /** O quanto do animal esta concessao alcanca. */
     private Set<GrantScope> scopes;

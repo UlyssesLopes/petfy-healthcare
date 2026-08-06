@@ -54,8 +54,8 @@ public class SensitiveAccessLog {
     private String actorName;
 
     /** Qual clinica, porque e a clinica que o tutor autorizou - nao a pessoa. */
-    @Column(name = "clinic_name")
-    private String clinicName;
+    @Column(name = "organization_name")
+    private String organizationName;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
