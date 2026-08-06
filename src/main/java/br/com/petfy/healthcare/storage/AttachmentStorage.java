@@ -11,7 +11,7 @@ import java.util.UUID;
  * padrao para arquivo publico, mas para dado de saude ela troca "checar autorizacao a
  * cada download" por "quem tiver o link entra ate expirar" - e link encaminhado por
  * engano e exatamente o caso que este produto passou o passo 8 inteiro tentando
- * evitar. O download passa pela API, pelo {@code PetAccessGuard} e pelo log de acesso.
+ * evitar. O download passa pela API, pelo {@code AnimalAccessGuard} e pelo log de acesso.
  *
  * O efeito colateral e bom: sem URL assinada, a interface e um armazem de bytes puro,
  * e trocar filesystem por S3 ou R2 nao encosta em regra de negocio nenhuma.
@@ -21,10 +21,10 @@ public interface AttachmentStorage {
     /**
      * Guarda o conteudo e devolve onde ficou.
      *
-     * A chave e gerada aqui, a partir do petId e de um UUID novo - nada do nome que o
+     * A chave e gerada aqui, a partir do animalId e de um UUID novo - nada do nome que o
      * cliente enviou entra nela.
      */
-    StoredFile store(UUID petId, InputStream content);
+    StoredFile store(UUID animalId, InputStream content);
 
     /** Abre o conteudo para leitura. Lanca se a chave nao existir. */
     InputStream read(String storageKey);

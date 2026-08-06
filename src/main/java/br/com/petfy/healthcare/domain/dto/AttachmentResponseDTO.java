@@ -24,7 +24,7 @@ public class AttachmentResponseDTO {
 
     private UUID attachmentId;
 
-    private UUID petId;
+    private UUID animalId;
 
     private UUID vaccineId;
 
@@ -42,7 +42,7 @@ public class AttachmentResponseDTO {
 
     private String description;
 
-    private String uploadedByOwnerName;
+    private String uploadedByPersonName;
 
     private LocalDateTime creationDate;
 

@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Aceitar o convite de co-tutor.
  *
- * Fora de {@code /pets/{petId}} de proposito: quem aceita ainda nao alcanca o
- * pet, e so descobre de que pet se trata depois de o convite ser validado. Pedir
- * o petId na URL exigiria do cliente um dado que ele nao tem - e daria de graca
- * um jeito de testar se um petId existe.
+ * Fora de {@code /animals/{animalId}} de proposito: quem aceita ainda nao alcanca o
+ * animal, e so descobre de que animal se trata depois de o convite ser validado. Pedir
+ * o animalId na URL exigiria do cliente um dado que ele nao tem - e daria de graca
+ * um jeito de testar se um animalId existe.
  *
  * Continua exigindo autenticacao, ao contrario do {@code /share/{token}}: o
  * convite cria vinculo, e vinculo precisa de conta a que associar.

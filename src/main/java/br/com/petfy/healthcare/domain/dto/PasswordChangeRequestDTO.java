@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * DTO proprio em vez de reaproveitar o OwnerRequestDTO: aqui os dois campos sao
+ * DTO proprio em vez de reaproveitar o PersonRequestDTO: aqui os dois campos sao
  * obrigatorios sempre, enquanto o outro e usado tambem no PUT parcial, onde
  * campo ausente significa "preserve o que esta la".
  */

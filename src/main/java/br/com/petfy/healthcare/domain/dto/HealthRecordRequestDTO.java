@@ -21,8 +21,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class HealthRecordRequestDTO {
 
-    @NotNull(message = "petId e obrigatorio")
-    private UUID petId;
+    @NotNull(message = "animalId e obrigatorio")
+    private UUID animalId;
 
     @NotBlank(message = "tipo do evento e obrigatorio")
     /**
@@ -45,6 +45,6 @@ public class HealthRecordRequestDTO {
 
     private String description;
 
-    private UUID clinicId;
+    private UUID organizationId;
 
 }

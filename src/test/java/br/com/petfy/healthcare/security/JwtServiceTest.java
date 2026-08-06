@@ -21,28 +21,35 @@ class JwtServiceTest {
     private final JwtService jwtService = new JwtService(SEGREDO, 120);
 
     private String tokenDeTutor() {
-        return jwtService.generateToken(EMAIL, UserRole.OWNER, SUBJECT_ID);
+        return jwtService.generateToken(EMAIL, SUBJECT_ID);
     }
 
     @Test
-    @DisplayName("deve gerar um token que devolve o email e o papel")
-    void deveGerarTokenComEmailEPapel() {
+    @DisplayName("deve gerar um token que devolve o email")
+    void deveGerarTokenComEmail() {
         var principal = jwtService.extractPrincipal(tokenDeTutor());
 
         assertThat(principal).isPresent();
         assertThat(principal.get().getEmail()).isEqualTo(EMAIL);
-        assertThat(principal.get().getRole()).isEqualTo(UserRole.OWNER);
     }
 
+    /**
+     * Substituiu dois casos que verificavam o papel dentro do token. O papel
+     * morreu no P1b, e este teste protege o motivo: papel no token e uma copia do
+     * vinculo, e copia envelhece. Credencial suspensa no meio da validade
+     * continuaria autorizando ato clinico ate o token expirar.
+     *
+     * A assercao e sobre o corpo do JWT, e nao sobre o JwtPrincipal: um claim que
+     * voltasse a ser emitido sem ninguem ler passaria despercebido por qualquer
+     * teste que so olhasse o objeto.
+     */
     @Test
-    @DisplayName("deve preservar o papel de veterinario")
-    void devePreservarPapelDeVeterinario() {
-        var token = jwtService.generateToken("vet@clinica.com.br", UserRole.VET, SUBJECT_ID);
+    @DisplayName("o token nao deve carregar papel nenhum")
+    void tokenNaoDeveCarregarPapel() {
+        String corpo = new String(java.util.Base64.getUrlDecoder()
+                .decode(tokenDeTutor().split("\\.")[1]), java.nio.charset.StandardCharsets.UTF_8);
 
-        assertThat(jwtService.extractPrincipal(token))
-                .get()
-                .extracting(JwtPrincipal::getRole)
-                .isEqualTo(UserRole.VET);
+        assertThat(corpo).doesNotContain("role").doesNotContain("ROLE_");
     }
 
     @Test
@@ -55,7 +62,7 @@ class JwtServiceTest {
     @DisplayName("deve recusar token assinado com outro segredo")
     void deveRecusarTokenDeOutroSegredo() {
         var tokenDeOutraChave = new JwtService(OUTRO_SEGREDO, 120)
-                .generateToken(EMAIL, UserRole.OWNER, SUBJECT_ID);
+                .generateToken(EMAIL, SUBJECT_ID);
 
         assertThat(jwtService.extractPrincipal(tokenDeOutraChave)).isEmpty();
     }
@@ -63,7 +70,7 @@ class JwtServiceTest {
     @Test
     @DisplayName("deve recusar token expirado")
     void deveRecusarTokenExpirado() {
-        var token = new JwtService(SEGREDO, -1).generateToken(EMAIL, UserRole.OWNER, SUBJECT_ID);
+        var token = new JwtService(SEGREDO, -1).generateToken(EMAIL, SUBJECT_ID);
 
         assertThat(jwtService.extractPrincipal(token)).isEmpty();
     }
@@ -76,29 +83,48 @@ class JwtServiceTest {
         assertThat(jwtService.extractPrincipal(token)).isEmpty();
     }
 
+    /**
+     * Dois casos foram substituidos por este no P1b: "deve recusar token com papel
+     * desconhecido" e "deve recusar token sem o claim de papel". Os dois cobriam
+     * uma regra que deixou de existir, e o segundo passaria por acidente - o token
+     * que ele montava tambem nao tinha iat, entao seria recusado por outro motivo,
+     * dando cobertura aparente a uma regra apagada.
+     *
+     * O que vale agora: token emitido antes do P1b ainda carrega role, e continua
+     * valendo ate expirar. O claim e simplesmente ignorado.
+     */
     @Test
-    @DisplayName("deve recusar token com papel desconhecido, em vez de tratar como sem papel")
-    void deveRecusarPapelDesconhecido() {
-        var comPapelEstranho = io.jsonwebtoken.Jwts.builder()
-                .setSubject(EMAIL)
+    @DisplayName("token antigo, com claim de papel, deve continuar valendo ate expirar")
+    void tokenAntigoComPapelDeveContinuarValendo() {
+        var comPapelAntigo = io.jsonwebtoken.Jwts.builder()
+                .subject(EMAIL)
                 .claim("role", "SUPERUSUARIO")
+                .issuedAt(new java.util.Date())
+                .expiration(new java.util.Date(System.currentTimeMillis() + 60_000))
                 .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(
                         SEGREDO.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
                 .compact();
 
-        assertThat(jwtService.extractPrincipal(comPapelEstranho)).isEmpty();
+        assertThat(jwtService.extractPrincipal(comPapelAntigo))
+                .get()
+                .extracting(JwtPrincipal::getEmail)
+                .isEqualTo(EMAIL);
     }
 
+    /**
+     * Sem iat nao ha como saber se o token e anterior a uma troca de senha, entao
+     * ele e tratado como invalido em vez de passar como se fosse recente.
+     */
     @Test
-    @DisplayName("deve recusar token sem o claim de papel")
-    void deveRecusarTokenSemPapel() {
-        var semPapel = io.jsonwebtoken.Jwts.builder()
-                .setSubject(EMAIL)
+    @DisplayName("deve recusar token sem instante de emissao")
+    void deveRecusarTokenSemIat() {
+        var semIat = io.jsonwebtoken.Jwts.builder()
+                .subject(EMAIL)
                 .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(
                         SEGREDO.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
                 .compact();
 
-        assertThat(jwtService.extractPrincipal(semPapel)).isEmpty();
+        assertThat(jwtService.extractPrincipal(semIat)).isEmpty();
     }
 
     @Test
@@ -108,10 +134,4 @@ class JwtServiceTest {
                 .isInstanceOf(io.jsonwebtoken.security.WeakKeyException.class);
     }
 
-    @Test
-    @DisplayName("o papel deve virar authority com o prefixo que o Spring Security espera")
-    void papelDeveVirarAuthorityComPrefixo() {
-        assertThat(UserRole.OWNER.asAuthority()).isEqualTo("ROLE_OWNER");
-        assertThat(UserRole.VET.asAuthority()).isEqualTo("ROLE_VET");
-    }
 }

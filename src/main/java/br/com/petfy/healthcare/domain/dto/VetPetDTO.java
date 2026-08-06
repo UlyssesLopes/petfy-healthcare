@@ -7,10 +7,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * O pet como o veterinario o enxerga.
+ * O animal como o veterinario o enxerga.
  *
  * Traz o nome do tutor para o atendimento saber com quem esta falando, mas nao
- * os dados de contato: a clinica foi autorizada a atender o pet, nao a receber a
+ * os dados de contato: a clinica foi autorizada a atender o animal, nao a receber a
  * agenda de contatos do tutor.
  */
 @Getter
@@ -20,7 +20,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class VetPetDTO {
 
-    private UUID petId;
+    private UUID animalId;
 
     private String name;
 
@@ -34,7 +34,7 @@ public class VetPetDTO {
 
     private Double weight;
 
-    private String ownerName;
+    private String personName;
 
     private LocalDateTime accessGrantedAt;
 

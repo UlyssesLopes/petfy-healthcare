@@ -3,10 +3,9 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.HealthRecordCorrection;
-import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Vet;
+import br.com.petfy.healthcare.domain.entity.Organization;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
-import br.com.petfy.healthcare.security.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -29,12 +28,17 @@ public class HealthRecordCorrectionLog {
 
     private final HealthRecordCorrectionRepository healthRecordCorrectionRepository;
 
-    public void recordByVet(HealthRecord antes, Vet vet) {
-        healthRecordCorrectionRepository.save(snapshot(antes).correctedByVet(vet).build());
+    /** Correcao feita por alguem agindo em nome de uma organizacao. */
+    public void recordByProfessional(HealthRecord antes, Person profissional, Organization organization) {
+        healthRecordCorrectionRepository.save(snapshot(antes)
+                .correctedBy(profissional)
+                .correctedInOrganization(organization)
+                .build());
     }
 
-    public void recordByOwner(HealthRecord antes, Owner owner) {
-        healthRecordCorrectionRepository.save(snapshot(antes).correctedByOwner(owner).build());
+    /** Correcao feita pela pessoa agindo por si, sem organizacao atras. */
+    public void recordByPerson(HealthRecord antes, Person person) {
+        healthRecordCorrectionRepository.save(snapshot(antes).correctedBy(person).build());
     }
 
     /** Da correcao mais recente para a mais antiga. */
@@ -56,25 +60,21 @@ public class HealthRecordCorrectionLog {
                 .correctedAt(LocalDateTime.now());
     }
 
+    /** O papel saiu, o contexto entrou - ver VaccineCorrectionLog para o porque. */
     private HealthRecordCorrectionResponseDTO toResponse(HealthRecordCorrection correction) {
-        boolean porVet = correction.getCorrectedByVet() != null;
-
         return HealthRecordCorrectionResponseDTO.builder()
                 .healthRecordCorrectionId(correction.getHealthRecordCorrectionId())
                 .correctedAt(correction.getCorrectedAt())
-                .correctedByRole(porVet ? UserRole.VET.name() : UserRole.OWNER.name())
-                .correctedByName(porVet
-                        ? correction.getCorrectedByVet().getName()
-                        : nomeDoTutor(correction))
-                .correctedByClinicName(porVet ? correction.getCorrectedByVet().getClinic().getName() : null)
+                .correctedByName(correction.getCorrectedBy() != null
+                        ? correction.getCorrectedBy().getName()
+                        : null)
+                .correctedByOrganizationName(correction.getCorrectedInOrganization() != null
+                        ? correction.getCorrectedInOrganization().getName()
+                        : null)
                 .previousEventType(correction.getPreviousEventType())
                 .previousEventDate(correction.getPreviousEventDate())
                 .previousDescription(correction.getPreviousDescription())
                 .build();
-    }
-
-    private String nomeDoTutor(HealthRecordCorrection correction) {
-        return correction.getCorrectedByOwner() != null ? correction.getCorrectedByOwner().getName() : null;
     }
 
 }

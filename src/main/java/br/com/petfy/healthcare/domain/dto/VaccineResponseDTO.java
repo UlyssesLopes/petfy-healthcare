@@ -23,9 +23,9 @@ public class VaccineResponseDTO {
 
     private String description;
 
-    private UUID petId;
+    private UUID animalId;
 
-    private UUID clinicId;
+    private UUID organizationId;
 
     private UUID vaccineCatalogId;
 

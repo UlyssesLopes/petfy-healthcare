@@ -1,22 +1,23 @@
 package br.com.petfy.healthcare.config;
 
 import br.com.petfy.healthcare.controller.AuthController;
-import br.com.petfy.healthcare.controller.OwnerController;
-import br.com.petfy.healthcare.controller.PetController;
-import br.com.petfy.healthcare.controller.PetShareController;
+import br.com.petfy.healthcare.controller.PersonController;
+import br.com.petfy.healthcare.controller.AnimalController;
+import br.com.petfy.healthcare.controller.AnimalShareController;
 import br.com.petfy.healthcare.controller.SharedCardController;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
-import br.com.petfy.healthcare.service.PetShareService;
+import br.com.petfy.healthcare.service.AnimalShareService;
+import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.security.JwtAuthenticationFilter;
 import br.com.petfy.healthcare.security.JwtService;
+import br.com.petfy.healthcare.security.ProfessionalAccessManager;
 import br.com.petfy.healthcare.security.TokenFreshness;
-import br.com.petfy.healthcare.security.UserRole;
 import br.com.petfy.healthcare.service.AuthService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
-import br.com.petfy.healthcare.service.OwnerExportService;
-import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.PersonExportService;
+import br.com.petfy.healthcare.service.PersonService;
 import br.com.petfy.healthcare.service.PasswordResetService;
-import br.com.petfy.healthcare.service.PetService;
+import br.com.petfy.healthcare.service.AnimalService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +46,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * SecurityFilterChain de verdade para conferir o que e publico e o que exige
  * token.
  */
-@WebMvcTest(controllers = {AuthController.class, PetController.class, OwnerController.class,
-        SharedCardController.class, PetShareController.class})
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
+@WebMvcTest(controllers = {AuthController.class, AnimalController.class, PersonController.class,
+        SharedCardController.class, AnimalShareController.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class,
+        ProfessionalAccessManager.class})
 @TestPropertySource(properties = {
         "petfy.jwt.secret=segredo-de-teste-com-mais-de-32-caracteres",
         "petfy.jwt.expiration-minutes=120"
@@ -60,20 +62,29 @@ class SecurityFilterChainTest {
     @Autowired
     private JwtService jwtService;
 
+    /**
+     * O ProfessionalAccessManager entra na cadeia de verdade - e ele que decide
+     * /vet/** desde que hasRole("VET") morreu -, mas o repositorio que ele consulta
+     * e mockado: este teste fala sobre o que e publico e o que exige token, nao
+     * sobre credencial.
+     */
+    @MockBean
+    private ProfessionalCredentialRepository professionalCredentialRepository;
+
     @MockBean
     private AuthService authService;
 
     @MockBean
-    private PetService petService;
+    private AnimalService animalService;
 
     @MockBean
-    private OwnerService ownerService;
+    private PersonService personService;
 
     @MockBean
-    private OwnerExportService ownerExportService;
+    private PersonExportService personExportService;
 
     @MockBean
-    private PetShareService petShareService;
+    private AnimalShareService animalShareService;
 
     @MockBean
     private PasswordResetService passwordResetService;
@@ -90,43 +101,43 @@ class SecurityFilterChainTest {
     private TokenFreshness tokenFreshness;
 
     private String tokenValido() {
-        return jwtService.generateToken("ulysses@petfy.com.br", UserRole.OWNER, UUID.randomUUID());
+        return jwtService.generateToken("ulysses@petfy.com.br", UUID.randomUUID());
     }
 
     @Test
     @DisplayName("deve responder 401 e nao chamar o service em rota protegida sem token")
     void deveResponder401SemToken() throws Exception {
-        mockMvc.perform(get("/pets"))
+        mockMvc.perform(get("/animals"))
                 .andExpect(status().isUnauthorized());
 
-        verify(petService, never()).listAllPets(any());
+        verify(animalService, never()).listAllAnimals(any());
     }
 
     @Test
     @DisplayName("deve responder 401 quando o token e invalido")
     void deveResponder401ComTokenInvalido() throws Exception {
-        mockMvc.perform(get("/pets").header("Authorization", "Bearer token-falsificado"))
+        mockMvc.perform(get("/animals").header("Authorization", "Bearer token-falsificado"))
                 .andExpect(status().isUnauthorized());
 
-        verify(petService, never()).listAllPets(any());
+        verify(animalService, never()).listAllAnimals(any());
     }
 
     @Test
     @DisplayName("deve responder 401 quando o header nao usa o esquema Bearer")
     void deveResponder401SemEsquemaBearer() throws Exception {
-        mockMvc.perform(get("/pets").header("Authorization", "Basic dXNlcjpwYXNz"))
+        mockMvc.perform(get("/animals").header("Authorization", "Basic dXNlcjpwYXNz"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("deve liberar a rota protegida quando o token e valido")
     void deveLiberarComTokenValido() throws Exception {
-        when(petService.listAllPets(any())).thenReturn(Page.empty());
+        when(animalService.listAllAnimals(any())).thenReturn(Page.empty());
 
-        mockMvc.perform(get("/pets").header("Authorization", "Bearer " + tokenValido()))
+        mockMvc.perform(get("/animals").header("Authorization", "Bearer " + tokenValido()))
                 .andExpect(status().isOk());
 
-        verify(petService).listAllPets(any());
+        verify(animalService).listAllAnimals(any());
     }
 
     @Test
@@ -141,44 +152,44 @@ class SecurityFilterChainTest {
     }
 
     @Test
-    @DisplayName("o cadastro de owner deve ser publico, senao nao existe primeiro usuario")
-    void cadastroDeOwnerDeveSerPublico() throws Exception {
-        mockMvc.perform(post("/owners")
+    @DisplayName("o cadastro de person deve ser publico, senao nao existe primeiro usuario")
+    void cadastroDePersonDeveSerPublico() throws Exception {
+        mockMvc.perform(post("/persons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Ulysses\",\"email\":\"ulysses@petfy.com.br\",\"password\":\"s3nhaForte\",\"acceptedTerms\":true}"))
                 .andExpect(status().isCreated());
 
-        verify(ownerService).createOwner(any());
+        verify(personService).createPerson(any());
     }
 
     @Test
     @DisplayName("a carteira compartilhada deve ser publica - quem recebe o link nao tem conta")
     void carteiraCompartilhadaDeveSerPublica() throws Exception {
-        when(petShareService.viewSharedCard("um-token")).thenReturn(SharedVaccineCardDTO.builder().petName("Rex").build());
+        when(animalShareService.viewSharedCard("um-token")).thenReturn(SharedVaccineCardDTO.builder().animalName("Rex").build());
 
         mockMvc.perform(get("/share/{token}", "um-token"))
                 .andExpect(status().isOk());
 
-        verify(petShareService).viewSharedCard("um-token");
+        verify(animalShareService).viewSharedCard("um-token");
     }
 
     @Test
     @DisplayName("criar link de compartilhamento deve exigir token - so o tutor compartilha")
     void criarLinkDeveExigirToken() throws Exception {
-        mockMvc.perform(post("/pets/{petId}/shares", UUID.randomUUID())
+        mockMvc.perform(post("/animals/{animalId}/shares", UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized());
 
-        verify(petShareService, never()).createShare(any(), any());
+        verify(animalShareService, never()).createShare(any(), any());
     }
 
     @Test
-    @DisplayName("as demais rotas de owner devem continuar exigindo token")
-    void demaisRotasDeOwnerDevemExigirToken() throws Exception {
-        mockMvc.perform(get("/owners/me"))
+    @DisplayName("as demais rotas de person devem continuar exigindo token")
+    void demaisRotasDePersonDevemExigirToken() throws Exception {
+        mockMvc.perform(get("/persons/me"))
                 .andExpect(status().isUnauthorized());
 
-        verify(ownerService, never()).getCurrentOwner();
+        verify(personService, never()).getCurrentPerson();
     }
 
     /**
@@ -227,10 +238,10 @@ class SecurityFilterChainTest {
     void deveResponder401ComTokenAnteriorATrocaDeSenha() throws Exception {
         when(tokenFreshness.isStale(any())).thenReturn(true);
 
-        mockMvc.perform(get("/pets").header("Authorization", "Bearer " + tokenValido()))
+        mockMvc.perform(get("/animals").header("Authorization", "Bearer " + tokenValido()))
                 .andExpect(status().isUnauthorized());
 
-        verify(petService, never()).listAllPets(any());
+        verify(animalService, never()).listAllAnimals(any());
     }
 
     @Test

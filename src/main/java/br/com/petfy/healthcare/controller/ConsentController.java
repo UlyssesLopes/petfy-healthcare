@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * Nao ha rota para <b>revogar</b> consentimento, e a ausencia e deliberada: sem
  * consentimento nao ha base legal para tratar dado de saude, entao revogar e sair -
- * o que ja existe em {@code DELETE /owners/me}. Uma rota de revogacao que deixasse a
+ * o que ja existe em {@code DELETE /persons/me}. Uma rota de revogacao que deixasse a
  * conta de pe criaria um estado em que a aplicacao guarda dado sem poder trata-lo.
  */
 @RestController

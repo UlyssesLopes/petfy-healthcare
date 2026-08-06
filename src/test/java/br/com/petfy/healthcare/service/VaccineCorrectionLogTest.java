@@ -1,10 +1,9 @@
 package br.com.petfy.healthcare.service;
 
-import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Organization;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -46,14 +45,18 @@ class VaccineCorrectionLogTest {
                 .build();
     }
 
-    private Vet vet() {
-        return Vet.builder().vetId(UUID.randomUUID()).name("Dra. Marina")
-                .clinic(Clinic.builder().clinicId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
-                .build();
+    private Person vet() {
+        return Person.builder().personId(UUID.randomUUID()).name("Dra. Marina").build();
     }
 
-    private Owner owner() {
-        return Owner.builder().ownerId(UUID.randomUUID()).name("Ulysses").build();
+    /** A organizacao em nome de quem o vet age: deixou de ser campo da pessoa no P3b. */
+    private Organization clinica() {
+        return Organization.builder().organizationId(UUID.randomUUID())
+                .name("Clinica Bicho Feliz").build();
+    }
+
+    private Person person() {
+        return Person.builder().personId(UUID.randomUUID()).name("Ulysses").build();
     }
 
     @Nested
@@ -63,7 +66,7 @@ class VaccineCorrectionLogTest {
         @Test
         @DisplayName("deve guardar o estado ANTERIOR, e nao o novo")
         void deveGuardarOEstadoAnterior() {
-            vaccineCorrectionLog.recordByVet(vacina(), vet());
+            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), clinica());
 
             var captor = ArgumentCaptor.forClass(VaccineCorrection.class);
             verify(vaccineCorrectionRepository).save(captor.capture());
@@ -75,18 +78,27 @@ class VaccineCorrectionLogTest {
             assertThat(captor.getValue().getCorrectedAt()).isNotNull();
         }
 
+        /**
+         * Substituiu "correcao de veterinario nao deve marcar tutor, e vice-versa".
+         *
+         * Aquele caso protegia a exclusividade entre duas colunas de autor, uma
+         * para cada tipo de conta. Nao ha mais dois tipos: ha sempre um autor, e o
+         * que muda e se ele agiu por uma organizacao. A regra que passou a valer -
+         * e que este caso protege - e que o autor nunca fica vazio, e que a clinica
+         * so aparece quando existiu.
+         */
         @Test
-        @DisplayName("correcao de veterinario nao deve marcar tutor, e vice-versa")
-        void naoDeveMarcarOsDoisAutores() {
-            vaccineCorrectionLog.recordByVet(vacina(), vet());
-            var porVet = capturar();
-            assertThat(porVet.getCorrectedByVet()).isNotNull();
-            assertThat(porVet.getCorrectedByOwner()).isNull();
+        @DisplayName("o autor e sempre uma pessoa; a clinica so aparece quando houve contexto")
+        void autorSempreExisteEClinicaSoQuandoHouveContexto() {
+            vaccineCorrectionLog.recordByProfessional(vacina(), vet(), clinica());
+            var comContexto = capturar();
+            assertThat(comContexto.getCorrectedBy()).isNotNull();
+            assertThat(comContexto.getCorrectedInOrganization()).isNotNull();
 
-            vaccineCorrectionLog.recordByOwner(vacina(), owner());
-            var porTutor = capturar();
-            assertThat(porTutor.getCorrectedByOwner()).isNotNull();
-            assertThat(porTutor.getCorrectedByVet()).isNull();
+            vaccineCorrectionLog.recordByPerson(vacina(), person());
+            var semContexto = capturar();
+            assertThat(semContexto.getCorrectedBy()).isNotNull();
+            assertThat(semContexto.getCorrectedInOrganization()).isNull();
         }
 
         private VaccineCorrection capturar() {
@@ -100,12 +112,12 @@ class VaccineCorrectionLogTest {
     @DisplayName("leitura")
     class Leitura {
 
-        private VaccineCorrection correcao(Vet vet, Owner owner) {
+        private VaccineCorrection correcao(Person autor, br.com.petfy.healthcare.domain.entity.Organization organization) {
             return VaccineCorrection.builder()
                     .vaccineCorrectionId(UUID.randomUUID())
                     .vaccine(vacina())
-                    .correctedByVet(vet)
-                    .correctedByOwner(owner)
+                    .correctedBy(autor)
+                    .correctedInOrganization(organization)
                     .previousVaccineName("V8")
                     .previousApplicationDate(LocalDate.of(2026, 7, 1))
                     .previousDescription("texto antigo")
@@ -113,29 +125,31 @@ class VaccineCorrectionLogTest {
                     .build();
         }
 
+        /**
+         * O papel saiu da resposta. Quem le distingue os dois casos pelo contexto:
+         * "a Ana, pela Clinica Norte, corrigiu" tem clinica; "a Ana corrigiu" nao.
+         */
         @Test
-        @DisplayName("deve identificar correcao feita por veterinario, com a clinica dele")
-        void deveIdentificarCorrecaoDeVeterinario() {
+        @DisplayName("correcao feita em nome de uma clinica deve trazer a clinica")
+        void correcaoComContextoDeveTrazerAClinica() {
             when(vaccineCorrectionRepository.findByVaccineVaccineIdOrderByCorrectedAtDesc(VACCINE_ID))
-                    .thenReturn(List.of(correcao(vet(), null)));
+                    .thenReturn(List.of(correcao(vet(), clinica())));
 
             assertThat(vaccineCorrectionLog.list(VACCINE_ID)).singleElement().satisfies(c -> {
-                assertThat(c.getCorrectedByRole()).isEqualTo("VET");
                 assertThat(c.getCorrectedByName()).isEqualTo("Dra. Marina");
-                assertThat(c.getCorrectedByClinicName()).isEqualTo("Clinica Bicho Feliz");
+                assertThat(c.getCorrectedByOrganizationName()).isEqualTo("Clinica Bicho Feliz");
             });
         }
 
         @Test
-        @DisplayName("deve identificar correcao feita pelo tutor, sem clinica")
-        void deveIdentificarCorrecaoDoTutor() {
+        @DisplayName("correcao feita pela pessoa por si nao deve trazer clinica")
+        void correcaoSemContextoNaoDeveTrazerClinica() {
             when(vaccineCorrectionRepository.findByVaccineVaccineIdOrderByCorrectedAtDesc(VACCINE_ID))
-                    .thenReturn(List.of(correcao(null, owner())));
+                    .thenReturn(List.of(correcao(person(), null)));
 
             assertThat(vaccineCorrectionLog.list(VACCINE_ID)).singleElement().satisfies(c -> {
-                assertThat(c.getCorrectedByRole()).isEqualTo("OWNER");
                 assertThat(c.getCorrectedByName()).isEqualTo("Ulysses");
-                assertThat(c.getCorrectedByClinicName()).isNull();
+                assertThat(c.getCorrectedByOrganizationName()).isNull();
             });
         }
 

@@ -2,11 +2,11 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.AccessActorType;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
-import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.entity.Organization;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.SensitiveAccessLog;
 import br.com.petfy.healthcare.domain.entity.Species;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
 import br.com.petfy.healthcare.security.RequestEvidenceProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -39,18 +39,24 @@ class SensitiveAccessLoggerTest {
     @InjectMocks
     private SensitiveAccessLogger logger;
 
-    private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID VET_ID = UUID.fromString("77777777-7777-7777-7777-777777777777");
 
-    private Pet rex() {
-        return Pet.builder().petId(PET_ID).name("Rex").species(Species.CANINA).build();
+    private Animal rex() {
+        return Animal.builder().animalId(ANIMAL_ID).name("Rex").species(Species.CANINA).build();
     }
 
-    private Vet marina() {
-        return Vet.builder()
-                .vetId(VET_ID).name("Dra. Marina").email("marina@vet.com.br")
-                .clinic(Clinic.builder().clinicId(UUID.randomUUID()).name("Clinica Bicho Feliz").build())
+    private Person marina() {
+        return Person.builder()
+                .personId(VET_ID).name("Dra. Marina").email("marina@vet.com.br")
                 .build();
+    }
+
+    /** Marina atuando pela clinica: o contexto substituiu o campo organization. */
+    private br.com.petfy.healthcare.security.ProfessionalContext porClinica() {
+        return br.com.petfy.healthcare.Contextos.por(marina(),
+                Organization.builder().organizationId(UUID.randomUUID())
+                        .name("Clinica Bicho Feliz").build());
     }
 
     private SensitiveAccessLog gravado() {
@@ -64,12 +70,12 @@ class SensitiveAccessLoggerTest {
     class VetLeu {
 
         @Test
-        @DisplayName("registra o pet, o recurso e quem leu")
+        @DisplayName("registra o animal, o recurso e quem leu")
         void registraOEssencial() {
-            logger.vetLeu(marina(), rex(), AccessedResource.HEALTH_RECORDS);
+            logger.vetLeu(porClinica(), rex(), AccessedResource.HEALTH_RECORDS);
 
             var log = gravado();
-            assertThat(log.getPet().getPetId()).isEqualTo(PET_ID);
+            assertThat(log.getAnimal().getAnimalId()).isEqualTo(ANIMAL_ID);
             assertThat(log.getActorType()).isEqualTo(AccessActorType.VET);
             assertThat(log.getActorId()).isEqualTo(VET_ID);
             assertThat(log.getResource()).isEqualTo(AccessedResource.HEALTH_RECORDS);
@@ -83,7 +89,7 @@ class SensitiveAccessLoggerTest {
         @Test
         @DisplayName("guarda o nome do veterinario no momento do acesso")
         void guardaONomeComoSnapshot() {
-            logger.vetLeu(marina(), rex(), AccessedResource.VACCINES);
+            logger.vetLeu(porClinica(), rex(), AccessedResource.VACCINES);
 
             assertThat(gravado().getActorName()).isEqualTo("Dra. Marina");
         }
@@ -92,20 +98,25 @@ class SensitiveAccessLoggerTest {
         @Test
         @DisplayName("guarda a clinica, que e o que o tutor autorizou")
         void guardaAClinica() {
-            logger.vetLeu(marina(), rex(), AccessedResource.VACCINES);
+            logger.vetLeu(porClinica(), rex(), AccessedResource.VACCINES);
 
-            assertThat(gravado().getClinicName()).isEqualTo("Clinica Bicho Feliz");
+            assertThat(gravado().getOrganizationName()).isEqualTo("Clinica Bicho Feliz");
         }
 
-        /** Vet sem clinica nao deveria existir, mas o log nao e o lugar de estourar por isso. */
+        /**
+         * <b>Atuar sem organizacao deixou de ser anomalia no P3b:</b> e o veterinario
+         * autonomo, e o log registra isso como o fato que e. O nome nulo nao e falta de
+         * dado - e a informacao de que nao houve organizacao autorizada, houve uma
+         * pessoa. Inventar um nome aqui contaria ao tutor que uma instituicao leu o
+         * historico quando nao leu.
+         */
         @Test
-        @DisplayName("veterinario sem clinica registra o acesso sem o nome dela")
-        void vetSemClinicaNaoQuebra() {
-            var semClinica = Vet.builder().vetId(VET_ID).name("Dra. Marina").build();
+        @DisplayName("veterinario autonomo registra o acesso sem nome de organizacao")
+        void autonomoRegistraSemOrganizacao() {
+            logger.vetLeu(br.com.petfy.healthcare.Contextos.autonomo(marina()), rex(),
+                    AccessedResource.VACCINES);
 
-            logger.vetLeu(semClinica, rex(), AccessedResource.VACCINES);
-
-            assertThat(gravado().getClinicName()).isNull();
+            assertThat(gravado().getOrganizationName()).isNull();
         }
 
         @Test
@@ -114,7 +125,7 @@ class SensitiveAccessLoggerTest {
             when(requestEvidenceProvider.ip()).thenReturn("203.0.113.7");
             when(requestEvidenceProvider.userAgent()).thenReturn("Mozilla/5.0");
 
-            logger.vetLeu(marina(), rex(), AccessedResource.VACCINES);
+            logger.vetLeu(porClinica(), rex(), AccessedResource.VACCINES);
 
             var log = gravado();
             assertThat(log.getIpAddress()).isEqualTo("203.0.113.7");
@@ -142,7 +153,7 @@ class SensitiveAccessLoggerTest {
             assertThat(log.getActorType()).isEqualTo(AccessActorType.SHARE_LINK);
             assertThat(log.getActorId()).isNull();
             assertThat(log.getActorName()).isNull();
-            assertThat(log.getClinicName()).isNull();
+            assertThat(log.getOrganizationName()).isNull();
             assertThat(log.getResource()).isEqualTo(AccessedResource.SHARED_CARD);
             assertThat(log.getIpAddress()).isEqualTo("198.51.100.4");
         }
@@ -153,7 +164,7 @@ class SensitiveAccessLoggerTest {
     class PoliticaDeFalha {
 
         /**
-         * <b>Falha propaga, de proposito.</b> E o oposto do ClinicActivityNotifier, e
+         * <b>Falha propaga, de proposito.</b> E o oposto do OrganizationActivityNotifier, e
          * a diferenca nao e descuido: la o efeito principal era o registro e o aviso
          * era acessorio; aqui o log <b>e</b> a garantia. Servir historico de saude sem
          * conseguir registrar quem leu entrega o dado e perde a unica prova de que
@@ -169,7 +180,7 @@ class SensitiveAccessLoggerTest {
             doThrow(new RuntimeException("tabela indisponivel"))
                     .when(sensitiveAccessLogRepository).save(any(SensitiveAccessLog.class));
 
-            assertThatThrownBy(() -> logger.vetLeu(marina(), rex(), AccessedResource.HEALTH_RECORDS))
+            assertThatThrownBy(() -> logger.vetLeu(porClinica(), rex(), AccessedResource.HEALTH_RECORDS))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("tabela indisponivel");
         }

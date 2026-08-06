@@ -16,7 +16,7 @@ public class AntiparasiticResponseDTO {
 
     private UUID antiparasiticId;
 
-    private UUID petId;
+    private UUID animalId;
 
     private String name;
 

@@ -9,6 +9,6 @@ import java.util.UUID;
 /** Leitura do log de acesso pelo tutor. A escrita fica no {@link SensitiveAccessLogger}. */
 public interface SensitiveAccessLogService {
 
-    Page<SensitiveAccessLogResponseDTO> listByPet(UUID petId, Pageable pageable);
+    Page<SensitiveAccessLogResponseDTO> listByAnimal(UUID animalId, Pageable pageable);
 
 }

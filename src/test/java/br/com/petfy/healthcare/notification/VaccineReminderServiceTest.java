@@ -2,8 +2,8 @@ package br.com.petfy.healthcare.notification;
 
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
-import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
@@ -45,6 +45,14 @@ class VaccineReminderServiceTest {
     @Mock
     private Notifier notifier;
 
+    /**
+     * Os destinatarios vem do AnimalReach desde o P2b: alcancar um animal passou a ter
+     * duas origens - custodia e concessao -, e a colecao do animal nao responde mais
+     * isso sozinha.
+     */
+    @Mock
+    private br.com.petfy.healthcare.service.AnimalReach animalReach;
+
     @InjectMocks
     private VaccineReminderService service;
 
@@ -55,34 +63,54 @@ class VaccineReminderServiceTest {
     void setUp() {
         ReflectionTestUtils.setField(service, "windowDays", 30);
         ReflectionTestUtils.setField(service, "cooldownDays", 7);
+
+        // Quem alcanca o animal passou a vir do AnimalReach, e nao da colecao do animal:
+        // depois do P2b sao duas origens - custodia e concessao -, e a colecao e lazy.
+        // Aqui a resposta e derivada das custodias que o proprio teste montou, para os
+        // casos continuarem falando sobre lembrete e nao sobre encanamento.
+        org.mockito.Mockito.lenient().when(animalReach.pessoas(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(i -> quemAlcanca.getOrDefault(i.getArgument(0), java.util.List.of()));
+        org.mockito.Mockito.lenient().when(animalReach.temAlguemNotificavel(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(i -> quemAlcanca.getOrDefault(i.getArgument(0), java.util.List.<Person>of())
+                        .stream().anyMatch(Person::podeReceberNotificacao));
+    }
+
+    /** animalId -> quem alcanca, preenchido por quem monta o animal no teste. */
+    private final java.util.Map<UUID, java.util.List<Person>> quemAlcanca = new java.util.HashMap<>();
+
+    private Animal animalDe(Person person, String animalName) {
+        Animal animal = Animal.builder().animalId(UUID.randomUUID()).name(animalName)
+                .custodies(br.com.petfy.healthcare.Custodias.titular(person)).build();
+        quemAlcanca.put(animal.getAnimalId(), java.util.List.of(person));
+        return animal;
     }
 
     /** Com e-mail confirmado: sem isso o lembrete nao sai, e o assunto do teste e outro. */
-    private Owner owner(String nome, String email) {
-        return Owner.builder()
-                .ownerId(UUID.randomUUID())
+    private Person person(String nome, String email) {
+        return Person.builder()
+                .personId(UUID.randomUUID())
                 .name(nome)
                 .email(email)
                 .emailVerifiedAt(LocalDateTime.now().minusDays(1))
                 .build();
     }
 
-    private Owner ownerSemEmailConfirmado(String nome, String email) {
-        return Owner.builder().ownerId(UUID.randomUUID()).name(nome).email(email).build();
+    private Person personSemEmailConfirmado(String nome, String email) {
+        return Person.builder().personId(UUID.randomUUID()).name(nome).email(email).build();
     }
 
-    private Vaccine vacina(Owner owner, String petName, String vaccineName,
+    private Vaccine vacina(Person person, String animalName, String vaccineName,
                            LocalDate proximaDose, LocalDateTime ultimoEnvio) {
         return Vaccine.builder()
                 .vaccineId(UUID.randomUUID())
                 .vaccineName(vaccineName)
                 .nextDoseDate(proximaDose)
                 .lastReminderSentAt(ultimoEnvio)
-                .pet(Pet.builder().petId(UUID.randomUUID()).name(petName).tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).build())
+                .animal(animalDe(person, animalName))
                 .build();
     }
 
-    private Antiparasitic anti(Owner owner, String petName, String name,
+    private Antiparasitic anti(Person person, String animalName, String name,
                                LocalDate proximaDose, LocalDateTime ultimoEnvio) {
         return Antiparasitic.builder()
                 .antiparasiticId(UUID.randomUUID())
@@ -90,7 +118,7 @@ class VaccineReminderServiceTest {
                 .kind(AntiparasiticKind.DEWORMER)
                 .nextDoseDate(proximaDose)
                 .lastReminderSentAt(ultimoEnvio)
-                .pet(Pet.builder().petId(UUID.randomUUID()).name(petName).tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).build())
+                .animal(animalDe(person, animalName))
                 .build();
     }
 
@@ -120,12 +148,12 @@ class VaccineReminderServiceTest {
 
         /**
          * O risco de mandar para endereco nao confirmado nao e spam: e o nome do
-         * pet e do tutor chegando na caixa de um estranho.
+         * animal e do tutor chegando na caixa de um estranho.
          */
         @Test
         @DisplayName("nao deve avisar tutor que ainda nao confirmou o e-mail")
         void naoDeveAvisarTutorSemEmailConfirmado() {
-            baseTem(vacina(ownerSemEmailConfirmado("Ulysses", "u@petfy.com.br"), "Rex", "V10",
+            baseTem(vacina(personSemEmailConfirmado("Ulysses", "u@petfy.com.br"), "Rex", "V10",
                     HOJE.minusDays(3), null));
 
             assertThat(service.enviarLembretes()).isZero();
@@ -140,7 +168,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("nao deve marcar a dose como avisada quando o tutor nao confirmou o e-mail")
         void naoDeveMarcarDoseComoAvisada() {
-            baseTem(vacina(ownerSemEmailConfirmado("Ulysses", "u@petfy.com.br"), "Rex", "V10",
+            baseTem(vacina(personSemEmailConfirmado("Ulysses", "u@petfy.com.br"), "Rex", "V10",
                     HOJE.minusDays(3), null));
 
             service.enviarLembretes();
@@ -152,9 +180,9 @@ class VaccineReminderServiceTest {
         @DisplayName("deve avisar apenas o tutor com e-mail confirmado quando ha os dois")
         void deveAvisarApenasQuemConfirmou() {
             baseTem(
-                    vacina(ownerSemEmailConfirmado("Sem", "sem@petfy.com.br"), "Rex", "V10",
+                    vacina(personSemEmailConfirmado("Sem", "sem@petfy.com.br"), "Rex", "V10",
                             HOJE.minusDays(3), null),
-                    vacina(owner("Com", "com@petfy.com.br"), "Bidu", "V8",
+                    vacina(person("Com", "com@petfy.com.br"), "Bidu", "V8",
                             HOJE.minusDays(2), null));
 
             assertThat(service.enviarLembretes()).isEqualTo(1);
@@ -169,7 +197,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("deve avisar quando a dose nunca teve lembrete")
         void deveAvisarQuandoNuncaTeveLembrete() {
-            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null));
+            baseTem(vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null));
 
             assertThat(service.enviarLembretes()).isEqualTo(1);
             verify(notifier).send(any());
@@ -178,7 +206,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("nao deve reavisar a mesma dose dentro do cooldown")
         void naoDeveReavisarDentroDoCooldown() {
-            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10",
+            baseTem(vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "V10",
                     HOJE.minusDays(3), AGORA.minusDays(2)));
 
             assertThat(service.enviarLembretes()).isZero();
@@ -188,7 +216,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("deve reavisar quando o cooldown ja passou - a dose segue vencida")
         void deveReavisarDepoisDoCooldown() {
-            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10",
+            baseTem(vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "V10",
                     HOJE.minusDays(30), AGORA.minusDays(8)));
 
             assertThat(service.enviarLembretes()).isEqualTo(1);
@@ -198,7 +226,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("deve ignorar dose sem data de proxima aplicacao")
         void deveIgnorarDoseSemProximaData() {
-            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "Dose unica", null, null));
+            baseTem(vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "Dose unica", null, null));
 
             assertThat(service.enviarLembretes()).isZero();
             verifyNoInteractions(notifier);
@@ -207,7 +235,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("deve marcar o envio para o cooldown valer na proxima execucao")
         void deveMarcarOEnvio() {
-            var vacina = vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null);
+            var vacina = vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null);
             baseTem(vacina);
 
             service.enviarLembretes();
@@ -219,7 +247,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("nao deve marcar como avisada uma dose cujo envio falhou")
         void naoDeveMarcarQuandoEnvioFalha() {
-            var vacina = vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null);
+            var vacina = vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null);
             baseTem(vacina);
             doThrow(new RuntimeException("SMTP fora do ar")).when(notifier).send(any());
 
@@ -238,7 +266,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("deve mandar um lembrete por tutor, nao um por dose")
         void deveMandarUmLembretePorTutor() {
-            var ulysses = owner("Ulysses", "u@petfy.com.br");
+            var ulysses = person("Ulysses", "u@petfy.com.br");
             baseTem(
                     vacina(ulysses, "Rex", "V10", HOJE.minusDays(3), null),
                     vacina(ulysses, "Mia", "Antirrabica", HOJE.plusDays(5), null),
@@ -254,8 +282,8 @@ class VaccineReminderServiceTest {
         @DisplayName("deve separar tutores diferentes em lembretes diferentes")
         void deveSepararTutoresDiferentes() {
             baseTem(
-                    vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null),
-                    vacina(owner("Maria", "m@petfy.com.br"), "Nina", "V8", HOJE.minusDays(1), null));
+                    vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null),
+                    vacina(person("Maria", "m@petfy.com.br"), "Nina", "V8", HOJE.minusDays(1), null));
 
             assertThat(service.enviarLembretes()).isEqualTo(2);
             verify(notifier, times(2)).send(any());
@@ -264,7 +292,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("deve enderecar o lembrete ao tutor das doses")
         void deveEnderecarAoTutor() {
-            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null));
+            baseTem(vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null));
 
             service.enviarLembretes();
 
@@ -276,7 +304,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("o assunto deve dizer atraso quando ha dose vencida")
         void assuntoDeveDizerAtrasoQuandoHaVencida() {
-            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null));
+            baseTem(vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.minusDays(3), null));
 
             service.enviarLembretes();
 
@@ -286,7 +314,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("o assunto nao deve falar em atraso quando tudo apenas vence em breve")
         void assuntoNaoDeveFalarEmAtrasoSemVencida() {
-            baseTem(vacina(owner("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.plusDays(5), null));
+            baseTem(vacina(person("Ulysses", "u@petfy.com.br"), "Rex", "V10", HOJE.plusDays(5), null));
 
             service.enviarLembretes();
 
@@ -296,7 +324,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("deve ordenar as doses da mais atrasada para a menos urgente")
         void deveOrdenarDaMaisAtrasada() {
-            var ulysses = owner("Ulysses", "u@petfy.com.br");
+            var ulysses = person("Ulysses", "u@petfy.com.br");
             baseTem(
                     vacina(ulysses, "Mia", "Vencendo", HOJE.plusDays(5), null),
                     vacina(ulysses, "Rex", "Muito atrasada", HOJE.minusDays(40), null));
@@ -310,7 +338,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("a linha deve dizer ha quantos dias venceu, ou em quantos vence")
         void linhaDeveDizerAtrasoOuAntecedencia() {
-            var ulysses = owner("Ulysses", "u@petfy.com.br");
+            var ulysses = person("Ulysses", "u@petfy.com.br");
             baseTem(
                     vacina(ulysses, "Rex", "Atrasada", HOJE.minusDays(4), null),
                     vacina(ulysses, "Mia", "Chegando", HOJE.plusDays(6), null));
@@ -346,7 +374,7 @@ class VaccineReminderServiceTest {
         @DisplayName("deve incluir antiparasitario vencido no lembrete do tutor")
         void deveAvisarAntiparasitarioVencido() {
             vacinasTem();
-            antisTem(anti(owner("Ulysses", "u@petfy.com.br"), "Rex", "Vermifugo",
+            antisTem(anti(person("Ulysses", "u@petfy.com.br"), "Rex", "Vermifugo",
                     HOJE.minusDays(5), null));
 
             assertThat(service.enviarLembretes()).isEqualTo(1);
@@ -356,7 +384,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("deve marcar antiparasitario como avisado apos envio")
         void deveMarcarAntiComoAvisado() {
-            var vermifugo = anti(owner("Ulysses", "u@petfy.com.br"), "Rex", "Vermifugo",
+            var vermifugo = anti(person("Ulysses", "u@petfy.com.br"), "Rex", "Vermifugo",
                     HOJE.minusDays(5), null);
             vacinasTem();
             antisTem(vermifugo);
@@ -370,7 +398,7 @@ class VaccineReminderServiceTest {
         @Test
         @DisplayName("deve agrupar vacina e antiparasitario do mesmo tutor num unico lembrete")
         void deveAgruparNoMesmoLembrete() {
-            var ulysses = owner("Ulysses", "u@petfy.com.br");
+            var ulysses = person("Ulysses", "u@petfy.com.br");
             vacinasTem(vacina(ulysses, "Rex", "V10", HOJE.minusDays(3), null));
             antisTem(anti(ulysses, "Rex", "Vermifugo", HOJE.minusDays(5), null));
 
@@ -383,7 +411,7 @@ class VaccineReminderServiceTest {
         @DisplayName("nao deve reavisar antiparasitario dentro do cooldown")
         void naoDeveReavisarAntiDentroDoCooldown() {
             vacinasTem();
-            antisTem(anti(owner("Ulysses", "u@petfy.com.br"), "Rex", "Antipulgas",
+            antisTem(anti(person("Ulysses", "u@petfy.com.br"), "Rex", "Antipulgas",
                     HOJE.minusDays(3), AGORA.minusDays(2)));
 
             assertThat(service.enviarLembretes()).isZero();
@@ -394,7 +422,7 @@ class VaccineReminderServiceTest {
         @DisplayName("nao deve avisar antiparasitario de tutor sem e-mail confirmado")
         void naoDeveAvisarAntiSemEmailConfirmado() {
             vacinasTem();
-            antisTem(anti(ownerSemEmailConfirmado("Sem", "sem@petfy.com.br"), "Rex", "Vermifugo",
+            antisTem(anti(personSemEmailConfirmado("Sem", "sem@petfy.com.br"), "Rex", "Vermifugo",
                     HOJE.minusDays(3), null));
 
             assertThat(service.enviarLembretes()).isZero();

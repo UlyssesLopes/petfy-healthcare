@@ -1,11 +1,11 @@
 package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.VaccineStatus;
-import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,6 +20,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +38,7 @@ class VaccineAgendaTest {
     private VaccineRepository vaccineRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private CurrentPersonProvider currentPersonProvider;
 
     // calculator real: a classificacao e justamente o que este teste verifica,
     // entao mocka-la esvaziaria o teste
@@ -55,13 +57,13 @@ class VaccineAgendaTest {
                 .vaccineName(nome)
                 .applicationDate(HOJE.minusYears(1))
                 .nextDoseDate(proximaDose)
-                .pet(Pet.builder().petId(UUID.randomUUID()).name("Rex").build())
+                .animal(Animal.builder().animalId(UUID.randomUUID()).name("Rex").build())
                 .build();
     }
 
     private void tutorTem(Vaccine... vacinas) {
-        when(currentOwnerProvider.require()).thenReturn(Owner.builder().ownerId(OWNER_ID).build());
-        when(vaccineRepository.findByPetTutorsOwnerOwnerId(OWNER_ID)).thenReturn(List.of(vacinas));
+        when(currentPersonProvider.require()).thenReturn(Person.builder().personId(OWNER_ID).build());
+        when(vaccineRepository.findAlcancadasPor(eq(OWNER_ID), any())).thenReturn(List.of(vacinas));
     }
 
     @Nested
@@ -152,12 +154,12 @@ class VaccineAgendaTest {
         }
 
         @Test
-        @DisplayName("deve levar o nome do pet junto, para a tela nao precisar de outra chamada")
-        void deveLevarNomeDoPet() {
+        @DisplayName("deve levar o nome do animal junto, para a tela nao precisar de outra chamada")
+        void deveLevarNomeDoAnimal() {
             tutorTem(vacinaComProximaDose("V10", HOJE.minusDays(1)));
 
             assertThat(vaccineService.getAgenda(30).getItems()).singleElement()
-                    .satisfies(item -> assertThat(item.getPetName()).isEqualTo("Rex"));
+                    .satisfies(item -> assertThat(item.getAnimalName()).isEqualTo("Rex"));
         }
 
         @Test

@@ -3,9 +3,9 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.EmailVerificationConfirmDTO;
 import br.com.petfy.healthcare.domain.dto.EmailVerificationResendDTO;
 import br.com.petfy.healthcare.domain.entity.EmailVerificationToken;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.Notification;
 import br.com.petfy.healthcare.notification.Notifier;
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 class EmailVerificationServiceImplTest {
 
     @Mock
-    private OwnerRepository ownerRepository;
+    private PersonRepository personRepository;
 
     @Mock
     private EmailVerificationTokenRepository tokenRepository;
@@ -63,8 +63,8 @@ class EmailVerificationServiceImplTest {
         ReflectionTestUtils.setField(service, "cooldownMinutes", 5L);
     }
 
-    private Owner owner() {
-        return Owner.builder().ownerId(OWNER_ID).name("Ulysses").email(EMAIL).build();
+    private Person person() {
+        return Person.builder().personId(OWNER_ID).name("Ulysses").email(EMAIL).build();
     }
 
     @Nested
@@ -74,11 +74,11 @@ class EmailVerificationServiceImplTest {
         @Test
         @DisplayName("deve gravar o hash e enviar o token no cadastro")
         void deveGravarHashEEnviarToken() {
-            when(tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
+            when(tokenRepository.findByPersonPersonIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
             when(opaqueTokenService.generate()).thenReturn("token-em-claro");
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
 
-            service.sendVerification(owner());
+            service.sendVerification(person());
 
             var captor = ArgumentCaptor.forClass(EmailVerificationToken.class);
             verify(tokenRepository).save(captor.capture());
@@ -97,12 +97,12 @@ class EmailVerificationServiceImplTest {
         @Test
         @DisplayName("falha de envio nao pode derrubar o cadastro")
         void falhaDeEnvioNaoPodeDerrubarCadastro() {
-            when(tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
+            when(tokenRepository.findByPersonPersonIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
             when(opaqueTokenService.generate()).thenReturn("token-em-claro");
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
             doThrow(new RuntimeException("SMTP fora")).when(notifier).send(any());
 
-            service.sendVerification(owner());
+            service.sendVerification(person());
         }
     }
 
@@ -113,7 +113,7 @@ class EmailVerificationServiceImplTest {
         @Test
         @DisplayName("deve terminar em silencio quando o e-mail nao tem conta")
         void deveTerminarEmSilencioQuandoEmailNaoTemConta() {
-            when(ownerRepository.findByEmail("ninguem@petfy.com.br")).thenReturn(Optional.empty());
+            when(personRepository.findByEmail("ninguem@petfy.com.br")).thenReturn(Optional.empty());
 
             service.resend(new EmailVerificationResendDTO("ninguem@petfy.com.br"));
 
@@ -124,9 +124,9 @@ class EmailVerificationServiceImplTest {
         @Test
         @DisplayName("nao deve reenviar para quem ja confirmou")
         void naoDeveReenviarParaQuemJaConfirmou() {
-            var jaConfirmado = owner();
+            var jaConfirmado = person();
             jaConfirmado.setEmailVerifiedAt(LocalDateTime.now().minusDays(1));
-            when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.of(jaConfirmado));
+            when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(jaConfirmado));
 
             service.resend(new EmailVerificationResendDTO(EMAIL));
 
@@ -141,9 +141,9 @@ class EmailVerificationServiceImplTest {
         @Test
         @DisplayName("falha de envio nao pode virar erro na resposta, senao denuncia que a conta existe")
         void falhaDeEnvioNaoPodeVirarErroNaResposta() {
-            when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner()));
-            when(tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(OWNER_ID)).thenReturn(Optional.empty());
-            when(tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
+            when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+            when(tokenRepository.findFirstByPersonPersonIdOrderByCreationDateDesc(OWNER_ID)).thenReturn(Optional.empty());
+            when(tokenRepository.findByPersonPersonIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
             when(opaqueTokenService.generate()).thenReturn("token-em-claro");
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
             doThrow(new IllegalStateException("Resend fora")).when(notifier).send(any());
@@ -159,8 +159,8 @@ class EmailVerificationServiceImplTest {
                     .creationDate(LocalDateTime.now().minusMinutes(1))
                     .build();
 
-            when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner()));
-            when(tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(OWNER_ID))
+            when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+            when(tokenRepository.findFirstByPersonPersonIdOrderByCreationDateDesc(OWNER_ID))
                     .thenReturn(Optional.of(recente));
 
             service.resend(new EmailVerificationResendDTO(EMAIL));
@@ -174,9 +174,9 @@ class EmailVerificationServiceImplTest {
     @DisplayName("confirm")
     class Confirm {
 
-        private EmailVerificationToken tokenValido(Owner dono) {
+        private EmailVerificationToken tokenValido(Person dono) {
             return EmailVerificationToken.builder()
-                    .owner(dono)
+                    .person(dono)
                     .tokenHash("hash-do-token")
                     .expiresAt(LocalDateTime.now().plusHours(20))
                     .creationDate(LocalDateTime.now().minusHours(4))
@@ -186,7 +186,7 @@ class EmailVerificationServiceImplTest {
         @Test
         @DisplayName("deve marcar o e-mail como confirmado e queimar o token")
         void deveMarcarEmailComoConfirmado() {
-            var dono = owner();
+            var dono = person();
             var token = tokenValido(dono);
 
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
@@ -194,8 +194,8 @@ class EmailVerificationServiceImplTest {
 
             service.confirm(new EmailVerificationConfirmDTO("token-em-claro"));
 
-            var captor = ArgumentCaptor.forClass(Owner.class);
-            verify(ownerRepository).save(captor.capture());
+            var captor = ArgumentCaptor.forClass(Person.class);
+            verify(personRepository).save(captor.capture());
             assertThat(captor.getValue().getEmailVerifiedAt()).isNotNull();
             assertThat(captor.getValue().podeReceberNotificacao()).isTrue();
 
@@ -205,7 +205,7 @@ class EmailVerificationServiceImplTest {
         @Test
         @DisplayName("deve recusar token expirado")
         void deveRecusarTokenExpirado() {
-            var expirado = tokenValido(owner());
+            var expirado = tokenValido(person());
             expirado.setExpiresAt(LocalDateTime.now().minusHours(1));
 
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
@@ -215,13 +215,13 @@ class EmailVerificationServiceImplTest {
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage(ErrorMessageEnum.VERIFICATION_TOKEN_NOT_FOUND.getMessage());
 
-            verify(ownerRepository, never()).save(any());
+            verify(personRepository, never()).save(any());
         }
 
         @Test
         @DisplayName("deve recusar token ja usado")
         void deveRecusarTokenJaUsado() {
-            var usado = tokenValido(owner());
+            var usado = tokenValido(person());
             usado.setUsedAt(LocalDateTime.now().minusMinutes(1));
 
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
@@ -231,7 +231,7 @@ class EmailVerificationServiceImplTest {
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage(ErrorMessageEnum.VERIFICATION_TOKEN_NOT_FOUND.getMessage());
 
-            verify(ownerRepository, never()).save(any());
+            verify(personRepository, never()).save(any());
         }
     }
 

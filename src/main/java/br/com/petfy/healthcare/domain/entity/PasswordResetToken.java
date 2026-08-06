@@ -26,8 +26,8 @@ public class PasswordResetToken {
     private UUID passwordResetTokenId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private Owner owner;
+    @JoinColumn(name = "person_id", nullable = false)
+    private Person person;
 
     /** Hash do token. O token em si nao e guardado - ver V11__password_reset.sql. */
     @Column(unique = true, nullable = false)

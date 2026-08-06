@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.security;
 
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
-import br.com.petfy.healthcare.domain.repository.VetRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,10 +23,7 @@ import static org.mockito.Mockito.when;
 class TokenFreshnessTest {
 
     @Mock
-    private OwnerRepository ownerRepository;
-
-    @Mock
-    private VetRepository vetRepository;
+    private PersonRepository personRepository;
 
     @InjectMocks
     private TokenFreshness tokenFreshness;
@@ -39,24 +36,24 @@ class TokenFreshnessTest {
         return momento.atZone(ZoneId.systemDefault()).toInstant();
     }
 
-    private JwtPrincipal owner(LocalDateTime emissao) {
-        return new JwtPrincipal(EMAIL, UserRole.OWNER, instante(emissao));
+    private JwtPrincipal person(LocalDateTime emissao) {
+        return new JwtPrincipal(EMAIL, instante(emissao));
     }
 
     @Test
     @DisplayName("token emitido antes da troca de senha deve ficar para tras")
     void tokenAnteriorDeveFicarParaTras() {
-        when(ownerRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.of(TROCA));
+        when(personRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.of(TROCA));
 
-        assertThat(tokenFreshness.isStale(owner(TROCA.minusMinutes(5)))).isTrue();
+        assertThat(tokenFreshness.isStale(person(TROCA.minusMinutes(5)))).isTrue();
     }
 
     @Test
     @DisplayName("token emitido depois da troca de senha deve seguir valendo")
     void tokenPosteriorDeveSeguirValendo() {
-        when(ownerRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.of(TROCA));
+        when(personRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.of(TROCA));
 
-        assertThat(tokenFreshness.isStale(owner(TROCA.plusSeconds(1)))).isFalse();
+        assertThat(tokenFreshness.isStale(person(TROCA.plusSeconds(1)))).isFalse();
     }
 
     /**
@@ -67,28 +64,36 @@ class TokenFreshnessTest {
     @Test
     @DisplayName("token do mesmo instante da troca deve ficar para tras, no lado seguro da duvida")
     void tokenDoMesmoInstanteDeveFicarParaTras() {
-        when(ownerRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.of(TROCA));
+        when(personRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.of(TROCA));
 
-        assertThat(tokenFreshness.isStale(owner(TROCA))).isTrue();
+        assertThat(tokenFreshness.isStale(person(TROCA))).isTrue();
     }
 
     @Test
     @DisplayName("quem nunca trocou de senha nao tem token a invalidar")
     void quemNuncaTrocouNaoTemTokenAInvalidar() {
-        when(ownerRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.empty());
+        when(personRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        assertThat(tokenFreshness.isStale(owner(TROCA.minusYears(1)))).isFalse();
+        assertThat(tokenFreshness.isStale(person(TROCA.minusYears(1)))).isFalse();
     }
 
+    /**
+     * O caso que existia aqui - "token de vet deve ser checado contra a tabela de
+     * vets, nao a de owners" - foi removido no P1b em vez de adaptado. Ele cobria
+     * uma ramificacao por papel que deixou de existir: ha uma tabela so, e escolher
+     * errado nao e mais um erro possivel. Reescreve-lo para passar seria manter um
+     * teste que nao protege nada e sugere cobertura que nao existe.
+     *
+     * O que sobrou dele esta abaixo: qualquer pessoa, com ou sem credencial
+     * profissional, passa pela mesma checagem.
+     */
     @Test
-    @DisplayName("token de vet deve ser checado contra a tabela de vets, nao a de owners")
-    void tokenDeVetDeveConsultarTabelaDeVets() {
-        when(vetRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.of(TROCA));
+    @DisplayName("a checagem nao depende de quem a pessoa e, e sim de quando o token saiu")
+    void checagemNaoDependeDeQuemAPessoaE() {
+        when(personRepository.findPasswordChangedAtByEmail(EMAIL)).thenReturn(Optional.of(TROCA));
 
-        var principal = new JwtPrincipal(EMAIL, UserRole.VET, instante(TROCA.minusMinutes(5)));
-
-        assertThat(tokenFreshness.isStale(principal)).isTrue();
-        verify(ownerRepository, never()).findPasswordChangedAtByEmail(EMAIL);
+        assertThat(tokenFreshness.isStale(person(TROCA.minusMinutes(5)))).isTrue();
+        assertThat(tokenFreshness.isStale(person(TROCA.plusMinutes(5)))).isFalse();
     }
 
 }

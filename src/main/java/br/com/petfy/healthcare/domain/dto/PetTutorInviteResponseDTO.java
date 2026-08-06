@@ -15,9 +15,9 @@ public class PetTutorInviteResponseDTO {
 
     private UUID petTutorInviteId;
 
-    private UUID petId;
+    private UUID animalId;
 
-    private String petName;
+    private String animalName;
 
     /**
      * Preenchido apenas na criacao. Nas listagens vem nulo, porque so o hash e
@@ -29,7 +29,7 @@ public class PetTutorInviteResponseDTO {
 
     private PetTutorRole role;
 
-    private String createdByOwnerName;
+    private String createdByPersonName;
 
     private LocalDateTime expiresAt;
 
@@ -39,7 +39,7 @@ public class PetTutorInviteResponseDTO {
 
     private boolean usable;
 
-    /** Explicito na resposta: aceitar este convite troca o titular do pet. */
+    /** Explicito na resposta: aceitar este convite troca o titular do animal. */
     private boolean transfersHolder;
 
 }

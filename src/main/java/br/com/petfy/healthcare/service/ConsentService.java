@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.dto.ConsentStatusResponseDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 
 /**
  * Registro de consentimento do titular.
@@ -17,7 +17,7 @@ public interface ConsentService {
      * cadastrar. Chamado de dentro da criacao de conta, na mesma transacao: conta
      * criada sem consentimento registrado seria exatamente a lacuna que isto fecha.
      */
-    void registrarAceiteNoCadastro(Owner owner);
+    void registrarAceiteNoCadastro(Person person);
 
     /** O que o titular autenticado ja aceitou, e o que falta aceitar. */
     ConsentStatusResponseDTO statusDoAutenticado();

@@ -2,10 +2,11 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.AccessActorType;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.SensitiveAccessLog;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
+import br.com.petfy.healthcare.security.ProfessionalContext;
 import br.com.petfy.healthcare.security.RequestEvidenceProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,10 +14,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 /**
- * Registra que um terceiro leu dado de saude de um pet.
+ * Registra que um terceiro leu dado de saude de um animal.
  *
  * <b>Falha aqui derruba a leitura, de proposito.</b> E o oposto da politica do
- * {@link br.com.petfy.healthcare.notification.ClinicActivityNotifier}, e a diferenca
+ * {@link br.com.petfy.healthcare.notification.OrganizationActivityNotifier}, e a diferenca
  * nao e descuido: la o efeito principal era o registro no historico e o aviso era
  * acessorio, entao perder o efeito por causa do acessorio seria trocar um problema
  * pequeno por um grande. Aqui o log <b>e</b> a garantia. Servir historico de saude
@@ -39,19 +40,24 @@ public class SensitiveAccessLogger {
     private final RequestEvidenceProvider requestEvidenceProvider;
 
     /**
-     * Veterinario leu um recurso do pet.
+     * Veterinario leu um recurso do animal.
      *
      * Guarda o nome do veterinario e o da clinica no momento do acesso. A clinica
      * importa porque foi ela que o tutor autorizou - a pessoa que abriu e uma
      * consequencia dessa autorizacao, nao o objeto dela.
      */
-    public void vetLeu(Vet vet, Pet pet, AccessedResource recurso) {
+    public void vetLeu(ProfessionalContext contexto, Animal animal, AccessedResource recurso) {
         registrar(SensitiveAccessLog.builder()
-                .pet(pet)
+                .animal(animal)
                 .actorType(AccessActorType.VET)
-                .actorId(vet.getVetId())
-                .actorName(vet.getName())
-                .clinicName(vet.getClinic() != null ? vet.getClinic().getName() : null)
+                .actorId(contexto.person().getPersonId())
+                .actorName(contexto.person().getName())
+                // nulo no autonomo, e isso e o registro correto: nao houve organizacao
+                // autorizada, houve uma pessoa. Inventar um nome aqui contaria ao tutor
+                // que uma instituicao leu o historico quando nao leu
+                .organizationName(contexto.organizacao()
+                        .map(br.com.petfy.healthcare.domain.entity.Organization::getName)
+                        .orElse(null))
                 .resource(recurso));
     }
 
@@ -63,9 +69,9 @@ public class SensitiveAccessLogger {
      * sem o IP, dois acessos pelo mesmo link sao indistinguiveis, e o tutor nao tem
      * como decidir se revoga.
      */
-    public void linkPublicoAberto(Pet pet) {
+    public void linkPublicoAberto(Animal animal) {
         registrar(SensitiveAccessLog.builder()
-                .pet(pet)
+                .animal(animal)
                 .actorType(AccessActorType.SHARE_LINK)
                 .resource(AccessedResource.SHARED_CARD));
     }

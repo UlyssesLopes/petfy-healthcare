@@ -16,29 +16,29 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 /**
- * Quem, de fora, leu o dado de saude deste pet.
+ * Quem, de fora, leu o dado de saude deste animal.
  *
  * Ate aqui havia rastro de escrita e nenhum de leitura: um veterinario podia abrir o
  * historico completo e o tutor nunca saberia. Registra acesso de terceiro - clinica
  * autorizada e link publico -, nao a leitura do proprio tutor nem a dos co-tutores.
  */
 @RestController
-@RequestMapping("/pets/{petId}/access-log")
+@RequestMapping("/animals/{animalId}/access-log")
 @RequiredArgsConstructor
 public class SensitiveAccessLogController {
 
     private final SensitiveAccessLogService sensitiveAccessLogService;
 
-    @Operation(summary = "Acessos de terceiros ao dado de saude do pet",
+    @Operation(summary = "Acessos de terceiros ao dado de saude do animal",
                description = "Do mais recente para o mais antigo. Inclui leitura por veterinario de "
                              + "clinica autorizada e abertura do link publico de carteira. Leitura do "
                              + "proprio tutor e dos co-tutores nao entra - o log responde 'quem MAIS viu "
                              + "isto', e a resposta nao inclui quem pergunta.")
     @GetMapping
-    public ResponseEntity<Page<SensitiveAccessLogResponseDTO>> listByPet(
-            @PathVariable UUID petId,
+    public ResponseEntity<Page<SensitiveAccessLogResponseDTO>> listByAnimal(
+            @PathVariable UUID animalId,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(sensitiveAccessLogService.listByPet(petId, pageable));
+        return ResponseEntity.ok(sensitiveAccessLogService.listByAnimal(animalId, pageable));
     }
 
 }

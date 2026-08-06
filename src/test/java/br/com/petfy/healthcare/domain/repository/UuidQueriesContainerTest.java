@@ -1,19 +1,22 @@
 package br.com.petfy.healthcare.domain.repository;
 
-import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
-import br.com.petfy.healthcare.PostgresContainerTest;
-import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
+import br.com.petfy.healthcare.domain.entity.Membership;
+import br.com.petfy.healthcare.domain.entity.MembershipRole;
+import br.com.petfy.healthcare.PostgresContainerTest;
+import br.com.petfy.healthcare.domain.entity.Organization;
+import br.com.petfy.healthcare.domain.entity.HealthRecord;
+import br.com.petfy.healthcare.domain.entity.Grant;
+import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
+import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.Species;
-import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
-import br.com.petfy.healthcare.domain.entity.PetShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
-import br.com.petfy.healthcare.domain.entity.Vet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -43,69 +46,86 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class UuidQueriesContainerTest extends PostgresContainerTest {
 
-    @Autowired private OwnerRepository ownerRepository;
-    @Autowired private PetRepository petRepository;
-    @Autowired private PetTutorRepository petTutorRepository;
-    @Autowired private ClinicRepository clinicRepository;
+    @Autowired private PersonRepository personRepository;
+    @Autowired private AnimalRepository animalRepository;
+    @Autowired private CustodyRepository custodyRepository;
+    @Autowired private OrganizationRepository organizationRepository;
+    @Autowired private MembershipRepository membershipRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
-    @Autowired private PetShareRepository petShareRepository;
-    @Autowired private VetRepository vetRepository;
-    @Autowired private PetClinicAccessRepository petClinicAccessRepository;
-    @Autowired private ClinicInviteRepository clinicInviteRepository;
+    @Autowired private GrantRepository grantRepository;
+    @Autowired private OrganizationInviteRepository organizationInviteRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
 
-    private Owner ulysses;
-    private Owner maria;
-    private Pet rex;
-    private Pet nina;
-    private Clinic bichoFeliz;
-    private Vet marina;
+    private Person ulysses;
+    private Person maria;
+    private Animal rex;
+    private Animal nina;
+    private Organization bichoFeliz;
+
+    /**
+     * Escopo minimo para as concessoes deste teste.
+     *
+     * Nao vazio de proposito: escopo vazio e um acesso que nao alcanca nada, e a
+     * entidade trata isso como negacao. Um teste que gravasse concessao sem escopo
+     * estaria exercitando um estado que o produto nao quer produzir.
+     */
+    private static java.util.Set<GrantScope> escopoCarteira() {
+        return new java.util.LinkedHashSet<>(java.util.Set.of(GrantScope.CARTEIRA));
+    }
+    private Person marina;
 
     @BeforeEach
     void setUp() {
-        ulysses = ownerRepository.save(Owner.builder()
+        ulysses = personRepository.save(Person.builder()
                 .name("Ulysses").email("ulysses-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash").build());
-        maria = ownerRepository.save(Owner.builder()
+        maria = personRepository.save(Person.builder()
                 .name("Maria").email("maria-" + UUID.randomUUID() + "@petfy.com.br")
                 .password("hash").build());
 
-        rex = petComTitular("Rex", ulysses);
-        nina = petComTitular("Nina", maria);
+        rex = animalComTitular("Rex", ulysses);
+        nina = animalComTitular("Nina", maria);
 
-        bichoFeliz = clinicRepository.save(Clinic.builder().name("Clinica Bicho Feliz").build());
+        bichoFeliz = organizationRepository.save(Organization.builder().name("Clinica Bicho Feliz").build());
 
-        marina = vetRepository.save(Vet.builder()
+        marina = personRepository.save(Person.builder()
                 .name("Dra. Marina").email("marina-" + UUID.randomUUID() + "@vet.com.br")
-                .password("hash").clinic(bichoFeliz).build());
+                .password("hash").build());
+
+        // o vinculo e uma linha propria desde o P3b: a pessoa esta na organizacao, e nao
+        // pertence a ela. Gravar so em memoria deixaria a consulta por membro vazia -
+        // mesma armadilha que a colecao de tutores tinha antes da V15
+        membershipRepository.save(Membership.builder()
+                .person(marina).organization(bichoFeliz).role(MembershipRole.VETERINARIO)
+                .joinedAt(LocalDateTime.now()).build());
     }
 
     /**
-     * O pet e o vinculo sao gravados em duas chamadas, como em
-     * {@code PetServiceImpl.createPet}: {@code Pet.tutors} e {@code mappedBy} sem
-     * cascade, entao salvar o pet nao grava tutor nenhum. Montar o vinculo so em
-     * memoria - o que a suite fazia enquanto {@code Pet} tinha {@code owner} -
+     * O animal e o vinculo sao gravados em duas chamadas, como em
+     * {@code AnimalServiceImpl.createAnimal}: {@code Animal.tutors} e {@code mappedBy} sem
+     * cascade, entao salvar o animal nao grava tutor nenhum. Montar o vinculo so em
+     * memoria - o que a suite fazia enquanto {@code Animal} tinha {@code person} -
      * deixaria toda consulta por tutor voltando vazia, e o teste diria que o
      * escopo por dono nao traz nada quando o que falta e a linha no banco.
      */
-    private Pet petComTitular(String nome, Owner titular) {
-        Pet pet = petRepository.save(Pet.builder().name(nome).species(Species.CANINA).build());
+    private Animal animalComTitular(String nome, Person titular) {
+        Animal animal = animalRepository.save(Animal.builder().name(nome).species(Species.CANINA).build());
 
-        PetTutor vinculo = petTutorRepository.save(PetTutor.builder()
-                .pet(pet)
-                .owner(titular)
-                .role(PetTutorRole.HOLDER)
-                .creationDate(LocalDateTime.now())
+        Custody custodia = custodyRepository.save(Custody.builder()
+                .animal(animal)
+                .holderPerson(titular)
+                .nature(CustodyNature.DEFINITIVA)
+                .startedAt(LocalDateTime.now())
                 .build());
 
-        pet.setTutors(new ArrayList<>(List.of(vinculo)));
-        return pet;
+        animal.setCustodies(new ArrayList<>(List.of(custodia)));
+        return animal;
     }
 
-    private Vaccine vacina(Pet pet, String nome, LocalDate proximaDose) {
+    private Vaccine vacina(Animal animal, String nome, LocalDate proximaDose) {
         return vaccineRepository.save(Vaccine.builder()
-                .pet(pet).vaccineName(nome)
+                .animal(animal).vaccineName(nome)
                 .applicationDate(LocalDate.now().minusYears(1))
                 .nextDoseDate(proximaDose).build());
     }
@@ -115,102 +135,108 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     class EscopoPorDono {
 
         @Test
-        @DisplayName("pets devem ser filtrados pelo dono, sem vazar os do outro")
-        void petsFiltradosPeloDono() {
-            var doUlysses = petRepository.findByTutorsOwnerOwnerId(ulysses.getOwnerId());
+        @DisplayName("animals devem ser filtrados pelo dono, sem vazar os do outro")
+        void animalsFiltradosPeloDono() {
+            var doUlysses = animalRepository.findAlcancadosPor(ulysses.getPersonId(), java.time.LocalDateTime.now());
 
-            assertThat(doUlysses).extracting(Pet::getName).containsExactly("Rex");
-            assertThat(petRepository.findByTutorsOwnerOwnerId(maria.getOwnerId()))
-                    .extracting(Pet::getName).containsExactly("Nina");
+            assertThat(doUlysses).extracting(Animal::getName).containsExactly("Rex");
+            assertThat(animalRepository.findAlcancadosPor(maria.getPersonId(), java.time.LocalDateTime.now()))
+                    .extracting(Animal::getName).containsExactly("Nina");
         }
 
         /**
-         * O caso que so passa a existir depois da V15: o mesmo pet aparece para os
-         * dois tutores, e nenhum dos dois alcanca o pet de terceiro. E a promessa
+         * O caso que so passa a existir depois da V15: o mesmo animal aparece para os
+         * dois tutores, e nenhum dos dois alcanca o animal de terceiro. E a promessa
          * do passo 8 verificada contra o Postgres, e nao contra mock.
          */
         @Test
-        @DisplayName("pet com dois tutores aparece para os dois, e para mais ninguem")
-        void petCompartilhadoApareceParaOsDoisTutores() {
-            petTutorRepository.save(PetTutor.builder()
-                    .pet(rex).owner(maria).role(PetTutorRole.EDITOR)
-                    .invitedBy(ulysses).creationDate(LocalDateTime.now()).build());
+        @DisplayName("animal com dois tutores aparece para os dois, e para mais ninguem")
+        void animalCompartilhadoApareceParaOsDoisTutores() {
+            // maria alcanca o Rex por concessao, nao por custodia: depois do P2b sao duas
+            // tabelas, e a consulta de "meus animais" tem de cobrir as duas
+            grantRepository.save(Grant.builder()
+                    .animal(rex).granteePerson(maria).level(GrantLevel.EDITOR)
+                    .scopes(escopoCarteira()).grantedBy(ulysses)
+                    .grantedAt(LocalDateTime.now()).build());
 
-            assertThat(petRepository.findByTutorsOwnerOwnerId(ulysses.getOwnerId()))
-                    .extracting(Pet::getName).containsExactly("Rex");
-            assertThat(petRepository.findByTutorsOwnerOwnerId(maria.getOwnerId()))
-                    .extracting(Pet::getName).containsExactlyInAnyOrder("Rex", "Nina");
+            assertThat(animalRepository.findAlcancadosPor(ulysses.getPersonId(), java.time.LocalDateTime.now()))
+                    .extracting(Animal::getName).containsExactly("Rex");
+            assertThat(animalRepository.findAlcancadosPor(maria.getPersonId(), java.time.LocalDateTime.now()))
+                    .extracting(Animal::getName).containsExactlyInAnyOrder("Rex", "Nina");
 
-            var estranho = ownerRepository.save(Owner.builder()
+            var estranho = personRepository.save(Person.builder()
                     .name("Estranho").email("estranho-" + UUID.randomUUID() + "@petfy.com.br")
                     .password("hash").build());
-            assertThat(petRepository.findByTutorsOwnerOwnerId(estranho.getOwnerId())).isEmpty();
+            assertThat(animalRepository.findAlcancadosPor(estranho.getPersonId(), java.time.LocalDateTime.now())).isEmpty();
         }
 
-        /** O co-tutor EDITOR ve a carteira do pet compartilhado, nao so o cadastro. */
+        /** O co-tutor EDITOR ve a carteira do animal compartilhado, nao so o cadastro. */
         @Test
-        @DisplayName("vacinas do pet compartilhado aparecem para o co-tutor")
-        void vacinasDoPetCompartilhadoAparecemParaOCoTutor() {
-            petTutorRepository.save(PetTutor.builder()
-                    .pet(rex).owner(maria).role(PetTutorRole.EDITOR)
-                    .invitedBy(ulysses).creationDate(LocalDateTime.now()).build());
+        @DisplayName("vacinas do animal compartilhado aparecem para o co-tutor")
+        void vacinasDoAnimalCompartilhadoAparecemParaOCoTutor() {
+            // maria alcanca o Rex por concessao, nao por custodia: depois do P2b sao duas
+            // tabelas, e a consulta de "meus animais" tem de cobrir as duas
+            grantRepository.save(Grant.builder()
+                    .animal(rex).granteePerson(maria).level(GrantLevel.EDITOR)
+                    .scopes(escopoCarteira()).grantedBy(ulysses)
+                    .grantedAt(LocalDateTime.now()).build());
             vacina(rex, "V10", LocalDate.now().plusDays(10));
 
-            assertThat(vaccineRepository.findByPetTutorsOwnerOwnerId(maria.getOwnerId()))
+            assertThat(vaccineRepository.findAlcancadasPor(maria.getPersonId(), java.time.LocalDateTime.now()))
                     .extracting(Vaccine::getVaccineName).containsExactly("V10");
         }
 
         @Test
-        @DisplayName("vacinas devem ser filtradas pelo dono do pet")
-        void vacinasFiltradasPeloDonoDoPet() {
+        @DisplayName("vacinas devem ser filtradas pelo dono do animal")
+        void vacinasFiltradasPeloDonoDoAnimal() {
             vacina(rex, "V10", LocalDate.now().plusDays(10));
             vacina(nina, "V8", LocalDate.now().plusDays(10));
 
-            assertThat(vaccineRepository.findByPetTutorsOwnerOwnerId(ulysses.getOwnerId()))
+            assertThat(vaccineRepository.findAlcancadasPor(ulysses.getPersonId(), java.time.LocalDateTime.now()))
                     .extracting(Vaccine::getVaccineName).containsExactly("V10");
         }
 
         @Test
-        @DisplayName("historico deve ser filtrado pelo dono do pet, do mais recente ao mais antigo")
+        @DisplayName("historico deve ser filtrado pelo dono do animal, do mais recente ao mais antigo")
         void historicoFiltradoEOrdenado() {
             healthRecordRepository.save(HealthRecord.builder()
                     .category(HealthEventCategory.CONSULTA)
-                    .pet(rex).eventType("Antiga").eventDate(LocalDate.now().minusDays(30)).build());
+                    .animal(rex).eventType("Antiga").eventDate(LocalDate.now().minusDays(30)).build());
             healthRecordRepository.save(HealthRecord.builder()
                     .category(HealthEventCategory.CONSULTA)
-                    .pet(rex).eventType("Recente").eventDate(LocalDate.now().minusDays(1)).build());
+                    .animal(rex).eventType("Recente").eventDate(LocalDate.now().minusDays(1)).build());
             healthRecordRepository.save(HealthRecord.builder()
                     .category(HealthEventCategory.CONSULTA)
-                    .pet(nina).eventType("De outro dono").eventDate(LocalDate.now()).build());
+                    .animal(nina).eventType("De outro dono").eventDate(LocalDate.now()).build());
 
-            assertThat(healthRecordRepository.findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(ulysses.getOwnerId()))
+            assertThat(healthRecordRepository.findAlcancadosPor(ulysses.getPersonId(), java.time.LocalDateTime.now()))
                     .extracting(HealthRecord::getEventType)
                     .containsExactly("Recente", "Antiga");
         }
 
         @Test
-        @DisplayName("historico por pet deve trazer so o daquele pet")
-        void historicoPorPet() {
+        @DisplayName("historico por animal deve trazer so o daquele animal")
+        void historicoPorAnimal() {
             healthRecordRepository.save(HealthRecord.builder()
                     .category(HealthEventCategory.CONSULTA)
-                    .pet(rex).eventType("Consulta").eventDate(LocalDate.now()).build());
+                    .animal(rex).eventType("Consulta").eventDate(LocalDate.now()).build());
             healthRecordRepository.save(HealthRecord.builder()
                     .category(HealthEventCategory.CONSULTA)
-                    .pet(nina).eventType("Cirurgia").eventDate(LocalDate.now()).build());
+                    .animal(nina).eventType("Cirurgia").eventDate(LocalDate.now()).build());
 
-            assertThat(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(rex.getPetId()))
+            assertThat(healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(rex.getAnimalId()))
                     .extracting(HealthRecord::getEventType).containsExactly("Consulta");
         }
 
         @Test
-        @DisplayName("vacinas por pet devem vir da mais recente para a mais antiga")
-        void vacinasPorPetOrdenadas() {
-            vaccineRepository.save(Vaccine.builder().pet(rex).vaccineName("Antiga")
+        @DisplayName("vacinas por animal devem vir da mais recente para a mais antiga")
+        void vacinasPorAnimalOrdenadas() {
+            vaccineRepository.save(Vaccine.builder().animal(rex).vaccineName("Antiga")
                     .applicationDate(LocalDate.now().minusYears(2)).build());
-            vaccineRepository.save(Vaccine.builder().pet(rex).vaccineName("Recente")
+            vaccineRepository.save(Vaccine.builder().animal(rex).vaccineName("Recente")
                     .applicationDate(LocalDate.now().minusDays(5)).build());
 
-            assertThat(vaccineRepository.findByPetPetIdOrderByApplicationDateDesc(rex.getPetId()))
+            assertThat(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(rex.getAnimalId()))
                     .extracting(Vaccine::getVaccineName).containsExactly("Recente", "Antiga");
         }
     }
@@ -220,45 +246,45 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     class AcessoDoVeterinario {
 
         @Test
-        @DisplayName("concessao deve ser encontrada pelo par pet e clinica")
+        @DisplayName("concessao deve ser encontrada pelo par animal e clinica")
         void concessaoEncontradaPeloPar() {
-            petClinicAccessRepository.save(PetClinicAccess.builder()
-                    .pet(rex).clinic(bichoFeliz).grantedAt(LocalDateTime.now()).build());
+            grantRepository.save(Grant.builder()
+                    .animal(rex).granteeOrganization(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
 
-            assertThat(petClinicAccessRepository
-                    .findByPetPetIdAndClinicClinicId(rex.getPetId(), bichoFeliz.getClinicId()))
+            assertThat(grantRepository
+                    .findVigenteDaClinicaNoAnimal(rex.getAnimalId(), bichoFeliz.getOrganizationId(), LocalDateTime.now()))
                     .isPresent();
 
-            assertThat(petClinicAccessRepository
-                    .findByPetPetIdAndClinicClinicId(nina.getPetId(), bichoFeliz.getClinicId()))
+            assertThat(grantRepository
+                    .findVigenteDaClinicaNoAnimal(nina.getAnimalId(), bichoFeliz.getOrganizationId(), LocalDateTime.now()))
                     .isEmpty();
         }
 
         @Test
-        @DisplayName("a clinica deve enxergar so os pets com concessao ativa")
+        @DisplayName("a clinica deve enxergar so os animals com concessao ativa")
         void clinicaEnxergaApenasConcessoesAtivas() {
-            petClinicAccessRepository.save(PetClinicAccess.builder()
-                    .pet(rex).clinic(bichoFeliz).grantedAt(LocalDateTime.now()).build());
-            petClinicAccessRepository.save(PetClinicAccess.builder()
-                    .pet(nina).clinic(bichoFeliz).grantedAt(LocalDateTime.now())
+            grantRepository.save(Grant.builder()
+                    .animal(rex).granteeOrganization(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
+            grantRepository.save(Grant.builder()
+                    .animal(nina).granteeOrganization(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now())
                     .revokedAt(LocalDateTime.now()).build());
 
-            assertThat(petClinicAccessRepository
-                    .findByClinicClinicIdAndRevokedAtIsNull(bichoFeliz.getClinicId()))
-                    .extracting(a -> a.getPet().getName())
+            assertThat(grantRepository
+                    .findVigentesDaClinica(bichoFeliz.getOrganizationId(), LocalDateTime.now()))
+                    .extracting(a -> a.getAnimal().getName())
                     .containsExactly("Rex");
         }
 
         @Test
         @DisplayName("convites devem ser filtrados pela clinica")
         void convitesFiltradosPelaClinica() {
-            clinicInviteRepository.save(br.com.petfy.healthcare.domain.entity.ClinicInvite.builder()
-                    .clinic(bichoFeliz).createdBy(marina).tokenHash("hash-" + UUID.randomUUID())
+            organizationInviteRepository.save(br.com.petfy.healthcare.domain.entity.OrganizationInvite.builder()
+                    .organization(bichoFeliz).createdBy(marina).tokenHash("hash-" + UUID.randomUUID())
                     .expiresAt(LocalDateTime.now().plusDays(7))
-                    .creationDate(LocalDateTime.now()).build());
+                    .build());
 
-            assertThat(clinicInviteRepository
-                    .findByClinicClinicIdOrderByCreationDateDesc(bichoFeliz.getClinicId()))
+            assertThat(organizationInviteRepository
+                    .findByOrganizationOrganizationIdOrderByCreationDateDesc(bichoFeliz.getOrganizationId()))
                     .hasSize(1);
         }
     }
@@ -271,34 +297,34 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @DisplayName("link de compartilhamento deve ser encontrado pelo hash do token")
         void linkEncontradoPeloHash() {
             var hash = "hash-" + UUID.randomUUID();
-            petShareRepository.save(PetShare.builder()
-                    .pet(rex).tokenHash(hash)
+            grantRepository.save(Grant.builder()
+                    .animal(rex).tokenHash(hash).level(GrantLevel.VIEWER).scopes(escopoCarteira()).grantedAt(LocalDateTime.now())
                     .expiresAt(LocalDateTime.now().plusDays(30))
-                    .creationDate(LocalDateTime.now()).build());
+                    .build());
 
-            assertThat(petShareRepository.findByTokenHash(hash)).isPresent();
-            assertThat(petShareRepository.findByTokenHash("outro-hash")).isEmpty();
+            assertThat(grantRepository.findByTokenHash(hash)).isPresent();
+            assertThat(grantRepository.findByTokenHash("outro-hash")).isEmpty();
         }
 
         @Test
-        @DisplayName("links devem ser filtrados pelo pet")
-        void linksFiltradosPeloPet() {
-            petShareRepository.save(PetShare.builder()
-                    .pet(rex).tokenHash("hash-" + UUID.randomUUID())
+        @DisplayName("links devem ser filtrados pelo animal")
+        void linksFiltradosPeloAnimal() {
+            grantRepository.save(Grant.builder()
+                    .animal(rex).tokenHash("hash-" + UUID.randomUUID()).level(GrantLevel.VIEWER).scopes(escopoCarteira()).grantedAt(LocalDateTime.now())
                     .expiresAt(LocalDateTime.now().plusDays(30))
-                    .creationDate(LocalDateTime.now()).build());
+                    .build());
 
-            assertThat(petShareRepository.findByPetOrderByCreationDateDesc(rex)).hasSize(1);
-            assertThat(petShareRepository.findByPetOrderByCreationDateDesc(nina)).isEmpty();
+            assertThat(grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(rex.getAnimalId())).hasSize(1);
+            assertThat(grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(nina.getAnimalId())).isEmpty();
         }
 
         @Test
         @DisplayName("tutor e veterinario devem ser encontrados por email - a base do login")
         void loginEncontraTutorEVeterinario() {
-            assertThat(ownerRepository.findByEmail(ulysses.getEmail())).isPresent();
-            assertThat(vetRepository.findByEmail(marina.getEmail())).isPresent();
-            assertThat(vetRepository.existsByEmail(marina.getEmail())).isTrue();
-            assertThat(ownerRepository.findByEmail("ninguem@petfy.com.br")).isEmpty();
+            assertThat(personRepository.findByEmail(ulysses.getEmail())).isPresent();
+            assertThat(personRepository.findByEmail(marina.getEmail())).isPresent();
+            assertThat(personRepository.existsByEmail(marina.getEmail())).isTrue();
+            assertThat(personRepository.findByEmail("ninguem@petfy.com.br")).isEmpty();
         }
     }
 
@@ -325,13 +351,13 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
             var outra = vacina(rex, "V8", LocalDate.now().plusDays(10));
 
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(vacina).correctedByOwner(ulysses).previousVaccineName("Antiga")
+                    .vaccine(vacina).correctedBy(ulysses).previousVaccineName("Antiga")
                     .correctedAt(LocalDateTime.now().minusDays(2)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(vacina).correctedByVet(marina).previousVaccineName("Recente")
+                    .vaccine(vacina).correctedBy(marina).correctedInOrganization(bichoFeliz).previousVaccineName("Recente")
                     .correctedAt(LocalDateTime.now().minusHours(1)).build());
             vaccineCorrectionRepository.save(VaccineCorrection.builder()
-                    .vaccine(outra).correctedByOwner(ulysses).previousVaccineName("De outra vacina")
+                    .vaccine(outra).correctedBy(ulysses).previousVaccineName("De outra vacina")
                     .correctedAt(LocalDateTime.now()).build());
 
             assertThat(vaccineCorrectionRepository

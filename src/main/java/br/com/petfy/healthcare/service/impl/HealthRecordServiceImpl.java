@@ -3,14 +3,14 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
-import br.com.petfy.healthcare.domain.entity.Clinic;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Pet;
-import br.com.petfy.healthcare.domain.repository.ClinicRepository;
+import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
+import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.HealthRecordService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -32,22 +32,22 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
     private final HealthRecordRepository healthRecordRepository;
 
-    private final ClinicRepository clinicRepository;
+    private final OrganizationRepository organizationRepository;
 
-    private final CurrentOwnerProvider currentOwnerProvider;
-    private final PetAccessGuard petAccessGuard;
+    private final CurrentPersonProvider currentPersonProvider;
+    private final AnimalAccessGuard animalAccessGuard;
 
     private final HealthRecordCorrectionLog healthRecordCorrectionLog;
 
     @Override
     public HealthRecordResponseDTO createHealthRecord(HealthRecordRequestDTO request) {
-        Pet pet = findPet(request.getPetId());
+        Animal animal = findAnimal(request.getAnimalId());
 
-        Clinic clinic = request.getClinicId() != null ? findClinic(request.getClinicId()) : null;
+        Organization organization = request.getOrganizationId() != null ? findOrganization(request.getOrganizationId()) : null;
 
         HealthRecord healthRecord = HealthRecord.builder()
-                .pet(pet)
-                .clinic(clinic)
+                .animal(animal)
+                .organization(organization)
                 .eventType(request.getEventType())
                 .category(request.getCategory())
                 .diagnosis(request.getDiagnosis())
@@ -67,22 +67,22 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     @Override
     public Page<HealthRecordResponseDTO> listAllHealthRecords(Pageable pageable) {
         return healthRecordRepository
-                .findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(currentOwnerProvider.require().getOwnerId(), pageable)
+                .findAlcancadosPor(currentPersonProvider.require().getPersonId(), LocalDateTime.now(), pageable)
                 .map(this::toResponse);
     }
 
     /**
      * Ler o historico e leitura: o tutor VIEWER acompanha o que aconteceu com o
-     * pet sem poder lancar atendimento. Exigir EDITOR aqui deixaria de fora
+     * animal sem poder lancar atendimento. Exigir EDITOR aqui deixaria de fora
      * justamente quem so olha.
      */
     @Override
-    public List<HealthRecordResponseDTO> listHealthRecordsByPet(UUID petId) {
-        // valida o pet primeiro para diferenciar "pet nao existe" de
-        // "pet existe e ainda nao tem historico"
-        petAccessGuard.requireLeitura(petId);
+    public List<HealthRecordResponseDTO> listHealthRecordsByAnimal(UUID animalId) {
+        // valida o animal primeiro para diferenciar "animal nao existe" de
+        // "animal existe e ainda nao tem historico"
+        animalAccessGuard.requireLeitura(animalId);
 
-        return healthRecordRepository.findByPetPetIdOrderByEventDateDesc(petId)
+        return healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(animalId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -93,9 +93,9 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         HealthRecord existing = buscarAlcancavel(healthRecordId);
 
         // o snapshot sai antes dos setters. O tutor nao tem janela - o historico e
-        // do pet dele - mas deixa rastro igual, senao a auditoria contaria meia
+        // do animal dele - mas deixa rastro igual, senao a auditoria contaria meia
         // verdade e daria impressao de completude
-        healthRecordCorrectionLog.recordByOwner(existing, currentOwnerProvider.require());
+        healthRecordCorrectionLog.recordByPerson(existing, currentPersonProvider.require());
 
         if (request.getEventType() != null) existing.setEventType(request.getEventType());
         if (request.getCategory() != null) existing.setCategory(request.getCategory());
@@ -103,12 +103,12 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         if (request.getEventDate() != null) existing.setEventDate(request.getEventDate());
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
-        if (request.getPetId() != null) {
-            existing.setPet(findPet(request.getPetId()));
+        if (request.getAnimalId() != null) {
+            existing.setAnimal(findAnimal(request.getAnimalId()));
         }
 
-        if (request.getClinicId() != null) {
-            existing.setClinic(findClinic(request.getClinicId()));
+        if (request.getOrganizationId() != null) {
+            existing.setOrganization(findOrganization(request.getOrganizationId()));
         }
 
         existing.setUpdateDate(LocalDateTime.now());
@@ -131,27 +131,27 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     }
 
     /**
-     * Registro de pet fora do alcance responde HEALTH_RECORD_NOT_FOUND, e nao
+     * Registro de animal fora do alcance responde HEALTH_RECORD_NOT_FOUND, e nao
      * 403: um 403 confirmaria que aquele id existe.
      *
-     * Basta alcancar o pet em qualquer papel - ler o proprio registro e leitura.
+     * Basta alcancar o animal em qualquer papel - ler o proprio registro e leitura.
      */
     private HealthRecord buscarAlcancavel(UUID healthRecordId) {
         return healthRecordRepository.findById(healthRecordId)
-                .filter(registro -> petAccessGuard.alcanca(registro.getPet().getPetId()))
+                .filter(registro -> animalAccessGuard.alcanca(registro.getAnimal().getAnimalId()))
                 .orElseThrow(this::notFound);
     }
 
     /**
      * Registrar atendimento no historico de saude e escrita, entao exige EDITOR.
-     * Pet inalcancavel e indistinguivel de pet inexistente - ver PetAccessGuard.
+     * Animal inalcancavel e indistinguivel de animal inexistente - ver AnimalAccessGuard.
      */
-    private Pet findPet(UUID petId) {
-        return petAccessGuard.requireEscrita(petId);
+    private Animal findAnimal(UUID animalId) {
+        return animalAccessGuard.requireEscrita(animalId);
     }
 
-    private Clinic findClinic(UUID clinicId) {
-        return clinicRepository.findById(clinicId)
+    private Organization findOrganization(UUID organizationId) {
+        return organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(), ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND));
     }
 
@@ -167,8 +167,8 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 .diagnosis(healthRecord.getDiagnosis())
                 .eventDate(healthRecord.getEventDate())
                 .description(healthRecord.getDescription())
-                .petId(healthRecord.getPet().getPetId())
-                .clinicId(healthRecord.getClinic() != null ? healthRecord.getClinic().getClinicId() : null)
+                .animalId(healthRecord.getAnimal().getAnimalId())
+                .organizationId(healthRecord.getOrganization() != null ? healthRecord.getOrganization().getOrganizationId() : null)
                 .creationDate(healthRecord.getCreationDate())
                 .updateDate(healthRecord.getUpdateDate())
                 .build();

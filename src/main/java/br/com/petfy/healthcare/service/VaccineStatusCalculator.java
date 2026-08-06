@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 /**
  * Regra de "esta dose esta em dia?", usada pela agenda do tutor e pela carteira
- * compartilhada. Fica separada para que as duas nao divirjam: um pet nao pode
+ * compartilhada. Fica separada para que as duas nao divirjam: um animal nao pode
  * aparecer em dia num lugar e atrasado no outro.
  */
 @Component

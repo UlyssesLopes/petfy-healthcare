@@ -3,9 +3,9 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.ConsentStatusResponseDTO;
 import br.com.petfy.healthcare.domain.entity.ConsentDocument;
 import br.com.petfy.healthcare.domain.entity.ConsentRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.RequestEvidenceProvider;
 import br.com.petfy.healthcare.service.ConsentService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import java.util.UUID;
 public class ConsentServiceImpl implements ConsentService {
 
     private final ConsentRecordRepository consentRecordRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final CurrentPersonProvider currentPersonProvider;
     private final RequestEvidenceProvider requestEvidenceProvider;
 
     /**
@@ -46,28 +46,28 @@ public class ConsentServiceImpl implements ConsentService {
 
     @Override
     @Transactional
-    public void registrarAceiteNoCadastro(Owner owner) {
-        gravarVigentes(owner);
+    public void registrarAceiteNoCadastro(Person person) {
+        gravarVigentes(person);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ConsentStatusResponseDTO statusDoAutenticado() {
-        Owner owner = currentOwnerProvider.require();
+        Person person = currentPersonProvider.require();
 
         return montarStatus(consentRecordRepository
-                .findByOwnerOwnerIdOrderByAcceptedAtDesc(owner.getOwnerId()));
+                .findByPersonPersonIdOrderByAcceptedAtDesc(person.getPersonId()));
     }
 
     @Override
     @Transactional
     public ConsentStatusResponseDTO aceitarVigentes() {
-        Owner owner = currentOwnerProvider.require();
+        Person person = currentPersonProvider.require();
 
-        gravarVigentes(owner);
+        gravarVigentes(person);
 
         return montarStatus(consentRecordRepository
-                .findByOwnerOwnerIdOrderByAcceptedAtDesc(owner.getOwnerId()));
+                .findByPersonPersonIdOrderByAcceptedAtDesc(person.getPersonId()));
     }
 
     /**
@@ -75,24 +75,24 @@ public class ConsentServiceImpl implements ConsentService {
      * naquela versao.
      *
      * Repetir o aceite da mesma versao e no-op, e nao erro: o cliente pode reenviar
-     * por perda de resposta, e a chave unica (owner, documento, versao) recusaria a
+     * por perda de resposta, e a chave unica (person, documento, versao) recusaria a
      * segunda linha com 500. O primeiro aceite e o que vale - e a data dele que
      * interessa a uma auditoria.
      */
-    private void gravarVigentes(Owner owner) {
+    private void gravarVigentes(Person person) {
         String ip = requestEvidenceProvider.ip();
         String userAgent = requestEvidenceProvider.userAgent();
 
         vigentes().forEach((documento, versao) -> {
             boolean jaAceito = consentRecordRepository
-                    .existsByOwnerOwnerIdAndDocumentAndDocumentVersion(owner.getOwnerId(), documento, versao);
+                    .existsByPersonPersonIdAndDocumentAndDocumentVersion(person.getPersonId(), documento, versao);
 
             if (jaAceito) {
                 return;
             }
 
             consentRecordRepository.save(ConsentRecord.builder()
-                    .owner(owner)
+                    .person(person)
                     .document(documento)
                     .documentVersion(versao)
                     .acceptedAt(LocalDateTime.now())

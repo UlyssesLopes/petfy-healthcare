@@ -60,14 +60,14 @@ class RateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("apos esgotar o limite, /owners responde 429")
-    void ownersResponde429() throws Exception {
+    @DisplayName("apos esgotar o limite, /persons responde 429")
+    void personsResponde429() throws Exception {
         for (int i = 0; i < 2; i++) {
-            filtro.doFilter(postPara("/owners", "10.0.0.3"), new MockHttpServletResponse(), new MockFilterChain());
+            filtro.doFilter(postPara("/persons", "10.0.0.3"), new MockHttpServletResponse(), new MockFilterChain());
         }
 
         MockHttpServletResponse res = new MockHttpServletResponse();
-        filtro.doFilter(postPara("/owners", "10.0.0.3"), res, new MockFilterChain());
+        filtro.doFilter(postPara("/persons", "10.0.0.3"), res, new MockFilterChain());
 
         assertThat(res.getStatus()).isEqualTo(429);
     }
@@ -100,11 +100,11 @@ class RateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("endpoint autenticado (ex: /pets) nao e limitado")
+    @DisplayName("endpoint autenticado (ex: /animals) nao e limitado")
     void endpointAutenticadoNaoELimitado() throws Exception {
         for (int i = 0; i < 20; i++) {
             MockHttpServletResponse res = new MockHttpServletResponse();
-            filtro.doFilter(postPara("/pets", "10.0.0.5"), res, new MockFilterChain());
+            filtro.doFilter(postPara("/animals", "10.0.0.5"), res, new MockFilterChain());
             assertThat(res.getStatus()).isNotEqualTo(429);
         }
     }

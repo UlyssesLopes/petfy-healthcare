@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.domain.entity;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.*;
@@ -19,10 +20,10 @@ import java.util.UUID;
 @Table(name = "antiparasitics")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
-public class Antiparasitic {
+
+public class Antiparasitic extends AnimalEvent {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -34,8 +35,8 @@ public class Antiparasitic {
     private UUID antiparasiticId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pet_id", nullable = false)
-    private Pet pet;
+    @JoinColumn(name = "animal_id", nullable = false)
+    private Animal animal;
 
     /** Nome do produto. Vem do catalogo quando informado; texto livre caso contrario. */
     @Column(nullable = false)

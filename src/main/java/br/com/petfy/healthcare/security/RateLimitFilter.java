@@ -52,8 +52,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /* endpoints que entram no grupo "cadastro/recuperacao" */
     private static final Set<String> ENDPOINTS_RESTRITO = Set.of(
-            "/owners",
-            "/vets",
+            // "/vets" saiu no P1b: o cadastro convergiu em /persons quando deixou de
+            // existir dois tipos de conta
+            "/persons",
             "/auth/password-reset",
             "/auth/email-verification/resend"
     );

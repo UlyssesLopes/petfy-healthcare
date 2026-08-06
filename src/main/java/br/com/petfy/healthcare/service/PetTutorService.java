@@ -9,34 +9,34 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Gestao de quem cuida do pet: convite, papel, saida e titularidade.
+ * Gestao de quem cuida do animal: convite, papel, saida e titularidade.
  *
- * A 8a deu ao pet uma tabela de tutores e uma peca so decidindo acesso
- * ({@code PetAccessGuard}); aqui essa tabela finalmente ganha um segundo tutor.
+ * A 8a deu ao animal uma tabela de tutores e uma peca so decidindo acesso
+ * ({@code AnimalAccessGuard}); aqui essa tabela finalmente ganha um segundo tutor.
  */
 public interface PetTutorService {
 
-    /** Titular convida alguem para o pet. Devolve o token uma unica vez. */
-    PetTutorInviteResponseDTO invite(UUID petId, PetTutorInviteRequestDTO request);
+    /** Titular convida alguem para o animal. Devolve o token uma unica vez. */
+    PetTutorInviteResponseDTO invite(UUID animalId, PetTutorInviteRequestDTO request);
 
     /** Quem recebeu o convite aceita, autenticado, e passa a ser tutor. */
     PetTutorResponseDTO accept(String token);
 
-    /** Quem cuida do pet, em qualquer papel. Visivel a qualquer tutor. */
-    List<PetTutorResponseDTO> listTutors(UUID petId);
+    /** Quem cuida do animal, em qualquer papel. Visivel a qualquer tutor. */
+    List<PetTutorResponseDTO> listTutors(UUID animalId);
 
-    /** Convites do pet, usados e pendentes. So o titular. */
-    List<PetTutorInviteResponseDTO> listInvites(UUID petId);
+    /** Convites do animal, usados e pendentes. So o titular. */
+    List<PetTutorInviteResponseDTO> listInvites(UUID animalId);
 
-    void revokeInvite(UUID petId, UUID petTutorInviteId);
+    void revokeInvite(UUID animalId, UUID petTutorInviteId);
 
     /** O titular remove um co-tutor; um co-tutor remove a si mesmo. */
-    void removeTutor(UUID petId, UUID ownerId);
+    void removeTutor(UUID animalId, UUID personId);
 
     /** Titular troca o papel de um co-tutor entre EDITOR e VIEWER. */
-    PetTutorResponseDTO changeRole(UUID petId, UUID ownerId, PetTutorRoleUpdateRequestDTO request);
+    PetTutorResponseDTO changeRole(UUID animalId, UUID personId, PetTutorRoleUpdateRequestDTO request);
 
-    /** Titular passa a titularidade a quem ja e tutor do pet. */
-    PetTutorResponseDTO transferHolder(UUID petId, UUID toOwnerId);
+    /** Titular passa a titularidade a quem ja e tutor do animal. */
+    PetTutorResponseDTO transferHolder(UUID animalId, UUID toPersonId);
 
 }

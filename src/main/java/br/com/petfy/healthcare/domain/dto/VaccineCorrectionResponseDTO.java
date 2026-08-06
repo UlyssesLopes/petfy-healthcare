@@ -23,13 +23,11 @@ public class VaccineCorrectionResponseDTO {
 
     private LocalDateTime correctedAt;
 
-    /** OWNER ou VET. */
-    private String correctedByRole;
 
     private String correctedByName;
 
-    /** Preenchido apenas quando quem corrigiu foi um veterinario. */
-    private String correctedByClinicName;
+    /** Nome da organizacao em nome de quem a pessoa agiu. Nulo quando ela agiu por si. */
+    private String correctedByOrganizationName;
 
     private String previousVaccineName;
 

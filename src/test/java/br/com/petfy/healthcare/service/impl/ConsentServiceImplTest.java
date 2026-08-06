@@ -3,9 +3,9 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.ConsentStatusResponseDTO;
 import br.com.petfy.healthcare.domain.entity.ConsentDocument;
 import br.com.petfy.healthcare.domain.entity.ConsentRecord;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.RequestEvidenceProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,7 @@ class ConsentServiceImplTest {
     private ConsentRecordRepository consentRecordRepository;
 
     @Mock
-    private CurrentOwnerProvider currentOwnerProvider;
+    private CurrentPersonProvider currentPersonProvider;
 
     @Mock
     private RequestEvidenceProvider requestEvidenceProvider;
@@ -50,19 +50,19 @@ class ConsentServiceImplTest {
     @BeforeEach
     void setUp() {
         consentService = new ConsentServiceImpl(
-                consentRecordRepository, currentOwnerProvider, requestEvidenceProvider);
+                consentRecordRepository, currentPersonProvider, requestEvidenceProvider);
         ReflectionTestUtils.setField(consentService, "termsVersion", VIGENTE);
         ReflectionTestUtils.setField(consentService, "privacyVersion", VIGENTE);
     }
 
-    private Owner owner() {
-        return Owner.builder().ownerId(OWNER_ID).name("Ulysses").email("ulysses@petfy.com.br").build();
+    private Person person() {
+        return Person.builder().personId(OWNER_ID).name("Ulysses").email("ulysses@petfy.com.br").build();
     }
 
     private ConsentRecord aceite(ConsentDocument documento, String versao, LocalDateTime quando) {
         return ConsentRecord.builder()
                 .consentRecordId(UUID.randomUUID())
-                .owner(owner())
+                .person(person())
                 .document(documento)
                 .documentVersion(versao)
                 .acceptedAt(quando)
@@ -80,7 +80,7 @@ class ConsentServiceImplTest {
         @Test
         @DisplayName("grava um aceite por documento vigente")
         void gravaUmAceitePorDocumento() {
-            consentService.registrarAceiteNoCadastro(owner());
+            consentService.registrarAceiteNoCadastro(person());
 
             var captor = ArgumentCaptor.forClass(ConsentRecord.class);
             verify(consentRecordRepository, times(2)).save(captor.capture());
@@ -93,7 +93,7 @@ class ConsentServiceImplTest {
                     .allSatisfy(r -> {
                         assertThat(r.getDocumentVersion()).isEqualTo(VIGENTE);
                         assertThat(r.getAcceptedAt()).isNotNull();
-                        assertThat(r.getOwner().getOwnerId()).isEqualTo(OWNER_ID);
+                        assertThat(r.getPerson().getPersonId()).isEqualTo(OWNER_ID);
                     });
         }
 
@@ -104,7 +104,7 @@ class ConsentServiceImplTest {
             when(requestEvidenceProvider.ip()).thenReturn("203.0.113.7");
             when(requestEvidenceProvider.userAgent()).thenReturn("Mozilla/5.0");
 
-            consentService.registrarAceiteNoCadastro(owner());
+            consentService.registrarAceiteNoCadastro(person());
 
             var captor = ArgumentCaptor.forClass(ConsentRecord.class);
             verify(consentRecordRepository, times(2)).save(captor.capture());
@@ -124,7 +124,7 @@ class ConsentServiceImplTest {
             when(requestEvidenceProvider.ip()).thenReturn(null);
             when(requestEvidenceProvider.userAgent()).thenReturn(null);
 
-            consentService.registrarAceiteNoCadastro(owner());
+            consentService.registrarAceiteNoCadastro(person());
 
             verify(consentRecordRepository, times(2)).save(any(ConsentRecord.class));
         }
@@ -137,8 +137,8 @@ class ConsentServiceImplTest {
         @Test
         @DisplayName("quem aceitou as versoes vigentes nao tem pendencia")
         void semPendenciaQuandoTudoAceito() {
-            when(currentOwnerProvider.require()).thenReturn(owner());
-            when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
+            when(currentPersonProvider.require()).thenReturn(person());
+            when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of(
                             aceite(ConsentDocument.TERMS_OF_SERVICE, VIGENTE, LocalDateTime.now()),
                             aceite(ConsentDocument.PRIVACY_POLICY, VIGENTE, LocalDateTime.now())));
@@ -158,8 +158,8 @@ class ConsentServiceImplTest {
         @Test
         @DisplayName("politica que mudou de versao volta a ficar pendente")
         void politicaNovaVoltaAFicarPendente() {
-            when(currentOwnerProvider.require()).thenReturn(owner());
-            when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
+            when(currentPersonProvider.require()).thenReturn(person());
+            when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of(
                             aceite(ConsentDocument.TERMS_OF_SERVICE, VIGENTE, LocalDateTime.now()),
                             aceite(ConsentDocument.PRIVACY_POLICY, ANTIGA, LocalDateTime.now().minusMonths(7))));
@@ -182,8 +182,8 @@ class ConsentServiceImplTest {
         @Test
         @DisplayName("conta sem aceite nenhum tem os dois documentos pendentes")
         void contaAnteriorTemTudoPendente() {
-            when(currentOwnerProvider.require()).thenReturn(owner());
-            when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
+            when(currentPersonProvider.require()).thenReturn(person());
+            when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of());
 
             var status = consentService.statusDoAutenticado();
@@ -197,8 +197,8 @@ class ConsentServiceImplTest {
         @Test
         @DisplayName("consultar o status nao grava aceite")
         void consultarNaoGrava() {
-            when(currentOwnerProvider.require()).thenReturn(owner());
-            when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
+            when(currentPersonProvider.require()).thenReturn(person());
+            when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of());
 
             consentService.statusDoAutenticado();
@@ -226,16 +226,16 @@ class ConsentServiceImplTest {
 
         /**
          * Reenviar o aceite da mesma versao e no-op, e nao erro: o cliente pode
-         * reenviar por perda de resposta, e a chave unica (owner, documento, versao)
+         * reenviar por perda de resposta, e a chave unica (person, documento, versao)
          * recusaria a segunda linha com 500.
          */
         @Test
         @DisplayName("aceitar de novo a mesma versao nao cria outro registro")
         void aceitarDeNovoNaoDuplica() {
-            when(currentOwnerProvider.require()).thenReturn(owner());
-            when(consentRecordRepository.existsByOwnerOwnerIdAndDocumentAndDocumentVersion(
+            when(currentPersonProvider.require()).thenReturn(person());
+            when(consentRecordRepository.existsByPersonPersonIdAndDocumentAndDocumentVersion(
                     eq(OWNER_ID), any(ConsentDocument.class), eq(VIGENTE))).thenReturn(true);
-            when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
+            when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of(
                             aceite(ConsentDocument.TERMS_OF_SERVICE, VIGENTE, LocalDateTime.now()),
                             aceite(ConsentDocument.PRIVACY_POLICY, VIGENTE, LocalDateTime.now())));
@@ -250,12 +250,12 @@ class ConsentServiceImplTest {
         @Test
         @DisplayName("grava apenas o documento que ainda falta")
         void gravaApenasOQueFalta() {
-            when(currentOwnerProvider.require()).thenReturn(owner());
-            when(consentRecordRepository.existsByOwnerOwnerIdAndDocumentAndDocumentVersion(
+            when(currentPersonProvider.require()).thenReturn(person());
+            when(consentRecordRepository.existsByPersonPersonIdAndDocumentAndDocumentVersion(
                     OWNER_ID, ConsentDocument.TERMS_OF_SERVICE, VIGENTE)).thenReturn(true);
-            when(consentRecordRepository.existsByOwnerOwnerIdAndDocumentAndDocumentVersion(
+            when(consentRecordRepository.existsByPersonPersonIdAndDocumentAndDocumentVersion(
                     OWNER_ID, ConsentDocument.PRIVACY_POLICY, VIGENTE)).thenReturn(false);
-            when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
+            when(consentRecordRepository.findByPersonPersonIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of());
 
             consentService.aceitarVigentes();

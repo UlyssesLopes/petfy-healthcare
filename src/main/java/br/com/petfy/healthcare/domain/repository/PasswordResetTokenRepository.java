@@ -13,16 +13,16 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
     Optional<PasswordResetToken> findByTokenHash(String tokenHash);
 
-    /** Pedidos ainda em aberto de um owner, para invalidar os anteriores quando um novo e emitido. */
-    List<PasswordResetToken> findByOwnerOwnerIdAndUsedAtIsNull(UUID ownerId);
+    /** Pedidos ainda em aberto de um person, para invalidar os anteriores quando um novo e emitido. */
+    List<PasswordResetToken> findByPersonPersonIdAndUsedAtIsNull(UUID personId);
 
     /** O mais recente, independente de estado - e ele que define se ja houve pedido demais. */
-    Optional<PasswordResetToken> findFirstByOwnerOwnerIdOrderByCreationDateDesc(UUID ownerId);
+    Optional<PasswordResetToken> findFirstByPersonPersonIdOrderByCreationDateDesc(UUID personId);
 
     /**
      * Usado ao apagar a conta. Sem isto a chave estrangeira recusa a exclusao, e
      * como todo cadastro gera token, nenhuma conta conseguiria ser apagada.
      */
-    void deleteByOwnerOwnerId(UUID ownerId);
+    void deleteByPersonPersonId(UUID personId);
 
 }

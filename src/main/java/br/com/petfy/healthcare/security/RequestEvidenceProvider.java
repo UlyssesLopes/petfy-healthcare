@@ -10,7 +10,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * IP e user agent da requisicao em andamento, para servir de evidencia de aceite.
  *
  * Le do {@code RequestContextHolder} em vez de o controller passar o
- * {@code HttpServletRequest} adiante - mesmo padrao do {@link CurrentOwnerProvider},
+ * {@code HttpServletRequest} adiante - mesmo padrao do {@link CurrentPersonProvider},
  * que resolve o titular pelo {@code SecurityContextHolder}. Assim o controller
  * continua sem saber que existe evidencia a coletar, e o dia em que outro fluxo
  * precisar dela nao pede mudanca de assinatura em cadeia.

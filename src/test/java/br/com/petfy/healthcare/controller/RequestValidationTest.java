@@ -1,9 +1,9 @@
 package br.com.petfy.healthcare.controller;
 
-import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
+import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
 import br.com.petfy.healthcare.exception.GlobalExceptionHandler;
-import br.com.petfy.healthcare.service.OwnerExportService;
-import br.com.petfy.healthcare.service.OwnerService;
+import br.com.petfy.healthcare.service.PersonExportService;
+import br.com.petfy.healthcare.service.PersonService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,17 +36,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RequestValidationTest {
 
     @Mock
-    private OwnerService ownerService;
+    private PersonService personService;
 
     @Mock
-    private OwnerExportService ownerExportService;
+    private PersonExportService personExportService;
 
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new OwnerController(ownerService, ownerExportService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new PersonController(personService, personExportService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -60,12 +60,12 @@ class RequestValidationTest {
     void deveResponder400QuandoEmailInvalido() throws Exception {
         var body = json(Map.of("name", "Ulysses", "email", "nao-e-email", "password", "s3nhaForte", "acceptedTerms", true));
 
-        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/persons").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("email: email invalido"));
 
-        verify(ownerService, never()).createOwner(any());
+        verify(personService, never()).createPerson(any());
     }
 
     @Test
@@ -73,11 +73,11 @@ class RequestValidationTest {
     void deveResponder400QuandoSenhaCurta() throws Exception {
         var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br", "password", "123", "acceptedTerms", true));
 
-        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/persons").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("password: senha deve ter entre 8 e 72 caracteres"));
 
-        verify(ownerService, never()).createOwner(any());
+        verify(personService, never()).createPerson(any());
     }
 
     @Test
@@ -85,7 +85,7 @@ class RequestValidationTest {
     void deveAcumularMensagensDeVariosCampos() throws Exception {
         var body = json(Map.of("email", "nao-e-email", "acceptedTerms", true));
 
-        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/persons").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "email: email invalido; name: nome e obrigatorio; password: senha e obrigatoria"));
@@ -95,14 +95,14 @@ class RequestValidationTest {
     @DisplayName("deve aceitar o payload valido e responder 201")
     void deveAceitarPayloadValido() throws Exception {
         var id = UUID.randomUUID();
-        when(ownerService.createOwner(any())).thenReturn(OwnerResponseDTO.builder().ownerId(id).build());
+        when(personService.createPerson(any())).thenReturn(PersonResponseDTO.builder().personId(id).build());
 
         var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br", "password", "s3nhaForte", "acceptedTerms", true));
 
-        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/persons").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());
 
-        verify(ownerService).createOwner(any());
+        verify(personService).createPerson(any());
     }
 
     /**
@@ -116,12 +116,12 @@ class RequestValidationTest {
         var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br",
                 "password", "s3nhaForte"));
 
-        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/persons").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "acceptedTerms: e obrigatorio aceitar os termos e a politica de privacidade"));
 
-        verify(ownerService, never()).createOwner(any());
+        verify(personService, never()).createPerson(any());
     }
 
     /**
@@ -135,26 +135,26 @@ class RequestValidationTest {
         var body = json(Map.of("name", "Ulysses", "email", "ulysses@petfy.com.br",
                 "password", "s3nhaForte", "acceptedTerms", false));
 
-        mockMvc.perform(post("/owners").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/persons").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(
                         "acceptedTerms: e obrigatorio aceitar os termos e a politica de privacidade"));
 
-        verify(ownerService, never()).createOwner(any());
+        verify(personService, never()).createPerson(any());
     }
 
     @Test
     @DisplayName("o update deve seguir aceitando payload parcial - a validacao nao vale para PUT")
     void updateDeveAceitarPayloadParcial() throws Exception {
         var id = UUID.randomUUID();
-        when(ownerService.updateCurrentOwner(any())).thenReturn(OwnerResponseDTO.builder().ownerId(id).build());
+        when(personService.updateCurrentPerson(any())).thenReturn(PersonResponseDTO.builder().personId(id).build());
 
         var body = json(Map.of("phone", "11888888888"));
 
-        mockMvc.perform(put("/owners/me").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(put("/persons/me").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
 
-        verify(ownerService).updateCurrentOwner(any());
+        verify(personService).updateCurrentPerson(any());
     }
 
     /**
@@ -168,10 +168,10 @@ class RequestValidationTest {
     void trocaDeSenhaDeveValidarPayload() throws Exception {
         var body = json(Map.of("currentPassword", "senha-atual", "newPassword", "curta"));
 
-        mockMvc.perform(put("/owners/me/password").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(put("/persons/me/password").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest());
 
-        verify(ownerService, never()).changePassword(any());
+        verify(personService, never()).changePassword(any());
     }
 
     @Test
@@ -179,9 +179,9 @@ class RequestValidationTest {
     void trocaDeSenhaDeveResponder204() throws Exception {
         var body = json(Map.of("currentPassword", "senha-atual", "newPassword", "s3nhaNovaForte"));
 
-        mockMvc.perform(put("/owners/me/password").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(put("/persons/me/password").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isNoContent());
 
-        verify(ownerService).changePassword(any());
+        verify(personService).changePassword(any());
     }
 }

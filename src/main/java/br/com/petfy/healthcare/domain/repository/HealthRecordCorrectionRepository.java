@@ -12,6 +12,6 @@ public interface HealthRecordCorrectionRepository extends JpaRepository<HealthRe
 
     List<HealthRecordCorrection> findByHealthRecordHealthRecordIdOrderByCorrectedAtDesc(UUID healthRecordId);
 
-    void deleteByHealthRecordPetPetIdIn(List<UUID> petIds);
+    void deleteByHealthRecordAnimalAnimalIdIn(List<UUID> animalIds);
 
 }

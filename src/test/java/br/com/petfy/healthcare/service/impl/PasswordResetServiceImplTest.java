@@ -2,9 +2,9 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.PasswordResetConfirmDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordResetRequestDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.PasswordResetToken;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.Notification;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
 class PasswordResetServiceImplTest {
 
     @Mock
-    private OwnerRepository ownerRepository;
+    private PersonRepository personRepository;
 
     @Mock
     private PasswordResetTokenRepository tokenRepository;
@@ -67,9 +67,9 @@ class PasswordResetServiceImplTest {
         ReflectionTestUtils.setField(service, "cooldownMinutes", 5L);
     }
 
-    private Owner owner() {
-        return Owner.builder()
-                .ownerId(OWNER_ID)
+    private Person person() {
+        return Person.builder()
+                .personId(OWNER_ID)
                 .name("Ulysses")
                 .email(EMAIL)
                 .password("hash-antigo")
@@ -87,7 +87,7 @@ class PasswordResetServiceImplTest {
         @Test
         @DisplayName("deve terminar em silencio quando o e-mail nao tem conta, sem gravar nem enviar")
         void deveTerminarEmSilencioQuandoEmailNaoTemConta() {
-            when(ownerRepository.findByEmail("ninguem@petfy.com.br")).thenReturn(Optional.empty());
+            when(personRepository.findByEmail("ninguem@petfy.com.br")).thenReturn(Optional.empty());
 
             service.requestReset(new PasswordResetRequestDTO("ninguem@petfy.com.br"));
 
@@ -98,9 +98,9 @@ class PasswordResetServiceImplTest {
         @Test
         @DisplayName("deve gravar o hash do token, nunca o token, e enviar o token pelo canal")
         void deveGravarHashEEnviarToken() {
-            when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner()));
-            when(tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(OWNER_ID)).thenReturn(Optional.empty());
-            when(tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
+            when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+            when(tokenRepository.findFirstByPersonPersonIdOrderByCreationDateDesc(OWNER_ID)).thenReturn(Optional.empty());
+            when(tokenRepository.findByPersonPersonIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
             when(opaqueTokenService.generate()).thenReturn("token-em-claro");
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
 
@@ -131,10 +131,10 @@ class PasswordResetServiceImplTest {
                     .creationDate(LocalDateTime.now().minusMinutes(10))
                     .build();
 
-            when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner()));
-            when(tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(OWNER_ID))
+            when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+            when(tokenRepository.findFirstByPersonPersonIdOrderByCreationDateDesc(OWNER_ID))
                     .thenReturn(Optional.of(anterior));
-            when(tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of(anterior));
+            when(tokenRepository.findByPersonPersonIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of(anterior));
             when(opaqueTokenService.generate()).thenReturn("token-novo");
             when(opaqueTokenService.hash("token-novo")).thenReturn("hash-novo");
 
@@ -152,9 +152,9 @@ class PasswordResetServiceImplTest {
         @Test
         @DisplayName("falha de envio nao pode virar erro na resposta, senao denuncia que a conta existe")
         void falhaDeEnvioNaoPodeVirarErroNaResposta() {
-            when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner()));
-            when(tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(OWNER_ID)).thenReturn(Optional.empty());
-            when(tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
+            when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+            when(tokenRepository.findFirstByPersonPersonIdOrderByCreationDateDesc(OWNER_ID)).thenReturn(Optional.empty());
+            when(tokenRepository.findByPersonPersonIdAndUsedAtIsNull(OWNER_ID)).thenReturn(List.of());
             when(opaqueTokenService.generate()).thenReturn("token-em-claro");
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
             doThrow(new IllegalStateException("Resend fora")).when(notifier).send(any());
@@ -175,8 +175,8 @@ class PasswordResetServiceImplTest {
                     .expiresAt(LocalDateTime.now().plusMinutes(29))
                     .build();
 
-            when(ownerRepository.findByEmail(EMAIL)).thenReturn(Optional.of(owner()));
-            when(tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(OWNER_ID))
+            when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+            when(tokenRepository.findFirstByPersonPersonIdOrderByCreationDateDesc(OWNER_ID))
                     .thenReturn(Optional.of(recente));
 
             service.requestReset(new PasswordResetRequestDTO(EMAIL));
@@ -190,9 +190,9 @@ class PasswordResetServiceImplTest {
     @DisplayName("confirmReset")
     class ConfirmReset {
 
-        private PasswordResetToken tokenValido(Owner dono) {
+        private PasswordResetToken tokenValido(Person dono) {
             return PasswordResetToken.builder()
-                    .owner(dono)
+                    .person(dono)
                     .tokenHash("hash-do-token")
                     .expiresAt(LocalDateTime.now().plusMinutes(20))
                     .creationDate(LocalDateTime.now().minusMinutes(5))
@@ -202,7 +202,7 @@ class PasswordResetServiceImplTest {
         @Test
         @DisplayName("deve trocar a senha, marcar o token como usado e derrubar as sessoes abertas")
         void deveTrocarSenhaEMarcarTokenComoUsado() {
-            var dono = owner();
+            var dono = person();
             var token = tokenValido(dono);
 
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
@@ -211,10 +211,10 @@ class PasswordResetServiceImplTest {
 
             service.confirmReset(new PasswordResetConfirmDTO("token-em-claro", "s3nhaNova"));
 
-            var ownerCaptor = ArgumentCaptor.forClass(Owner.class);
-            verify(ownerRepository).save(ownerCaptor.capture());
-            assertThat(ownerCaptor.getValue().getPassword()).isEqualTo("hash-novo");
-            assertThat(ownerCaptor.getValue().getPasswordChangedAt()).isNotNull();
+            var personCaptor = ArgumentCaptor.forClass(Person.class);
+            verify(personRepository).save(personCaptor.capture());
+            assertThat(personCaptor.getValue().getPassword()).isEqualTo("hash-novo");
+            assertThat(personCaptor.getValue().getPasswordChangedAt()).isNotNull();
 
             assertThat(token.getUsedAt()).isNotNull();
             verify(tokenRepository).save(token);
@@ -230,13 +230,13 @@ class PasswordResetServiceImplTest {
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage(ErrorMessageEnum.RESET_TOKEN_NOT_FOUND.getMessage());
 
-            verify(ownerRepository, never()).save(any());
+            verify(personRepository, never()).save(any());
         }
 
         @Test
         @DisplayName("deve recusar token expirado, com a mesma resposta de token inexistente")
         void deveRecusarTokenExpirado() {
-            var expirado = tokenValido(owner());
+            var expirado = tokenValido(person());
             expirado.setExpiresAt(LocalDateTime.now().minusMinutes(1));
 
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
@@ -246,7 +246,7 @@ class PasswordResetServiceImplTest {
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage(ErrorMessageEnum.RESET_TOKEN_NOT_FOUND.getMessage());
 
-            verify(ownerRepository, never()).save(any());
+            verify(personRepository, never()).save(any());
         }
 
         /**
@@ -256,7 +256,7 @@ class PasswordResetServiceImplTest {
         @Test
         @DisplayName("deve recusar token ja usado")
         void deveRecusarTokenJaUsado() {
-            var usado = tokenValido(owner());
+            var usado = tokenValido(person());
             usado.setUsedAt(LocalDateTime.now().minusMinutes(1));
 
             when(opaqueTokenService.hash("token-em-claro")).thenReturn("hash-do-token");
@@ -266,7 +266,7 @@ class PasswordResetServiceImplTest {
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage(ErrorMessageEnum.RESET_TOKEN_NOT_FOUND.getMessage());
 
-            verify(ownerRepository, never()).save(any());
+            verify(personRepository, never()).save(any());
         }
     }
 

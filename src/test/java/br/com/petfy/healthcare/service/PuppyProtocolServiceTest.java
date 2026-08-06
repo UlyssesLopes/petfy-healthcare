@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.service;
 
-import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
@@ -39,20 +39,20 @@ class PuppyProtocolServiceTest {
     @InjectMocks
     private PuppyProtocolService puppyProtocolService;
 
-    private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
 
     @BeforeEach
     void configurarLimiteFilhote() {
         ReflectionTestUtils.setField(puppyProtocolService, "maxAgeDays", 120);
     }
 
-    private Pet petComIdade(long dias, Species species) {
-        return Pet.builder()
-                .petId(PET_ID)
+    private Animal animalComIdade(long dias, Species species) {
+        return Animal.builder()
+                .animalId(ANIMAL_ID)
                 .name("Rex")
                 .bornDate(LocalDate.now().minusDays(dias))
                 .species(species)
-                .tutors(br.com.petfy.healthcare.PetTutores.titular(Owner.builder().ownerId(UUID.randomUUID()).build()))
+                .custodies(br.com.petfy.healthcare.Custodias.titular(Person.builder().personId(UUID.randomUUID()).build()))
                 .build();
     }
 
@@ -76,13 +76,13 @@ class PuppyProtocolServiceTest {
         @Test
         @DisplayName("deve gerar todas as doses do protocolo inicial de todas as vacinas mandatorias")
         void deveGerarProtocoloInicial() {
-            Pet pet = petComIdade(45, Species.CANINA);
+            Animal animal = animalComIdade(45, Species.CANINA);
             when(vaccineCatalogRepository.findBySpeciesAndMandatoryTrueOrderByNameAsc(Species.CANINA))
                     .thenReturn(List.of(
                             catalogo("V10", Species.CANINA, 3, 21, true),
                             catalogo("ANTIRRABICA_C", Species.CANINA, 1, null, true)));
 
-            puppyProtocolService.gerarEsquemaInicialSePuppy(pet);
+            puppyProtocolService.gerarEsquemaInicialSePuppy(animal);
 
             var captor = ArgumentCaptor.forClass(List.class);
             verify(vaccineRepository).saveAll(captor.capture());
@@ -90,7 +90,7 @@ class PuppyProtocolServiceTest {
             List<Vaccine> geradas = captor.getValue();
             assertThat(geradas).hasSize(4);  // 3 doses V10 + 1 antirrabica
             assertThat(geradas).allSatisfy(v -> {
-                assertThat(v.getPet()).isSameAs(pet);
+                assertThat(v.getAnimal()).isSameAs(animal);
                 assertThat(v.getApplicationDate()).isNull();  // dose planejada, nao aplicada
                 assertThat(v.getNextDoseDate()).isNotNull();
             });
@@ -101,11 +101,11 @@ class PuppyProtocolServiceTest {
         @Test
         @DisplayName("filhote sem vacina mandatoria da especie no catalogo nao gera nada")
         void filhoteSemMandatoriaNaoGera() {
-            Pet pet = petComIdade(45, Species.CANINA);
+            Animal animal = animalComIdade(45, Species.CANINA);
             when(vaccineCatalogRepository.findBySpeciesAndMandatoryTrueOrderByNameAsc(Species.CANINA))
                     .thenReturn(List.of());
 
-            puppyProtocolService.gerarEsquemaInicialSePuppy(pet);
+            puppyProtocolService.gerarEsquemaInicialSePuppy(animal);
 
             verify(vaccineRepository, never()).saveAll(org.mockito.ArgumentMatchers.anyList());
         }
@@ -113,11 +113,11 @@ class PuppyProtocolServiceTest {
         @Test
         @DisplayName("no limite: filhote com exatamente 120 dias ainda ganha o protocolo")
         void filhoteNoLimite() {
-            Pet pet = petComIdade(120, Species.FELINA);
+            Animal animal = animalComIdade(120, Species.FELINA);
             when(vaccineCatalogRepository.findBySpeciesAndMandatoryTrueOrderByNameAsc(Species.FELINA))
                     .thenReturn(List.of(catalogo("V4_FELINA", Species.FELINA, 2, 30, true)));
 
-            puppyProtocolService.gerarEsquemaInicialSePuppy(pet);
+            puppyProtocolService.gerarEsquemaInicialSePuppy(animal);
 
             verify(vaccineRepository).saveAll(org.mockito.ArgumentMatchers.anyList());
         }
@@ -130,9 +130,9 @@ class PuppyProtocolServiceTest {
         @Test
         @DisplayName("adulto de 3 anos nao ganha o protocolo inicial")
         void adultoNaoGeraNada() {
-            Pet pet = petComIdade(365 * 3, Species.CANINA);
+            Animal animal = animalComIdade(365 * 3, Species.CANINA);
 
-            puppyProtocolService.gerarEsquemaInicialSePuppy(pet);
+            puppyProtocolService.gerarEsquemaInicialSePuppy(animal);
 
             verify(vaccineRepository, never()).saveAll(org.mockito.ArgumentMatchers.anyList());
             verify(vaccineCatalogRepository, never()).findBySpeciesAndMandatoryTrueOrderByNameAsc(org.mockito.ArgumentMatchers.any());
@@ -141,24 +141,24 @@ class PuppyProtocolServiceTest {
         @Test
         @DisplayName("um dia alem do limite ja e adulto")
         void umDiaAlemDoLimite() {
-            Pet pet = petComIdade(121, Species.CANINA);
+            Animal animal = animalComIdade(121, Species.CANINA);
 
-            puppyProtocolService.gerarEsquemaInicialSePuppy(pet);
+            puppyProtocolService.gerarEsquemaInicialSePuppy(animal);
 
             verify(vaccineRepository, never()).saveAll(org.mockito.ArgumentMatchers.anyList());
         }
 
         @Test
-        @DisplayName("pet sem data de nascimento nao ganha nada - nao da para saber se e filhote")
+        @DisplayName("animal sem data de nascimento nao ganha nada - nao da para saber se e filhote")
         void semBornDateNaoGeraNada() {
-            Pet pet = Pet.builder()
-                    .petId(PET_ID)
+            Animal animal = Animal.builder()
+                    .animalId(ANIMAL_ID)
                     .name("Rex")
                     .species(Species.CANINA)
-                    .tutors(br.com.petfy.healthcare.PetTutores.titular(Owner.builder().ownerId(UUID.randomUUID()).build()))
+                    .custodies(br.com.petfy.healthcare.Custodias.titular(Person.builder().personId(UUID.randomUUID()).build()))
                     .build();
 
-            puppyProtocolService.gerarEsquemaInicialSePuppy(pet);
+            puppyProtocolService.gerarEsquemaInicialSePuppy(animal);
 
             verify(vaccineRepository, never()).saveAll(org.mockito.ArgumentMatchers.anyList());
         }

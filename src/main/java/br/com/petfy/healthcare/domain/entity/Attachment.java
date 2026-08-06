@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.domain.entity;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.*;
@@ -8,26 +9,26 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Um arquivo anexado ao pet.
+ * Um arquivo anexado ao animal.
  *
- * O {@code pet} e obrigatorio e faz dois trabalhos: e a ancora de autorizacao - toda
- * pergunta sobre quem pode ver este arquivo se reduz a quem pode ver este pet, que o
- * {@code PetAccessGuard} ja responde - e a ancora de limpeza, porque o
- * {@code PetPurger} apaga por petId.
+ * O {@code animal} e obrigatorio e faz dois trabalhos: e a ancora de autorizacao - toda
+ * pergunta sobre quem pode ver este arquivo se reduz a quem pode ver este animal, que o
+ * {@code AnimalAccessGuard} ja responde - e a ancora de limpeza, porque o
+ * {@code AnimalPurger} apaga por animalId.
  *
  * {@code vaccine} e {@code healthRecord} dizem o que o arquivo documenta, e no maximo
  * um dos dois esta preenchido - garantido por CHECK no banco, e nao por validacao em
- * codigo que um insert direto contornaria. Os dois nulos significa anexo do pet em si:
+ * codigo que um insert direto contornaria. Os dois nulos significa anexo do animal em si:
  * foto, RG animal.
  */
 @Entity
 @Table(name = "attachments")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
-public class Attachment {
+
+public class Attachment extends AnimalEvent {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -39,8 +40,8 @@ public class Attachment {
     private UUID attachmentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pet_id", nullable = false)
-    private Pet pet;
+    @JoinColumn(name = "animal_id", nullable = false)
+    private Animal animal;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vaccine_id")
@@ -77,12 +78,8 @@ public class Attachment {
 
     /**
      * Quem subiu. Nulo se essa pessoa apagou a conta depois - o arquivo pertence ao
-     * pet, que sobrevive se houver outro tutor.
+     * animal, que sobrevive se houver outro tutor.
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploaded_by_owner_id")
-    private Owner uploadedBy;
-
     @Column(name = "creation_date", nullable = false)
     private LocalDateTime creationDate;
 

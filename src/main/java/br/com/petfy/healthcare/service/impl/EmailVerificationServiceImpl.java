@@ -3,9 +3,9 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.EmailVerificationConfirmDTO;
 import br.com.petfy.healthcare.domain.dto.EmailVerificationResendDTO;
 import br.com.petfy.healthcare.domain.entity.EmailVerificationToken;
-import br.com.petfy.healthcare.domain.entity.Owner;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.Notification;
 import br.com.petfy.healthcare.notification.Notifier;
@@ -28,7 +28,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class EmailVerificationServiceImpl implements EmailVerificationService {
 
-    private final OwnerRepository ownerRepository;
+    private final PersonRepository personRepository;
     private final EmailVerificationTokenRepository tokenRepository;
     private final OpaqueTokenService opaqueTokenService;
     private final Notifier notifier;
@@ -46,11 +46,11 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
      * grande. O reenvio existe justamente para cobrir esse caso.
      */
     @Override
-    public void sendVerification(Owner owner) {
+    public void sendVerification(Person person) {
         try {
-            emitirEEnviar(owner, LocalDateTime.now());
+            emitirEEnviar(person, LocalDateTime.now());
         } catch (Exception e) {
-            log.error("Falha ao enviar a confirmacao de e-mail do owner {}", owner.getOwnerId(), e);
+            log.error("Falha ao enviar a confirmacao de e-mail da pessoa {}", person.getPersonId(), e);
         }
     }
 
@@ -62,23 +62,23 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
     @Override
     @Transactional
     public void resend(EmailVerificationResendDTO request) {
-        Optional<Owner> talvezOwner = ownerRepository.findByEmail(request.getEmail());
+        Optional<Person> talvezPerson = personRepository.findByEmail(request.getEmail());
 
-        if (talvezOwner.isEmpty()) {
+        if (talvezPerson.isEmpty()) {
             log.info("Reenvio de confirmacao para e-mail sem conta; respondendo igual a um pedido valido");
             return;
         }
 
-        Owner owner = talvezOwner.get();
+        Person person = talvezPerson.get();
         LocalDateTime agora = LocalDateTime.now();
 
-        if (owner.podeReceberNotificacao()) {
-            log.info("Reenvio pedido para o owner {}, que ja tinha verificado o e-mail", owner.getOwnerId());
+        if (person.podeReceberNotificacao()) {
+            log.info("Reenvio pedido para a pessoa {}, que ja tinha verificado o e-mail", person.getPersonId());
             return;
         }
 
-        if (dentroDoCooldown(owner, agora)) {
-            log.info("Reenvio dentro do cooldown para o owner {}; nada enviado", owner.getOwnerId());
+        if (dentroDoCooldown(person, agora)) {
+            log.info("Reenvio dentro do cooldown para a pessoa {}; nada enviado", person.getPersonId());
             return;
         }
 
@@ -86,9 +86,9 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         // igual exista ou nao a conta, e um 500 aqui contra um 202 para e-mail
         // desconhecido entregaria exatamente a informacao que o silencio esconde
         try {
-            emitirEEnviar(owner, agora);
+            emitirEEnviar(person, agora);
         } catch (Exception e) {
-            log.error("Falha ao reenviar a confirmacao de e-mail do owner {}", owner.getOwnerId(), e);
+            log.error("Falha ao reenviar a confirmacao de e-mail da pessoa {}", person.getPersonId(), e);
         }
     }
 
@@ -104,38 +104,38 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
                         ErrorMessageEnum.VERIFICATION_TOKEN_NOT_FOUND.getCode(),
                         HttpStatus.BAD_REQUEST));
 
-        Owner owner = token.getOwner();
-        owner.setEmailVerifiedAt(agora);
-        owner.setUpdateDate(agora);
-        ownerRepository.save(owner);
+        Person person = token.getPerson();
+        person.setEmailVerifiedAt(agora);
+        person.setUpdateDate(agora);
+        personRepository.save(person);
 
         token.setUsedAt(agora);
         tokenRepository.save(token);
 
-        log.info("E-mail confirmado para o owner {}", owner.getOwnerId());
+        log.info("E-mail confirmado para a pessoa {}", person.getPersonId());
     }
 
-    private void emitirEEnviar(Owner owner, LocalDateTime agora) {
+    private void emitirEEnviar(Person person, LocalDateTime agora) {
         // pedir de novo invalida o anterior, como na recuperacao de senha: dois
         // links vivos so aumentam a superficie sem ajudar quem pediu
-        List<EmailVerificationToken> emAberto = tokenRepository.findByOwnerOwnerIdAndUsedAtIsNull(owner.getOwnerId());
+        List<EmailVerificationToken> emAberto = tokenRepository.findByPersonPersonIdAndUsedAtIsNull(person.getPersonId());
         emAberto.forEach(anterior -> anterior.setUsedAt(agora));
         tokenRepository.saveAll(emAberto);
 
         String token = opaqueTokenService.generate();
 
         tokenRepository.save(EmailVerificationToken.builder()
-                .owner(owner)
+                .person(person)
                 .tokenHash(opaqueTokenService.hash(token))
                 .expiresAt(agora.plusHours(expirationHours))
                 .creationDate(agora)
                 .build());
 
-        notifier.send(mensagem(owner, token));
+        notifier.send(mensagem(person, token));
     }
 
-    private boolean dentroDoCooldown(Owner owner, LocalDateTime agora) {
-        return tokenRepository.findFirstByOwnerOwnerIdOrderByCreationDateDesc(owner.getOwnerId())
+    private boolean dentroDoCooldown(Person person, LocalDateTime agora) {
+        return tokenRepository.findFirstByPersonPersonIdOrderByCreationDateDesc(person.getPersonId())
                 .map(ultimo -> ultimo.getCreationDate().plusMinutes(cooldownMinutes).isAfter(agora))
                 .orElse(false);
     }
@@ -145,13 +145,13 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
      * - porque o que esta em jogo e diferente: este token confirma um endereco,
      * aquele troca a senha da conta.
      */
-    private Notification mensagem(Owner owner, String token) {
+    private Notification mensagem(Person person, String token) {
         return Notification.builder()
-                .toEmail(owner.getEmail())
-                .toName(owner.getName())
+                .toEmail(person.getEmail())
+                .toName(person.getName())
                 .subject("Confirme seu e-mail - Petfy")
                 .lines(List.of(
-                        "Falta confirmar este endereco para voce receber os lembretes de vacina do seu pet.",
+                        "Falta confirmar este endereco para voce receber os lembretes de vacina do seu animal.",
                         "Codigo: " + token,
                         "Ele vale por " + expirationHours + " horas.",
                         "Ate confirmar, sua conta funciona normalmente, mas nao enviamos nenhum aviso."))

@@ -36,15 +36,22 @@ public class HealthRecordCorrection {
     @JoinColumn(name = "health_record_id", nullable = false)
     private HealthRecord healthRecord;
 
-    /** Preenchido quando quem corrigiu foi um veterinario. Exclusivo com o outro. */
+    /**
+     * Quem corrigiu. Sempre preenchido: nao ha mais duas colunas exclusivas entre
+     * si, uma para tutor e outra para veterinario, porque nao ha mais dois tipos
+     * de conta.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "corrected_by_vet_id")
-    private Vet correctedByVet;
+    @JoinColumn(name = "corrected_by_person_id", nullable = false)
+    private Person correctedBy;
 
-    /** Preenchido quando quem corrigiu foi o tutor. Exclusivo com o outro. */
+    /**
+     * Em nome de qual organizacao a pessoa agiu, quando agiu por uma. Nulo quando
+     * ela agiu por si. Substituiu o papel - ver VaccineCorrection para o porque.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "corrected_by_owner_id")
-    private Owner correctedByOwner;
+    @JoinColumn(name = "corrected_in_organization_id")
+    private Organization correctedInOrganization;
 
     private String previousEventType;
 

@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.controller;
 
-import br.com.petfy.healthcare.domain.dto.PetResponseDTO;
+import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
 import br.com.petfy.healthcare.service.PetIdService;
 import lombok.RequiredArgsConstructor;
 import net.sourceforge.tess4j.TesseractException;
@@ -23,8 +23,8 @@ public class PetIdController {
     private final PetIdService petIdService;
 
     @PostMapping("/import-pet-id-card")
-    public ResponseEntity<PetResponseDTO> importPetIdCard(@RequestParam MultipartFile file) throws IOException, TesseractException {
-        PetResponseDTO dto = petIdService.importPetFromIdCard(file);
+    public ResponseEntity<AnimalResponseDTO> importPetIdCard(@RequestParam MultipartFile file) throws IOException, TesseractException {
+        AnimalResponseDTO dto = petIdService.importAnimalFromIdCard(file);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 

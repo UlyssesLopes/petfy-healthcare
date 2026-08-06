@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.domain.entity;
 
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 
 import jakarta.persistence.*;
@@ -13,10 +14,10 @@ import java.util.UUID;
 @Table(name = "vaccines")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
-public class Vaccine {
+
+public class Vaccine extends AnimalEvent {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -28,8 +29,8 @@ public class Vaccine {
     private UUID vaccineId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pet_id", nullable = false)
-    private Pet pet;
+    @JoinColumn(name = "animal_id", nullable = false)
+    private Animal animal;
 
     private String vaccineName;
 
@@ -38,10 +39,6 @@ public class Vaccine {
     private LocalDate nextDoseDate;
 
     private String description;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id")
-    private Clinic clinic;
 
     /** Nulo para vacina digitada em texto livre e para os registros anteriores ao catalogo. */
     @ManyToOne(fetch = FetchType.LAZY)

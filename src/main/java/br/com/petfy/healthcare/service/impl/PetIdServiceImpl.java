@@ -1,14 +1,14 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.dto.PetResponseDTO;
-import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.PetTutor;
-import br.com.petfy.healthcare.domain.entity.PetTutorRole;
-import br.com.petfy.healthcare.domain.entity.Pet;
-import br.com.petfy.healthcare.domain.repository.OwnerRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
-import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
-import br.com.petfy.healthcare.security.CurrentOwnerProvider;
+import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
+import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.CustodyNature;
+import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.repository.PersonRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalRepository;
+import br.com.petfy.healthcare.domain.repository.CustodyRepository;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.service.PetIdService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -35,9 +35,9 @@ public class PetIdServiceImpl implements PetIdService {
 
     private final TesseractOcrServiceImpl tesseractOcrService;
     private final ImageProcessorService imageProcessorService;
-    private final PetRepository petRepository;
-    private final PetTutorRepository petTutorRepository;
-    private final CurrentOwnerProvider currentOwnerProvider;
+    private final AnimalRepository animalRepository;
+    private final CustodyRepository custodyRepository;
+    private final CurrentPersonProvider currentPersonProvider;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -48,9 +48,9 @@ public class PetIdServiceImpl implements PetIdService {
     );
 
     @Override
-    public PetResponseDTO importPetFromIdCard(MultipartFile file) throws IOException, TesseractException {
+    public AnimalResponseDTO importAnimalFromIdCard(MultipartFile file) throws IOException, TesseractException {
 
-        Owner ownerById = currentOwnerProvider.require();
+        Person personById = currentPersonProvider.require();
 
         BufferedImage imageFile = ImageIO.read(file.getInputStream());
         BufferedImage bufferedImage = imageProcessorService.preProcess(imageFile);
@@ -59,49 +59,51 @@ public class PetIdServiceImpl implements PetIdService {
 
         Map<String, String> stringStringMap = parseFields(extractedText);
 
-        PetResponseDTO petResponseDTO = parse(stringStringMap);
+        AnimalResponseDTO animalResponseDTO = parse(stringStringMap);
 
-        Pet pet = Pet.builder()
-                .name(petResponseDTO.getName())
-                .type(petResponseDTO.getType())
-                .breed(petResponseDTO.getBreed())
-                .bornDate(petResponseDTO.getBornDate())
-                .gender(petResponseDTO.getGender())
-                .bornLocal(petResponseDTO.getBornLocal())
-                .color(petResponseDTO.getColor())
-                .generalRegistry(petResponseDTO.getGeneralRegistry())
+        Animal animal = Animal.builder()
+                .name(animalResponseDTO.getName())
+                .type(animalResponseDTO.getType())
+                .breed(animalResponseDTO.getBreed())
+                .bornDate(animalResponseDTO.getBornDate())
+                .gender(animalResponseDTO.getGender())
+                .bornLocal(animalResponseDTO.getBornLocal())
+                .color(animalResponseDTO.getColor())
+                .generalRegistry(animalResponseDTO.getGeneralRegistry())
                 .creationDate(LocalDateTime.now())
-                .microchip(petResponseDTO.getMicrochip())
+                .microchip(animalResponseDTO.getMicrochip())
                 .build();
 
-        Pet saved = petRepository.save(pet);
+        Animal saved = animalRepository.save(animal);
 
-        // quem importou a carteirinha nasce titular do pet, igual a quem cadastra
-        // pela API - a partir da V15 o vinculo e explicito, nao um campo no pet
-        petTutorRepository.save(PetTutor.builder()
-                .pet(saved)
-                .owner(ownerById)
-                .role(PetTutorRole.HOLDER)
-                .creationDate(LocalDateTime.now())
+        // quem importou a carteirinha nasce titular do animal, igual a quem cadastra
+        // pela API - a partir da V15 o vinculo e explicito, nao um campo no animal
+        // quem cadastra nasce respondendo pelo animal. Natureza DEFINITIVA: e o tutor
+        // comum, sem prazo - lar transitorio e abrigo entram por outro caminho
+        custodyRepository.save(Custody.builder()
+                .animal(saved)
+                .holderPerson(personById)
+                .nature(CustodyNature.DEFINITIVA)
+                .startedAt(LocalDateTime.now())
                 .build());
 
         return toResponse(saved);
     }
 
-    public PetResponseDTO parse(Map<String, String> stringStringMap) {
-        PetResponseDTO petResponse = new PetResponseDTO();
-        petResponse.setName(stringStringMap.get("Nome do Animal"));
-        petResponse.setGeneralRegistry(stringStringMap.get("Registro Geral do Animal"));
-        petResponse.setMicrochip(parseSimNao(stringStringMap.get("Microchip")));
-        petResponse.setColor(stringStringMap.get("Cor"));
+    public AnimalResponseDTO parse(Map<String, String> stringStringMap) {
+        AnimalResponseDTO animalResponse = new AnimalResponseDTO();
+        animalResponse.setName(stringStringMap.get("Nome do Animal"));
+        animalResponse.setGeneralRegistry(stringStringMap.get("Registro Geral do Animal"));
+        animalResponse.setMicrochip(parseSimNao(stringStringMap.get("Microchip")));
+        animalResponse.setColor(stringStringMap.get("Cor"));
         // "Especie" e canina/felina, que corresponde ao type; a raca vem em campo proprio
-        petResponse.setType(stringStringMap.get("Espécie"));
-        petResponse.setBreed(stringStringMap.get("Raça"));
-        petResponse.setGender(stringStringMap.get("Sexo"));
-        petResponse.setBornDate(bornDateStringFormat(stringStringMap.get("Data de Nascimento")));
-        petResponse.setBornLocal(stringStringMap.get("Naturalidade"));
+        animalResponse.setType(stringStringMap.get("Espécie"));
+        animalResponse.setBreed(stringStringMap.get("Raça"));
+        animalResponse.setGender(stringStringMap.get("Sexo"));
+        animalResponse.setBornDate(bornDateStringFormat(stringStringMap.get("Data de Nascimento")));
+        animalResponse.setBornLocal(stringStringMap.get("Naturalidade"));
 
-        return petResponse;
+        return animalResponse;
     }
 
     public LocalDate bornDateStringFormat(String bornStringDate) {
@@ -198,19 +200,19 @@ public class PetIdServiceImpl implements PetIdService {
         return fields;
     }
 
-    private PetResponseDTO toResponse(Pet pet) {
-        return PetResponseDTO.builder()
-                .petId(pet.getPetId())
-                .name(pet.getName())
-                .type(pet.getType())
-                .generalRegistry(pet.getGeneralRegistry())
-                .breed(pet.getBreed())
-                .bornDate(pet.getBornDate())
-                .weight(pet.getWeight())
-                .gender(pet.getGender())
-                .ownerId(pet.getHolder().map(Owner::getOwnerId).orElse(null))
-                .creationDate(pet.getCreationDate())
-                .updateDate(pet.getUpdateDate())
+    private AnimalResponseDTO toResponse(Animal animal) {
+        return AnimalResponseDTO.builder()
+                .animalId(animal.getAnimalId())
+                .name(animal.getName())
+                .type(animal.getType())
+                .generalRegistry(animal.getGeneralRegistry())
+                .breed(animal.getBreed())
+                .bornDate(animal.getBornDate())
+                .weight(animal.getWeight())
+                .gender(animal.getGender())
+                .personId(animal.getHolder().map(Person::getPersonId).orElse(null))
+                .creationDate(animal.getCreationDate())
+                .updateDate(animal.getUpdateDate())
                 .build();
     }
 

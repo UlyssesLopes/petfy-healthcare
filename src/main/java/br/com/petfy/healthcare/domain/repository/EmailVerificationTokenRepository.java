@@ -13,11 +13,11 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
 
     Optional<EmailVerificationToken> findByTokenHash(String tokenHash);
 
-    List<EmailVerificationToken> findByOwnerOwnerIdAndUsedAtIsNull(UUID ownerId);
+    List<EmailVerificationToken> findByPersonPersonIdAndUsedAtIsNull(UUID personId);
 
-    Optional<EmailVerificationToken> findFirstByOwnerOwnerIdOrderByCreationDateDesc(UUID ownerId);
+    Optional<EmailVerificationToken> findFirstByPersonPersonIdOrderByCreationDateDesc(UUID personId);
 
     /** Ver o equivalente em PasswordResetTokenRepository: sem isto a conta nao pode ser apagada. */
-    void deleteByOwnerOwnerId(UUID ownerId);
+    void deleteByPersonPersonId(UUID personId);
 
 }
