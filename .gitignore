@@ -4,6 +4,10 @@ target/
 ### Overrides locais (credenciais reais nunca versionadas)
 application-*.local.properties
 .env
+
+### Raiz do storage de anexo. E dado de saude de animal real em homologacao, e
+### residuo de teste em dev - nas duas leituras nao pertence ao repositorio
+data/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
