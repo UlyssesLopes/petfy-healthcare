@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.ClinicAccessRequestDTO;
 import br.com.petfy.healthcare.domain.dto.ClinicAccessResponseDTO;
-import br.com.petfy.healthcare.service.PetClinicAccessService;
+import br.com.petfy.healthcare.service.ClinicAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,24 +16,24 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/animals/{animalId}/clinic-access")
 @RequiredArgsConstructor
-public class PetClinicAccessController {
+public class ClinicAccessController {
 
-    private final PetClinicAccessService petClinicAccessService;
+    private final ClinicAccessService clinicAccessService;
 
     @PostMapping
     public ResponseEntity<ClinicAccessResponseDTO> grant(@PathVariable UUID animalId,
                                                          @Valid @RequestBody ClinicAccessRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(petClinicAccessService.grant(animalId, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(clinicAccessService.grant(animalId, request));
     }
 
     @GetMapping
     public ResponseEntity<List<ClinicAccessResponseDTO>> list(@PathVariable UUID animalId) {
-        return ResponseEntity.ok(petClinicAccessService.list(animalId));
+        return ResponseEntity.ok(clinicAccessService.list(animalId));
     }
 
     @DeleteMapping("/{clinicId}")
     public ResponseEntity<Void> revoke(@PathVariable UUID animalId, @PathVariable UUID clinicId) {
-        petClinicAccessService.revoke(animalId, clinicId);
+        clinicAccessService.revoke(animalId, clinicId);
         return ResponseEntity.noContent().build();
     }
 

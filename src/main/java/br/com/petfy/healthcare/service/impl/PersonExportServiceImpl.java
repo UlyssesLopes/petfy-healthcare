@@ -44,8 +44,7 @@ public class PersonExportServiceImpl implements PersonExportService {
     private final AntiparasiticRepository antiparasiticRepository;
     private final AnimalWeightHistoryRepository animalWeightHistoryRepository;
     private final AttachmentRepository attachmentRepository;
-    private final AnimalShareRepository animalShareRepository;
-    private final PetClinicAccessRepository petClinicAccessRepository;
+    private final GrantRepository grantRepository;
     private final SensitiveAccessLogRepository sensitiveAccessLogRepository;
     private final AnimalHealthConditionRepository animalHealthConditionRepository;
 
@@ -295,29 +294,44 @@ public class PersonExportServiceImpl implements PersonExportService {
                 .toList();
     }
 
+    /**
+     * Os dois metodos abaixo leem a mesma tabela desde o P2 - links e acessos de
+     * clinica viraram concessoes -, e continuam separados no documento de
+     * proposito: para quem le o export, "quem tem um link do meu animal" e "que
+     * clinica enxerga meu animal" sao perguntas diferentes.
+     *
+     * O escopo entra nos dois. Sem ele o documento diria que houve acesso sem dizer
+     * a quanto, que e justamente o que o P2 passou a permitir limitar.
+     */
     private List<PersonExportDTO.LinkCompartilhadoDTO> links(Animal animal) {
         LocalDateTime agora = LocalDateTime.now();
 
-        return animalShareRepository.findByAnimalOrderByCreationDateDesc(animal)
+        return grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animal.getAnimalId())
                 .stream()
-                .map(s -> PersonExportDTO.LinkCompartilhadoDTO.builder()
-                        .animalShareId(s.getAnimalShareId())
-                        .expiresAt(s.getExpiresAt())
-                        .revokedAt(s.getRevokedAt())
-                        .active(s.isActive(agora))
-                        .creationDate(s.getCreationDate())
+                .filter(g -> g.getTokenHash() != null)
+                .map(g -> PersonExportDTO.LinkCompartilhadoDTO.builder()
+                        .grantId(g.getGrantId())
+                        .scopes(g.getScopes())
+                        .expiresAt(g.getExpiresAt())
+                        .revokedAt(g.getRevokedAt())
+                        .active(g.estaVigente(agora))
+                        .creationDate(g.getGrantedAt())
                         .build())
                 .toList();
     }
 
     private List<PersonExportDTO.AcessoDeClinicaDTO> acessosDeClinica(UUID animalId) {
-        return petClinicAccessRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animalId)
+        LocalDateTime agora = LocalDateTime.now();
+
+        return grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animalId)
                 .stream()
-                .map(a -> PersonExportDTO.AcessoDeClinicaDTO.builder()
-                        .clinicName(a.getClinic().getName())
-                        .grantedAt(a.getGrantedAt())
-                        .revokedAt(a.getRevokedAt())
-                        .active(a.isActive())
+                .filter(g -> g.getGranteeClinic() != null)
+                .map(g -> PersonExportDTO.AcessoDeClinicaDTO.builder()
+                        .clinicName(g.getGranteeClinic().getName())
+                        .scopes(g.getScopes())
+                        .grantedAt(g.getGrantedAt())
+                        .revokedAt(g.getRevokedAt())
+                        .active(g.estaVigente(agora))
                         .build())
                 .toList();
     }

@@ -4,13 +4,14 @@ import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
+import br.com.petfy.healthcare.domain.entity.Grant;
+import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.HealthRecordCorrection;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
-import br.com.petfy.healthcare.domain.entity.AnimalShare;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
@@ -62,8 +63,7 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
     @Autowired private HealthRecordCorrectionRepository healthRecordCorrectionRepository;
-    @Autowired private AnimalShareRepository animalShareRepository;
-    @Autowired private PetClinicAccessRepository petClinicAccessRepository;
+    @Autowired private GrantRepository grantRepository;
     @Autowired private AnimalWeightHistoryRepository animalWeightHistoryRepository;
     @Autowired private AntiparasiticRepository antiparasiticRepository;
 
@@ -128,13 +128,18 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
                 .applicationDate(LocalDate.now().minusMonths(3))
                 .creationDate(LocalDateTime.now()).updateDate(LocalDateTime.now()).build());
 
-        animalShareRepository.saveAndFlush(AnimalShare.builder()
+        grantRepository.saveAndFlush(Grant.builder()
                 .animal(rex).tokenHash("hash-" + UUID.randomUUID())
+                .level(GrantLevel.VIEWER)
+                .scopes(new java.util.LinkedHashSet<>(java.util.Set.of(GrantScope.CARTEIRA)))
+                .grantedAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusDays(30))
-                .creationDate(LocalDateTime.now()).build());
+                .build());
 
-        petClinicAccessRepository.saveAndFlush(PetClinicAccess.builder()
-                .animal(rex).clinic(bichoFeliz).grantedAt(LocalDateTime.now()).build());
+        grantRepository.saveAndFlush(Grant.builder()
+                .animal(rex).granteeClinic(bichoFeliz).level(GrantLevel.EDITOR)
+                .scopes(new java.util.LinkedHashSet<>(java.util.Set.of(GrantScope.CARTEIRA)))
+                .grantedAt(LocalDateTime.now()).build());
     }
 
     /**
@@ -155,8 +160,8 @@ class AnimalDeletionContainerTest extends PostgresContainerTest {
         assertThat(healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(animalId)).isEmpty();
         assertThat(animalWeightHistoryRepository.findByAnimalAnimalIdOrderByMeasuredAtDesc(animalId)).isEmpty();
         assertThat(antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId)).isEmpty();
-        assertThat(animalShareRepository.findByAnimalOrderByCreationDateDesc(rex)).isEmpty();
-        assertThat(petClinicAccessRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animalId)).isEmpty();
+        assertThat(grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(rex.getAnimalId())).isEmpty();
+        assertThat(grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animalId)).isEmpty();
     }
 
     /**

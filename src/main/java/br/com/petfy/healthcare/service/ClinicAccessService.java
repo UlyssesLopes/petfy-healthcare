@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 /** Lado do tutor: quem decide quais clinicas alcancam o animal. */
-public interface PetClinicAccessService {
+public interface ClinicAccessService {
 
     ClinicAccessResponseDTO grant(UUID animalId, ClinicAccessRequestDTO request);
 

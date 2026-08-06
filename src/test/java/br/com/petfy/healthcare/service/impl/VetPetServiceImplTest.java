@@ -8,10 +8,11 @@ import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
-import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
+import br.com.petfy.healthcare.domain.entity.Grant;
+import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
@@ -53,7 +54,7 @@ import static org.mockito.Mockito.when;
 class VetPetServiceImplTest {
 
     @Mock
-    private PetClinicAccessRepository petClinicAccessRepository;
+    private GrantRepository grantRepository;
 
     @Mock
     private VaccineRepository vaccineRepository;
@@ -91,7 +92,7 @@ class VetPetServiceImplTest {
     void setUp() {
         // factory real: o que interessa aqui e que a vacina saia carimbada com a
         // clinica certa, e nao repetir a regra de montagem num mock
-        service = new VetPetServiceImpl(petClinicAccessRepository, vaccineRepository,
+        service = new VetPetServiceImpl(grantRepository, vaccineRepository,
                 currentProfessionalProvider, new VaccineFactory(vaccineCatalogRepository),
                 clinicActivityNotifier, vaccineCorrectionLog,
                 healthRecordRepository, healthRecordCorrectionLog, sensitiveAccessLogger);
@@ -108,11 +109,12 @@ class VetPetServiceImplTest {
                 .build();
     }
 
-    private PetClinicAccess acesso(LocalDateTime revokedAt) {
-        return PetClinicAccess.builder()
-                .petClinicAccessId(UUID.randomUUID())
+    private Grant acesso(LocalDateTime revokedAt) {
+        return Grant.builder()
+                .grantId(UUID.randomUUID())
                 .animal(animal())
-                .clinic(clinic(CLINIC_ID))
+                .granteeClinic(clinic(CLINIC_ID))
+                .level(GrantLevel.EDITOR)
                 .grantedAt(LocalDateTime.now().minusDays(3))
                 .revokedAt(revokedAt)
                 .build();
@@ -131,7 +133,7 @@ class VetPetServiceImplTest {
         @DisplayName("deve listar apenas os animals com concessao ativa para a clinica do vet")
         void deveListarAnimalsComConcessaoAtiva() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByClinicClinicIdAndRevokedAtIsNull(CLINIC_ID))
+            when(grantRepository.findVigentesDaClinica(eq(CLINIC_ID), any()))
                     .thenReturn(List.of(acesso(null)));
 
             var result = service.listAccessibleAnimals();
@@ -157,7 +159,7 @@ class VetPetServiceImplTest {
         @DisplayName("deve devolver lista vazia quando a clinica nao foi autorizada por ninguem")
         void deveDevolverListaVaziaSemAutorizacoes() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByClinicClinicIdAndRevokedAtIsNull(CLINIC_ID))
+            when(grantRepository.findVigentesDaClinica(eq(CLINIC_ID), any()))
                     .thenReturn(List.of());
 
             assertThat(service.listAccessibleAnimals()).isEmpty();
@@ -179,7 +181,7 @@ class VetPetServiceImplTest {
         @DisplayName("deve registrar a vacina no animal autorizado")
         void deveRegistrarVacinaNoAnimalAutorizado() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -193,7 +195,7 @@ class VetPetServiceImplTest {
         @DisplayName("deve carimbar a vacina com a clinica do vet, e nao com a do payload")
         void deveCarimbarComAClinicaDoVet() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -214,7 +216,7 @@ class VetPetServiceImplTest {
         @DisplayName("deve usar o animalId do path, ignorando o que vier no corpo")
         void deveUsarAnimalIdDoPath() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -234,7 +236,7 @@ class VetPetServiceImplTest {
         @DisplayName("deve avisar o tutor de que a clinica registrou algo no animal dele")
         void deveAvisarOTutor() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -249,7 +251,7 @@ class VetPetServiceImplTest {
         @DisplayName("nao deve avisar quando o registro foi recusado")
         void naoDeveAvisarQuandoRegistroRecusado() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.registerVaccine(ANIMAL_ID, request()))
@@ -262,7 +264,7 @@ class VetPetServiceImplTest {
         @DisplayName("nao deve registrar em animal sem concessao para a clinica do vet")
         void naoDeveRegistrarSemConcessao() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.registerVaccine(ANIMAL_ID, request()))
@@ -276,8 +278,12 @@ class VetPetServiceImplTest {
         @DisplayName("nao deve registrar quando a concessao foi revogada")
         void naoDeveRegistrarComConcessaoRevogada() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
-                    .thenReturn(Optional.of(acesso(LocalDateTime.now().minusDays(1))));
+            // devolve vazio, e nao uma concessao com revokedAt preenchido: desde o P2a
+            // quem filtra vigencia e a propria consulta, e nao o servico. Um mock que
+            // devolvesse concessao revogada estaria testando um filtro que saiu daqui -
+            // e o caso real, contra Postgres, esta no UuidQueriesContainerTest
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
+                    .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.registerVaccine(ANIMAL_ID, request()))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -306,7 +312,7 @@ class VetPetServiceImplTest {
 
         private void baseTem(Vaccine vaccine) {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(vaccine));
         }
@@ -414,7 +420,7 @@ class VetPetServiceImplTest {
         @DisplayName("nao deve corrigir vacina de animal sem concessao ativa")
         void naoDeveCorrigirSemConcessao() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.correctVaccine(ANIMAL_ID, VACCINE_ID,
@@ -434,7 +440,7 @@ class VetPetServiceImplTest {
         @DisplayName("deve devolver o rastro de qualquer vacina do animal autorizado")
         void deveDevolverRastroDoAnimalAutorizado() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(
                     Vaccine.builder().vaccineId(VACCINE_ID).animal(animal()).build()));
@@ -448,7 +454,7 @@ class VetPetServiceImplTest {
         @DisplayName("nao deve devolver rastro de animal sem concessao ativa")
         void naoDeveDevolverSemConcessao() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.listCorrections(ANIMAL_ID, VACCINE_ID))
@@ -462,7 +468,7 @@ class VetPetServiceImplTest {
         @DisplayName("nao deve devolver rastro de vacina que nao e daquele animal")
         void naoDeveDevolverDeVacinaDeOutroAnimal() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(
                     Vaccine.builder().vaccineId(VACCINE_ID)
@@ -494,7 +500,7 @@ class VetPetServiceImplTest {
 
         private void comAcesso() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
         }
 
@@ -532,7 +538,7 @@ class VetPetServiceImplTest {
         @DisplayName("nao deve registrar atendimento em animal sem concessao ativa")
         void naoDeveRegistrarSemConcessao() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.registerHealthRecord(ANIMAL_ID,
@@ -640,7 +646,7 @@ class VetPetServiceImplTest {
         @DisplayName("nao deve expor o historico de animal sem concessao")
         void naoDeveExporHistoricoSemConcessao() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.listHealthRecords(ANIMAL_ID))
@@ -671,7 +677,7 @@ class VetPetServiceImplTest {
         @DisplayName("deve listar as vacinas do animal autorizado")
         void deveListarVacinasDoAnimalAutorizado() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(Vaccine.builder()
@@ -684,7 +690,7 @@ class VetPetServiceImplTest {
         @DisplayName("nao deve expor o historico de animal sem concessao")
         void naoDeveExporHistoricoSemConcessao() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.listVaccines(ANIMAL_ID))
@@ -711,7 +717,7 @@ class VetPetServiceImplTest {
         @DisplayName("listar vacinas registra o acesso")
         void listarVacinasRegistra() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID)).thenReturn(List.of());
 
@@ -725,7 +731,7 @@ class VetPetServiceImplTest {
         @DisplayName("listar o historico de saude registra o acesso")
         void listarHistoricoRegistra() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(ANIMAL_ID)).thenReturn(List.of());
 
@@ -744,7 +750,7 @@ class VetPetServiceImplTest {
         @DisplayName("acesso recusado nao gera registro de leitura")
         void acessoRecusadoNaoRegistra() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.listVaccines(ANIMAL_ID))
@@ -762,7 +768,7 @@ class VetPetServiceImplTest {
         @DisplayName("registrar vacina nao entra no log de leitura")
         void escritaNaoEntraNoLogDeLeitura() {
             vetDaClinica(CLINIC_ID);
-            when(petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(ANIMAL_ID, CLINIC_ID))
+            when(grantRepository.findVigenteDaClinicaNoAnimal(eq(ANIMAL_ID), eq(CLINIC_ID), any()))
                     .thenReturn(Optional.of(acesso(null)));
             when(vaccineRepository.save(any(Vaccine.class))).thenAnswer(i -> i.getArgument(0));
 

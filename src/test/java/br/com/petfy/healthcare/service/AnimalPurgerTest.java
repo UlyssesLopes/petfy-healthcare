@@ -4,10 +4,9 @@ import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
-import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
+import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
-import br.com.petfy.healthcare.domain.repository.AnimalShareRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalWeightHistoryRepository;
@@ -27,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -57,8 +57,7 @@ class AnimalPurgerTest {
     @Mock private HealthRecordCorrectionRepository healthRecordCorrectionRepository;
     @Mock private AnimalWeightHistoryRepository animalWeightHistoryRepository;
     @Mock private AntiparasiticRepository antiparasiticRepository;
-    @Mock private AnimalShareRepository animalShareRepository;
-    @Mock private PetClinicAccessRepository petClinicAccessRepository;
+    @Mock private GrantRepository grantRepository;
     @Mock private SensitiveAccessLogRepository sensitiveAccessLogRepository;
     @Mock private AnimalHealthConditionRepository animalHealthConditionRepository;
 
@@ -73,7 +72,7 @@ class AnimalPurgerTest {
                 attachmentRepository, vaccineCorrectionRepository, healthRecordCorrectionRepository,
                 vaccineRepository, healthRecordRepository,
                 animalWeightHistoryRepository, antiparasiticRepository,
-                animalShareRepository, petClinicAccessRepository, sensitiveAccessLogRepository,
+                grantRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
                 petTutorInviteRepository, petTutorRepository,
                 animalRepository, attachmentStorage);
@@ -111,8 +110,7 @@ class AnimalPurgerTest {
             ordem.verify(healthRecordRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(animalWeightHistoryRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(antiparasiticRepository).deleteByAnimalAnimalIdIn(UM_PET);
-            ordem.verify(animalShareRepository).deleteByAnimalAnimalIdIn(UM_PET);
-            ordem.verify(petClinicAccessRepository).deleteByAnimalAnimalIdIn(UM_PET);
+            ordem.verify(grantRepository).deleteAll(any());
             ordem.verify(sensitiveAccessLogRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(animalHealthConditionRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(petTutorInviteRepository).deleteByAnimalAnimalIdIn(UM_PET);
@@ -166,7 +164,7 @@ class AnimalPurgerTest {
                     attachmentRepository, vaccineCorrectionRepository, healthRecordCorrectionRepository,
                     vaccineRepository, healthRecordRepository,
                     animalWeightHistoryRepository, antiparasiticRepository,
-                    animalShareRepository, petClinicAccessRepository, sensitiveAccessLogRepository,
+                    grantRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
                     petTutorInviteRepository, petTutorRepository,
                     animalRepository, attachmentStorage);

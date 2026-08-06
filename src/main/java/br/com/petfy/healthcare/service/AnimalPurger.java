@@ -4,10 +4,9 @@ import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
-import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
-import br.com.petfy.healthcare.domain.repository.AnimalShareRepository;
+import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalWeightHistoryRepository;
@@ -58,8 +57,7 @@ public class AnimalPurger {
     private final HealthRecordCorrectionRepository healthRecordCorrectionRepository;
     private final AnimalWeightHistoryRepository animalWeightHistoryRepository;
     private final AntiparasiticRepository antiparasiticRepository;
-    private final AnimalShareRepository animalShareRepository;
-    private final PetClinicAccessRepository petClinicAccessRepository;
+    private final GrantRepository grantRepository;
     private final SensitiveAccessLogRepository sensitiveAccessLogRepository;
     private final AnimalHealthConditionRepository animalHealthConditionRepository;
 
@@ -119,8 +117,9 @@ public class AnimalPurger {
         healthRecordRepository.deleteByAnimalAnimalIdIn(animalIds);
         animalWeightHistoryRepository.deleteByAnimalAnimalIdIn(animalIds);
         antiparasiticRepository.deleteByAnimalAnimalIdIn(animalIds);
-        animalShareRepository.deleteByAnimalAnimalIdIn(animalIds);
-        petClinicAccessRepository.deleteByAnimalAnimalIdIn(animalIds);
+        // por entidade, e nao em massa: grant_scopes aponta para grants, e um delete
+        // em massa deixaria os escopos orfaos - que o Postgres recusa e o mock nao
+        grantRepository.deleteAll(grantRepository.findByAnimalAnimalIdIn(animalIds));
         sensitiveAccessLogRepository.deleteByAnimalAnimalIdIn(animalIds);
         animalHealthConditionRepository.deleteByAnimalAnimalIdIn(animalIds);
 

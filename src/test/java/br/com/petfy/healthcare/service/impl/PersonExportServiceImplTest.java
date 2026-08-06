@@ -50,8 +50,7 @@ class PersonExportServiceImplTest {
     @Mock private AntiparasiticRepository antiparasiticRepository;
     @Mock private AnimalWeightHistoryRepository animalWeightHistoryRepository;
     @Mock private AttachmentRepository attachmentRepository;
-    @Mock private AnimalShareRepository animalShareRepository;
-    @Mock private PetClinicAccessRepository petClinicAccessRepository;
+    @Mock private GrantRepository grantRepository;
     @Mock private SensitiveAccessLogRepository sensitiveAccessLogRepository;
     @Mock private AnimalHealthConditionRepository animalHealthConditionRepository;
 
@@ -102,8 +101,7 @@ class PersonExportServiceImplTest {
         when(antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID)).thenReturn(List.of());
         when(animalWeightHistoryRepository.findByAnimalAnimalIdOrderByMeasuredAtDesc(ANIMAL_ID)).thenReturn(List.of());
         when(attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(ANIMAL_ID)).thenReturn(List.of());
-        when(animalShareRepository.findByAnimalOrderByCreationDateDesc(any())).thenReturn(List.of());
-        when(petClinicAccessRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(ANIMAL_ID)).thenReturn(List.of());
+        when(grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(ANIMAL_ID)).thenReturn(List.of());
         when(sensitiveAccessLogRepository.findByAnimalAnimalIdOrderByAccessedAtDesc(eq(ANIMAL_ID), any()))
                 .thenReturn(Page.empty());
         when(animalHealthConditionRepository

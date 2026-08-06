@@ -8,12 +8,14 @@ import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionKind;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionSeverity;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.entity.Species;
 import lombok.Builder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -235,7 +237,10 @@ public record PersonExportDTO(
 
     @Builder
     public record LinkCompartilhadoDTO(
-            UUID animalShareId,
+            UUID grantId,
+            // o quanto o link mostra. Sem isto o documento diria que houve acesso sem
+            // dizer a quanto, que e justamente o que o P2 passou a permitir limitar
+            Set<GrantScope> scopes,
             LocalDateTime expiresAt,
             LocalDateTime revokedAt,
             boolean active,
@@ -248,6 +253,7 @@ public record PersonExportDTO(
     @Builder
     public record AcessoDeClinicaDTO(
             String clinicName,
+            Set<GrantScope> scopes,
             LocalDateTime grantedAt,
             LocalDateTime revokedAt,
             boolean active

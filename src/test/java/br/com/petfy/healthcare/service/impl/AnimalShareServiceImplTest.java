@@ -4,15 +4,19 @@ import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.dto.AnimalShareRequestDTO;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineStatus;
+import br.com.petfy.healthcare.domain.entity.Grant;
+import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
+import br.com.petfy.healthcare.domain.repository.GrantRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.AnimalShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
-import br.com.petfy.healthcare.domain.repository.AnimalShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.SensitiveAccessLogger;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
@@ -47,7 +51,7 @@ import static org.mockito.Mockito.when;
 class AnimalShareServiceImplTest {
 
     @Mock
-    private AnimalShareRepository animalShareRepository;
+    private GrantRepository grantRepository;
 
     @Mock
     private VaccineRepository vaccineRepository;
@@ -57,6 +61,12 @@ class AnimalShareServiceImplTest {
 
     @Mock
     private SensitiveAccessLogger sensitiveAccessLogger;
+
+    @Mock
+    private AnimalHealthConditionRepository conditionRepository;
+
+    @Mock
+    private CurrentPersonProvider currentPersonProvider;
 
     private AnimalShareServiceImpl service;
 
@@ -69,9 +79,9 @@ class AnimalShareServiceImplTest {
     void setUp() {
         // calculator real: o valor do teste esta em conferir o status que o link
         // mostra, e nao em repetir a regra num mock
-        service = new AnimalShareServiceImpl(animalShareRepository, vaccineRepository,
-                animalAccessGuard, new VaccineStatusCalculator(), new OpaqueTokenService(),
-                sensitiveAccessLogger);
+        service = new AnimalShareServiceImpl(grantRepository, vaccineRepository,
+                conditionRepository, animalAccessGuard, currentPersonProvider,
+                new VaccineStatusCalculator(), new OpaqueTokenService(), sensitiveAccessLogger);
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 30);
         ReflectionTestUtils.setField(service, "windowDays", 30);
     }
@@ -93,13 +103,15 @@ class AnimalShareServiceImplTest {
                 HttpStatus.NOT_FOUND);
     }
 
-    private AnimalShare shareAtivo() {
-        return AnimalShare.builder()
-                .animalShareId(SHARE_ID)
+    private Grant shareAtivo() {
+        return Grant.builder()
+                .grantId(SHARE_ID)
                 .animal(animal())
                 .tokenHash("hash-qualquer")
+                .level(GrantLevel.VIEWER)
+                .scopes(new java.util.LinkedHashSet<>(java.util.Set.of(GrantScope.CARTEIRA)))
+                .grantedAt(LocalDateTime.now().minusDays(1))
                 .expiresAt(LocalDateTime.now().plusDays(10))
-                .creationDate(LocalDateTime.now().minusDays(1))
                 .build();
     }
 
@@ -111,7 +123,7 @@ class AnimalShareServiceImplTest {
         @DisplayName("deve devolver o token apenas na criacao")
         void deveDevolverTokenApenasNaCriacao() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(animalShareRepository.save(any(AnimalShare.class))).thenAnswer(i -> i.getArgument(0));
+            when(grantRepository.save(any(Grant.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(ANIMAL_ID, null);
 
@@ -123,12 +135,12 @@ class AnimalShareServiceImplTest {
         @DisplayName("nao deve guardar o token, apenas o hash")
         void naoDeveGuardarOToken() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(animalShareRepository.save(any(AnimalShare.class))).thenAnswer(i -> i.getArgument(0));
+            when(grantRepository.save(any(Grant.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(ANIMAL_ID, null);
 
-            var captor = ArgumentCaptor.forClass(AnimalShare.class);
-            verify(animalShareRepository).save(captor.capture());
+            var captor = ArgumentCaptor.forClass(Grant.class);
+            verify(grantRepository).save(captor.capture());
             assertThat(captor.getValue().getTokenHash())
                     .isNotBlank()
                     .isNotEqualTo(result.getToken());
@@ -137,7 +149,7 @@ class AnimalShareServiceImplTest {
         @Test
         @DisplayName("a entidade de share nao deve ter campo para o token em claro")
         void entidadeNaoDeveTerCampoDeTokenEmClaro() {
-            assertThat(AnimalShare.class.getDeclaredFields())
+            assertThat(Grant.class.getDeclaredFields())
                     .extracting(Field::getName)
                     .contains("tokenHash")
                     .doesNotContain("token");
@@ -147,7 +159,7 @@ class AnimalShareServiceImplTest {
         @DisplayName("dois links do mesmo animal devem ter tokens diferentes")
         void doisLinksDevemTerTokensDiferentes() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(animalShareRepository.save(any(AnimalShare.class))).thenAnswer(i -> i.getArgument(0));
+            when(grantRepository.save(any(Grant.class))).thenAnswer(i -> i.getArgument(0));
 
             assertThat(service.createShare(ANIMAL_ID, null).getToken())
                     .isNotEqualTo(service.createShare(ANIMAL_ID, null).getToken());
@@ -157,7 +169,7 @@ class AnimalShareServiceImplTest {
         @DisplayName("deve usar a validade padrao quando o request nao informa")
         void deveUsarValidadePadrao() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(animalShareRepository.save(any(AnimalShare.class))).thenAnswer(i -> i.getArgument(0));
+            when(grantRepository.save(any(Grant.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(ANIMAL_ID, null);
 
@@ -169,7 +181,7 @@ class AnimalShareServiceImplTest {
         @DisplayName("deve respeitar a validade informada no request")
         void deveRespeitarValidadeInformada() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(animalShareRepository.save(any(AnimalShare.class))).thenAnswer(i -> i.getArgument(0));
+            when(grantRepository.save(any(Grant.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = service.createShare(ANIMAL_ID, AnimalShareRequestDTO.builder().expiresInDays(3).build());
 
@@ -185,7 +197,7 @@ class AnimalShareServiceImplTest {
                     .isInstanceOf(PetfyHealthcareException.class)
                     .hasMessage("Animal not found");
 
-            verify(animalShareRepository, never()).save(any());
+            verify(grantRepository, never()).save(any());
         }
     }
 
@@ -197,7 +209,7 @@ class AnimalShareServiceImplTest {
         @DisplayName("nao deve devolver o token nas listagens")
         void naoDeveDevolverTokenNasListagens() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(animalShareRepository.findByAnimalOrderByCreationDateDesc(any())).thenReturn(List.of(shareAtivo()));
+            when(grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(any())).thenReturn(List.of(shareAtivo()));
 
             assertThat(service.listShares(ANIMAL_ID)).singleElement()
                     .satisfies(share -> {
@@ -215,14 +227,14 @@ class AnimalShareServiceImplTest {
         @DisplayName("deve marcar a data de revogacao")
         void deveMarcarDataDeRevogacao() {
             var share = shareAtivo();
-            when(animalShareRepository.findById(SHARE_ID)).thenReturn(Optional.of(share));
+            when(grantRepository.findById(SHARE_ID)).thenReturn(Optional.of(share));
             when(animalAccessGuard.alcanca(ANIMAL_ID)).thenReturn(true);
 
             service.revokeShare(SHARE_ID);
 
             assertThat(share.getRevokedAt()).isNotNull();
-            assertThat(share.isActive(LocalDateTime.now())).isFalse();
-            verify(animalShareRepository).save(share);
+            assertThat(share.estaVigente(LocalDateTime.now())).isFalse();
+            verify(grantRepository).save(share);
         }
 
         @Test
@@ -232,13 +244,13 @@ class AnimalShareServiceImplTest {
             var original = LocalDateTime.now().minusDays(3);
             jaRevogado.setRevokedAt(original);
 
-            when(animalShareRepository.findById(SHARE_ID)).thenReturn(Optional.of(jaRevogado));
+            when(grantRepository.findById(SHARE_ID)).thenReturn(Optional.of(jaRevogado));
             when(animalAccessGuard.alcanca(ANIMAL_ID)).thenReturn(true);
 
             service.revokeShare(SHARE_ID);
 
             assertThat(jaRevogado.getRevokedAt()).isEqualTo(original);
-            verify(animalShareRepository, never()).save(any());
+            verify(grantRepository, never()).save(any());
         }
 
         /**
@@ -248,7 +260,7 @@ class AnimalShareServiceImplTest {
         @Test
         @DisplayName("basta alcancar o animal para revogar, em qualquer papel")
         void bastaAlcancarOAnimal() {
-            when(animalShareRepository.findById(SHARE_ID)).thenReturn(Optional.of(shareAtivo()));
+            when(grantRepository.findById(SHARE_ID)).thenReturn(Optional.of(shareAtivo()));
             when(animalAccessGuard.alcanca(ANIMAL_ID)).thenReturn(true);
 
             service.revokeShare(SHARE_ID);
@@ -260,7 +272,7 @@ class AnimalShareServiceImplTest {
         @Test
         @DisplayName("link de animal fora do alcance responde SHARE_NOT_FOUND e nao e revogado")
         void linkForaDoAlcanceNaoERevogado() {
-            when(animalShareRepository.findById(SHARE_ID)).thenReturn(Optional.of(shareAtivo()));
+            when(grantRepository.findById(SHARE_ID)).thenReturn(Optional.of(shareAtivo()));
             when(animalAccessGuard.alcanca(ANIMAL_ID)).thenReturn(false);
 
             assertThatThrownBy(() -> service.revokeShare(SHARE_ID))
@@ -268,13 +280,13 @@ class AnimalShareServiceImplTest {
                     .extracting("code", "httpStatus")
                     .containsExactly(107, HttpStatus.NOT_FOUND);
 
-            verify(animalShareRepository, never()).save(any());
+            verify(grantRepository, never()).save(any());
         }
 
         @Test
         @DisplayName("link inexistente responde SHARE_NOT_FOUND sem perguntar ao guard")
         void linkInexistenteResponde404() {
-            when(animalShareRepository.findById(SHARE_ID)).thenReturn(Optional.empty());
+            when(grantRepository.findById(SHARE_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.revokeShare(SHARE_ID))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -290,7 +302,7 @@ class AnimalShareServiceImplTest {
     class ViewSharedCard {
 
         private void linkValidoCom(Vaccine... vacinas) {
-            when(animalShareRepository.findByTokenHash(any())).thenReturn(Optional.of(shareAtivo()));
+            when(grantRepository.findByTokenHash(any())).thenReturn(Optional.of(shareAtivo()));
             when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID)).thenReturn(List.of(vacinas));
         }
 
@@ -337,13 +349,46 @@ class AnimalShareServiceImplTest {
                             VaccineStatus.UP_TO_DATE, VaccineStatus.NO_NEXT_DOSE);
         }
 
+        /**
+         * A regra mudou no P2a, e o teste mudou com ela.
+         *
+         * Antes o link nunca carregava contato, e conferir a ausencia do campo bastava.
+         * Agora ele pode carregar o telefone - mas <b>so com o escopo CONTATO</b>, que
+         * o tutor concede de propria vontade, e que existe para o cartao de emergencia.
+         * O que se protege agora e o gate, e nao a ausencia: e-mail, endereco e id
+         * continuam fora em qualquer escopo.
+         */
         @Test
-        @DisplayName("nao deve expor dados de contato do tutor")
-        void naoDeveExporContatoDoTutor() {
+        @DisplayName("telefone do tutor so sai com o escopo CONTATO; email e endereco nunca")
+        void contatoDoTutorSoSaiComEscopo() {
             assertThat(SharedVaccineCardDTO.class.getDeclaredFields())
                     .extracting(Field::getName)
-                    .contains("personName")
-                    .doesNotContain("personEmail", "personPhone", "personAddress", "personId");
+                    .contains("personName", "personPhone")
+                    .doesNotContain("personEmail", "personAddress", "personId");
+        }
+
+        @Test
+        @DisplayName("sem o escopo CONTATO o telefone do tutor nao aparece")
+        void semEscopoContatoNaoSaiTelefone() {
+            var semContato = shareAtivo();
+            when(grantRepository.findByTokenHash(any())).thenReturn(Optional.of(semContato));
+            when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
+                    .thenReturn(List.of());
+
+            assertThat(service.viewSharedCard("token-qualquer").getPersonPhone()).isNull();
+        }
+
+        @Test
+        @DisplayName("com o escopo CONTATO o telefone do tutor aparece")
+        void comEscopoContatoSaiTelefone() {
+            var comContato = shareAtivo();
+            comContato.getScopes().add(GrantScope.CONTATO);
+            when(grantRepository.findByTokenHash(any())).thenReturn(Optional.of(comContato));
+            when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
+                    .thenReturn(List.of());
+
+            assertThat(service.viewSharedCard("token-qualquer").getPersonPhone())
+                    .isEqualTo("11999999999");
         }
 
         @Test
@@ -357,7 +402,7 @@ class AnimalShareServiceImplTest {
         @Test
         @DisplayName("deve recusar token que nao existe")
         void deveRecusarTokenInexistente() {
-            when(animalShareRepository.findByTokenHash(any())).thenReturn(Optional.empty());
+            when(grantRepository.findByTokenHash(any())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.viewSharedCard("token-invalido"))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -370,7 +415,7 @@ class AnimalShareServiceImplTest {
         void deveRecusarLinkExpirado() {
             var expirado = shareAtivo();
             expirado.setExpiresAt(LocalDateTime.now().minusDays(1));
-            when(animalShareRepository.findByTokenHash(any())).thenReturn(Optional.of(expirado));
+            when(grantRepository.findByTokenHash(any())).thenReturn(Optional.of(expirado));
 
             assertThatThrownBy(() -> service.viewSharedCard("token-qualquer"))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -382,7 +427,7 @@ class AnimalShareServiceImplTest {
         void deveRecusarLinkRevogado() {
             var revogado = shareAtivo();
             revogado.setRevokedAt(LocalDateTime.now().minusMinutes(1));
-            when(animalShareRepository.findByTokenHash(any())).thenReturn(Optional.of(revogado));
+            when(grantRepository.findByTokenHash(any())).thenReturn(Optional.of(revogado));
 
             assertThatThrownBy(() -> service.viewSharedCard("token-qualquer"))
                     .isInstanceOf(PetfyHealthcareException.class)
@@ -397,7 +442,7 @@ class AnimalShareServiceImplTest {
             var revogado = shareAtivo();
             revogado.setRevokedAt(LocalDateTime.now());
 
-            when(animalShareRepository.findByTokenHash(any()))
+            when(grantRepository.findByTokenHash(any()))
                     .thenReturn(Optional.empty())
                     .thenReturn(Optional.of(expirado))
                     .thenReturn(Optional.of(revogado));
@@ -431,7 +476,7 @@ class AnimalShareServiceImplTest {
         @DisplayName("criar o link exige escrita")
         void criarExigeEscrita() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(animalShareRepository.save(any(AnimalShare.class))).thenAnswer(i -> i.getArgument(0));
+            when(grantRepository.save(any(Grant.class))).thenAnswer(i -> i.getArgument(0));
 
             service.createShare(ANIMAL_ID, null);
 
@@ -443,7 +488,7 @@ class AnimalShareServiceImplTest {
         @DisplayName("listar os links exige escrita")
         void listarExigeEscrita() {
             when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
-            when(animalShareRepository.findByAnimalOrderByCreationDateDesc(any())).thenReturn(List.of());
+            when(grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(any())).thenReturn(List.of());
 
             service.listShares(ANIMAL_ID);
 

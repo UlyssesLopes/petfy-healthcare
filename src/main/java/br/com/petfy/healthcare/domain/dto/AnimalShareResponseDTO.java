@@ -2,7 +2,10 @@ package br.com.petfy.healthcare.domain.dto;
 
 import lombok.*;
 
+import br.com.petfy.healthcare.domain.entity.GrantScope;
+
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -12,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AnimalShareResponseDTO {
 
-    private UUID animalShareId;
+    private UUID grantId;
 
     private UUID animalId;
 
@@ -21,6 +24,9 @@ public class AnimalShareResponseDTO {
      * guardado - nao ha como reexibir. Quem perdeu o link revoga e cria outro.
      */
     private String token;
+
+    /** O escopo que este link alcanca. */
+    private Set<GrantScope> scopes;
 
     private LocalDateTime expiresAt;
 

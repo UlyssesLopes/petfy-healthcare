@@ -11,10 +11,10 @@ import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
+import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
-import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
+import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.ClinicActivityNotifier;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class VetPetServiceImpl implements VetPetService {
 
-    private final PetClinicAccessRepository petClinicAccessRepository;
+    private final GrantRepository grantRepository;
     private final VaccineRepository vaccineRepository;
     private final CurrentProfessionalProvider currentProfessionalProvider;
     private final VaccineFactory vaccineFactory;
@@ -266,9 +266,9 @@ public class VetPetServiceImpl implements VetPetService {
         }
     }
 
-    private List<PetClinicAccess> acessosAtivosDaClinica() {
+    private List<Grant> acessosAtivosDaClinica() {
         UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
-        return petClinicAccessRepository.findByClinicClinicIdAndRevokedAtIsNull(clinicId);
+        return grantRepository.findVigentesDaClinica(clinicId, LocalDateTime.now());
     }
 
     /**
@@ -287,18 +287,17 @@ public class VetPetServiceImpl implements VetPetService {
         sensitiveAccessLogger.vetLeu(currentProfessionalProvider.require(), animal, recurso);
     }
 
-    private PetClinicAccess exigirAcessoAoAnimal(UUID animalId) {
+    private Grant exigirAcessoAoAnimal(UUID animalId) {
         UUID clinicId = currentProfessionalProvider.require().getClinic().getClinicId();
 
-        return petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(animalId, clinicId)
-                .filter(PetClinicAccess::isActive)
+        return grantRepository.findVigenteDaClinicaNoAnimal(animalId, clinicId, LocalDateTime.now())
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.ANIMAL_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.ANIMAL_NOT_FOUND.getCode(),
                         HttpStatus.NOT_FOUND));
     }
 
-    private VetPetDTO toVetPet(PetClinicAccess access) {
+    private VetPetDTO toVetPet(Grant access) {
         Animal animal = access.getAnimal();
 
         return VetPetDTO.builder()

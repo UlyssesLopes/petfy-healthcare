@@ -4,13 +4,14 @@ import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
+import br.com.petfy.healthcare.domain.entity.Grant;
+import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Species;
-import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
-import br.com.petfy.healthcare.domain.entity.AnimalShare;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,8 +49,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     @Autowired private ClinicRepository clinicRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
-    @Autowired private AnimalShareRepository animalShareRepository;
-    @Autowired private PetClinicAccessRepository petClinicAccessRepository;
+    @Autowired private GrantRepository grantRepository;
     @Autowired private ClinicInviteRepository clinicInviteRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
 
@@ -58,6 +58,17 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     private Animal rex;
     private Animal nina;
     private Clinic bichoFeliz;
+
+    /**
+     * Escopo minimo para as concessoes deste teste.
+     *
+     * Nao vazio de proposito: escopo vazio e um acesso que nao alcanca nada, e a
+     * entidade trata isso como negacao. Um teste que gravasse concessao sem escopo
+     * estaria exercitando um estado que o produto nao quer produzir.
+     */
+    private static java.util.Set<GrantScope> escopoCarteira() {
+        return new java.util.LinkedHashSet<>(java.util.Set.of(GrantScope.CARTEIRA));
+    }
     private Person marina;
 
     @BeforeEach
@@ -220,29 +231,29 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("concessao deve ser encontrada pelo par animal e clinica")
         void concessaoEncontradaPeloPar() {
-            petClinicAccessRepository.save(PetClinicAccess.builder()
-                    .animal(rex).clinic(bichoFeliz).grantedAt(LocalDateTime.now()).build());
+            grantRepository.save(Grant.builder()
+                    .animal(rex).granteeClinic(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
 
-            assertThat(petClinicAccessRepository
-                    .findByAnimalAnimalIdAndClinicClinicId(rex.getAnimalId(), bichoFeliz.getClinicId()))
+            assertThat(grantRepository
+                    .findVigenteDaClinicaNoAnimal(rex.getAnimalId(), bichoFeliz.getClinicId(), LocalDateTime.now()))
                     .isPresent();
 
-            assertThat(petClinicAccessRepository
-                    .findByAnimalAnimalIdAndClinicClinicId(nina.getAnimalId(), bichoFeliz.getClinicId()))
+            assertThat(grantRepository
+                    .findVigenteDaClinicaNoAnimal(nina.getAnimalId(), bichoFeliz.getClinicId(), LocalDateTime.now()))
                     .isEmpty();
         }
 
         @Test
         @DisplayName("a clinica deve enxergar so os animals com concessao ativa")
         void clinicaEnxergaApenasConcessoesAtivas() {
-            petClinicAccessRepository.save(PetClinicAccess.builder()
-                    .animal(rex).clinic(bichoFeliz).grantedAt(LocalDateTime.now()).build());
-            petClinicAccessRepository.save(PetClinicAccess.builder()
-                    .animal(nina).clinic(bichoFeliz).grantedAt(LocalDateTime.now())
+            grantRepository.save(Grant.builder()
+                    .animal(rex).granteeClinic(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
+            grantRepository.save(Grant.builder()
+                    .animal(nina).granteeClinic(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now())
                     .revokedAt(LocalDateTime.now()).build());
 
-            assertThat(petClinicAccessRepository
-                    .findByClinicClinicIdAndRevokedAtIsNull(bichoFeliz.getClinicId()))
+            assertThat(grantRepository
+                    .findVigentesDaClinica(bichoFeliz.getClinicId(), LocalDateTime.now()))
                     .extracting(a -> a.getAnimal().getName())
                     .containsExactly("Rex");
         }
@@ -253,7 +264,7 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
             clinicInviteRepository.save(br.com.petfy.healthcare.domain.entity.ClinicInvite.builder()
                     .clinic(bichoFeliz).createdBy(marina).tokenHash("hash-" + UUID.randomUUID())
                     .expiresAt(LocalDateTime.now().plusDays(7))
-                    .creationDate(LocalDateTime.now()).build());
+                    .build());
 
             assertThat(clinicInviteRepository
                     .findByClinicClinicIdOrderByCreationDateDesc(bichoFeliz.getClinicId()))
@@ -269,25 +280,25 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
         @DisplayName("link de compartilhamento deve ser encontrado pelo hash do token")
         void linkEncontradoPeloHash() {
             var hash = "hash-" + UUID.randomUUID();
-            animalShareRepository.save(AnimalShare.builder()
-                    .animal(rex).tokenHash(hash)
+            grantRepository.save(Grant.builder()
+                    .animal(rex).tokenHash(hash).level(GrantLevel.VIEWER).scopes(escopoCarteira()).grantedAt(LocalDateTime.now())
                     .expiresAt(LocalDateTime.now().plusDays(30))
-                    .creationDate(LocalDateTime.now()).build());
+                    .build());
 
-            assertThat(animalShareRepository.findByTokenHash(hash)).isPresent();
-            assertThat(animalShareRepository.findByTokenHash("outro-hash")).isEmpty();
+            assertThat(grantRepository.findByTokenHash(hash)).isPresent();
+            assertThat(grantRepository.findByTokenHash("outro-hash")).isEmpty();
         }
 
         @Test
         @DisplayName("links devem ser filtrados pelo animal")
         void linksFiltradosPeloAnimal() {
-            animalShareRepository.save(AnimalShare.builder()
-                    .animal(rex).tokenHash("hash-" + UUID.randomUUID())
+            grantRepository.save(Grant.builder()
+                    .animal(rex).tokenHash("hash-" + UUID.randomUUID()).level(GrantLevel.VIEWER).scopes(escopoCarteira()).grantedAt(LocalDateTime.now())
                     .expiresAt(LocalDateTime.now().plusDays(30))
-                    .creationDate(LocalDateTime.now()).build());
+                    .build());
 
-            assertThat(animalShareRepository.findByAnimalOrderByCreationDateDesc(rex)).hasSize(1);
-            assertThat(animalShareRepository.findByAnimalOrderByCreationDateDesc(nina)).isEmpty();
+            assertThat(grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(rex.getAnimalId())).hasSize(1);
+            assertThat(grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(nina.getAnimalId())).isEmpty();
         }
 
         @Test

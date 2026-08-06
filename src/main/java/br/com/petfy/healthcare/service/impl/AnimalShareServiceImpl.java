@@ -3,14 +3,18 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.AnimalShareRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalShareResponseDTO;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
-import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
-import br.com.petfy.healthcare.domain.entity.AnimalShare;
+import br.com.petfy.healthcare.domain.entity.Grant;
+import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
+import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
-import br.com.petfy.healthcare.domain.repository.AnimalShareRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
+import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.AnimalShareService;
 import br.com.petfy.healthcare.service.SensitiveAccessLogger;
@@ -23,18 +27,28 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * O link de carteira, agora como um Grant com token e escopo.
+ *
+ * O que mudou em relacao ao AnimalShare que ele substitui: o tutor escolhe o que o
+ * link mostra. Sem escolha explicita continua sendo so a carteira, que e o que ele
+ * sempre mostrou.
+ */
 @Service
 @RequiredArgsConstructor
 public class AnimalShareServiceImpl implements AnimalShareService {
 
-    private final AnimalShareRepository animalShareRepository;
+    private final GrantRepository grantRepository;
     private final VaccineRepository vaccineRepository;
+    private final AnimalHealthConditionRepository conditionRepository;
     private final AnimalAccessGuard animalAccessGuard;
+    private final CurrentPersonProvider currentPersonProvider;
     private final VaccineStatusCalculator vaccineStatusCalculator;
     private final OpaqueTokenService opaqueTokenService;
     private final SensitiveAccessLogger sensitiveAccessLogger;
@@ -56,42 +70,44 @@ public class AnimalShareServiceImpl implements AnimalShareService {
 
         String token = opaqueTokenService.generate();
 
-        AnimalShare share = animalShareRepository.save(AnimalShare.builder()
+        Grant grant = grantRepository.save(Grant.builder()
                 .animal(animal)
                 .tokenHash(opaqueTokenService.hash(token))
+                .level(GrantLevel.VIEWER)
+                .scopes(escopoPedido(request))
+                .grantedBy(currentPersonProvider.require())
+                .grantedAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusDays(validade))
-                .creationDate(LocalDateTime.now())
                 .build());
 
         // unico momento em que o token existe fora do cliente
-        return toResponse(share, token);
+        return toResponse(grant, token);
     }
 
     @Override
     public List<AnimalShareResponseDTO> listShares(UUID animalId) {
-        Animal animal = animalAccessGuard.requireEscrita(animalId);
+        animalAccessGuard.requireEscrita(animalId);
 
-        return animalShareRepository.findByAnimalOrderByCreationDateDesc(animal)
+        return grantRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animalId)
                 .stream()
-                .map(share -> toResponse(share, null))
+                .filter(g -> g.getTokenHash() != null)
+                .map(g -> toResponse(g, null))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void revokeShare(UUID animalShareId) {
+    public void revokeShare(UUID grantId) {
         // basta alcancar o animal: quem cuida do animal pode cortar um link que corre
         // por fora, sem depender de quem o criou
-        AnimalShare share = animalShareRepository.findById(animalShareId)
-                .filter(s -> animalAccessGuard.alcanca(s.getAnimal().getAnimalId()))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.SHARE_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.SHARE_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
+        Grant grant = grantRepository.findById(grantId)
+                .filter(g -> g.getTokenHash() != null)
+                .filter(g -> animalAccessGuard.alcanca(g.getAnimal().getAnimalId()))
+                .orElseThrow(this::linkNaoEncontrado);
 
         // revogar duas vezes nao e erro, mas a primeira data e que vale
-        if (share.getRevokedAt() == null) {
-            share.setRevokedAt(LocalDateTime.now());
-            animalShareRepository.save(share);
+        if (grant.getRevokedAt() == null) {
+            grant.setRevokedAt(LocalDateTime.now());
+            grantRepository.save(grant);
         }
     }
 
@@ -101,14 +117,11 @@ public class AnimalShareServiceImpl implements AnimalShareService {
 
         // token invalido, revogado e expirado respondem igual: distinguir diria a
         // quem tem um link velho que aquele animal existe
-        AnimalShare share = animalShareRepository.findByTokenHash(opaqueTokenService.hash(token))
-                .filter(s -> s.isActive(agora))
-                .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.SHARE_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.SHARE_NOT_FOUND.getCode(),
-                        HttpStatus.NOT_FOUND));
+        Grant grant = grantRepository.findByTokenHash(opaqueTokenService.hash(token))
+                .filter(g -> g.estaVigente(agora))
+                .orElseThrow(this::linkNaoEncontrado);
 
-        Animal animal = share.getAnimal();
+        Animal animal = grant.getAnimal();
         LocalDate hoje = LocalDate.now();
 
         // Registra depois de o link ser validado, e nao antes: token invalido nao e
@@ -116,11 +129,27 @@ public class AnimalShareServiceImpl implements AnimalShareService {
         // animal que ninguem conseguiu abrir - ou, pior, de um animalId que nao existe.
         sensitiveAccessLogger.linkPublicoAberto(animal);
 
-        List<SharedVaccineCardDTO.SharedVaccineDTO> vacinas =
-                vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animal.getAnimalId())
+        // Cada bloco so entra se o escopo permitir. E o mesmo link servindo de carteira
+        // para a creche e de cartao de emergencia para quem socorre, sem que um deles
+        // precise entregar mais do que o tutor autorizou.
+        List<SharedVaccineCardDTO.SharedVaccineDTO> vacinas = grant.alcanca(GrantScope.CARTEIRA)
+                ? vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animal.getAnimalId())
                         .stream()
                         .map(vaccine -> toSharedVaccine(vaccine, hoje))
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toList())
+                : List.of();
+
+        List<SharedVaccineCardDTO.SharedConditionDTO> condicoes = grant.alcanca(GrantScope.CONDICOES)
+                ? conditionRepository.findByAnimalOrdenadasPorRelevancia(animal.getAnimalId())
+                        .stream()
+                        .map(c -> SharedVaccineCardDTO.SharedConditionDTO.builder()
+                                .kind(c.getKind())
+                                .description(c.getDescription())
+                                .severity(c.getSeverity())
+                                .resolvedAt(c.getResolvedAt())
+                                .build())
+                        .collect(Collectors.toList())
+                : List.of();
 
         return SharedVaccineCardDTO.builder()
                 .animalName(animal.getName())
@@ -129,10 +158,34 @@ public class AnimalShareServiceImpl implements AnimalShareService {
                 .animalBornDate(animal.getBornDate())
                 .animalGender(animal.getGender())
                 .personName(animal.getHolder().map(Person::getName).orElse(null))
+                .personPhone(grant.alcanca(GrantScope.CONTATO)
+                        ? animal.getHolder().map(Person::getPhone).orElse(null)
+                        : null)
+                .scopes(grant.getScopes())
                 .referenceDate(hoje)
-                .expiresAt(share.getExpiresAt())
+                .expiresAt(grant.getExpiresAt())
                 .vaccines(vacinas)
+                .conditions(condicoes)
                 .build();
+    }
+
+    /**
+     * Escopo vazio nao e "sem restricao": e um link que nao mostra nada. Sem pedido
+     * explicito vale CARTEIRA, que e o que o link sempre mostrou.
+     */
+    private Set<GrantScope> escopoPedido(AnimalShareRequestDTO request) {
+        if (request == null || request.getScopes() == null || request.getScopes().isEmpty()) {
+            return new LinkedHashSet<>(Set.of(GrantScope.CARTEIRA));
+        }
+
+        return new LinkedHashSet<>(request.getScopes());
+    }
+
+    private PetfyHealthcareException linkNaoEncontrado() {
+        return new PetfyHealthcareException(
+                ErrorMessageEnum.SHARE_NOT_FOUND.getMessage(),
+                ErrorMessageEnum.SHARE_NOT_FOUND.getCode(),
+                HttpStatus.NOT_FOUND);
     }
 
     private SharedVaccineCardDTO.SharedVaccineDTO toSharedVaccine(Vaccine vaccine, LocalDate hoje) {
@@ -145,15 +198,16 @@ public class AnimalShareServiceImpl implements AnimalShareService {
                 .build();
     }
 
-    private AnimalShareResponseDTO toResponse(AnimalShare share, String token) {
+    private AnimalShareResponseDTO toResponse(Grant grant, String token) {
         return AnimalShareResponseDTO.builder()
-                .animalShareId(share.getAnimalShareId())
-                .animalId(share.getAnimal().getAnimalId())
+                .grantId(grant.getGrantId())
+                .animalId(grant.getAnimal().getAnimalId())
                 .token(token)
-                .expiresAt(share.getExpiresAt())
-                .revokedAt(share.getRevokedAt())
-                .creationDate(share.getCreationDate())
-                .active(share.isActive(LocalDateTime.now()))
+                .scopes(grant.getScopes())
+                .expiresAt(grant.getExpiresAt())
+                .revokedAt(grant.getRevokedAt())
+                .creationDate(grant.getGrantedAt())
+                .active(grant.estaVigente(LocalDateTime.now()))
                 .build();
     }
 
