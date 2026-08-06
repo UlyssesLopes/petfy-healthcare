@@ -6,11 +6,11 @@ import br.com.petfy.healthcare.domain.dto.AntiparasiticResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticCatalog;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.AntiparasiticService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -29,23 +29,23 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
 
     private final AntiparasiticRepository antiparasiticRepository;
     private final AntiparasiticCatalogRepository catalogRepository;
-    private final PetAccessGuard petAccessGuard;
+    private final AnimalAccessGuard animalAccessGuard;
 
     @Override
     public AntiparasiticResponseDTO create(AntiparasiticRequestDTO request) {
-        Pet pet = petAccessGuard.requireEscrita(request.getPetId());
+        Animal animal = animalAccessGuard.requireEscrita(request.getAnimalId());
 
         AntiparasiticCatalog catalog = request.getAntiparasiticCatalogId() != null
                 ? buscarNoCatalogo(request.getAntiparasiticCatalogId())
                 : null;
 
-        recusarEspecieDivergente(catalog, pet);
+        recusarEspecieDivergente(catalog, animal);
 
         String name = resolverNome(request, catalog);
         AntiparasiticKind kind = resolverKind(request, catalog);
 
         Antiparasitic entity = Antiparasitic.builder()
-                .pet(pet)
+                .animal(animal)
                 .name(name)
                 .kind(kind)
                 .catalog(catalog)
@@ -69,12 +69,12 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
         if (request.getNextDoseDate() != null) existing.setNextDoseDate(request.getNextDoseDate());
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
-        if (request.getPetId() != null) {
-            Pet novoPet = petAccessGuard.requireEscrita(request.getPetId());
-            // mover o registro para um pet de outra especie tornaria o catalogo
+        if (request.getAnimalId() != null) {
+            Animal novoAnimal = animalAccessGuard.requireEscrita(request.getAnimalId());
+            // mover o registro para um animal de outra especie tornaria o catalogo
             // associado invalido - mesma recusa que na criacao
-            recusarEspecieDivergente(existing.getCatalog(), novoPet);
-            existing.setPet(novoPet);
+            recusarEspecieDivergente(existing.getCatalog(), novoAnimal);
+            existing.setAnimal(novoAnimal);
         }
 
         existing.setUpdateDate(LocalDateTime.now());
@@ -93,27 +93,27 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
     }
 
     @Override
-    public List<AntiparasiticResponseDTO> listByPet(UUID petId) {
-        // verifica ownership do pet antes de listar
-        petAccessGuard.requireLeitura(petId);
+    public List<AntiparasiticResponseDTO> listByAnimal(UUID animalId) {
+        // verifica ownership do animal antes de listar
+        animalAccessGuard.requireLeitura(animalId);
 
-        return antiparasiticRepository.findByPetPetIdOrderByApplicationDateDesc(petId)
+        return antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Sem petId devolve o catalogo inteiro; com petId devolve so o da especie
-     * daquele pet. Mesmo contrato do /vaccine-catalog: o cliente monta a selecao
+     * Sem animalId devolve o catalogo inteiro; com animalId devolve so o da especie
+     * daquele animal. Mesmo contrato do /vaccine-catalog: o cliente monta a selecao
      * sem oferecer vermifugo felino para quem tem cachorro.
      */
     @Override
-    public List<AntiparasiticCatalogResponseDTO> listCatalog(UUID petId) {
-        List<AntiparasiticCatalog> catalogo = petId == null
+    public List<AntiparasiticCatalogResponseDTO> listCatalog(UUID animalId) {
+        List<AntiparasiticCatalog> catalogo = animalId == null
                 ? catalogRepository.findAllByOrderBySpeciesAscNameAsc()
                 : catalogRepository.findBySpeciesOrderByNameAsc(
-                        petAccessGuard.requireLeitura(petId).getSpecies());
+                        animalAccessGuard.requireLeitura(animalId).getSpecies());
 
         return catalogo.stream()
                 .map(this::toCatalogResponse)
@@ -124,8 +124,8 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
      * Antiparasitario canino num gato passaria como valido e so apareceria
      * quando o lembrete errado saisse. Mesma regra e mesmo 409 do VaccineFactory.
      */
-    private void recusarEspecieDivergente(AntiparasiticCatalog catalog, Pet pet) {
-        if (catalog != null && catalog.getSpecies() != pet.getSpecies()) {
+    private void recusarEspecieDivergente(AntiparasiticCatalog catalog, Animal animal) {
+        if (catalog != null && catalog.getSpecies() != animal.getSpecies()) {
             throw new PetfyHealthcareException(
                     ErrorMessageEnum.SPECIES_MISMATCH.getMessage(),
                     ErrorMessageEnum.SPECIES_MISMATCH.getCode(),
@@ -170,15 +170,15 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
     }
 
     /**
-     * Registro de pet que a pessoa nao alcanca responde NOT_FOUND, nao 403:
+     * Registro de animal que a pessoa nao alcanca responde NOT_FOUND, nao 403:
      * um 403 confirmaria que aquele id existe.
      */
     private Antiparasitic buscarAlcancavel(UUID id) {
         return antiparasiticRepository.findById(id)
-                .filter(a -> petAccessGuard.alcanca(a.getPet().getPetId()))
+                .filter(a -> animalAccessGuard.alcanca(a.getAnimal().getAnimalId()))
                 .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
+                        ErrorMessageEnum.ANIMAL_NOT_FOUND.getMessage(),
+                        ErrorMessageEnum.ANIMAL_NOT_FOUND.getCode(),
                         HttpStatus.NOT_FOUND));
     }
 
@@ -193,7 +193,7 @@ public class AntiparasiticServiceImpl implements AntiparasiticService {
     private AntiparasiticResponseDTO toResponse(Antiparasitic a) {
         return AntiparasiticResponseDTO.builder()
                 .antiparasiticId(a.getAntiparasiticId())
-                .petId(a.getPet().getPetId())
+                .animalId(a.getAnimal().getAnimalId())
                 .name(a.getName())
                 .kind(a.getKind())
                 .applicationDate(a.getApplicationDate())

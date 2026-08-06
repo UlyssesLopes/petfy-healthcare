@@ -29,7 +29,7 @@ public class VaccineCatalog {
     @Column(nullable = false)
     private String name;
 
-    /** Especie a que a vacina se aplica. Cruza com {@link Pet#getSpecies()}. */
+    /** Especie a que a vacina se aplica. Cruza com {@link Animal#getSpecies()}. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private Species species;
@@ -50,9 +50,9 @@ public class VaccineCatalog {
     private Integer initialDoseIntervalDays;
 
     /**
-     * Entra automaticamente no schedule do filhote quando um pet dessa especie
+     * Entra automaticamente no schedule do filhote quando um animal dessa especie
      * e cadastrado. Nem toda vacina do catalogo e obrigatoria: a V3 e a V4
-     * felinas cobrem o mesmo pet, so uma delas vira schedule automatico; a
+     * felinas cobrem o mesmo animal, so uma delas vira schedule automatico; a
      * antirrabica sim, obrigatoria por lei.
      */
     @Column(nullable = false)

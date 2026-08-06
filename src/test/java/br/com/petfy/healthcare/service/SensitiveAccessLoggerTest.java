@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.entity.AccessActorType;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.SensitiveAccessLog;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vet;
@@ -39,11 +39,11 @@ class SensitiveAccessLoggerTest {
     @InjectMocks
     private SensitiveAccessLogger logger;
 
-    private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID VET_ID = UUID.fromString("77777777-7777-7777-7777-777777777777");
 
-    private Pet rex() {
-        return Pet.builder().petId(PET_ID).name("Rex").species(Species.CANINA).build();
+    private Animal rex() {
+        return Animal.builder().animalId(ANIMAL_ID).name("Rex").species(Species.CANINA).build();
     }
 
     private Vet marina() {
@@ -64,12 +64,12 @@ class SensitiveAccessLoggerTest {
     class VetLeu {
 
         @Test
-        @DisplayName("registra o pet, o recurso e quem leu")
+        @DisplayName("registra o animal, o recurso e quem leu")
         void registraOEssencial() {
             logger.vetLeu(marina(), rex(), AccessedResource.HEALTH_RECORDS);
 
             var log = gravado();
-            assertThat(log.getPet().getPetId()).isEqualTo(PET_ID);
+            assertThat(log.getAnimal().getAnimalId()).isEqualTo(ANIMAL_ID);
             assertThat(log.getActorType()).isEqualTo(AccessActorType.VET);
             assertThat(log.getActorId()).isEqualTo(VET_ID);
             assertThat(log.getResource()).isEqualTo(AccessedResource.HEALTH_RECORDS);

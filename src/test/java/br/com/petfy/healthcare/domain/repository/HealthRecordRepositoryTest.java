@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.domain.repository;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Cobre o modo de falha que os testes com mock nao alcancam: a query derivada
- * findByPetPetIdOrderByEventDateDesc so e traduzida quando o Spring Data cria o
+ * findByAnimalAnimalIdOrderByEventDateDesc so e traduzida quando o Spring Data cria o
  * repositorio, ou seja, na subida do contexto. Um nome de propriedade errado
  * derrubaria a aplicacao no boot, e nao no teste.
  *
@@ -44,13 +44,13 @@ class HealthRecordRepositoryTest {
     private HealthRecordRepository healthRecordRepository;
 
     @Autowired
-    private PetRepository petRepository;
+    private AnimalRepository animalRepository;
 
     @Autowired
     private OwnerRepository ownerRepository;
 
     @Test
-    @DisplayName("a query derivada por pet deve ser traduzida pelo Spring Data e executar sem erro")
+    @DisplayName("a query derivada por animal deve ser traduzida pelo Spring Data e executar sem erro")
     void queryDerivadaDeveSerTraduzidaEExecutar() {
         Owner owner = ownerRepository.save(Owner.builder()
                 .name("Ulysses")
@@ -58,17 +58,17 @@ class HealthRecordRepositoryTest {
                 .password("hash")
                 .build());
 
-        Pet rex = petRepository.save(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
+        Animal rex = animalRepository.save(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
 
         healthRecordRepository.save(HealthRecord.builder()
                 .category(HealthEventCategory.CONSULTA)
-                    .pet(rex)
+                    .animal(rex)
                 .eventType("Consulta")
                 .eventDate(LocalDate.of(2025, 1, 10))
                 .build());
 
-        assertThat(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(rex.getPetId())).isNotNull();
-        assertThat(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(UUID.randomUUID())).isEmpty();
+        assertThat(healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(rex.getAnimalId())).isNotNull();
+        assertThat(healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(UUID.randomUUID())).isEmpty();
     }
 
     @Test
@@ -80,11 +80,11 @@ class HealthRecordRepositoryTest {
                 .password("hash")
                 .build());
 
-        Pet pet = petRepository.save(Pet.builder().name("Mia").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
+        Animal animal = animalRepository.save(Animal.builder().name("Mia").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
 
         HealthRecord salvo = healthRecordRepository.save(HealthRecord.builder()
                 .category(HealthEventCategory.CONSULTA)
-                    .pet(pet)
+                    .animal(animal)
                 .eventType("Cirurgia")
                 .eventDate(LocalDate.of(2025, 8, 20))
                 .description("Castracao")
@@ -96,7 +96,7 @@ class HealthRecordRepositoryTest {
                 .satisfies(r -> {
                     assertThat(r.getEventType()).isEqualTo("Cirurgia");
                     assertThat(r.getDescription()).isEqualTo("Castracao");
-                    assertThat(r.getPet().getPetId()).isEqualTo(pet.getPetId());
+                    assertThat(r.getAnimal().getAnimalId()).isEqualTo(animal.getAnimalId());
                 });
     }
 }

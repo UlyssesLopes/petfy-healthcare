@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.security;
 
 public enum UserRole {
 
-    /** Tutor: dono dos pets. */
+    /** Tutor: dono dos animals. */
     OWNER,
 
     /** Veterinario, vinculado a uma clinica. */

@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
@@ -20,7 +20,7 @@ import java.util.UUID;
  * Monta a vacina a partir do request, resolvendo catalogo, nome e proxima dose.
  *
  * Existe separado porque uma vacina agora nasce de dois lugares - o tutor
- * registrando no proprio pet, e o veterinario registrando num pet autorizado - e
+ * registrando no proprio animal, e o veterinario registrando num animal autorizado - e
  * as duas rotas precisam calcular a proxima dose do mesmo jeito.
  */
 @Component
@@ -29,12 +29,12 @@ public class VaccineFactory {
 
     private final VaccineCatalogRepository vaccineCatalogRepository;
 
-    public Vaccine build(Pet pet, Clinic clinic, VaccineRequestDTO request) {
+    public Vaccine build(Animal animal, Clinic clinic, VaccineRequestDTO request) {
         VaccineCatalog catalog = request.getVaccineCatalogId() != null
                 ? buscarNoCatalogo(request.getVaccineCatalogId())
                 : null;
 
-        if (catalog != null && catalog.getSpecies() != pet.getSpecies()) {
+        if (catalog != null && catalog.getSpecies() != animal.getSpecies()) {
             // Sem essa checagem, o tutor poderia registrar uma vacina canina num
             // gato e o sistema seguiria como se fosse valido. E o tipo de erro
             // que so aparece quando alguem for cobrar por que o lembrete errado
@@ -46,7 +46,7 @@ public class VaccineFactory {
         }
 
         return Vaccine.builder()
-                .pet(pet)
+                .animal(animal)
                 .clinic(clinic)
                 .catalog(catalog)
                 .vaccineName(resolverNome(request, catalog))

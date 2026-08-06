@@ -13,7 +13,7 @@ import java.util.UUID;
  * O IP <b>volta</b> nesta resposta, ao contrario do que acontece no consentimento.
  * A diferenca e de quem e o dado: la o IP era do proprio titular consultando o
  * proprio aceite, e devolve-lo nao acrescentava nada; aqui e a evidencia de um
- * terceiro que abriu a carteira do pet dele, e sem ela um acesso por link publico
+ * terceiro que abriu a carteira do animal dele, e sem ela um acesso por link publico
  * fica indistinguivel do outro. E o unico jeito de o tutor decidir se revoga o link.
  *
  * O user agent nao volta: e ruido para quem le, e nao muda decisao nenhuma.
@@ -27,7 +27,7 @@ public class SensitiveAccessLogResponseDTO {
 
     private UUID sensitiveAccessLogId;
 
-    private UUID petId;
+    private UUID animalId;
 
     private AccessActorType actorType;
 

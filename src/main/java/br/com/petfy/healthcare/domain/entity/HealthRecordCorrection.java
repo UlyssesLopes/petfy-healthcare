@@ -12,7 +12,7 @@ import java.util.UUID;
  * Estado anterior de um registro de saude, gravado a cada correcao.
  *
  * Guarda o que era, e nao o que passou a ser: o estado atual esta no proprio
- * registro, entao repetir seria redundancia que pode divergir.
+ * registro, entao reanimalir seria redundancia que pode divergir.
  */
 @Entity
 @Table(name = "health_record_corrections")

@@ -11,27 +11,27 @@ import br.com.petfy.healthcare.domain.dto.VetPetDTO;
 import java.util.List;
 import java.util.UUID;
 
-/** Lado do veterinario: o que ele alcanca dos pets que a clinica dele atende. */
+/** Lado do veterinario: o que ele alcanca dos animals que a clinica dele atende. */
 public interface VetPetService {
 
-    List<VetPetDTO> listAccessiblePets();
+    List<VetPetDTO> listAccessibleAnimals();
 
-    List<VaccineResponseDTO> listVaccines(UUID petId);
+    List<VaccineResponseDTO> listVaccines(UUID animalId);
 
-    VaccineResponseDTO registerVaccine(UUID petId, VaccineRequestDTO request);
+    VaccineResponseDTO registerVaccine(UUID animalId, VaccineRequestDTO request);
 
     /** Corrige um registro da propria clinica, dentro da janela de correcao. */
-    VaccineResponseDTO correctVaccine(UUID petId, UUID vaccineId, VaccineRequestDTO request);
+    VaccineResponseDTO correctVaccine(UUID animalId, UUID vaccineId, VaccineRequestDTO request);
 
-    List<VaccineCorrectionResponseDTO> listCorrections(UUID petId, UUID vaccineId);
+    List<VaccineCorrectionResponseDTO> listCorrections(UUID animalId, UUID vaccineId);
 
-    List<HealthRecordResponseDTO> listHealthRecords(UUID petId);
+    List<HealthRecordResponseDTO> listHealthRecords(UUID animalId);
 
-    HealthRecordResponseDTO registerHealthRecord(UUID petId, HealthRecordRequestDTO request);
+    HealthRecordResponseDTO registerHealthRecord(UUID animalId, HealthRecordRequestDTO request);
 
     /** Corrige um atendimento da propria clinica, dentro da janela de correcao. */
-    HealthRecordResponseDTO correctHealthRecord(UUID petId, UUID healthRecordId, HealthRecordRequestDTO request);
+    HealthRecordResponseDTO correctHealthRecord(UUID animalId, UUID healthRecordId, HealthRecordRequestDTO request);
 
-    List<HealthRecordCorrectionResponseDTO> listHealthRecordCorrections(UUID petId, UUID healthRecordId);
+    List<HealthRecordCorrectionResponseDTO> listHealthRecordCorrections(UUID animalId, UUID healthRecordId);
 
 }

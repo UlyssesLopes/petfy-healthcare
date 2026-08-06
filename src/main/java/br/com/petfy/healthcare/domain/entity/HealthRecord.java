@@ -27,8 +27,8 @@ public class HealthRecord {
     private UUID healthRecordId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pet_id", nullable = false)
-    private Pet pet;
+    @JoinColumn(name = "animal_id", nullable = false)
+    private Animal animal;
 
     private String description;
 

@@ -25,10 +25,10 @@ public class OwnerExportServiceImpl implements OwnerExportService {
     private static final String FORMATO = "1";
 
     /**
-     * Teto de acessos por pet no documento.
+     * Teto de acessos por animal no documento.
      *
-     * O log de acesso cresce sem limite: uma clinica que acompanha um pet cronico gera
-     * entrada toda semana, por anos. Sem teto, o export de um unico pet antigo viraria o
+     * O log de acesso cresce sem limite: uma clinica que acompanha um animal cronico gera
+     * entrada toda semana, por anos. Sem teto, o export de um unico animal antigo viraria o
      * maior objeto que esta API ja serializou. O corte e declarado nas limitacoes - o que
      * nao pode acontecer e o documento parecer completo tendo truncado em silencio.
      */
@@ -42,22 +42,22 @@ public class OwnerExportServiceImpl implements OwnerExportService {
     private final HealthRecordRepository healthRecordRepository;
     private final HealthRecordCorrectionRepository healthRecordCorrectionRepository;
     private final AntiparasiticRepository antiparasiticRepository;
-    private final PetWeightHistoryRepository petWeightHistoryRepository;
+    private final AnimalWeightHistoryRepository animalWeightHistoryRepository;
     private final AttachmentRepository attachmentRepository;
-    private final PetShareRepository petShareRepository;
+    private final AnimalShareRepository animalShareRepository;
     private final PetClinicAccessRepository petClinicAccessRepository;
     private final SensitiveAccessLogRepository sensitiveAccessLogRepository;
-    private final PetHealthConditionRepository petHealthConditionRepository;
+    private final AnimalHealthConditionRepository animalHealthConditionRepository;
 
     /**
      * Monta o documento a partir dos vinculos de tutor, e nao de uma consulta por dono.
      *
-     * A diferenca importa desde a V15: um pet pode ter varios tutores, e o que define o
+     * A diferenca importa desde a V15: um animal pode ter varios tutores, e o que define o
      * que este titular leva embora e o <b>vinculo</b> - inclusive o papel, que pode ser
      * apenas de leitor.
      *
-     * Sao muitas consultas, uma por colecao por pet. E deliberado: um tutor tem poucos
-     * pets, o endpoint e chamado raramente, e a alternativa - uma consulta grande com
+     * Sao muitas consultas, uma por colecao por animal. E deliberado: um tutor tem poucos
+     * animals, o endpoint e chamado raramente, e a alternativa - uma consulta grande com
      * varios joins - devolveria produto cartesiano que teria de ser desmontado em memoria
      * de qualquer forma. Legibilidade vence aqui.
      */
@@ -90,54 +90,54 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                                 .acceptedAt(c.getAcceptedAt())
                                 .build())
                         .toList())
-                .pets(vinculos.stream().map(this::exportarPet).toList())
+                .animals(vinculos.stream().map(this::exportarAnimal).toList())
                 .limitacoes(limitacoes())
                 .build();
     }
 
-    private OwnerExportDTO.PetExportDTO exportarPet(PetTutor meuVinculo) {
-        Pet pet = meuVinculo.getPet();
-        UUID petId = pet.getPetId();
+    private OwnerExportDTO.AnimalExportDTO exportarAnimal(PetTutor meuVinculo) {
+        Animal animal = meuVinculo.getAnimal();
+        UUID animalId = animal.getAnimalId();
 
-        return OwnerExportDTO.PetExportDTO.builder()
-                .petId(petId)
-                .name(pet.getName())
-                .type(pet.getType())
-                .breed(pet.getBreed())
-                .species(pet.getSpecies())
-                .bornDate(pet.getBornDate())
-                .gender(pet.getGender())
-                .color(pet.getColor())
-                .microchip(pet.getMicrochip())
-                .microchipNumber(pet.getMicrochipNumber())
-                .castrated(pet.getCastrated())
-                .castratedAt(pet.getCastratedAt())
-                .generalRegistry(pet.getGeneralRegistry())
-                .weight(pet.getWeight())
-                .creationDate(pet.getCreationDate())
+        return OwnerExportDTO.AnimalExportDTO.builder()
+                .animalId(animalId)
+                .name(animal.getName())
+                .type(animal.getType())
+                .breed(animal.getBreed())
+                .species(animal.getSpecies())
+                .bornDate(animal.getBornDate())
+                .gender(animal.getGender())
+                .color(animal.getColor())
+                .microchip(animal.getMicrochip())
+                .microchipNumber(animal.getMicrochipNumber())
+                .castrated(animal.getCastrated())
+                .castratedAt(animal.getCastratedAt())
+                .generalRegistry(animal.getGeneralRegistry())
+                .weight(animal.getWeight())
+                .creationDate(animal.getCreationDate())
                 .meuPapel(meuVinculo.getRole())
-                .condicoes(condicoes(petId))
-                .coTutores(coTutores(petId, meuVinculo))
-                .vacinas(vacinas(petId))
-                .antiparasitarios(antiparasitarios(petId))
-                .pesagens(pesagens(petId))
-                .atendimentos(atendimentos(petId))
-                .anexos(anexos(petId))
-                .linksCompartilhados(links(pet))
-                .acessosDeClinica(acessosDeClinica(petId))
-                .acessosDeTerceiros(acessosDeTerceiros(petId))
+                .condicoes(condicoes(animalId))
+                .coTutores(coTutores(animalId, meuVinculo))
+                .vacinas(vacinas(animalId))
+                .antiparasitarios(antiparasitarios(animalId))
+                .pesagens(pesagens(animalId))
+                .atendimentos(atendimentos(animalId))
+                .anexos(anexos(animalId))
+                .linksCompartilhados(links(animal))
+                .acessosDeClinica(acessosDeClinica(animalId))
+                .acessosDeTerceiros(acessosDeTerceiros(animalId))
                 .build();
     }
 
     /**
      * Os outros tutores, por nome e papel.
      *
-     * Sem e-mail e sem id: saber com quem se divide o pet e informacao do titular, o
+     * Sem e-mail e sem id: saber com quem se divide o animal e informacao do titular, o
      * endereco de contato da outra pessoa nao. O proprio vinculo sai da lista - ele ja
-     * esta em {@code meuPapel}, e repetir daria a impressao de haver um tutor a mais.
+     * esta em {@code meuPapel}, e reanimalir daria a impressao de haver um tutor a mais.
      */
-    private List<OwnerExportDTO.CoTutorDTO> coTutores(UUID petId, PetTutor meuVinculo) {
-        return petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId)
+    private List<OwnerExportDTO.CoTutorDTO> coTutores(UUID animalId, PetTutor meuVinculo) {
+        return petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(animalId)
                 .stream()
                 .filter(t -> !t.getPetTutorId().equals(meuVinculo.getPetTutorId()))
                 .map(t -> OwnerExportDTO.CoTutorDTO.builder()
@@ -155,8 +155,8 @@ public class OwnerExportServiceImpl implements OwnerExportService {
      * historico: quem importa o prontuario deste animal tem de saber a que ele e alergico
      * antes de ler o que ja aconteceu com ele.
      */
-    private List<OwnerExportDTO.CondicaoDTO> condicoes(UUID petId) {
-        return petHealthConditionRepository.findByPetOrdenadasPorRelevancia(petId)
+    private List<OwnerExportDTO.CondicaoDTO> condicoes(UUID animalId) {
+        return animalHealthConditionRepository.findByAnimalOrdenadasPorRelevancia(animalId)
                 .stream()
                 .map(c -> OwnerExportDTO.CondicaoDTO.builder()
                         .kind(c.getKind())
@@ -170,8 +170,8 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.VacinaDTO> vacinas(UUID petId) {
-        return vaccineRepository.findByPetPetIdOrderByApplicationDateDesc(petId)
+    private List<OwnerExportDTO.VacinaDTO> vacinas(UUID animalId) {
+        return vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId)
                 .stream()
                 .map(v -> OwnerExportDTO.VacinaDTO.builder()
                         .vaccineId(v.getVaccineId())
@@ -204,8 +204,8 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.AtendimentoDTO> atendimentos(UUID petId) {
-        return healthRecordRepository.findByPetPetIdOrderByEventDateDesc(petId)
+    private List<OwnerExportDTO.AtendimentoDTO> atendimentos(UUID animalId) {
+        return healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(animalId)
                 .stream()
                 .map(r -> OwnerExportDTO.AtendimentoDTO.builder()
                         .healthRecordId(r.getHealthRecordId())
@@ -242,8 +242,8 @@ public class OwnerExportServiceImpl implements OwnerExportService {
         return porVet != null ? porVet.getName() : null;
     }
 
-    private List<OwnerExportDTO.AntiparasiticoDTO> antiparasitarios(UUID petId) {
-        return antiparasiticRepository.findByPetPetIdOrderByApplicationDateDesc(petId)
+    private List<OwnerExportDTO.AntiparasiticoDTO> antiparasitarios(UUID animalId) {
+        return antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId)
                 .stream()
                 .map(a -> OwnerExportDTO.AntiparasiticoDTO.builder()
                         .antiparasiticId(a.getAntiparasiticId())
@@ -256,8 +256,8 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.PesagemDTO> pesagens(UUID petId) {
-        return petWeightHistoryRepository.findByPetPetIdOrderByMeasuredAtDesc(petId)
+    private List<OwnerExportDTO.PesagemDTO> pesagens(UUID animalId) {
+        return animalWeightHistoryRepository.findByAnimalAnimalIdOrderByMeasuredAtDesc(animalId)
                 .stream()
                 .map(p -> OwnerExportDTO.PesagemDTO.builder()
                         .weight(p.getWeight())
@@ -275,8 +275,8 @@ public class OwnerExportServiceImpl implements OwnerExportService {
      * limitacao esta declarada no documento - o que nao pode acontecer e o titular
      * concluir que levou os arquivos quando levou a lista deles.
      */
-    private List<OwnerExportDTO.AnexoDTO> anexos(UUID petId) {
-        return attachmentRepository.findByPetPetIdOrderByCreationDateDesc(petId)
+    private List<OwnerExportDTO.AnexoDTO> anexos(UUID animalId) {
+        return attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(animalId)
                 .stream()
                 .map(a -> OwnerExportDTO.AnexoDTO.builder()
                         .attachmentId(a.getAttachmentId())
@@ -291,13 +291,13 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.LinkCompartilhadoDTO> links(Pet pet) {
+    private List<OwnerExportDTO.LinkCompartilhadoDTO> links(Animal animal) {
         LocalDateTime agora = LocalDateTime.now();
 
-        return petShareRepository.findByPetOrderByCreationDateDesc(pet)
+        return animalShareRepository.findByAnimalOrderByCreationDateDesc(animal)
                 .stream()
                 .map(s -> OwnerExportDTO.LinkCompartilhadoDTO.builder()
-                        .petShareId(s.getPetShareId())
+                        .animalShareId(s.getAnimalShareId())
                         .expiresAt(s.getExpiresAt())
                         .revokedAt(s.getRevokedAt())
                         .active(s.isActive(agora))
@@ -306,8 +306,8 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.AcessoDeClinicaDTO> acessosDeClinica(UUID petId) {
-        return petClinicAccessRepository.findByPetPetIdOrderByGrantedAtDesc(petId)
+    private List<OwnerExportDTO.AcessoDeClinicaDTO> acessosDeClinica(UUID animalId) {
+        return petClinicAccessRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animalId)
                 .stream()
                 .map(a -> OwnerExportDTO.AcessoDeClinicaDTO.builder()
                         .clinicName(a.getClinic().getName())
@@ -318,9 +318,9 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 .toList();
     }
 
-    private List<OwnerExportDTO.AcessoRegistradoDTO> acessosDeTerceiros(UUID petId) {
+    private List<OwnerExportDTO.AcessoRegistradoDTO> acessosDeTerceiros(UUID animalId) {
         return sensitiveAccessLogRepository
-                .findByPetPetIdOrderByAccessedAtDesc(petId, PageRequest.of(0, MAX_ACESSOS_POR_PET))
+                .findByAnimalAnimalIdOrderByAccessedAtDesc(animalId, PageRequest.of(0, MAX_ACESSOS_POR_PET))
                 .getContent()
                 .stream()
                 .map(l -> OwnerExportDTO.AcessoRegistradoDTO.builder()
@@ -346,11 +346,11 @@ public class OwnerExportServiceImpl implements OwnerExportService {
                 "Os anexos entram como metadado e caminho de download, nao como conteudo. "
                         + "Cada arquivo e baixado por downloadPath, que exige autenticacao.",
                 "O log de acesso de terceiros vem truncado nos " + MAX_ACESSOS_POR_PET
-                        + " registros mais recentes por pet.",
+                        + " registros mais recentes por animal.",
                 "Dado pessoal de terceiro vem reduzido: co-tutor aparece por nome e papel, "
                         + "sem e-mail. A portabilidade e dos dados do titular.",
-                "Pet compartilhado com outros tutores esta incluido, com o papel do titular "
-                        + "indicado em meuPapel - ele pode nao ser o titular do pet.",
+                "Animal compartilhado com outros tutores esta incluido, com o papel do titular "
+                        + "indicado em meuPapel - ele pode nao ser o titular do animal.",
                 "A senha nao aparece, nem como hash.",
                 "As alergias e condicoes cronicas vem com as ativas primeiro; condicao "
                         + "encerrada aparece com resolvedAt preenchido, porque faz parte do "

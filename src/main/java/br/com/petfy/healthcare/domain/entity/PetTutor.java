@@ -8,12 +8,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Vinculo entre um pet e quem cuida dele.
+ * Vinculo entre um animal e quem cuida dele.
  *
- * Substitui o {@code pets.owner_id} que existia ate a V15. A coluna nao foi
+ * Substitui o {@code animals.owner_id} que existia ate a V15. A coluna nao foi
  * mantida junto com esta tabela de proposito: com as duas, "quem e o dono" teria
  * duas respostas possiveis, e o dia em que elas divergissem seria um vazamento -
- * alguem enxergando pet que nao e seu, ou deixando de enxergar o proprio.
+ * alguem enxergando animal que nao e seu, ou deixando de enxergar o proprio.
  *
  * Por isso o titular tambem mora aqui, com {@link PetTutorRole#HOLDER}, e nao em
  * campo separado.
@@ -38,7 +38,7 @@ public class PetTutor {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pet_id", nullable = false)
-    private Pet pet;
+    private Animal animal;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)

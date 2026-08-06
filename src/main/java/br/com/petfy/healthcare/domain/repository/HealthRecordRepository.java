@@ -12,13 +12,13 @@ import java.util.UUID;
 @Repository
 public interface HealthRecordRepository extends JpaRepository<HealthRecord, UUID> {
 
-    List<HealthRecord> findByPetPetIdOrderByEventDateDesc(UUID petId);
+    List<HealthRecord> findByAnimalAnimalIdOrderByEventDateDesc(UUID animalId);
 
-    List<HealthRecord> findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(UUID ownerId);
+    List<HealthRecord> findByAnimalTutorsOwnerOwnerIdOrderByEventDateDesc(UUID ownerId);
 
     /** Listagem paginada de todos os registros do tutor autenticado. */
-    Page<HealthRecord> findByPetTutorsOwnerOwnerIdOrderByEventDateDesc(UUID ownerId, Pageable pageable);
+    Page<HealthRecord> findByAnimalTutorsOwnerOwnerIdOrderByEventDateDesc(UUID ownerId, Pageable pageable);
 
-    void deleteByPetPetIdIn(List<UUID> petIds);
+    void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 
 }

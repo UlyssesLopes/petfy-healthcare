@@ -11,9 +11,9 @@ import java.util.UUID;
 @Repository
 public interface AntiparasiticRepository extends JpaRepository<Antiparasitic, UUID> {
 
-    List<Antiparasitic> findByPetTutorsOwnerOwnerId(UUID ownerId);
+    List<Antiparasitic> findByAnimalTutorsOwnerOwnerId(UUID ownerId);
 
-    List<Antiparasitic> findByPetPetIdOrderByApplicationDateDesc(UUID petId);
+    List<Antiparasitic> findByAnimalAnimalIdOrderByApplicationDateDesc(UUID animalId);
 
     /**
      * Usado pela rotina de lembretes, simetrico ao VaccineRepository.
@@ -21,7 +21,7 @@ public interface AntiparasiticRepository extends JpaRepository<Antiparasitic, UU
      */
     List<Antiparasitic> findByNextDoseDateLessThanEqual(LocalDate limite);
 
-    /** Usado ao apagar o pet - ver {@code PetPurger}. Faltava, junto com o peso. */
-    void deleteByPetPetIdIn(List<UUID> petIds);
+    /** Usado ao apagar o animal - ver {@code AnimalPurger}. Faltava, junto com o peso. */
+    void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 
 }

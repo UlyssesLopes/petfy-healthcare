@@ -151,7 +151,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
                 .toName(owner.getName())
                 .subject("Confirme seu e-mail - Petfy")
                 .lines(List.of(
-                        "Falta confirmar este endereco para voce receber os lembretes de vacina do seu pet.",
+                        "Falta confirmar este endereco para voce receber os lembretes de vacina do seu animal.",
                         "Codigo: " + token,
                         "Ele vale por " + expirationHours + " horas.",
                         "Ate confirmar, sua conta funciona normalmente, mas nao enviamos nenhum aviso."))

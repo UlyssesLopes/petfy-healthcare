@@ -18,7 +18,7 @@ public interface HealthRecordService {
     /** Listagem paginada para o controller. */
     Page<HealthRecordResponseDTO> listAllHealthRecords(Pageable pageable);
 
-    List<HealthRecordResponseDTO> listHealthRecordsByPet(UUID petId);
+    List<HealthRecordResponseDTO> listHealthRecordsByAnimal(UUID animalId);
 
     HealthRecordResponseDTO updateHealthRecord(UUID healthRecordId, HealthRecordRequestDTO request);
 

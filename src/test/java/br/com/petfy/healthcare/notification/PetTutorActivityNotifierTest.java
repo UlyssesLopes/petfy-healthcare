@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.notification;
 
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Species;
 import org.junit.jupiter.api.DisplayName;
@@ -52,8 +52,8 @@ class PetTutorActivityNotifierTest {
                 .build();
     }
 
-    private Pet rex() {
-        return Pet.builder().petId(UUID.randomUUID()).name("Rex").species(Species.CANINA).build();
+    private Animal rex() {
+        return Animal.builder().animalId(UUID.randomUUID()).name("Rex").species(Species.CANINA).build();
     }
 
     private List<Notification> enviadas() {
@@ -116,7 +116,7 @@ class PetTutorActivityNotifierTest {
         }
 
         /**
-         * Enquanto o e-mail nao for confirmado nada sai: o nome do pet e dos tutores
+         * Enquanto o e-mail nao for confirmado nada sai: o nome do animal e dos tutores
          * nao vai para a caixa de um estranho.
          */
         @Test
@@ -171,7 +171,7 @@ class PetTutorActivityNotifierTest {
 
         /**
          * Vai para todos os tutores, e nao so para os dois envolvidos: quem e o
-         * titular define quem pode convidar e apagar o pet, entao interessa a quem
+         * titular define quem pode convidar e apagar o animal, entao interessa a quem
          * cuida do animal.
          */
         @Test
@@ -200,7 +200,7 @@ class PetTutorActivityNotifierTest {
         }
 
         /**
-         * O titular antigo nao sai do pet, vira EDITOR - e a mensagem diz isso, senao
+         * O titular antigo nao sai do animal, vira EDITOR - e a mensagem diz isso, senao
          * quem recebe conclui que a pessoa perdeu o acesso.
          */
         @Test
@@ -221,7 +221,7 @@ class PetTutorActivityNotifierTest {
     class TutorSaiu {
 
         @Test
-        @DisplayName("avisa quem fica que a pessoa deixou de cuidar do pet")
+        @DisplayName("avisa quem fica que a pessoa deixou de cuidar do animal")
         void avisaQuemFica() {
             var ulysses = confirmado(ULYSSES_ID, "Ulysses");
             var maria = confirmado(MARIA_ID, "Maria");
@@ -303,15 +303,15 @@ class PetTutorActivityNotifierTest {
         void todoAvisoTerminaComOrientacao() {
             var ulysses = confirmado(ULYSSES_ID, "Ulysses");
             var maria = confirmado(MARIA_ID, "Maria");
-            var pet = rex();
+            var animal = rex();
 
-            notifier.tutorEntrou(pet, List.of(ulysses, maria), maria, PetTutorRole.EDITOR);
-            notifier.titularidadeMudou(pet, List.of(ulysses, maria), ulysses, maria, ulysses);
-            notifier.tutorSaiu(pet, List.of(ulysses), maria, ulysses);
+            notifier.tutorEntrou(animal, List.of(ulysses, maria), maria, PetTutorRole.EDITOR);
+            notifier.titularidadeMudou(animal, List.of(ulysses, maria), ulysses, maria, ulysses);
+            notifier.tutorSaiu(animal, List.of(ulysses), maria, ulysses);
 
             assertThat(enviadas()).allSatisfy(enviada ->
                     assertThat(enviada.getLines()).last()
-                            .isEqualTo("Se nao reconhece esta mudanca, revise os tutores do pet no Petfy."));
+                            .isEqualTo("Se nao reconhece esta mudanca, revise os tutores do animal no Petfy."));
         }
 
         @Test
@@ -323,7 +323,7 @@ class PetTutorActivityNotifierTest {
 
             notifier.titularidadeMudou(rex(), List.of(ulysses, maria, joao), ulysses, maria, ulysses);
 
-            // o corpo cita nomes, que os tutores do mesmo pet ja conhecem; e-mail de
+            // o corpo cita nomes, que os tutores do mesmo animal ja conhecem; e-mail de
             // terceiro nao entra - quem quiser ve na lista de tutores, autenticado
             assertThat(enviadas()).allSatisfy(enviada ->
                     assertThat(String.join(" ", enviada.getLines()))
@@ -335,7 +335,7 @@ class PetTutorActivityNotifierTest {
     @DisplayName("lista sem ninguem a avisar")
     class SemDestinatario {
 
-        /** Pet de um tutor so: nao ha a quem contar que ele mesmo entrou. */
+        /** Animal de um tutor so: nao ha a quem contar que ele mesmo entrou. */
         @Test
         @DisplayName("tutor unico nao gera aviso nenhum")
         void tutorUnicoNaoGeraAviso() {

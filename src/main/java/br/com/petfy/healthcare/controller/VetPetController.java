@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Prefixo /vet separado do /pets do tutor de proposito: sao visoes diferentes do
+ * Prefixo /vet separado do /animals do tutor de proposito: sao visoes diferentes do
  * mesmo recurso, com regras de acesso diferentes. Misturar as duas no mesmo path
  * faria a autorizacao depender de quem chamou, que e onde esse tipo de bug mora.
  *
@@ -25,68 +25,68 @@ import java.util.UUID;
  * correcao - ver README.
  */
 @RestController
-@RequestMapping("/vet/pets")
+@RequestMapping("/vet/animals")
 @RequiredArgsConstructor
 public class VetPetController {
 
     private final VetPetService vetPetService;
 
     @GetMapping
-    public ResponseEntity<List<VetPetDTO>> listAccessiblePets() {
-        return ResponseEntity.ok(vetPetService.listAccessiblePets());
+    public ResponseEntity<List<VetPetDTO>> listAccessibleAnimals() {
+        return ResponseEntity.ok(vetPetService.listAccessibleAnimals());
     }
 
-    @GetMapping("/{petId}/vaccines")
-    public ResponseEntity<List<VaccineResponseDTO>> listVaccines(@PathVariable UUID petId) {
-        return ResponseEntity.ok(vetPetService.listVaccines(petId));
+    @GetMapping("/{animalId}/vaccines")
+    public ResponseEntity<List<VaccineResponseDTO>> listVaccines(@PathVariable UUID animalId) {
+        return ResponseEntity.ok(vetPetService.listVaccines(animalId));
     }
 
     /**
      * Sem @Valid de proposito: no VaccineRequestDTO o unico campo obrigatorio e o
-     * petId, que aqui vem do path. Exigi-lo tambem no corpo so criaria uma
+     * animalId, que aqui vem do path. Exigi-lo tambem no corpo so criaria uma
      * duplicidade que o service ignora - ele usa o do path.
      */
-    @PostMapping("/{petId}/vaccines")
-    public ResponseEntity<VaccineResponseDTO> registerVaccine(@PathVariable UUID petId,
+    @PostMapping("/{animalId}/vaccines")
+    public ResponseEntity<VaccineResponseDTO> registerVaccine(@PathVariable UUID animalId,
                                                               @RequestBody VaccineRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(vetPetService.registerVaccine(petId, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(vetPetService.registerVaccine(animalId, request));
     }
 
-    @PutMapping("/{petId}/vaccines/{vaccineId}")
-    public ResponseEntity<VaccineResponseDTO> correctVaccine(@PathVariable UUID petId,
+    @PutMapping("/{animalId}/vaccines/{vaccineId}")
+    public ResponseEntity<VaccineResponseDTO> correctVaccine(@PathVariable UUID animalId,
                                                              @PathVariable UUID vaccineId,
                                                              @RequestBody VaccineRequestDTO request) {
-        return ResponseEntity.ok(vetPetService.correctVaccine(petId, vaccineId, request));
+        return ResponseEntity.ok(vetPetService.correctVaccine(animalId, vaccineId, request));
     }
 
-    @GetMapping("/{petId}/vaccines/{vaccineId}/corrections")
-    public ResponseEntity<List<VaccineCorrectionResponseDTO>> listCorrections(@PathVariable UUID petId,
+    @GetMapping("/{animalId}/vaccines/{vaccineId}/corrections")
+    public ResponseEntity<List<VaccineCorrectionResponseDTO>> listCorrections(@PathVariable UUID animalId,
                                                                               @PathVariable UUID vaccineId) {
-        return ResponseEntity.ok(vetPetService.listCorrections(petId, vaccineId));
+        return ResponseEntity.ok(vetPetService.listCorrections(animalId, vaccineId));
     }
 
-    @GetMapping("/{petId}/health-records")
-    public ResponseEntity<List<HealthRecordResponseDTO>> listHealthRecords(@PathVariable UUID petId) {
-        return ResponseEntity.ok(vetPetService.listHealthRecords(petId));
+    @GetMapping("/{animalId}/health-records")
+    public ResponseEntity<List<HealthRecordResponseDTO>> listHealthRecords(@PathVariable UUID animalId) {
+        return ResponseEntity.ok(vetPetService.listHealthRecords(animalId));
     }
 
-    @PostMapping("/{petId}/health-records")
-    public ResponseEntity<HealthRecordResponseDTO> registerHealthRecord(@PathVariable UUID petId,
+    @PostMapping("/{animalId}/health-records")
+    public ResponseEntity<HealthRecordResponseDTO> registerHealthRecord(@PathVariable UUID animalId,
                                                                         @RequestBody HealthRecordRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(vetPetService.registerHealthRecord(petId, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(vetPetService.registerHealthRecord(animalId, request));
     }
 
-    @PutMapping("/{petId}/health-records/{healthRecordId}")
-    public ResponseEntity<HealthRecordResponseDTO> correctHealthRecord(@PathVariable UUID petId,
+    @PutMapping("/{animalId}/health-records/{healthRecordId}")
+    public ResponseEntity<HealthRecordResponseDTO> correctHealthRecord(@PathVariable UUID animalId,
                                                                        @PathVariable UUID healthRecordId,
                                                                        @RequestBody HealthRecordRequestDTO request) {
-        return ResponseEntity.ok(vetPetService.correctHealthRecord(petId, healthRecordId, request));
+        return ResponseEntity.ok(vetPetService.correctHealthRecord(animalId, healthRecordId, request));
     }
 
-    @GetMapping("/{petId}/health-records/{healthRecordId}/corrections")
+    @GetMapping("/{animalId}/health-records/{healthRecordId}/corrections")
     public ResponseEntity<List<HealthRecordCorrectionResponseDTO>> listHealthRecordCorrections(
-            @PathVariable UUID petId, @PathVariable UUID healthRecordId) {
-        return ResponseEntity.ok(vetPetService.listHealthRecordCorrections(petId, healthRecordId));
+            @PathVariable UUID animalId, @PathVariable UUID healthRecordId) {
+        return ResponseEntity.ok(vetPetService.listHealthRecordCorrections(animalId, healthRecordId));
     }
 
 }

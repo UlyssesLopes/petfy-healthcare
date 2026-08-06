@@ -65,7 +65,7 @@ public class OwnerController {
      * qualquer outro - a diferenca e a completude, nao a natureza.
      */
     @Operation(summary = "Exporta todos os dados do tutor autenticado",
-               description = "Documento JSON com o tutor, os consentimentos e todos os pets em que ele "
+               description = "Documento JSON com o tutor, os consentimentos e todos os animals em que ele "
                              + "e tutor - vacinas, antiparasitarios, pesagens, atendimentos, correcoes, "
                              + "anexos, links de compartilhamento, acessos de clinica e o log de acessos "
                              + "de terceiros. Dado pessoal de terceiro vem reduzido, e o proprio "

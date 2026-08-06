@@ -34,8 +34,8 @@ public class Antiparasitic {
     private UUID antiparasiticId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pet_id", nullable = false)
-    private Pet pet;
+    @JoinColumn(name = "animal_id", nullable = false)
+    private Animal animal;
 
     /** Nome do produto. Vem do catalogo quando informado; texto livre caso contrario. */
     @Column(nullable = false)

@@ -14,12 +14,12 @@ public interface SensitiveAccessLogRepository extends JpaRepository<SensitiveAcc
 
     /**
      * Paginado desde o inicio, e nao lista: este log cresce sem teto - uma clinica
-     * que acompanha um pet cronico gera acesso toda semana, por anos. Devolver tudo
+     * que acompanha um animal cronico gera acesso toda semana, por anos. Devolver tudo
      * seria a consulta que derruba a resposta no dia em que o produto der certo.
      */
-    Page<SensitiveAccessLog> findByPetPetIdOrderByAccessedAtDesc(UUID petId, Pageable pageable);
+    Page<SensitiveAccessLog> findByAnimalAnimalIdOrderByAccessedAtDesc(UUID animalId, Pageable pageable);
 
-    /** Usado ao apagar o pet - ver {@code PetPurger}. */
-    void deleteByPetPetIdIn(List<UUID> petIds);
+    /** Usado ao apagar o animal - ver {@code AnimalPurger}. */
+    void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 
 }

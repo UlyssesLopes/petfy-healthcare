@@ -5,8 +5,8 @@ import br.com.petfy.healthcare.domain.entity.AccessedResource;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
 import br.com.petfy.healthcare.domain.entity.ConsentDocument;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
-import br.com.petfy.healthcare.domain.entity.PetHealthConditionKind;
-import br.com.petfy.healthcare.domain.entity.PetHealthConditionSeverity;
+import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionKind;
+import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionSeverity;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Species;
 import lombok.Builder;
@@ -29,14 +29,14 @@ import java.util.UUID;
  *
  * <ul>
  *   <li><b>Co-tutor</b> aparece por nome e papel, sem e-mail. Saber com quem se divide o
- *       pet e informacao do titular; o endereco de contato da outra pessoa nao e.</li>
+ *       animal e informacao do titular; o endereco de contato da outra pessoa nao e.</li>
  *   <li><b>Veterinario e clinica</b> aparecem por nome. E capacidade profissional, e faz
  *       parte da integridade do registro saber quem escreveu no prontuario.</li>
  *   <li><b>Quem abriu o link publico</b> aparece so pelo IP, porque e tudo que existe -
  *       ver o log de acesso.</li>
  * </ul>
  *
- * <b>Pet compartilhado entra</b>, com o papel do titular indicado. Ele tem acesso
+ * <b>Animal compartilhado entra</b>, com o papel do titular indicado. Ele tem acesso
  * legitimo aquele animal, e omiti-lo daria um export que contradiz o que o app mostra.
  */
 @Builder
@@ -55,7 +55,7 @@ public record OwnerExportDTO(
 
         List<ConsentimentoDTO> consentimentos,
 
-        List<PetExportDTO> pets,
+        List<AnimalExportDTO> animals,
 
         /** O que este documento deliberadamente nao carrega. */
         List<String> limitacoes
@@ -87,8 +87,8 @@ public record OwnerExportDTO(
     }
 
     @Builder
-    public record PetExportDTO(
-            UUID petId,
+    public record AnimalExportDTO(
+            UUID animalId,
             String name,
             String type,
             String breed,
@@ -105,7 +105,7 @@ public record OwnerExportDTO(
             Double weight,
             LocalDateTime creationDate,
 
-            /** O papel do titular <b>neste</b> pet, que pode nao ser o de titular. */
+            /** O papel do titular <b>neste</b> animal, que pode nao ser o de titular. */
             PetTutorRole meuPapel,
 
             /**
@@ -135,9 +135,9 @@ public record OwnerExportDTO(
      */
     @Builder
     public record CondicaoDTO(
-            PetHealthConditionKind kind,
+            AnimalHealthConditionKind kind,
             String description,
-            PetHealthConditionSeverity severity,
+            AnimalHealthConditionSeverity severity,
             String notes,
             LocalDate since,
             LocalDate resolvedAt,
@@ -235,7 +235,7 @@ public record OwnerExportDTO(
 
     @Builder
     public record LinkCompartilhadoDTO(
-            UUID petShareId,
+            UUID animalShareId,
             LocalDateTime expiresAt,
             LocalDateTime revokedAt,
             boolean active,

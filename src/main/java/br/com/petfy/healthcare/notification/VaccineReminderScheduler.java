@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Desligado por padrao: com varias instancias da aplicacao no ar, todas
- * disparariam a rotina e o tutor receberia o lembrete repetido. Ligar exige
+ * disparariam a rotina e o tutor receberia o lembrete reanimalido. Ligar exige
  * decidir quem executa - uma instancia so, ou um agendador externo chamando a
  * rotina. Enquanto isso nao existe, o default seguro e nao enviar.
  */

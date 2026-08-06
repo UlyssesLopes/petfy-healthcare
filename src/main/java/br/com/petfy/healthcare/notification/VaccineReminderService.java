@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.notification;
 
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
@@ -44,7 +44,7 @@ public class VaccineReminderService {
      * Varre as doses pendentes (vacinas e antiparasitarios), manda um lembrete
      * por tutor e marca o envio.
      *
-     * Um lembrete por tutor, e nao um por dose: quem tem tres pets atrasados
+     * Um lembrete por tutor, e nao um por dose: quem tem tres animals atrasados
      * recebe um e-mail com tres linhas, nao tres e-mails. Antiparasitarios e
      * vacinas sao agrupados no mesmo e-mail porque pertencem ao mesmo tutor -
      * o canal nao muda, so a fonte dos dados.
@@ -61,7 +61,7 @@ public class VaccineReminderService {
         List<Vaccine> vacinasPendentes = vaccineRepository.findByNextDoseDateLessThanEqual(limite)
                 .stream()
                 .filter(v -> deveAvisarVacina(v, agora))
-                .filter(v -> temTutorNotificavel(v.getPet()))
+                .filter(v -> temTutorNotificavel(v.getAnimal()))
                 .collect(Collectors.toList());
 
         // --- antiparasitarios ---
@@ -72,7 +72,7 @@ public class VaccineReminderService {
                 // vem antes do agrupamento de proposito: assim a dose tambem nao
                 // e marcada como avisada, e o lembrete sai na primeira varredura
                 // depois que ele confirmar, em vez de se perder
-                .filter(a -> temTutorNotificavel(a.getPet()))
+                .filter(a -> temTutorNotificavel(a.getAnimal()))
                 .collect(Collectors.toList());
 
         if (vacinasPendentes.isEmpty() && antisPendentes.isEmpty()) {
@@ -87,14 +87,14 @@ public class VaccineReminderService {
         // Agrupa por tutor para gerar um unico e-mail por pessoa, qualquer que
         // seja o tipo da dose.
         //
-        // A partir da V15 um pet tem varios tutores, entao a mesma dose entra no
+        // A partir da V15 um animal tem varios tutores, entao a mesma dose entra no
         // lembrete de cada um deles - quem divide o cuidado do animal precisa
-        // saber da vacina vencendo, e nao so quem cadastrou o pet. Por isso o
-        // agrupamento **explode** cada dose pelos tutores do pet, em vez de
+        // saber da vacina vencendo, e nao so quem cadastrou o animal. Por isso o
+        // agrupamento **explode** cada dose pelos tutores do animal, em vez de
         // indexar por um dono unico que nao existe mais.
         Map<Owner, List<Vaccine>> vacinasPorTutor = new LinkedHashMap<>();
         for (Vaccine v : vacinasPendentes) {
-            for (Owner tutor : v.getPet().getTutorOwners()) {
+            for (Owner tutor : v.getAnimal().getTutorOwners()) {
                 if (tutor.podeReceberNotificacao()) {
                     vacinasPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(v);
                 }
@@ -103,7 +103,7 @@ public class VaccineReminderService {
 
         Map<Owner, List<Antiparasitic>> antisPorTutor = new LinkedHashMap<>();
         for (Antiparasitic a : antisPendentes) {
-            for (Owner tutor : a.getPet().getTutorOwners()) {
+            for (Owner tutor : a.getAnimal().getTutorOwners()) {
                 if (tutor.podeReceberNotificacao()) {
                     antisPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(a);
                 }
@@ -127,7 +127,7 @@ public class VaccineReminderService {
         }
 
         // A marcacao vem depois de TODOS os envios, e nao dentro do laco, porque
-        // uma dose de pet compartilhado aparece no lembrete de mais de um tutor -
+        // uma dose de animal compartilhado aparece no lembrete de mais de um tutor -
         // marcada por tutor, ela seria escrita duas vezes.
         //
         // Continua valendo o que valia antes: marcar so depois de enviar. Se o
@@ -148,12 +148,12 @@ public class VaccineReminderService {
 
     /**
      * Basta um tutor apto para a dose entrar na varredura. O filtro fica antes
-     * do agrupamento de proposito, como antes da V15: um pet cujos tutores nao
+     * do agrupamento de proposito, como antes da V15: um animal cujos tutores nao
      * confirmaram o e-mail nao tem a dose marcada como avisada, e o lembrete sai
      * na primeira varredura depois da confirmacao em vez de se perder.
      */
-    private boolean temTutorNotificavel(Pet pet) {
-        return pet.getTutorOwners().stream().anyMatch(Owner::podeReceberNotificacao);
+    private boolean temTutorNotificavel(Animal animal) {
+        return animal.getTutorOwners().stream().anyMatch(Owner::podeReceberNotificacao);
     }
 
     private Notification montarLembrete(Owner owner, List<Vaccine> vacinas, List<Antiparasitic> antis, LocalDate hoje) {
@@ -184,7 +184,7 @@ public class VaccineReminderService {
         long dias = ChronoUnit.DAYS.between(hoje, vaccine.getNextDoseDate());
 
         return String.format("- %s: %s %s (%s)",
-                vaccine.getPet().getName(),
+                vaccine.getAnimal().getName(),
                 vaccine.getVaccineName(),
                 dias < 0 ? "venceu ha " + Math.abs(dias) + " dia(s)" : "vence em " + dias + " dia(s)",
                 vaccine.getNextDoseDate());
@@ -194,7 +194,7 @@ public class VaccineReminderService {
         long dias = ChronoUnit.DAYS.between(hoje, anti.getNextDoseDate());
 
         return String.format("- %s: %s %s (%s)",
-                anti.getPet().getName(),
+                anti.getAnimal().getName(),
                 anti.getName(),
                 dias < 0 ? "venceu ha " + Math.abs(dias) + " dia(s)" : "vence em " + dias + " dia(s)",
                 anti.getNextDoseDate());
@@ -202,7 +202,7 @@ public class VaccineReminderService {
 
     /**
      * Dose vencida continua vencida todo dia. Sem o cooldown, o mesmo lembrete
-     * sairia diariamente ate o tutor vacinar o pet.
+     * sairia diariamente ate o tutor vacinar o animal.
      */
     private boolean deveAvisarVacina(Vaccine vaccine, LocalDateTime agora) {
         if (vaccine.getNextDoseDate() == null) {

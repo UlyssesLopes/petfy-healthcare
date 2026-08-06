@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.notification;
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
@@ -71,18 +71,18 @@ class VaccineReminderServiceTest {
         return Owner.builder().ownerId(UUID.randomUUID()).name(nome).email(email).build();
     }
 
-    private Vaccine vacina(Owner owner, String petName, String vaccineName,
+    private Vaccine vacina(Owner owner, String animalName, String vaccineName,
                            LocalDate proximaDose, LocalDateTime ultimoEnvio) {
         return Vaccine.builder()
                 .vaccineId(UUID.randomUUID())
                 .vaccineName(vaccineName)
                 .nextDoseDate(proximaDose)
                 .lastReminderSentAt(ultimoEnvio)
-                .pet(Pet.builder().petId(UUID.randomUUID()).name(petName).tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).build())
+                .animal(Animal.builder().animalId(UUID.randomUUID()).name(animalName).tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).build())
                 .build();
     }
 
-    private Antiparasitic anti(Owner owner, String petName, String name,
+    private Antiparasitic anti(Owner owner, String animalName, String name,
                                LocalDate proximaDose, LocalDateTime ultimoEnvio) {
         return Antiparasitic.builder()
                 .antiparasiticId(UUID.randomUUID())
@@ -90,7 +90,7 @@ class VaccineReminderServiceTest {
                 .kind(AntiparasiticKind.DEWORMER)
                 .nextDoseDate(proximaDose)
                 .lastReminderSentAt(ultimoEnvio)
-                .pet(Pet.builder().petId(UUID.randomUUID()).name(petName).tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).build())
+                .animal(Animal.builder().animalId(UUID.randomUUID()).name(animalName).tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).build())
                 .build();
     }
 
@@ -120,7 +120,7 @@ class VaccineReminderServiceTest {
 
         /**
          * O risco de mandar para endereco nao confirmado nao e spam: e o nome do
-         * pet e do tutor chegando na caixa de um estranho.
+         * animal e do tutor chegando na caixa de um estranho.
          */
         @Test
         @DisplayName("nao deve avisar tutor que ainda nao confirmou o e-mail")

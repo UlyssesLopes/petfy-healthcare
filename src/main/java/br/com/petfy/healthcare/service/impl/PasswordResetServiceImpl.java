@@ -48,7 +48,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
      *
      * E de proposito. Responder "esse e-mail nao esta cadastrado" transformaria o
      * endpoint, que e publico, num verificador de quem tem conta aqui. Para uma
-     * base de tutores de pet isso ja e exposicao; combinado com o vazamento de
+     * base de tutores de animal isso ja e exposicao; combinado com o vazamento de
      * outro servico, vira lista de alvos.
      */
     @Override

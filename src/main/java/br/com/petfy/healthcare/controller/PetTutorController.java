@@ -15,58 +15,58 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Quem cuida do pet, junto com quem cadastrou.
+ * Quem cuida do animal, junto com quem cadastrou.
  *
  * Os niveis de cada rota estao no {@code PetTutorServiceImpl}, e nao aqui: a
- * decisao de acesso mora numa peca so desde a V15, e repeti-la em anotacao no
- * controller criaria a segunda copia que o {@code PetAccessGuard} existe para
+ * decisao de acesso mora numa peca so desde a V15, e reanimali-la em anotacao no
+ * controller criaria a segunda copia que o {@code AnimalAccessGuard} existe para
  * evitar.
  */
 @RestController
-@RequestMapping("/pets")
+@RequestMapping("/animals")
 @RequiredArgsConstructor
 public class PetTutorController {
 
     private final PetTutorService petTutorService;
 
-    @GetMapping("/{petId}/tutors")
-    public ResponseEntity<List<PetTutorResponseDTO>> listTutors(@PathVariable UUID petId) {
-        return ResponseEntity.ok(petTutorService.listTutors(petId));
+    @GetMapping("/{animalId}/tutors")
+    public ResponseEntity<List<PetTutorResponseDTO>> listTutors(@PathVariable UUID animalId) {
+        return ResponseEntity.ok(petTutorService.listTutors(animalId));
     }
 
-    @PostMapping("/{petId}/tutors/invites")
+    @PostMapping("/{animalId}/tutors/invites")
     public ResponseEntity<PetTutorInviteResponseDTO> invite(
-            @PathVariable UUID petId,
+            @PathVariable UUID animalId,
             @Valid @RequestBody PetTutorInviteRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(petTutorService.invite(petId, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(petTutorService.invite(animalId, request));
     }
 
-    @GetMapping("/{petId}/tutors/invites")
-    public ResponseEntity<List<PetTutorInviteResponseDTO>> listInvites(@PathVariable UUID petId) {
-        return ResponseEntity.ok(petTutorService.listInvites(petId));
+    @GetMapping("/{animalId}/tutors/invites")
+    public ResponseEntity<List<PetTutorInviteResponseDTO>> listInvites(@PathVariable UUID animalId) {
+        return ResponseEntity.ok(petTutorService.listInvites(animalId));
     }
 
-    @DeleteMapping("/{petId}/tutors/invites/{petTutorInviteId}")
+    @DeleteMapping("/{animalId}/tutors/invites/{petTutorInviteId}")
     public ResponseEntity<Void> revokeInvite(
-            @PathVariable UUID petId,
+            @PathVariable UUID animalId,
             @PathVariable UUID petTutorInviteId) {
-        petTutorService.revokeInvite(petId, petTutorInviteId);
+        petTutorService.revokeInvite(animalId, petTutorInviteId);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{petId}/tutors/{ownerId}")
+    @PatchMapping("/{animalId}/tutors/{ownerId}")
     public ResponseEntity<PetTutorResponseDTO> changeRole(
-            @PathVariable UUID petId,
+            @PathVariable UUID animalId,
             @PathVariable UUID ownerId,
             @Valid @RequestBody PetTutorRoleUpdateRequestDTO request) {
-        return ResponseEntity.ok(petTutorService.changeRole(petId, ownerId, request));
+        return ResponseEntity.ok(petTutorService.changeRole(animalId, ownerId, request));
     }
 
-    @DeleteMapping("/{petId}/tutors/{ownerId}")
+    @DeleteMapping("/{animalId}/tutors/{ownerId}")
     public ResponseEntity<Void> removeTutor(
-            @PathVariable UUID petId,
+            @PathVariable UUID animalId,
             @PathVariable UUID ownerId) {
-        petTutorService.removeTutor(petId, ownerId);
+        petTutorService.removeTutor(animalId, ownerId);
         return ResponseEntity.noContent().build();
     }
 
@@ -74,11 +74,11 @@ public class PetTutorController {
      * POST, e nao PATCH no papel: a transferencia mexe em dois vinculos ao mesmo
      * tempo - promove um e rebaixa o outro - entao nao e a edicao de um recurso.
      */
-    @PostMapping("/{petId}/tutors/{ownerId}/transfer-holder")
+    @PostMapping("/{animalId}/tutors/{ownerId}/transfer-holder")
     public ResponseEntity<PetTutorResponseDTO> transferHolder(
-            @PathVariable UUID petId,
+            @PathVariable UUID animalId,
             @PathVariable UUID ownerId) {
-        return ResponseEntity.ok(petTutorService.transferHolder(petId, ownerId));
+        return ResponseEntity.ok(petTutorService.transferHolder(animalId, ownerId));
     }
 
 }

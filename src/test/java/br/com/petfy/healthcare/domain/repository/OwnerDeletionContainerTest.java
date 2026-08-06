@@ -7,10 +7,10 @@ import br.com.petfy.healthcare.domain.entity.ConsentDocument;
 import br.com.petfy.healthcare.domain.entity.ConsentRecord;
 import br.com.petfy.healthcare.domain.entity.EmailVerificationToken;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
-import br.com.petfy.healthcare.domain.entity.PetWeightHistory;
+import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.PasswordResetToken;
@@ -161,26 +161,26 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
      *
      * Os casos acima replicam as chamadas de repositorio; estes chamam
      * {@code deleteCurrentOwner()}, porque o que esta em jogo aqui e a <b>ordem</b>
-     * em que ele emite os comandos. A V15 exige exatamente um HOLDER por pet via
+     * em que ele emite os comandos. A V15 exige exatamente um HOLDER por animal via
      * indice unico parcial, e a heranca de titularidade promove o sucessor antes de
-     * o vinculo de quem sai ter saido - dois HOLDER no mesmo pet. Se o Postgres
+     * o vinculo de quem sai ter saido - dois HOLDER no mesmo animal. Se o Postgres
      * enxergar esse estado intermediario, a exclusao de conta quebra em producao, e
      * nenhum teste de mock veria isso.
      */
     @Nested
-    @DisplayName("exclusao com pet compartilhado")
-    class PetCompartilhado {
+    @DisplayName("exclusao com animal compartilhado")
+    class AnimalCompartilhado {
 
         @Autowired private OwnerService ownerService;
-        @Autowired private PetRepository petRepository;
+        @Autowired private AnimalRepository animalRepository;
         @Autowired private PetTutorRepository petTutorRepository;
         @Autowired private VaccineRepository vaccineRepository;
-        @Autowired private PetWeightHistoryRepository petWeightHistoryRepository;
+        @Autowired private AnimalWeightHistoryRepository animalWeightHistoryRepository;
         @Autowired private AntiparasiticRepository antiparasiticRepository;
         @Autowired private ConsentRecordRepository consentRecordRepository;
 
         private Owner maria;
-        private Pet rex;
+        private Animal rex;
 
         @BeforeEach
         void compartilhaRexComMaria() {
@@ -190,7 +190,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
                     .password("hash")
                     .build());
 
-            rex = petRepository.save(Pet.builder().name("Rex").species(Species.CANINA)
+            rex = animalRepository.save(Animal.builder().name("Rex").species(Species.CANINA)
                     .creationDate(LocalDateTime.now()).build());
 
             // owner e o titular; maria entrou depois como co-tutora
@@ -200,7 +200,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
 
         private void vinculo(Owner de, PetTutorRole papel, LocalDateTime quando) {
             petTutorRepository.saveAndFlush(PetTutor.builder()
-                    .pet(rex).owner(de).role(papel).creationDate(quando).build());
+                    .animal(rex).owner(de).role(papel).creationDate(quando).build());
         }
 
         private void autenticar(Owner como) {
@@ -214,18 +214,18 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
         }
 
         /**
-         * O titular fecha a conta e o pet tem outro tutor: o pet sobrevive e a
+         * O titular fecha a conta e o animal tem outro tutor: o animal sobrevive e a
          * titularidade passa para quem fica. E aqui que os dois HOLDER coexistem.
          */
         @Test
-        @DisplayName("titular sai, pet sobrevive e a titularidade passa ao co-tutor")
-        void titularSaiEPetSobrevive() {
+        @DisplayName("titular sai, animal sobrevive e a titularidade passa ao co-tutor")
+        void titularSaiEAnimalSobrevive() {
             autenticar(owner);
 
             ownerService.deleteCurrentOwner();
 
-            assertThat(petRepository.findById(rex.getPetId())).isPresent();
-            assertThat(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(rex.getPetId()))
+            assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
+            assertThat(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(rex.getAnimalId()))
                     .singleElement()
                     .satisfies(restante -> {
                         assertThat(restante.getOwner().getOwnerId()).isEqualTo(maria.getOwnerId());
@@ -234,30 +234,30 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
         }
 
         /**
-         * O pet unico da conta morre com ela, e leva a carteira inteira.
+         * O animal unico da conta morre com ela, e leva a carteira inteira.
          *
          * Peso e antiparasitario chegaram no passo 9 e nao entraram na cascata da
          * exclusao: a partir dali, apagar a conta de quem tinha registrado uma
          * pesagem respondia 500 e o pedido de exclusao ficava sem atendimento. Nao
-         * aparecia em mock nem nos casos acima, que criavam pet sem historico.
+         * aparecia em mock nem nos casos acima, que criavam animal sem historico.
          */
         @Test
-        @DisplayName("pet unico da conta morre com a carteira inteira, peso e antiparasitario incluidos")
-        void petUnicoMorreComACarteiraInteira() {
-            Pet nina = petRepository.saveAndFlush(Pet.builder()
+        @DisplayName("animal unico da conta morre com a carteira inteira, peso e antiparasitario incluidos")
+        void animalUnicoMorreComACarteiraInteira() {
+            Animal nina = animalRepository.saveAndFlush(Animal.builder()
                     .name("Nina").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
             petTutorRepository.saveAndFlush(PetTutor.builder()
-                    .pet(nina).owner(owner).role(PetTutorRole.HOLDER)
+                    .animal(nina).owner(owner).role(PetTutorRole.HOLDER)
                     .creationDate(LocalDateTime.now()).build());
 
             vaccineRepository.saveAndFlush(Vaccine.builder()
-                    .pet(nina).vaccineName("V10").applicationDate(LocalDate.now().minusMonths(2))
+                    .animal(nina).vaccineName("V10").applicationDate(LocalDate.now().minusMonths(2))
                     .creationDate(LocalDateTime.now()).build());
-            petWeightHistoryRepository.saveAndFlush(PetWeightHistory.builder()
-                    .pet(nina).weight(8.0).measuredAt(LocalDate.now().minusMonths(1))
+            animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                    .animal(nina).weight(8.0).measuredAt(LocalDate.now().minusMonths(1))
                     .creationDate(LocalDateTime.now()).build());
             antiparasiticRepository.saveAndFlush(Antiparasitic.builder()
-                    .pet(nina).name("Vermifugo").kind(AntiparasiticKind.DEWORMER)
+                    .animal(nina).name("Vermifugo").kind(AntiparasiticKind.DEWORMER)
                     .applicationDate(LocalDate.now().minusMonths(1))
                     .creationDate(LocalDateTime.now()).updateDate(LocalDateTime.now()).build());
 
@@ -266,12 +266,12 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
             ownerService.deleteCurrentOwner();
 
             assertThat(ownerRepository.findById(owner.getOwnerId())).isEmpty();
-            assertThat(petRepository.findById(nina.getPetId())).isEmpty();
-            assertThat(petWeightHistoryRepository.findByPetPetIdOrderByMeasuredAtDesc(nina.getPetId())).isEmpty();
-            assertThat(antiparasiticRepository.findByPetPetIdOrderByApplicationDateDesc(nina.getPetId())).isEmpty();
+            assertThat(animalRepository.findById(nina.getAnimalId())).isEmpty();
+            assertThat(animalWeightHistoryRepository.findByAnimalAnimalIdOrderByMeasuredAtDesc(nina.getAnimalId())).isEmpty();
+            assertThat(antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(nina.getAnimalId())).isEmpty();
 
             // rex tem outro tutor e sobrevive, com a titularidade passada a maria
-            assertThat(petRepository.findById(rex.getPetId())).isPresent();
+            assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
         }
 
         /**
@@ -303,7 +303,7 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
                     .findByOwnerOwnerIdOrderByAcceptedAtDesc(owner.getOwnerId())).isEmpty();
         }
 
-        /** Co-tutor sai: o pet nao muda de titular e continua de pe. */
+        /** Co-tutor sai: o animal nao muda de titular e continua de pe. */
         @Test
         @DisplayName("co-tutor sai e o titular segue titular")
         void coTutorSaiSemMexerNoTitular() {
@@ -311,8 +311,8 @@ class OwnerDeletionContainerTest extends PostgresContainerTest {
 
             ownerService.deleteCurrentOwner();
 
-            assertThat(petRepository.findById(rex.getPetId())).isPresent();
-            assertThat(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(rex.getPetId()))
+            assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
+            assertThat(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(rex.getAnimalId()))
                     .singleElement()
                     .satisfies(restante -> {
                         assertThat(restante.getOwner().getOwnerId()).isEqualTo(owner.getOwnerId());

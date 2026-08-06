@@ -100,11 +100,11 @@ class RateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("endpoint autenticado (ex: /pets) nao e limitado")
+    @DisplayName("endpoint autenticado (ex: /animals) nao e limitado")
     void endpointAutenticadoNaoELimitado() throws Exception {
         for (int i = 0; i < 20; i++) {
             MockHttpServletResponse res = new MockHttpServletResponse();
-            filtro.doFilter(postPara("/pets", "10.0.0.5"), res, new MockFilterChain());
+            filtro.doFilter(postPara("/animals", "10.0.0.5"), res, new MockFilterChain());
             assertThat(res.getStatus()).isNotEqualTo(429);
         }
     }

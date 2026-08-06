@@ -1,13 +1,13 @@
 package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.VaccineCatalogResponseDTO;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
  * Somente leitura: o catalogo e mantido por migration. Nao ha service proprio
  * porque nao ha regra alguma - so a listagem para o cliente montar a selecao.
  *
- * Filtrar por petId devolve apenas as vacinas da especie daquele pet - o
+ * Filtrar por animalId devolve apenas as vacinas da especie daquele animal - o
  * default para o cliente da UI, evitando que o tutor escolha vacina que nao
- * casa com o pet.
+ * casa com o animal.
  */
 @RestController
 @RequestMapping("/vaccine-catalog")
@@ -35,15 +35,15 @@ import java.util.stream.Collectors;
 public class VaccineCatalogController {
 
     private final VaccineCatalogRepository vaccineCatalogRepository;
-    private final PetRepository petRepository;
+    private final AnimalRepository animalRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
-    private final PetAccessGuard petAccessGuard;
+    private final AnimalAccessGuard animalAccessGuard;
 
     @GetMapping
-    public ResponseEntity<List<VaccineCatalogResponseDTO>> list(@RequestParam(required = false) UUID petId) {
-        List<VaccineCatalog> catalogo = petId == null
+    public ResponseEntity<List<VaccineCatalogResponseDTO>> list(@RequestParam(required = false) UUID animalId) {
+        List<VaccineCatalog> catalogo = animalId == null
                 ? vaccineCatalogRepository.findAllByOrderBySpeciesAscNameAsc()
-                : vaccineCatalogRepository.findBySpeciesOrderByNameAsc(petAccessGuard.requireLeitura(petId).getSpecies());
+                : vaccineCatalogRepository.findBySpeciesOrderByNameAsc(animalAccessGuard.requireLeitura(animalId).getSpecies());
 
         return ResponseEntity.ok(catalogo.stream()
                 .map(this::toResponse)
@@ -51,9 +51,9 @@ public class VaccineCatalogController {
     }
 
     /**
-     * Pet de outro dono responde PET_NOT_FOUND, e nao 403: um 403 confirmaria
+     * Animal de outro dono responde ANIMAL_NOT_FOUND, e nao 403: um 403 confirmaria
      * que aquele id existe, o que permitiria varrer ids para descobrir o que ha
-     * na base. Mesma regra do PetServiceImpl.
+     * na base. Mesma regra do AnimalServiceImpl.
      */
     private VaccineCatalogResponseDTO toResponse(VaccineCatalog entrada) {
         return VaccineCatalogResponseDTO.builder()

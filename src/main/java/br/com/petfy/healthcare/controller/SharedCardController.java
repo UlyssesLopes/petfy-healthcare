@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
-import br.com.petfy.healthcare.service.PetShareService;
+import br.com.petfy.healthcare.service.AnimalShareService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class SharedCardController {
 
-    private final PetShareService petShareService;
+    private final AnimalShareService animalShareService;
 
     @GetMapping("/{token}")
     public ResponseEntity<SharedVaccineCardDTO> viewSharedCard(@PathVariable String token) {
-        return ResponseEntity.ok(petShareService.viewSharedCard(token));
+        return ResponseEntity.ok(animalShareService.viewSharedCard(token));
     }
 
 }

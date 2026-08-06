@@ -6,8 +6,8 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Carrega o nome do pet junto porque a agenda cruza todos os pets do tutor: sem
- * isso o cliente precisaria de uma chamada por pet so para montar a tela.
+ * Carrega o nome do animal junto porque a agenda cruza todos os animals do tutor: sem
+ * isso o cliente precisaria de uma chamada por animal so para montar a tela.
  */
 @Getter
 @Setter
@@ -20,9 +20,9 @@ public class VaccineAgendaItemDTO {
 
     private String vaccineName;
 
-    private UUID petId;
+    private UUID animalId;
 
-    private String petName;
+    private String animalName;
 
     private LocalDate applicationDate;
 

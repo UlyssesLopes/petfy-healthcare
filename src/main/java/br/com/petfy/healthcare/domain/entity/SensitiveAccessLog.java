@@ -8,11 +8,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Um acesso de terceiro ao dado de saude de um pet.
+ * Um acesso de terceiro ao dado de saude de um animal.
  *
  * Append-only: nao ha caminho de update nem de delete individual. Log de auditoria
  * que pode ser editado nao e log de auditoria - a unica remocao e em massa, quando o
- * pet deixa de existir e nao ha mais tutor a quem responder.
+ * animal deixa de existir e nao ha mais tutor a quem responder.
  *
  * O ator e guardado como tipo + id + <b>nome no momento do acesso</b>, e nao por
  * chave estrangeira para {@code vets}. Duas razoes: o veterinario pode fechar a conta
@@ -39,8 +39,8 @@ public class SensitiveAccessLog {
     private UUID sensitiveAccessLogId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pet_id", nullable = false)
-    private Pet pet;
+    @JoinColumn(name = "animal_id", nullable = false)
+    private Animal animal;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "actor_type", nullable = false, length = 16)

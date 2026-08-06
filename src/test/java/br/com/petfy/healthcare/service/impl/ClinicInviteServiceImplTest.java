@@ -55,7 +55,7 @@ class ClinicInviteServiceImplTest {
     @BeforeEach
     void setUp() {
         // token service real: o valor do teste esta em conferir que o token nao e
-        // guardado em claro, e nao em repetir o hash num mock
+        // guardado em claro, e nao em reanimalir o hash num mock
         service = new ClinicInviteServiceImpl(clinicInviteRepository, vetRepository,
                 currentVetProvider, new OpaqueTokenService());
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 7);

@@ -1,12 +1,12 @@
 package br.com.petfy.healthcare.domain.entity;
 
 /**
- * O que cada tutor pode fazer com um pet.
+ * O que cada tutor pode fazer com um animal.
  *
- * Sao tres, e nao dois, porque "dividir o pet" nao e uma coisa so: a esposa que
+ * Sao tres, e nao dois, porque "dividir o animal" nao e uma coisa so: a esposa que
  * cuida junto precisa registrar vacina, e a avo que so quer acompanhar nao
  * precisa poder editar nada. Quem decide qual dos dois casos e o titular, um por
- * pet.
+ * animal.
  *
  * A ordem da declaracao e a hierarquia: quem tem um papel pode tudo que os
  * seguintes podem - ver {@link #permite(PetTutorRole)}.
@@ -14,15 +14,15 @@ package br.com.petfy.healthcare.domain.entity;
 public enum PetTutorRole {
 
     /**
-     * Dono do pet. Faz tudo que o EDITOR faz, e mais o que ninguem mais faz:
+     * Dono do animal. Faz tudo que o EDITOR faz, e mais o que ninguem mais faz:
      * convidar e remover tutores, mudar o papel de cada um, transferir a
-     * titularidade e apagar o pet.
+     * titularidade e apagar o animal.
      *
-     * Existe exatamente um por pet, garantido por indice unico parcial.
+     * Existe exatamente um por animal, garantido por indice unico parcial.
      */
     HOLDER,
 
-    /** Le e escreve: registra vacina, corrige peso, edita o cadastro do pet. */
+    /** Le e escreve: registra vacina, corrige peso, edita o cadastro do animal. */
     EDITOR,
 
     /** So le. Acompanha a carteira e a agenda, nao altera nada. */

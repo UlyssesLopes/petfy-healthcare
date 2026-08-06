@@ -84,7 +84,7 @@ public class ClinicInviteServiceImpl implements ClinicInviteService {
     /**
      * Token inexistente, expirado, revogado, ja usado e destinado a outro email
      * respondem igual. Distinguir diria a quem tenta adivinhar qual parte errou -
-     * e o convite e o que separa um estranho dos pets de uma clinica inteira.
+     * e o convite e o que separa um estranho dos animals de uma clinica inteira.
      */
     @Override
     public ClinicInvite validate(String token, String email) {

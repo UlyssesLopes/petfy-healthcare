@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Convite para entrar num pet, emitido pelo titular.
+ * Convite para entrar num animal, emitido pelo titular.
  *
  * Mesmo desenho do {@link ClinicInvite}: token guardado como hash, uso unico,
  * expiracao curta e e-mail travando o destinatario. Existe convite em vez de
@@ -39,7 +39,7 @@ public class PetTutorInvite {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pet_id", nullable = false)
-    private Pet pet;
+    private Animal animal;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_owner_id", nullable = false)
@@ -51,7 +51,7 @@ public class PetTutorInvite {
 
     /**
      * So este e-mail pode aceitar. **Obrigatorio aqui**, ao contrario do convite
-     * de clinica, onde e opcional: um convite de pet da acesso ao historico de
+     * de clinica, onde e opcional: um convite de animal da acesso ao historico de
      * saude de um animal e ao nome do tutor, entao um link solto encaminhado por
      * engano entrega dado pessoal a quem passar por ele.
      */

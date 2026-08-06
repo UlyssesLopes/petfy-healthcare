@@ -4,12 +4,12 @@ import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.dto.PetTutorInviteRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PetTutorRoleUpdateRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.service.PetService;
+import br.com.petfy.healthcare.service.AnimalService;
 import br.com.petfy.healthcare.service.PetTutorService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.AfterEach;
@@ -35,12 +35,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * O fluxo de co-tutor contra Postgres de verdade.
  *
  * Existe porque a parte perigosa do 8b nao e regra de negocio, e sim <b>ordem de
- * comandos</b>: a V15 garante exatamente um HOLDER por pet com indice unico
+ * comandos</b>: a V15 garante exatamente um HOLDER por animal com indice unico
  * parcial, e toda troca de titularidade passa por um instante em que dois
  * candidatos existem. Mock nao tem indice, e foi assim que a exclusao de conta
  * quebrou antes - ver OwnerDeletionContainerTest.
  *
- * O convite tambem trouxe chaves estrangeiras novas para pets e owners, que so
+ * O convite tambem trouxe chaves estrangeiras novas para animals e owners, que so
  * recusam o delete no banco.
  */
 @SpringBootTest
@@ -49,22 +49,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PetTutorFlowContainerTest extends PostgresContainerTest {
 
     @Autowired private PetTutorService petTutorService;
-    @Autowired private PetService petService;
+    @Autowired private AnimalService animalService;
     @Autowired private OwnerRepository ownerRepository;
-    @Autowired private PetRepository petRepository;
+    @Autowired private AnimalRepository animalRepository;
     @Autowired private PetTutorRepository petTutorRepository;
     @Autowired private PetTutorInviteRepository petTutorInviteRepository;
 
     private Owner ulysses;
     private Owner maria;
-    private Pet rex;
+    private Animal rex;
 
     @BeforeEach
     void setUp() {
         ulysses = owner("ulysses");
         maria = owner("maria");
 
-        rex = petRepository.saveAndFlush(Pet.builder()
+        rex = animalRepository.saveAndFlush(Animal.builder()
                 .name("Rex").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
 
         vinculo(ulysses, PetTutorRole.HOLDER);
@@ -85,7 +85,7 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
 
     private PetTutor vinculo(Owner de, PetTutorRole papel) {
         return petTutorRepository.saveAndFlush(PetTutor.builder()
-                .pet(rex).owner(de).role(papel).creationDate(LocalDateTime.now()).build());
+                .animal(rex).owner(de).role(papel).creationDate(LocalDateTime.now()).build());
     }
 
     private void autenticar(Owner como) {
@@ -95,12 +95,12 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
 
     private String convidar(Owner emissor, Owner para, PetTutorRole papel) {
         autenticar(emissor);
-        return petTutorService.invite(rex.getPetId(), PetTutorInviteRequestDTO.builder()
+        return petTutorService.invite(rex.getAnimalId(), PetTutorInviteRequestDTO.builder()
                 .email(para.getEmail()).role(papel).build()).getToken();
     }
 
     private List<PetTutor> tutoresDoRex() {
-        return petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(rex.getPetId());
+        return petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(rex.getAnimalId());
     }
 
     private long holdersDoRex() {
@@ -112,17 +112,17 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
     class ConviteEAceite {
 
         @Test
-        @DisplayName("co-tutor aceito passa a alcancar o pet, no papel do convite")
-        void coTutorAceitoAlcancaOPet() {
+        @DisplayName("co-tutor aceito passa a alcancar o animal, no papel do convite")
+        void coTutorAceitoAlcancaOAnimal() {
             String token = convidar(ulysses, maria, PetTutorRole.EDITOR);
 
             autenticar(maria);
             var vinculo = petTutorService.accept(token);
 
             assertThat(vinculo.getRole()).isEqualTo(PetTutorRole.EDITOR);
-            assertThat(vinculo.getPetId()).isEqualTo(rex.getPetId());
-            assertThat(petRepository.findByTutorsOwnerOwnerId(maria.getOwnerId()))
-                    .extracting(Pet::getName).containsExactly("Rex");
+            assertThat(vinculo.getAnimalId()).isEqualTo(rex.getAnimalId());
+            assertThat(animalRepository.findByTutorsOwnerOwnerId(maria.getOwnerId()))
+                    .extracting(Animal::getName).containsExactly("Rex");
         }
 
         /** Uso unico: o mesmo token nao entra duas vezes. */
@@ -158,18 +158,18 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
                     .extracting("code")
                     .isEqualTo(ErrorMessageEnum.PET_TUTOR_INVITE_NOT_FOUND.getCode());
 
-            assertThat(petRepository.findByTutorsOwnerOwnerId(estranho.getOwnerId())).isEmpty();
+            assertThat(animalRepository.findByTutorsOwnerOwnerId(estranho.getOwnerId())).isEmpty();
         }
 
         @Test
         @DisplayName("convite revogado nao e aceito")
         void conviteRevogadoNaoEAceito() {
             String token = convidar(ulysses, maria, PetTutorRole.EDITOR);
-            UUID inviteId = petTutorInviteRepository.findByPetPetIdOrderByCreationDateDesc(rex.getPetId())
+            UUID inviteId = petTutorInviteRepository.findByAnimalAnimalIdOrderByCreationDateDesc(rex.getAnimalId())
                     .get(0).getPetTutorInviteId();
 
             autenticar(ulysses);
-            petTutorService.revokeInvite(rex.getPetId(), inviteId);
+            petTutorService.revokeInvite(rex.getAnimalId(), inviteId);
 
             autenticar(maria);
             assertThatThrownBy(() -> petTutorService.accept(token))
@@ -184,13 +184,13 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
         void conviteGuardaHash() {
             String token = convidar(ulysses, maria, PetTutorRole.EDITOR);
 
-            assertThat(petTutorInviteRepository.findByPetPetIdOrderByCreationDateDesc(rex.getPetId()))
+            assertThat(petTutorInviteRepository.findByAnimalAnimalIdOrderByCreationDateDesc(rex.getAnimalId()))
                     .singleElement()
                     .satisfies(invite -> assertThat(invite.getTokenHash()).isNotBlank().isNotEqualTo(token));
         }
 
         @Test
-        @DisplayName("nao se convida quem ja e tutor do pet")
+        @DisplayName("nao se convida quem ja e tutor do animal")
         void naoConvidaQuemJaETutor() {
             vinculo(maria, PetTutorRole.VIEWER);
             autenticar(ulysses);
@@ -198,7 +198,7 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
             var request = PetTutorInviteRequestDTO.builder()
                     .email(maria.getEmail()).role(PetTutorRole.EDITOR).build();
 
-            assertThatThrownBy(() -> petTutorService.invite(rex.getPetId(), request))
+            assertThatThrownBy(() -> petTutorService.invite(rex.getAnimalId(), request))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
                     .containsExactly(ErrorMessageEnum.ALREADY_A_TUTOR.getCode(), HttpStatus.CONFLICT);
@@ -226,7 +226,7 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
             assertThat(holdersDoRex()).isEqualTo(1);
 
             // quem transferiu continua enxergando a carteira, agora como EDITOR
-            assertThat(petTutorRepository.findByPetPetIdAndOwnerOwnerId(rex.getPetId(), ulysses.getOwnerId()))
+            assertThat(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(rex.getAnimalId(), ulysses.getOwnerId()))
                     .get()
                     .satisfies(antigo -> assertThat(antigo.getRole()).isEqualTo(PetTutorRole.EDITOR));
         }
@@ -237,13 +237,13 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
             vinculo(maria, PetTutorRole.VIEWER);
             autenticar(ulysses);
 
-            var resultado = petTutorService.transferHolder(rex.getPetId(), maria.getOwnerId());
+            var resultado = petTutorService.transferHolder(rex.getAnimalId(), maria.getOwnerId());
             petTutorRepository.flush();
 
             assertThat(resultado.getRole()).isEqualTo(PetTutorRole.HOLDER);
             assertThat(resultado.getOwnerId()).isEqualTo(maria.getOwnerId());
             assertThat(holdersDoRex()).isEqualTo(1);
-            assertThat(petTutorRepository.findByPetPetIdAndOwnerOwnerId(rex.getPetId(), ulysses.getOwnerId()))
+            assertThat(petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(rex.getAnimalId(), ulysses.getOwnerId()))
                     .get()
                     .satisfies(antigo -> assertThat(antigo.getRole()).isEqualTo(PetTutorRole.EDITOR));
         }
@@ -257,13 +257,13 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
         void quemTransferiuPerdeOPoder() {
             vinculo(maria, PetTutorRole.VIEWER);
             autenticar(ulysses);
-            petTutorService.transferHolder(rex.getPetId(), maria.getOwnerId());
+            petTutorService.transferHolder(rex.getAnimalId(), maria.getOwnerId());
             petTutorRepository.flush();
 
-            assertThatThrownBy(() -> petTutorService.transferHolder(rex.getPetId(), ulysses.getOwnerId()))
+            assertThatThrownBy(() -> petTutorService.transferHolder(rex.getAnimalId(), ulysses.getOwnerId()))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
-                    .containsExactly(ErrorMessageEnum.INSUFFICIENT_PET_ROLE.getCode(), HttpStatus.FORBIDDEN);
+                    .containsExactly(ErrorMessageEnum.INSUFFICIENT_ANIMAL_ROLE.getCode(), HttpStatus.FORBIDDEN);
         }
 
         @Test
@@ -271,7 +271,7 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
         void transferirParaSiMesmoNaoMudaNada() {
             autenticar(ulysses);
 
-            var resultado = petTutorService.transferHolder(rex.getPetId(), ulysses.getOwnerId());
+            var resultado = petTutorService.transferHolder(rex.getAnimalId(), ulysses.getOwnerId());
 
             assertThat(resultado.getRole()).isEqualTo(PetTutorRole.HOLDER);
             assertThat(holdersDoRex()).isEqualTo(1);
@@ -282,7 +282,7 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
         void transferirParaNaoTutor() {
             autenticar(ulysses);
 
-            assertThatThrownBy(() -> petTutorService.transferHolder(rex.getPetId(), maria.getOwnerId()))
+            assertThatThrownBy(() -> petTutorService.transferHolder(rex.getAnimalId(), maria.getOwnerId()))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
                     .containsExactly(ErrorMessageEnum.TUTOR_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
@@ -299,7 +299,7 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
             vinculo(maria, PetTutorRole.VIEWER);
             autenticar(ulysses);
 
-            var resultado = petTutorService.changeRole(rex.getPetId(), maria.getOwnerId(),
+            var resultado = petTutorService.changeRole(rex.getAnimalId(), maria.getOwnerId(),
                     PetTutorRoleUpdateRequestDTO.builder().role(PetTutorRole.EDITOR).build());
 
             assertThat(resultado.getRole()).isEqualTo(PetTutorRole.EDITOR);
@@ -313,7 +313,7 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
 
             var request = PetTutorRoleUpdateRequestDTO.builder().role(PetTutorRole.HOLDER).build();
 
-            assertThatThrownBy(() -> petTutorService.changeRole(rex.getPetId(), maria.getOwnerId(), request))
+            assertThatThrownBy(() -> petTutorService.changeRole(rex.getAnimalId(), maria.getOwnerId(), request))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
                     .containsExactly(ErrorMessageEnum.TRANSFER_REQUIRED_FOR_HOLDER.getCode(),
@@ -323,16 +323,16 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
         }
 
         @Test
-        @DisplayName("co-tutor sai do pet por conta propria")
+        @DisplayName("co-tutor sai do animal por conta propria")
         void coTutorSaiSozinho() {
             vinculo(maria, PetTutorRole.EDITOR);
             autenticar(maria);
 
-            petTutorService.removeTutor(rex.getPetId(), maria.getOwnerId());
+            petTutorService.removeTutor(rex.getAnimalId(), maria.getOwnerId());
             petTutorRepository.flush();
 
-            assertThat(petRepository.findByTutorsOwnerOwnerId(maria.getOwnerId())).isEmpty();
-            assertThat(petRepository.findById(rex.getPetId())).isPresent();
+            assertThat(animalRepository.findByTutorsOwnerOwnerId(maria.getOwnerId())).isEmpty();
+            assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
         }
 
         @Test
@@ -344,22 +344,22 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
 
             autenticar(maria);
 
-            assertThatThrownBy(() -> petTutorService.removeTutor(rex.getPetId(), joao.getOwnerId()))
+            assertThatThrownBy(() -> petTutorService.removeTutor(rex.getAnimalId(), joao.getOwnerId()))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
-                    .containsExactly(ErrorMessageEnum.INSUFFICIENT_PET_ROLE.getCode(), HttpStatus.FORBIDDEN);
+                    .containsExactly(ErrorMessageEnum.INSUFFICIENT_ANIMAL_ROLE.getCode(), HttpStatus.FORBIDDEN);
         }
 
         /**
          * Nem o proprio titular sai por aqui: o indice exige exatamente um HOLDER, e
-         * um pet sem titular ficaria sem ninguem que pudesse convidar ou apaga-lo.
+         * um animal sem titular ficaria sem ninguem que pudesse convidar ou apaga-lo.
          */
         @Test
-        @DisplayName("o titular nao se remove: transfere primeiro ou apaga o pet")
+        @DisplayName("o titular nao se remove: transfere primeiro ou apaga o animal")
         void titularNaoSeRemove() {
             autenticar(ulysses);
 
-            assertThatThrownBy(() -> petTutorService.removeTutor(rex.getPetId(), ulysses.getOwnerId()))
+            assertThatThrownBy(() -> petTutorService.removeTutor(rex.getAnimalId(), ulysses.getOwnerId()))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
                     .containsExactly(ErrorMessageEnum.CANNOT_REMOVE_HOLDER.getCode(), HttpStatus.CONFLICT);
@@ -368,25 +368,25 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
         }
 
         @Test
-        @DisplayName("quem nao alcanca o pet recebe 404 na lista de tutores")
+        @DisplayName("quem nao alcanca o animal recebe 404 na lista de tutores")
         void estranhoNaoVeALista() {
             Owner estranho = owner("estranho");
             autenticar(estranho);
 
-            assertThatThrownBy(() -> petTutorService.listTutors(rex.getPetId()))
+            assertThatThrownBy(() -> petTutorService.listTutors(rex.getAnimalId()))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
-                    .containsExactly(ErrorMessageEnum.PET_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
+                    .containsExactly(ErrorMessageEnum.ANIMAL_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
         }
 
-        /** Saber quem alcanca o pet e parte da privacidade, inclusive para o VIEWER. */
+        /** Saber quem alcanca o animal e parte da privacidade, inclusive para o VIEWER. */
         @Test
-        @DisplayName("o co-tutor VIEWER ve quem mais alcanca o pet")
+        @DisplayName("o co-tutor VIEWER ve quem mais alcanca o animal")
         void viewerVeALista() {
             vinculo(maria, PetTutorRole.VIEWER);
             autenticar(maria);
 
-            assertThat(petTutorService.listTutors(rex.getPetId()))
+            assertThat(petTutorService.listTutors(rex.getAnimalId()))
                     .hasSize(2)
                     .extracting("role")
                     .containsExactly(PetTutorRole.HOLDER, PetTutorRole.VIEWER);
@@ -394,7 +394,7 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
     }
 
     /**
-     * O convite trouxe chaves estrangeiras novas para pets e owners. Como o schema
+     * O convite trouxe chaves estrangeiras novas para animals e owners. Como o schema
      * nao tem ON DELETE CASCADE em lugar nenhum, quem recusa o delete e o banco - e
      * so aqui isso aparece.
      */
@@ -403,16 +403,16 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
     class ConvitePendenteEExclusao {
 
         @Test
-        @DisplayName("apagar o pet com convite pendente funciona")
-        void apagarPetComConvitePendente() {
+        @DisplayName("apagar o animal com convite pendente funciona")
+        void apagarAnimalComConvitePendente() {
             convidar(ulysses, maria, PetTutorRole.EDITOR);
 
             autenticar(ulysses);
-            petService.deletePet(rex.getPetId());
-            petRepository.flush();
+            animalService.deleteAnimal(rex.getAnimalId());
+            animalRepository.flush();
 
-            assertThat(petRepository.findById(rex.getPetId())).isEmpty();
-            assertThat(petTutorInviteRepository.findByPetPetIdOrderByCreationDateDesc(rex.getPetId())).isEmpty();
+            assertThat(animalRepository.findById(rex.getAnimalId())).isEmpty();
+            assertThat(petTutorInviteRepository.findByAnimalAnimalIdOrderByCreationDateDesc(rex.getAnimalId())).isEmpty();
         }
     }
 

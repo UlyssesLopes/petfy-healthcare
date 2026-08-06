@@ -14,13 +14,13 @@ public interface PetTutorInviteRepository extends JpaRepository<PetTutorInvite, 
     /** Busca por hash, e nao por token: o token nao esta guardado. */
     Optional<PetTutorInvite> findByTokenHash(String tokenHash);
 
-    List<PetTutorInvite> findByPetPetIdOrderByCreationDateDesc(UUID petId);
+    List<PetTutorInvite> findByAnimalAnimalIdOrderByCreationDateDesc(UUID animalId);
 
     /**
-     * Usado ao apagar o pet e ao apagar a conta: convite pendente aponta para o
-     * pet e para quem o criou, entao seguraria os deletes seguintes.
+     * Usado ao apagar o animal e ao apagar a conta: convite pendente aponta para o
+     * animal e para quem o criou, entao seguraria os deletes seguintes.
      */
-    void deleteByPetPetIdIn(List<UUID> petIds);
+    void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 
     void deleteByCreatedByOwnerId(UUID ownerId);
 

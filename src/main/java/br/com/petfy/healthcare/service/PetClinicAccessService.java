@@ -6,13 +6,13 @@ import br.com.petfy.healthcare.domain.dto.ClinicAccessResponseDTO;
 import java.util.List;
 import java.util.UUID;
 
-/** Lado do tutor: quem decide quais clinicas alcancam o pet. */
+/** Lado do tutor: quem decide quais clinicas alcancam o animal. */
 public interface PetClinicAccessService {
 
-    ClinicAccessResponseDTO grant(UUID petId, ClinicAccessRequestDTO request);
+    ClinicAccessResponseDTO grant(UUID animalId, ClinicAccessRequestDTO request);
 
-    List<ClinicAccessResponseDTO> list(UUID petId);
+    List<ClinicAccessResponseDTO> list(UUID animalId);
 
-    void revoke(UUID petId, UUID clinicId);
+    void revoke(UUID animalId, UUID clinicId);
 
 }

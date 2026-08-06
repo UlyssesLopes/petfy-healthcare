@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.AccessActorType;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.SensitiveAccessLog;
 import br.com.petfy.healthcare.domain.entity.Vet;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 /**
- * Registra que um terceiro leu dado de saude de um pet.
+ * Registra que um terceiro leu dado de saude de um animal.
  *
  * <b>Falha aqui derruba a leitura, de proposito.</b> E o oposto da politica do
  * {@link br.com.petfy.healthcare.notification.ClinicActivityNotifier}, e a diferenca
@@ -39,15 +39,15 @@ public class SensitiveAccessLogger {
     private final RequestEvidenceProvider requestEvidenceProvider;
 
     /**
-     * Veterinario leu um recurso do pet.
+     * Veterinario leu um recurso do animal.
      *
      * Guarda o nome do veterinario e o da clinica no momento do acesso. A clinica
      * importa porque foi ela que o tutor autorizou - a pessoa que abriu e uma
      * consequencia dessa autorizacao, nao o objeto dela.
      */
-    public void vetLeu(Vet vet, Pet pet, AccessedResource recurso) {
+    public void vetLeu(Vet vet, Animal animal, AccessedResource recurso) {
         registrar(SensitiveAccessLog.builder()
-                .pet(pet)
+                .animal(animal)
                 .actorType(AccessActorType.VET)
                 .actorId(vet.getVetId())
                 .actorName(vet.getName())
@@ -63,9 +63,9 @@ public class SensitiveAccessLogger {
      * sem o IP, dois acessos pelo mesmo link sao indistinguiveis, e o tutor nao tem
      * como decidir se revoga.
      */
-    public void linkPublicoAberto(Pet pet) {
+    public void linkPublicoAberto(Animal animal) {
         registrar(SensitiveAccessLog.builder()
-                .pet(pet)
+                .animal(animal)
                 .actorType(AccessActorType.SHARE_LINK)
                 .resource(AccessedResource.SHARED_CARD));
     }

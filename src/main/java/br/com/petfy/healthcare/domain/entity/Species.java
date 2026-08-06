@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.domain.entity;
 
 /**
- * Especie do pet. Nao e String livre porque toda associacao entre pet e catalogo
+ * Especie do animal. Nao e String livre porque toda associacao entre animal e catalogo
  * de vacinas depende de casar espécie exata - "cachorro" vs "canina" vs "Canis
  * familiaris" cai fora do match e a vacina errada passa despercebida.
  *

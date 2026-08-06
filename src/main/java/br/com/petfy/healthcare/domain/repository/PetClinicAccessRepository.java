@@ -11,13 +11,13 @@ import java.util.UUID;
 @Repository
 public interface PetClinicAccessRepository extends JpaRepository<PetClinicAccess, UUID> {
 
-    Optional<PetClinicAccess> findByPetPetIdAndClinicClinicId(UUID petId, UUID clinicId);
+    Optional<PetClinicAccess> findByAnimalAnimalIdAndClinicClinicId(UUID animalId, UUID clinicId);
 
-    List<PetClinicAccess> findByPetPetIdOrderByGrantedAtDesc(UUID petId);
+    List<PetClinicAccess> findByAnimalAnimalIdOrderByGrantedAtDesc(UUID animalId);
 
-    /** Usado pelo vet para listar os pets que a clinica dele pode atender. */
+    /** Usado pelo vet para listar os animals que a clinica dele pode atender. */
     List<PetClinicAccess> findByClinicClinicIdAndRevokedAtIsNull(UUID clinicId);
 
-    void deleteByPetPetIdIn(List<UUID> petIds);
+    void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 
 }

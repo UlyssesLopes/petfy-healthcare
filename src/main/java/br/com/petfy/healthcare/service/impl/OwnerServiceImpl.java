@@ -19,7 +19,7 @@ import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.OwnerService;
-import br.com.petfy.healthcare.service.PetPurger;
+import br.com.petfy.healthcare.service.AnimalPurger;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -46,7 +46,7 @@ public class OwnerServiceImpl implements OwnerService {
     private final PasswordEncoder passwordEncoder;
     private final CurrentOwnerProvider currentOwnerProvider;
     private final EmailVerificationService emailVerificationService;
-    private final PetPurger petPurger;
+    private final AnimalPurger animalPurger;
     private final ConsentService consentService;
     private final ConsentRecordRepository consentRecordRepository;
     private final AttachmentRepository attachmentRepository;
@@ -148,30 +148,30 @@ public class OwnerServiceImpl implements OwnerService {
     }
 
     /**
-     * Apaga a conta e todo o rastro do tutor no sistema: pets, vacinas, historico,
+     * Apaga a conta e todo o rastro do tutor no sistema: animals, vacinas, historico,
      * shares, acessos por clinica, correcoes e tokens. E o exercicio do direito de
      * exclusao pela LGPD.
      *
      * Ordem obrigatoria: filhas antes das pais. As correcoes apontam para vacina e
-     * historico; vacina/historico apontam para pet; pet aponta para owner. Sem
+     * historico; vacina/historico apontam para animal; animal aponta para owner. Sem
      * essa ordem o banco recusa cada delete com violacao de chave estrangeira - o
      * DELETE /owners/me estava quebrado desde a V12 exatamente por isso, so
-     * apagava a conta sem pet.
+     * apagava a conta sem animal.
      *
-     * <b>Com multi-tutor, a cascata deixou de ser cega.</b> Antes da V15 todo pet
-     * tinha um dono so, entao sair do sistema e levar os pets junto eram a mesma
-     * coisa. Agora nao sao: um pet que outra pessoa tambem cuida nao pode morrer
+     * <b>Com multi-tutor, a cascata deixou de ser cega.</b> Antes da V15 todo animal
+     * tinha um dono so, entao sair do sistema e levar os animals junto eram a mesma
+     * coisa. Agora nao sao: um animal que outra pessoa tambem cuida nao pode morrer
      * porque um dos tutores fechou a conta - seria apagar dado de saude de um
      * animal que continua tendo quem responda por ele, e o pedido de exclusao de
      * um titular nao autoriza destruir o historico do outro.
      *
-     * Entao os pets se dividem em dois grupos:
+     * Entao os animals se dividem em dois grupos:
      * <ul>
-     *   <li><b>Pet sem outro tutor</b> - morre junto, com vacinas, historico,
+     *   <li><b>Animal sem outro tutor</b> - morre junto, com vacinas, historico,
      *       correcoes, shares e acessos de clinica. E a cascata de antes.</li>
-     *   <li><b>Pet com outro tutor</b> - sobrevive e so perde este vinculo. Se
+     *   <li><b>Animal com outro tutor</b> - sobrevive e so perde este vinculo. Se
      *       quem sai era o titular, a titularidade passa ao tutor mais antigo,
-     *       porque o indice do banco exige exatamente um HOLDER por pet e um pet
+     *       porque o indice do banco exige exatamente um HOLDER por animal e um animal
      *       sem titular ficaria sem ninguem que pudesse convidar ou apagar.</li>
      * </ul>
      *
@@ -186,57 +186,57 @@ public class OwnerServiceImpl implements OwnerService {
 
         List<PetTutor> vinculos = petTutorRepository.findByOwnerOwnerId(ownerId);
 
-        List<UUID> petsQueMorrem = new ArrayList<>();
-        List<UUID> petsQuePrecisamDeSucessor = new ArrayList<>();
+        List<UUID> animalsQueMorrem = new ArrayList<>();
+        List<UUID> animalsQuePrecisamDeSucessor = new ArrayList<>();
 
         for (PetTutor vinculo : vinculos) {
-            UUID petId = vinculo.getPet().getPetId();
+            UUID animalId = vinculo.getAnimal().getAnimalId();
 
-            if (petTutorRepository.countByPetPetId(petId) > 1) {
+            if (petTutorRepository.countByAnimalAnimalId(animalId) > 1) {
                 if (vinculo.isHolder()) {
-                    petsQuePrecisamDeSucessor.add(petId);
+                    animalsQuePrecisamDeSucessor.add(animalId);
                 }
             } else {
-                petsQueMorrem.add(petId);
+                animalsQueMorrem.add(animalId);
             }
         }
 
-        // Os convites saem antes dos vinculos e dos pets: cada linha aponta para o
-        // pet, para quem convidou e para quem aceitou, entao seguraria os tres
+        // Os convites saem antes dos vinculos e dos animals: cada linha aponta para o
+        // animal, para quem convidou e para quem aceitou, entao seguraria os tres
         // deletes seguintes. Convite e credencial de uso unico com validade curta,
         // nao historico de saude - apagar segue a mesma politica que o passo 10
         // escolheu para o resto da conta.
         petTutorInviteRepository.deleteByCreatedByOwnerId(ownerId);
         petTutorInviteRepository.deleteByAcceptedByOwnerId(ownerId);
 
-        // Os vinculos saem primeiro: sao filhos de pet e de owner ao mesmo tempo,
+        // Os vinculos saem primeiro: sao filhos de animal e de owner ao mesmo tempo,
         // entao segurariam os dois deletes seguintes
         petTutorRepository.deleteByOwnerOwnerId(ownerId);
 
         // E saem tambem antes de promover o sucessor, nao depois. O indice unico
-        // parcial da V15 exige exatamente um HOLDER por pet: promover com o
+        // parcial da V15 exige exatamente um HOLDER por animal: promover com o
         // vinculo de quem sai ainda na tabela deixa dois, e o Postgres recusa o
         // update - derrubando a exclusao de conta inteira. Nao aparecia em teste
         // de mock, que nao tem indice.
         petTutorRepository.flush();
-        petsQuePrecisamDeSucessor.forEach(this::promoverSucessor);
+        animalsQuePrecisamDeSucessor.forEach(this::promoverSucessor);
 
-        // Anexo enviado por quem sai, num pet que SOBREVIVE porque tem outro tutor: o
-        // arquivo pertence ao pet, nao a quem fez o upload. Apagar o laudo porque quem o
+        // Anexo enviado por quem sai, num animal que SOBREVIVE porque tem outro tutor: o
+        // arquivo pertence ao animal, nao a quem fez o upload. Apagar o laudo porque quem o
         // subiu fechou a conta destruiria dado de saude de um animal que continua tendo
-        // quem responda por ele - a mesma regra que a V15 aplicou ao pet inteiro. Perde-se
+        // quem responda por ele - a mesma regra que a V15 aplicou ao animal inteiro. Perde-se
         // so a autoria.
         //
-        // Nos pets que morrem, o purge apaga o anexo e o arquivo de qualquer forma; este
+        // Nos animals que morrem, o purge apaga o anexo e o arquivo de qualquer forma; este
         // update passa por eles antes sem prejuizo.
         attachmentRepository.desassociarUploader(ownerId);
 
-        // Os pets que morrem, com tudo que pende deles. A sequencia mora no
-        // PetPurger, compartilhada com o DELETE /pets/{id}: eram duas listas
+        // Os animals que morrem, com tudo que pende deles. A sequencia mora no
+        // AnimalPurger, compartilhada com o DELETE /animals/{id}: eram duas listas
         // separadas e elas divergiram - quando o passo 9 trouxe peso e
         // antiparasitario, nenhuma das duas foi atualizada, e os dois caminhos
         // passaram a responder 500 em casos diferentes.
-        petPurger.purge(petsQueMorrem);
+        animalPurger.purge(animalsQueMorrem);
 
         // Tokens da conta
         passwordResetTokenRepository.deleteByOwnerOwnerId(ownerId);
@@ -253,17 +253,17 @@ public class OwnerServiceImpl implements OwnerService {
     }
 
     /**
-     * Quem sai era o titular de um pet que sobrevive: alguem precisa herdar.
+     * Quem sai era o titular de um animal que sobrevive: alguem precisa herdar.
      * O criterio e o vinculo mais antigo entre os que ficam - quem acompanha o
-     * pet ha mais tempo. Nao ha escolha do usuario aqui de proposito: apagar a
+     * animal ha mais tempo. Nao ha escolha do usuario aqui de proposito: apagar a
      * conta nao pode ficar bloqueado esperando uma decisao.
      *
      * Chamado <b>depois</b> de o vinculo de quem sai ter sido apagado e descarregado
      * no banco, entao os candidatos aqui sao apenas quem fica - nao ha mais o que
-     * filtrar, e nao ha um segundo HOLDER competindo pelo indice unico.
+     * filtrar, e nao ha um segundo HOLDER comanimalindo pelo indice unico.
      */
-    private void promoverSucessor(UUID petId) {
-        petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId).stream()
+    private void promoverSucessor(UUID animalId) {
+        petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(animalId).stream()
                 .min(Comparator.comparing(PetTutor::getCreationDate))
                 .ifPresent(sucessor -> {
                     sucessor.setRole(PetTutorRole.HOLDER);

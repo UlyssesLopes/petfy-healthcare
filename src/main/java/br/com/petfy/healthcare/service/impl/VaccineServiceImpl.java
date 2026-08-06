@@ -7,7 +7,7 @@ import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineStatus;
 import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
@@ -15,7 +15,7 @@ import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineFactory;
 import br.com.petfy.healthcare.service.VaccineService;
@@ -47,7 +47,7 @@ public class VaccineServiceImpl implements VaccineService {
     private final ClinicRepository clinicRepository;
 
     private final CurrentOwnerProvider currentOwnerProvider;
-    private final PetAccessGuard petAccessGuard;
+    private final AnimalAccessGuard animalAccessGuard;
 
     private final VaccineStatusCalculator vaccineStatusCalculator;
 
@@ -57,14 +57,14 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public VaccineResponseDTO createVaccine(VaccineRequestDTO request) {
-        Pet pet = petAccessGuard.requireEscrita(request.getPetId());
+        Animal animal = animalAccessGuard.requireEscrita(request.getAnimalId());
 
         Clinic clinic = request.getClinicId() != null
                 ? clinicRepository.findById(request.getClinicId())
                 .orElseThrow(() -> new PetfyHealthcareException(ErrorMessageEnum.CLINIC_NOT_FOUND.getMessage(), ErrorMessageEnum.CLINIC_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND))
                 : null;
 
-        return toResponse(vaccineRepository.save(vaccineFactory.build(pet, clinic, request)));
+        return toResponse(vaccineRepository.save(vaccineFactory.build(animal, clinic, request)));
     }
 
     @Override
@@ -81,8 +81,8 @@ public class VaccineServiceImpl implements VaccineService {
         if (request.getNextDoseDate() != null) existing.setNextDoseDate(request.getNextDoseDate());
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
-        if (request.getPetId() != null) {
-            existing.setPet(petAccessGuard.requireEscrita(request.getPetId()));
+        if (request.getAnimalId() != null) {
+            existing.setAnimal(animalAccessGuard.requireEscrita(request.getAnimalId()));
         }
 
         if (request.getClinicId() != null) {
@@ -117,7 +117,7 @@ public class VaccineServiceImpl implements VaccineService {
 
     @Override
     public Page<VaccineResponseDTO> listAllVaccines(Pageable pageable) {
-        return vaccineRepository.findByPetTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
+        return vaccineRepository.findByAnimalTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId(), pageable)
                 .map(this::toResponse);
     }
 
@@ -127,7 +127,7 @@ public class VaccineServiceImpl implements VaccineService {
 
         // filtra em memoria de proposito: a agenda cobre as vacinas de um tutor,
         // que sao poucas, e assim a classificacao inteira fica testavel sem banco
-        List<Vaccine> doTutor = vaccineRepository.findByPetTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId());
+        List<Vaccine> doTutor = vaccineRepository.findByAnimalTutorsOwnerOwnerId(currentOwnerProvider.require().getOwnerId());
 
         Map<VaccineStatus, List<VaccineAgendaItemDTO>> porStatus = doTutor.stream()
                 .map(vaccine -> toAgendaItem(vaccine, hoje, windowDays))
@@ -159,8 +159,8 @@ public class VaccineServiceImpl implements VaccineService {
         return VaccineAgendaItemDTO.builder()
                 .vaccineId(vaccine.getVaccineId())
                 .vaccineName(vaccine.getVaccineName())
-                .petId(vaccine.getPet().getPetId())
-                .petName(vaccine.getPet().getName())
+                .animalId(vaccine.getAnimal().getAnimalId())
+                .animalName(vaccine.getAnimal().getName())
                 .applicationDate(vaccine.getApplicationDate())
                 .nextDoseDate(proximaDose)
                 .status(status)
@@ -169,12 +169,12 @@ public class VaccineServiceImpl implements VaccineService {
     }
 
     /**
-     * Vacina de pet fora do alcance responde VACCINE_NOT_FOUND, e nao 403: um 403
+     * Vacina de animal fora do alcance responde VACCINE_NOT_FOUND, e nao 403: um 403
      * confirmaria que aquele id existe.
      */
     private Vaccine buscarAlcancavel(UUID vaccineId) {
         return vaccineRepository.findById(vaccineId)
-                .filter(vaccine -> petAccessGuard.alcanca(vaccine.getPet().getPetId()))
+                .filter(vaccine -> animalAccessGuard.alcanca(vaccine.getAnimal().getAnimalId()))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(),
@@ -188,7 +188,7 @@ public class VaccineServiceImpl implements VaccineService {
                 .applicationDate(vaccine.getApplicationDate())
                 .nextDoseDate(vaccine.getNextDoseDate())
                 .description(vaccine.getDescription())
-                .petId(vaccine.getPet().getPetId())
+                .animalId(vaccine.getAnimal().getAnimalId())
                 .clinicId(vaccine.getClinic() != null ? vaccine.getClinic().getClinicId() : null)
                 .vaccineCatalogId(vaccine.getCatalog() != null ? vaccine.getCatalog().getVaccineCatalogId() : null)
                 .creationDate(vaccine.getCreationDate())

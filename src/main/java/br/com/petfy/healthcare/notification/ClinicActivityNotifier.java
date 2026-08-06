@@ -2,7 +2,7 @@ package br.com.petfy.healthcare.notification;
 
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Avisa o tutor sobre o que uma clinica escreveu no pet dele.
+ * Avisa o tutor sobre o que uma clinica escreveu no animal dele.
  *
  * Sem isso o tutor so descobre abrindo o app, o que e o oposto de confiar a
  * carteira a terceiros: quem autorizou uma clinica precisa enxergar o que ela
@@ -31,11 +31,11 @@ public class ClinicActivityNotifier {
     private final AsyncNotificationDispatcher dispatcher;
 
     public void vaccineRecorded(Vaccine vaccine) {
-        enviar(vaccine.getPet(), destinatario -> {
+        enviar(vaccine.getAnimal(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s registrou uma vacina no %s:",
                     clinica(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null),
-                    vaccine.getPet().getName()));
+                    vaccine.getAnimal().getName()));
             linhas.add(String.format("- %s, aplicada em %s",
                     vaccine.getVaccineName(), vaccine.getApplicationDate()));
 
@@ -44,16 +44,16 @@ public class ClinicActivityNotifier {
             }
 
             return montar(destinatario,
-                    "Nova vacina registrada em " + vaccine.getPet().getName(), linhas);
+                    "Nova vacina registrada em " + vaccine.getAnimal().getName(), linhas);
         }, "vacina registrada");
     }
 
     public void vaccineCorrected(Vaccine vaccine) {
-        enviar(vaccine.getPet(), destinatario -> {
+        enviar(vaccine.getAnimal(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s corrigiu um registro de vacina do %s.",
                     clinica(vaccine.getClinic() != null ? vaccine.getClinic().getName() : null),
-                    vaccine.getPet().getName()));
+                    vaccine.getAnimal().getName()));
             linhas.add(String.format("Como esta agora: %s, aplicada em %s",
                     vaccine.getVaccineName(), vaccine.getApplicationDate()));
 
@@ -62,16 +62,16 @@ public class ClinicActivityNotifier {
             }
 
             return montar(destinatario,
-                    "Registro de vacina corrigido em " + vaccine.getPet().getName(), linhas);
+                    "Registro de vacina corrigido em " + vaccine.getAnimal().getName(), linhas);
         }, "vacina corrigida");
     }
 
     public void healthRecordRecorded(HealthRecord record) {
-        enviar(record.getPet(), destinatario -> {
+        enviar(record.getAnimal(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s registrou um atendimento do %s:",
                     clinica(record.getClinic() != null ? record.getClinic().getName() : null),
-                    record.getPet().getName()));
+                    record.getAnimal().getName()));
             linhas.add(String.format("- %s em %s", record.getEventType(), record.getEventDate()));
 
             if (record.getDescription() != null && !record.getDescription().isBlank()) {
@@ -79,21 +79,21 @@ public class ClinicActivityNotifier {
             }
 
             return montar(destinatario,
-                    "Novo atendimento registrado em " + record.getPet().getName(), linhas);
+                    "Novo atendimento registrado em " + record.getAnimal().getName(), linhas);
         }, "atendimento registrado");
     }
 
     public void healthRecordCorrected(HealthRecord record) {
-        enviar(record.getPet(), destinatario -> {
+        enviar(record.getAnimal(), destinatario -> {
             List<String> linhas = new ArrayList<>();
             linhas.add(String.format("%s corrigiu um atendimento do %s.",
                     clinica(record.getClinic() != null ? record.getClinic().getName() : null),
-                    record.getPet().getName()));
+                    record.getAnimal().getName()));
             linhas.add(String.format("Como esta agora: %s em %s",
                     record.getEventType(), record.getEventDate()));
 
             return montar(destinatario,
-                    "Atendimento corrigido em " + record.getPet().getName(), linhas);
+                    "Atendimento corrigido em " + record.getAnimal().getName(), linhas);
         }, "atendimento corrigido");
     }
 
@@ -102,7 +102,7 @@ public class ClinicActivityNotifier {
      *
      * E o oposto do lembrete de vacina, onde a excecao sobe de proposito: la o
      * envio e o unico efeito, e nao avisar significa nao ter feito nada. Aqui o
-     * efeito principal e o registro no historico do pet - perde-lo porque o SMTP
+     * efeito principal e o registro no historico do animal - perde-lo porque o SMTP
      * caiu seria trocar um problema pequeno por um grande.
      */
     /**
@@ -111,21 +111,21 @@ public class ClinicActivityNotifier {
      * um que venha a ser adicionado depois, que nao compila sem passar o tutor.
      *
      * Enquanto o e-mail nao for confirmado, nada sai para aquele endereco. O
-     * silencio aqui e aceitavel: o registro no historico do pet continua sendo
-     * feito e o tutor o ve ao abrir a carteira. O que nao pode e o nome do pet e
+     * silencio aqui e aceitavel: o registro no historico do animal continua sendo
+     * feito e o tutor o ve ao abrir a carteira. O que nao pode e o nome do animal e
      * do tutor irem parar na caixa de um estranho.
      *
      * A mensagem e montada aqui, ainda na transacao de quem chamou, porque monta-la
      * passa por associacoes lazy. So o envio sai para outra thread: e ele que
      * depende de SMTP e que somava latencia a requisicao do veterinario.
      */
-    private void enviar(Pet pet, java.util.function.Function<Owner, Notification> mensagem, String evento) {
-        // A partir da V15 um pet tem varios tutores, e o aviso vai para todos:
+    private void enviar(Animal animal, java.util.function.Function<Owner, Notification> mensagem, String evento) {
+        // A partir da V15 um animal tem varios tutores, e o aviso vai para todos:
         // quem divide o cuidado do animal precisa saber que a clinica registrou
         // algo nele. O papel nao filtra - quem so le tambem quer saber que
         // apareceu vacina que ninguem da casa reconhece, que e justamente o caso
         // que a orientacao no rodape trata.
-        for (Owner destinatario : pet.getTutorOwners()) {
+        for (Owner destinatario : animal.getTutorOwners()) {
             if (!destinatario.podeReceberNotificacao()) {
                 log.info("Tutor {} ainda nao confirmou o e-mail; aviso de {} suprimido",
                         destinatario.getOwnerId(), evento);

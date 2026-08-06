@@ -76,11 +76,11 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 String.class);
 
         assertThat(tabelas).contains(
-                "owners", "clinics", "pets", "vaccines", "health_records",
-                "vaccine_catalog", "pet_shares", "vets", "pet_clinic_access",
+                "owners", "clinics", "animals", "vaccines", "health_records",
+                "vaccine_catalog", "animal_shares", "vets", "pet_clinic_access",
                 "clinic_invites", "vaccine_corrections",
                 "pet_tutors", "pet_tutor_invites", "consent_records", "sensitive_access_log",
-                "attachments", "pet_health_conditions");
+                "attachments", "animal_health_conditions");
     }
 
     @Test
@@ -88,7 +88,7 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
     void uuidDeveSerTipoNativo() {
         List<String> tipos = jdbcTemplate.queryForList(
                 "select data_type from information_schema.columns "
-                        + "where table_schema = 'public' and column_name = 'pet_id'",
+                        + "where table_schema = 'public' and column_name = 'animal_id'",
                 String.class);
 
         assertThat(tipos).isNotEmpty().containsOnly("uuid");
@@ -116,18 +116,18 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
                 String.class);
 
         assertThat(constraints).contains(
-                "fk_vaccines_pet", "fk_health_records_pet",
+                "fk_vaccines_animal", "fk_health_records_animal",
                 "fk_vets_clinic", "fk_pet_clinic_access_pet", "fk_clinic_invites_clinic",
                 "fk_vaccine_corrections_vaccine",
                 "fk_pet_tutors_pet", "fk_pet_tutors_owner", "fk_pet_tutor_invites_pet",
-                "fk_consent_records_owner", "fk_sensitive_access_log_pet");
+                "fk_consent_records_owner", "fk_sensitive_access_log_animal");
     }
 
     /**
      * O que a V15 promete, conferido contra o banco e nao contra o mapeamento.
      *
      * A parte perigosa dessa migration nao e criar tabela: e trocar a fonte de
-     * verdade sobre quem manda no pet. Se {@code pets.owner_id} sobrevivesse, ou
+     * verdade sobre quem manda no animal. Se {@code animals.owner_id} sobrevivesse, ou
      * se o banco aceitasse dois titulares, a regra de acesso passaria a ter duas
      * respostas possiveis para a mesma pergunta.
      */
@@ -138,19 +138,26 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
         /**
          * A coluna antiga tem de ter saido. Mantida ao lado de pet_tutors, "quem e
          * o dono" teria duas respostas, e o dia em que divergissem seria alguem
-         * enxergando pet que nao e seu.
+         * enxergando animal que nao e seu.
          */
         @Test
-        @DisplayName("pets.owner_id nao pode mais existir")
-        void ownerIdDeveTerSaidoDePets() {
+        @DisplayName("animals.owner_id nao pode mais existir")
+        void ownerIdDeveTerSaidoDeAnimals() {
             List<String> colunas = jdbcTemplate.queryForList(
                     "select column_name from information_schema.columns "
-                            + "where table_schema = 'public' and table_name = 'pets'",
+                            + "where table_schema = 'public' and table_name = 'animals'",
                     String.class);
 
             assertThat(colunas).isNotEmpty().doesNotContain("owner_id");
         }
 
+        /**
+         * A coluna continua chamando {@code pet_id}, e nao {@code animal_id}, depois
+         * da V20. Nao e esquecimento: {@code pet_tutors} se dissolve em custodia e
+         * acesso no P2 da Fase 6, e renomear coluna de tabela marcada para morrer e
+         * trabalho que se joga fora. O descasamento com {@code animals.animal_id}
+         * marca justamente o que ainda e o mundo velho.
+         */
         @Test
         @DisplayName("o vinculo de tutor deve existir com papel obrigatorio")
         void petTutorsDeveTerPapelObrigatorio() {
@@ -181,8 +188,8 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
         }
 
         @Test
-        @DisplayName("o indice parcial de um titular por pet deve existir")
-        void indiceDeUmTitularPorPetDeveExistir() {
+        @DisplayName("o indice parcial de um titular por animal deve existir")
+        void indiceDeUmTitularPorAnimalDeveExistir() {
             List<String> indices = jdbcTemplate.queryForList(
                     "select indexname from pg_indexes "
                             + "where schemaname = 'public' and tablename = 'pet_tutors'",
@@ -193,43 +200,43 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
         }
 
         /**
-         * O indice parcial em acao. Um pet sem titular ficaria sem ninguem que
+         * O indice parcial em acao. Um animal sem titular ficaria sem ninguem que
          * pudesse convidar ou apagar; com dois, os dois se removeriam mutuamente.
          * Por isso a garantia e do banco, e nao so do servico.
          */
         @Test
-        @DisplayName("o banco recusa um segundo titular no mesmo pet")
+        @DisplayName("o banco recusa um segundo titular no mesmo animal")
         void bancoRecusaSegundoTitular() {
             UUID donoA = inserirOwner("titular-a");
             UUID donoB = inserirOwner("titular-b");
-            UUID petId = inserirPet();
+            UUID animalId = inserirAnimal();
 
-            inserirTutor(petId, donoA, "HOLDER");
+            inserirTutor(animalId, donoA, "HOLDER");
 
-            assertThatThrownBy(() -> inserirTutor(petId, donoB, "HOLDER"))
+            assertThatThrownBy(() -> inserirTutor(animalId, donoB, "HOLDER"))
                     .isInstanceOf(DuplicateKeyException.class);
 
-            // o mesmo pet aceita quantos co-tutores quiser: a restricao e so sobre
+            // o mesmo animal aceita quantos co-tutores quiser: a restricao e so sobre
             // HOLDER, e e por isso que ela e um indice parcial
-            inserirTutor(petId, donoB, "EDITOR");
+            inserirTutor(animalId, donoB, "EDITOR");
 
-            assertThat(contarTutores(petId)).isEqualTo(2);
+            assertThat(contarTutores(animalId)).isEqualTo(2);
 
-            limpar(petId);
+            limpar(animalId);
         }
 
         @Test
-        @DisplayName("o banco recusa a mesma pessoa duas vezes no mesmo pet")
+        @DisplayName("o banco recusa a mesma pessoa duas vezes no mesmo animal")
         void bancoRecusaTutorDuplicado() {
-            UUID dono = inserirOwner("tutor-repetido");
-            UUID petId = inserirPet();
+            UUID dono = inserirOwner("tutor-reanimalido");
+            UUID animalId = inserirAnimal();
 
-            inserirTutor(petId, dono, "HOLDER");
+            inserirTutor(animalId, dono, "HOLDER");
 
-            assertThatThrownBy(() -> inserirTutor(petId, dono, "VIEWER"))
+            assertThatThrownBy(() -> inserirTutor(animalId, dono, "VIEWER"))
                     .isInstanceOf(DuplicateKeyException.class);
 
-            limpar(petId);
+            limpar(animalId);
         }
 
         private UUID inserirOwner(String prefixo) {
@@ -240,30 +247,30 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
             return id;
         }
 
-        private UUID inserirPet() {
+        private UUID inserirAnimal() {
             UUID id = UUID.randomUUID();
             jdbcTemplate.update(
-                    "insert into pets (pet_id, name, species, creation_date) values (?, ?, ?, ?)",
+                    "insert into animals (animal_id, name, species, creation_date) values (?, ?, ?, ?)",
                     id, "Rex", "CANINA", Timestamp.valueOf(LocalDateTime.now()));
             return id;
         }
 
-        private void inserirTutor(UUID petId, UUID ownerId, String role) {
+        private void inserirTutor(UUID animalId, UUID ownerId, String role) {
             jdbcTemplate.update(
                     "insert into pet_tutors (pet_tutor_id, pet_id, owner_id, role, creation_date) "
                             + "values (?, ?, ?, ?, ?)",
-                    UUID.randomUUID(), petId, ownerId, role, Timestamp.valueOf(LocalDateTime.now()));
+                    UUID.randomUUID(), animalId, ownerId, role, Timestamp.valueOf(LocalDateTime.now()));
         }
 
-        private Integer contarTutores(UUID petId) {
+        private Integer contarTutores(UUID animalId) {
             return jdbcTemplate.queryForObject(
-                    "select count(*) from pet_tutors where pet_id = ?", Integer.class, petId);
+                    "select count(*) from pet_tutors where pet_id = ?", Integer.class, animalId);
         }
 
-        /** O container e compartilhado entre as classes: o pet e os vinculos saem daqui. */
-        private void limpar(UUID petId) {
-            jdbcTemplate.update("delete from pet_tutors where pet_id = ?", petId);
-            jdbcTemplate.update("delete from pets where pet_id = ?", petId);
+        /** O container e compartilhado entre as classes: o animal e os vinculos saem daqui. */
+        private void limpar(UUID animalId) {
+            jdbcTemplate.update("delete from pet_tutors where pet_id = ?", animalId);
+            jdbcTemplate.update("delete from animals where animal_id = ?", animalId);
         }
     }
 }

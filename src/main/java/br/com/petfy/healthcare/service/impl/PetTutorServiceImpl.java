@@ -5,7 +5,7 @@ import br.com.petfy.healthcare.domain.dto.PetTutorInviteResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PetTutorResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PetTutorRoleUpdateRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorInvite;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
@@ -16,7 +16,7 @@ import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.notification.PetTutorActivityNotifier;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.PetTutorService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ public class PetTutorServiceImpl implements PetTutorService {
     private final PetTutorInviteRepository petTutorInviteRepository;
     private final OwnerRepository ownerRepository;
     private final CurrentOwnerProvider currentOwnerProvider;
-    private final PetAccessGuard petAccessGuard;
+    private final AnimalAccessGuard animalAccessGuard;
     private final OpaqueTokenService opaqueTokenService;
     private final PetTutorActivityNotifier petTutorActivityNotifier;
 
@@ -47,7 +47,7 @@ public class PetTutorServiceImpl implements PetTutorService {
 
     /**
      * Convidar e do titular. Um EDITOR que pudesse convidar contornaria a regra:
-     * bastaria convidar um comparsa como HOLDER para tomar o pet de quem o
+     * bastaria convidar um comparsa como HOLDER para tomar o animal de quem o
      * cadastrou.
      *
      * O convite existe em vez de vinculo direto porque o caso comum e o conjuge
@@ -57,11 +57,11 @@ public class PetTutorServiceImpl implements PetTutorService {
      */
     @Override
     @Transactional
-    public PetTutorInviteResponseDTO invite(UUID petId, PetTutorInviteRequestDTO request) {
-        Pet pet = petAccessGuard.requireTitular(petId);
+    public PetTutorInviteResponseDTO invite(UUID animalId, PetTutorInviteRequestDTO request) {
+        Animal animal = animalAccessGuard.requireTitular(animalId);
         Owner emissor = currentOwnerProvider.require();
 
-        recusarSeJaETutor(petId, request.getEmail());
+        recusarSeJaETutor(animalId, request.getEmail());
 
         int validade = request.getExpiresInDays() != null
                 ? request.getExpiresInDays()
@@ -70,7 +70,7 @@ public class PetTutorServiceImpl implements PetTutorService {
         String token = opaqueTokenService.generate();
 
         PetTutorInvite invite = petTutorInviteRepository.save(PetTutorInvite.builder()
-                .pet(pet)
+                .animal(animal)
                 .createdBy(emissor)
                 .tokenHash(opaqueTokenService.hash(token))
                 .email(request.getEmail().trim())
@@ -90,7 +90,7 @@ public class PetTutorServiceImpl implements PetTutorService {
      *
      * <b>Token invalido, expirado, revogado, ja usado e destinado a outra pessoa
      * respondem igual.</b> Distinguir diria a quem tenta adivinhar qual parte
-     * errou - e um convite de pet e o que separa um estranho da carteira inteira.
+     * errou - e um convite de animal e o que separa um estranho da carteira inteira.
      */
     @Override
     @Transactional
@@ -102,19 +102,19 @@ public class PetTutorServiceImpl implements PetTutorService {
                 .filter(i -> i.getEmail().equalsIgnoreCase(aceitante.getEmail()))
                 .orElseThrow(PetTutorServiceImpl::conviteInvalido);
 
-        UUID petId = invite.getPet().getPetId();
+        UUID animalId = invite.getAnimal().getAnimalId();
 
-        if (petTutorRepository.existsByPetPetIdAndOwnerOwnerId(petId, aceitante.getOwnerId())) {
+        if (petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(animalId, aceitante.getOwnerId())) {
             throw jaETutor();
         }
 
         // A transferencia rebaixa o titular atual ANTES de o novo vinculo entrar.
-        // O indice unico parcial da V15 admite um HOLDER por pet: inserir primeiro
+        // O indice unico parcial da V15 admite um HOLDER por animal: inserir primeiro
         // deixaria dois na tabela e o Postgres recusaria o insert.
-        Owner titularAnterior = invite.transfereTitularidade() ? rebaixarTitular(petId) : null;
+        Owner titularAnterior = invite.transfereTitularidade() ? rebaixarTitular(animalId) : null;
 
         PetTutor vinculo = petTutorRepository.save(PetTutor.builder()
-                .pet(invite.getPet())
+                .animal(invite.getAnimal())
                 .owner(aceitante)
                 .role(invite.getRole())
                 .invitedBy(invite.getCreatedBy())
@@ -125,14 +125,14 @@ public class PetTutorServiceImpl implements PetTutorService {
         invite.setAcceptedBy(aceitante);
         petTutorInviteRepository.save(invite);
 
-        // Um aviso so, e nao dois: aceitar convite de HOLDER e entrar no pet e virar
+        // Um aviso so, e nao dois: aceitar convite de HOLDER e entrar no animal e virar
         // titular ao mesmo tempo, e a mudanca de titularidade e a informacao que
         // importa - ela ja diz que ha gente nova cuidando do animal.
         if (titularAnterior != null) {
-            petTutorActivityNotifier.titularidadeMudou(invite.getPet(), tutoresDoPet(petId),
+            petTutorActivityNotifier.titularidadeMudou(invite.getAnimal(), tutoresDoAnimal(animalId),
                     titularAnterior, aceitante, aceitante);
         } else {
-            petTutorActivityNotifier.tutorEntrou(invite.getPet(), tutoresDoPet(petId),
+            petTutorActivityNotifier.tutorEntrou(invite.getAnimal(), tutoresDoAnimal(animalId),
                     aceitante, invite.getRole());
         }
 
@@ -141,15 +141,15 @@ public class PetTutorServiceImpl implements PetTutorService {
 
     /**
      * Qualquer tutor ve a lista. Saber quem alcanca o historico de saude do seu
-     * pet e parte da privacidade, e nao o contrario - inclusive para quem so
+     * animal e parte da privacidade, e nao o contrario - inclusive para quem so
      * acompanha.
      */
     @Override
     @Transactional(readOnly = true)
-    public List<PetTutorResponseDTO> listTutors(UUID petId) {
-        petAccessGuard.requireLeitura(petId);
+    public List<PetTutorResponseDTO> listTutors(UUID animalId) {
+        animalAccessGuard.requireLeitura(animalId);
 
-        return petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId)
+        return petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(animalId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -158,10 +158,10 @@ public class PetTutorServiceImpl implements PetTutorService {
     /** Convite pendente e informacao de gestao: so o titular, que os emitiu. */
     @Override
     @Transactional(readOnly = true)
-    public List<PetTutorInviteResponseDTO> listInvites(UUID petId) {
-        petAccessGuard.requireTitular(petId);
+    public List<PetTutorInviteResponseDTO> listInvites(UUID animalId) {
+        animalAccessGuard.requireTitular(animalId);
 
-        return petTutorInviteRepository.findByPetPetIdOrderByCreationDateDesc(petId)
+        return petTutorInviteRepository.findByAnimalAnimalIdOrderByCreationDateDesc(animalId)
                 .stream()
                 .map(invite -> toResponse(invite, null))
                 .collect(Collectors.toList());
@@ -169,11 +169,11 @@ public class PetTutorServiceImpl implements PetTutorService {
 
     @Override
     @Transactional
-    public void revokeInvite(UUID petId, UUID petTutorInviteId) {
-        petAccessGuard.requireTitular(petId);
+    public void revokeInvite(UUID animalId, UUID petTutorInviteId) {
+        animalAccessGuard.requireTitular(animalId);
 
         PetTutorInvite invite = petTutorInviteRepository.findById(petTutorInviteId)
-                .filter(i -> i.getPet().getPetId().equals(petId))
+                .filter(i -> i.getAnimal().getAnimalId().equals(animalId))
                 .orElseThrow(PetTutorServiceImpl::conviteInvalido);
 
         // revogar duas vezes nao e erro, mas a primeira data e que vale
@@ -187,29 +187,29 @@ public class PetTutorServiceImpl implements PetTutorService {
      * Duas saidas pela mesma porta, com regras diferentes:
      *
      * <ul>
-     *   <li><b>O titular remove um co-tutor</b> - tirar acesso ao pet e decisao de
+     *   <li><b>O titular remove um co-tutor</b> - tirar acesso ao animal e decisao de
      *       quem responde por ele.</li>
      *   <li><b>Um co-tutor remove a si mesmo</b> - quem nao quer mais acompanhar
      *       sai sozinho, sem depender do titular. Exigir autorizacao para sair
-     *       prenderia a pessoa a notificacoes de um pet que nao e dela.</li>
+     *       prenderia a pessoa a notificacoes de um animal que nao e dela.</li>
      * </ul>
      *
      * O titular nunca sai por aqui, nem por vontade propria: o indice do banco
-     * exige exatamente um HOLDER, e um pet sem titular ficaria sem ninguem que
-     * pudesse convidar ou apaga-lo. Transfere primeiro, ou apaga o pet.
+     * exige exatamente um HOLDER, e um animal sem titular ficaria sem ninguem que
+     * pudesse convidar ou apaga-lo. Transfere primeiro, ou apaga o animal.
      */
     @Override
     @Transactional
-    public void removeTutor(UUID petId, UUID ownerId) {
+    public void removeTutor(UUID animalId, UUID ownerId) {
         Owner quemAgiu = currentOwnerProvider.require();
         boolean saindoSozinho = quemAgiu.getOwnerId().equals(ownerId);
 
-        Pet pet = saindoSozinho
+        Animal animal = saindoSozinho
                 // provar que e tutor basta: sair nao exige nivel nenhum
-                ? petAccessGuard.requireLeitura(petId)
-                : petAccessGuard.requireTitular(petId);
+                ? animalAccessGuard.requireLeitura(animalId)
+                : animalAccessGuard.requireTitular(animalId);
 
-        PetTutor vinculo = buscarVinculo(petId, ownerId);
+        PetTutor vinculo = buscarVinculo(animalId, ownerId);
 
         if (vinculo.isHolder()) {
             throw new PetfyHealthcareException(
@@ -221,12 +221,12 @@ public class PetTutorServiceImpl implements PetTutorService {
         Owner queSaiu = vinculo.getOwner();
 
         petTutorRepository.delete(vinculo);
-        // o flush e o que faz tutoresDoPet devolver a lista sem quem saiu: sem ele o
+        // o flush e o que faz tutoresDoAnimal devolver a lista sem quem saiu: sem ele o
         // delete fica pendente e o aviso iria tambem para quem acabou de perder o
         // acesso, contando-lhe que ele mesmo saiu
         petTutorRepository.flush();
 
-        petTutorActivityNotifier.tutorSaiu(pet, tutoresDoPet(petId), queSaiu, quemAgiu);
+        petTutorActivityNotifier.tutorSaiu(animal, tutoresDoAnimal(animalId), queSaiu, quemAgiu);
     }
 
     /**
@@ -236,16 +236,16 @@ public class PetTutorServiceImpl implements PetTutorService {
      */
     @Override
     @Transactional
-    public PetTutorResponseDTO changeRole(UUID petId, UUID ownerId, PetTutorRoleUpdateRequestDTO request) {
-        petAccessGuard.requireTitular(petId);
+    public PetTutorResponseDTO changeRole(UUID animalId, UUID ownerId, PetTutorRoleUpdateRequestDTO request) {
+        animalAccessGuard.requireTitular(animalId);
 
         if (request.getRole() == PetTutorRole.HOLDER) {
             throw transferenciaExigida();
         }
 
-        PetTutor vinculo = buscarVinculo(petId, ownerId);
+        PetTutor vinculo = buscarVinculo(animalId, ownerId);
 
-        // rebaixar o titular por aqui deixaria o pet sem nenhum, e o indice do
+        // rebaixar o titular por aqui deixaria o animal sem nenhum, e o indice do
         // banco recusaria - mas a resposta certa nao e 500: e apontar a porta
         if (vinculo.isHolder()) {
             throw transferenciaExigida();
@@ -258,10 +258,10 @@ public class PetTutorServiceImpl implements PetTutorService {
     }
 
     /**
-     * Adocao, venda, separacao: o pet troca de titular sem trocar de historico.
+     * Adocao, venda, separacao: o animal troca de titular sem trocar de historico.
      *
      * Quem recebe precisa <b>ja ser tutor</b>. Transferir para quem esta fora do
-     * pet e o convite com papel HOLDER - la a pessoa aceita, e aqui nao haveria
+     * animal e o convite com papel HOLDER - la a pessoa aceita, e aqui nao haveria
      * como pedir consentimento de quem passaria a responder pelo animal.
      *
      * O titular antigo vira EDITOR em vez de sair: quem cuidou do animal ate
@@ -269,11 +269,11 @@ public class PetTutorServiceImpl implements PetTutorService {
      */
     @Override
     @Transactional
-    public PetTutorResponseDTO transferHolder(UUID petId, UUID toOwnerId) {
-        Pet pet = petAccessGuard.requireTitular(petId);
+    public PetTutorResponseDTO transferHolder(UUID animalId, UUID toOwnerId) {
+        Animal animal = animalAccessGuard.requireTitular(animalId);
         Owner quemAgiu = currentOwnerProvider.require();
 
-        PetTutor destino = buscarVinculo(petId, toOwnerId);
+        PetTutor destino = buscarVinculo(animalId, toOwnerId);
 
         // transferir para quem ja e o titular e no-op, e nao erro: o estado final
         // pedido e o estado atual. Nao avisa ninguem, porque nada mudou
@@ -283,14 +283,14 @@ public class PetTutorServiceImpl implements PetTutorService {
 
         // mesma ordem da aceitacao: rebaixa antes de promover, senao os dois
         // HOLDER coexistem e o indice unico parcial recusa
-        Owner titularAnterior = rebaixarTitular(petId);
+        Owner titularAnterior = rebaixarTitular(animalId);
 
         destino.setRole(PetTutorRole.HOLDER);
         destino.setUpdateDate(LocalDateTime.now());
 
         PetTutorResponseDTO resposta = toResponse(petTutorRepository.save(destino));
 
-        petTutorActivityNotifier.titularidadeMudou(pet, tutoresDoPet(petId),
+        petTutorActivityNotifier.titularidadeMudou(animal, tutoresDoAnimal(animalId),
                 titularAnterior, destino.getOwner(), quemAgiu);
 
         return resposta;
@@ -301,11 +301,11 @@ public class PetTutorServiceImpl implements PetTutorService {
      *
      * O {@code flush} nao e zelo: sem ele o Hibernate pode emitir o insert ou o
      * update do novo titular antes deste update, e o indice unico parcial veria
-     * dois HOLDER no mesmo pet. Foi exatamente assim que a exclusao de conta
+     * dois HOLDER no mesmo animal. Foi exatamente assim que a exclusao de conta
      * quebrou - ver OwnerServiceImpl.
      */
-    private Owner rebaixarTitular(UUID petId) {
-        Owner anterior = petTutorRepository.findByPetPetIdAndRole(petId, PetTutorRole.HOLDER)
+    private Owner rebaixarTitular(UUID animalId) {
+        Owner anterior = petTutorRepository.findByAnimalAnimalIdAndRole(animalId, PetTutorRole.HOLDER)
                 .map(titular -> {
                     titular.setRole(PetTutorRole.EDITOR);
                     titular.setUpdateDate(LocalDateTime.now());
@@ -320,35 +320,35 @@ public class PetTutorServiceImpl implements PetTutorService {
     }
 
     /**
-     * Quem cuida do pet agora, por consulta e nao pela colecao de {@code Pet}.
+     * Quem cuida do animal agora, por consulta e nao pela colecao de {@code Animal}.
      *
      * A colecao e lazy e acabou de ser mexida - vinculo inserido, papel alterado -,
      * entao ler dela daria uma lista que pode nao refletir o que foi gravado. O
      * aviso iria para o conjunto errado de pessoas, que e o unico jeito de este
      * recurso piorar a privacidade em vez de melhorar.
      */
-    private List<Owner> tutoresDoPet(UUID petId) {
-        return petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(petId)
+    private List<Owner> tutoresDoAnimal(UUID animalId) {
+        return petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(animalId)
                 .stream()
                 .map(PetTutor::getOwner)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Convidar quem ja cuida do pet nao e engano de digitacao a ser silenciado: a
+     * Convidar quem ja cuida do animal nao e engano de digitacao a ser silenciado: a
      * chave unica recusaria o vinculo no aceite, e a pessoa levaria o erro no
      * lugar de quem convidou.
      */
-    private void recusarSeJaETutor(UUID petId, String email) {
+    private void recusarSeJaETutor(UUID animalId, String email) {
         ownerRepository.findByEmail(email.trim())
-                .filter(owner -> petTutorRepository.existsByPetPetIdAndOwnerOwnerId(petId, owner.getOwnerId()))
+                .filter(owner -> petTutorRepository.existsByAnimalAnimalIdAndOwnerOwnerId(animalId, owner.getOwnerId()))
                 .ifPresent(owner -> {
                     throw jaETutor();
                 });
     }
 
-    private PetTutor buscarVinculo(UUID petId, UUID ownerId) {
-        return petTutorRepository.findByPetPetIdAndOwnerOwnerId(petId, ownerId)
+    private PetTutor buscarVinculo(UUID animalId, UUID ownerId) {
+        return petTutorRepository.findByAnimalAnimalIdAndOwnerOwnerId(animalId, ownerId)
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.TUTOR_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.TUTOR_NOT_FOUND.getCode(),
@@ -379,7 +379,7 @@ public class PetTutorServiceImpl implements PetTutorService {
     private PetTutorResponseDTO toResponse(PetTutor vinculo) {
         return PetTutorResponseDTO.builder()
                 .petTutorId(vinculo.getPetTutorId())
-                .petId(vinculo.getPet().getPetId())
+                .animalId(vinculo.getAnimal().getAnimalId())
                 .ownerId(vinculo.getOwner().getOwnerId())
                 .ownerName(vinculo.getOwner().getName())
                 .ownerEmail(vinculo.getOwner().getEmail())
@@ -393,8 +393,8 @@ public class PetTutorServiceImpl implements PetTutorService {
     private PetTutorInviteResponseDTO toResponse(PetTutorInvite invite, String token) {
         return PetTutorInviteResponseDTO.builder()
                 .petTutorInviteId(invite.getPetTutorInviteId())
-                .petId(invite.getPet().getPetId())
-                .petName(invite.getPet().getName())
+                .animalId(invite.getAnimal().getAnimalId())
+                .animalName(invite.getAnimal().getName())
                 .token(token)
                 .email(invite.getEmail())
                 .role(invite.getRole())

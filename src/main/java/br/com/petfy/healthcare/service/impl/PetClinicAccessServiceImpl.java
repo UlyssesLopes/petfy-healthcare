@@ -3,12 +3,12 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.ClinicAccessRequestDTO;
 import br.com.petfy.healthcare.domain.dto.ClinicAccessResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Clinic;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.repository.ClinicRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.PetClinicAccessService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -26,19 +26,19 @@ public class PetClinicAccessServiceImpl implements PetClinicAccessService {
 
     private final PetClinicAccessRepository petClinicAccessRepository;
     private final ClinicRepository clinicRepository;
-    private final PetAccessGuard petAccessGuard;
+    private final AnimalAccessGuard animalAccessGuard;
 
     @Override
-    public ClinicAccessResponseDTO grant(UUID petId, ClinicAccessRequestDTO request) {
-        Pet pet = petAccessGuard.requireEscrita(petId);
+    public ClinicAccessResponseDTO grant(UUID animalId, ClinicAccessRequestDTO request) {
+        Animal animal = animalAccessGuard.requireEscrita(animalId);
         Clinic clinic = buscarClinica(request.getClinicId());
 
         // reconceder reativa a linha existente: a chave unica impede duplicar o
         // par, e o tutor que revogou e mudou de ideia espera simplesmente voltar
         // a ter acesso liberado
         PetClinicAccess access = petClinicAccessRepository
-                .findByPetPetIdAndClinicClinicId(petId, request.getClinicId())
-                .orElseGet(() -> PetClinicAccess.builder().pet(pet).clinic(clinic).build());
+                .findByAnimalAnimalIdAndClinicClinicId(animalId, request.getClinicId())
+                .orElseGet(() -> PetClinicAccess.builder().animal(animal).clinic(clinic).build());
 
         access.setRevokedAt(null);
         access.setGrantedAt(LocalDateTime.now());
@@ -47,21 +47,21 @@ public class PetClinicAccessServiceImpl implements PetClinicAccessService {
     }
 
     @Override
-    public List<ClinicAccessResponseDTO> list(UUID petId) {
-        petAccessGuard.requireEscrita(petId);
+    public List<ClinicAccessResponseDTO> list(UUID animalId) {
+        animalAccessGuard.requireEscrita(animalId);
 
-        return petClinicAccessRepository.findByPetPetIdOrderByGrantedAtDesc(petId)
+        return petClinicAccessRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(animalId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void revoke(UUID petId, UUID clinicId) {
-        petAccessGuard.requireEscrita(petId);
+    public void revoke(UUID animalId, UUID clinicId) {
+        animalAccessGuard.requireEscrita(animalId);
 
         PetClinicAccess access = petClinicAccessRepository
-                .findByPetPetIdAndClinicClinicId(petId, clinicId)
+                .findByAnimalAnimalIdAndClinicClinicId(animalId, clinicId)
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.CLINIC_ACCESS_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.CLINIC_ACCESS_NOT_FOUND.getCode(),
@@ -85,7 +85,7 @@ public class PetClinicAccessServiceImpl implements PetClinicAccessService {
     private ClinicAccessResponseDTO toResponse(PetClinicAccess access) {
         return ClinicAccessResponseDTO.builder()
                 .petClinicAccessId(access.getPetClinicAccessId())
-                .petId(access.getPet().getPetId())
+                .animalId(access.getAnimal().getAnimalId())
                 .clinicId(access.getClinic().getClinicId())
                 .clinicName(access.getClinic().getName())
                 .grantedAt(access.getGrantedAt())

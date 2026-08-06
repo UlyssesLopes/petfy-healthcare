@@ -10,7 +10,7 @@ import br.com.petfy.healthcare.domain.dto.VetPetDTO;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetClinicAccess;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.Vet;
@@ -58,7 +58,7 @@ public class VetPetServiceImpl implements VetPetService {
     private int correctionWindowDays;
 
     @Override
-    public List<VetPetDTO> listAccessiblePets() {
+    public List<VetPetDTO> listAccessibleAnimals() {
         return acessosAtivosDaClinica()
                 .stream()
                 .map(this::toVetPet)
@@ -66,25 +66,25 @@ public class VetPetServiceImpl implements VetPetService {
     }
 
     @Override
-    public List<VaccineResponseDTO> listVaccines(UUID petId) {
-        registrarLeitura(exigirAcessoAoPet(petId).getPet(), AccessedResource.VACCINES);
+    public List<VaccineResponseDTO> listVaccines(UUID animalId) {
+        registrarLeitura(exigirAcessoAoAnimal(animalId).getAnimal(), AccessedResource.VACCINES);
 
-        return vaccineRepository.findByPetPetIdOrderByApplicationDateDesc(petId)
+        return vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public VaccineResponseDTO registerVaccine(UUID petId, VaccineRequestDTO request) {
+    public VaccineResponseDTO registerVaccine(UUID animalId, VaccineRequestDTO request) {
         Vet vet = currentVetProvider.require();
-        Pet pet = exigirAcessoAoPet(petId).getPet();
+        Animal animal = exigirAcessoAoAnimal(animalId).getAnimal();
 
         // a clinica vem do vet autenticado, nunca do payload: aceitar clinicId do
         // cliente deixaria um vet registrar vacina em nome de outra clinica
-        Vaccine vaccine = vaccineRepository.save(vaccineFactory.build(pet, vet.getClinic(), request));
+        Vaccine vaccine = vaccineRepository.save(vaccineFactory.build(animal, vet.getClinic(), request));
 
-        // o tutor precisa saber o que a clinica escreveu no pet dele
+        // o tutor precisa saber o que a clinica escreveu no animal dele
         clinicActivityNotifier.vaccineRecorded(vaccine);
 
         return toResponse(vaccine);
@@ -97,12 +97,12 @@ public class VetPetServiceImpl implements VetPetService {
      * de digitacao, e o tutor e quem decide o que fica na carteira dele.
      */
     @Override
-    public VaccineResponseDTO correctVaccine(UUID petId, UUID vaccineId, VaccineRequestDTO request) {
+    public VaccineResponseDTO correctVaccine(UUID animalId, UUID vaccineId, VaccineRequestDTO request) {
         Vet vet = currentVetProvider.require();
-        exigirAcessoAoPet(petId);
+        exigirAcessoAoAnimal(animalId);
 
         Vaccine vaccine = vaccineRepository.findById(vaccineId)
-                .filter(v -> v.getPet().getPetId().equals(petId))
+                .filter(v -> v.getAnimal().getAnimalId().equals(animalId))
                 .filter(v -> registradaPelaClinica(v, vet))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
@@ -129,16 +129,16 @@ public class VetPetServiceImpl implements VetPetService {
     }
 
     /**
-     * Rastro de qualquer vacina do pet, e nao so das registradas pela propria
+     * Rastro de qualquer vacina do animal, e nao so das registradas pela propria
      * clinica: o vet ja enxerga a carteira inteira em listVaccines, e saber que
      * um registro foi alterado faz parte de ler aquele registro.
      */
     @Override
-    public List<VaccineCorrectionResponseDTO> listCorrections(UUID petId, UUID vaccineId) {
-        registrarLeitura(exigirAcessoAoPet(petId).getPet(), AccessedResource.VACCINE_CORRECTIONS);
+    public List<VaccineCorrectionResponseDTO> listCorrections(UUID animalId, UUID vaccineId) {
+        registrarLeitura(exigirAcessoAoAnimal(animalId).getAnimal(), AccessedResource.VACCINE_CORRECTIONS);
 
         vaccineRepository.findById(vaccineId)
-                .filter(v -> v.getPet().getPetId().equals(petId))
+                .filter(v -> v.getAnimal().getAnimalId().equals(animalId))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(),
@@ -148,24 +148,24 @@ public class VetPetServiceImpl implements VetPetService {
     }
 
     @Override
-    public List<HealthRecordResponseDTO> listHealthRecords(UUID petId) {
-        registrarLeitura(exigirAcessoAoPet(petId).getPet(), AccessedResource.HEALTH_RECORDS);
+    public List<HealthRecordResponseDTO> listHealthRecords(UUID animalId) {
+        registrarLeitura(exigirAcessoAoAnimal(animalId).getAnimal(), AccessedResource.HEALTH_RECORDS);
 
-        return healthRecordRepository.findByPetPetIdOrderByEventDateDesc(petId)
+        return healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(animalId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public HealthRecordResponseDTO registerHealthRecord(UUID petId, HealthRecordRequestDTO request) {
+    public HealthRecordResponseDTO registerHealthRecord(UUID animalId, HealthRecordRequestDTO request) {
         Vet vet = currentVetProvider.require();
-        Pet pet = exigirAcessoAoPet(petId).getPet();
+        Animal animal = exigirAcessoAoAnimal(animalId).getAnimal();
 
         // mesma regra da vacina: a clinica vem do vet autenticado, nunca do
-        // payload, e o petId vem do path
+        // payload, e o animalId vem do path
         HealthRecord record = healthRecordRepository.save(HealthRecord.builder()
-                .pet(pet)
+                .animal(animal)
                 .clinic(vet.getClinic())
                 .eventType(request.getEventType())
                 .category(request.getCategory())
@@ -182,13 +182,13 @@ public class VetPetServiceImpl implements VetPetService {
 
     /** Mesmos limites da correcao de vacina: propria clinica, dentro da janela, com rastro. */
     @Override
-    public HealthRecordResponseDTO correctHealthRecord(UUID petId, UUID healthRecordId,
+    public HealthRecordResponseDTO correctHealthRecord(UUID animalId, UUID healthRecordId,
                                                        HealthRecordRequestDTO request) {
         Vet vet = currentVetProvider.require();
-        exigirAcessoAoPet(petId);
+        exigirAcessoAoAnimal(animalId);
 
         HealthRecord record = healthRecordRepository.findById(healthRecordId)
-                .filter(r -> r.getPet().getPetId().equals(petId))
+                .filter(r -> r.getAnimal().getAnimalId().equals(animalId))
                 .filter(r -> r.getClinic() != null
                         && vet.getClinic().getClinicId().equals(r.getClinic().getClinicId()))
                 .orElseThrow(this::registroNaoEncontrado);
@@ -213,11 +213,11 @@ public class VetPetServiceImpl implements VetPetService {
     }
 
     @Override
-    public List<HealthRecordCorrectionResponseDTO> listHealthRecordCorrections(UUID petId, UUID healthRecordId) {
-        registrarLeitura(exigirAcessoAoPet(petId).getPet(), AccessedResource.HEALTH_RECORD_CORRECTIONS);
+    public List<HealthRecordCorrectionResponseDTO> listHealthRecordCorrections(UUID animalId, UUID healthRecordId) {
+        registrarLeitura(exigirAcessoAoAnimal(animalId).getAnimal(), AccessedResource.HEALTH_RECORD_CORRECTIONS);
 
         healthRecordRepository.findById(healthRecordId)
-                .filter(r -> r.getPet().getPetId().equals(petId))
+                .filter(r -> r.getAnimal().getAnimalId().equals(animalId))
                 .orElseThrow(this::registroNaoEncontrado);
 
         return healthRecordCorrectionLog.list(healthRecordId);
@@ -238,7 +238,7 @@ public class VetPetServiceImpl implements VetPetService {
                 .diagnosis(record.getDiagnosis())
                 .eventDate(record.getEventDate())
                 .description(record.getDescription())
-                .petId(record.getPet().getPetId())
+                .animalId(record.getAnimal().getAnimalId())
                 .clinicId(record.getClinic() != null ? record.getClinic().getClinicId() : null)
                 .creationDate(record.getCreationDate())
                 .updateDate(record.getUpdateDate())
@@ -273,9 +273,9 @@ public class VetPetServiceImpl implements VetPetService {
     }
 
     /**
-     * Pet sem concessao ativa para a clinica do vet responde PET_NOT_FOUND, e nao
-     * 403: para o veterinario, um pet que a clinica dele nao atende e
-     * indistinguivel de um pet que nao existe.
+     * Animal sem concessao ativa para a clinica do vet responde ANIMAL_NOT_FOUND, e nao
+     * 403: para o veterinario, um animal que a clinica dele nao atende e
+     * indistinguivel de um animal que nao existe.
      */
     /**
      * Registra que este veterinario leu o recurso.
@@ -284,33 +284,33 @@ public class VetPetServiceImpl implements VetPetService {
      * em {@code vaccine_corrections} e {@code health_record_corrections}, e avisa o
      * tutor por e-mail na hora. Era a leitura que passava invisivel.
      */
-    private void registrarLeitura(Pet pet, AccessedResource recurso) {
-        sensitiveAccessLogger.vetLeu(currentVetProvider.require(), pet, recurso);
+    private void registrarLeitura(Animal animal, AccessedResource recurso) {
+        sensitiveAccessLogger.vetLeu(currentVetProvider.require(), animal, recurso);
     }
 
-    private PetClinicAccess exigirAcessoAoPet(UUID petId) {
+    private PetClinicAccess exigirAcessoAoAnimal(UUID animalId) {
         UUID clinicId = currentVetProvider.require().getClinic().getClinicId();
 
-        return petClinicAccessRepository.findByPetPetIdAndClinicClinicId(petId, clinicId)
+        return petClinicAccessRepository.findByAnimalAnimalIdAndClinicClinicId(animalId, clinicId)
                 .filter(PetClinicAccess::isActive)
                 .orElseThrow(() -> new PetfyHealthcareException(
-                        ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                        ErrorMessageEnum.PET_NOT_FOUND.getCode(),
+                        ErrorMessageEnum.ANIMAL_NOT_FOUND.getMessage(),
+                        ErrorMessageEnum.ANIMAL_NOT_FOUND.getCode(),
                         HttpStatus.NOT_FOUND));
     }
 
     private VetPetDTO toVetPet(PetClinicAccess access) {
-        Pet pet = access.getPet();
+        Animal animal = access.getAnimal();
 
         return VetPetDTO.builder()
-                .petId(pet.getPetId())
-                .name(pet.getName())
-                .type(pet.getType())
-                .breed(pet.getBreed())
-                .bornDate(pet.getBornDate())
-                .gender(pet.getGender())
-                .weight(pet.getWeight())
-                .ownerName(pet.getHolder().map(Owner::getName).orElse(null))
+                .animalId(animal.getAnimalId())
+                .name(animal.getName())
+                .type(animal.getType())
+                .breed(animal.getBreed())
+                .bornDate(animal.getBornDate())
+                .gender(animal.getGender())
+                .weight(animal.getWeight())
+                .ownerName(animal.getHolder().map(Owner::getName).orElse(null))
                 .accessGrantedAt(access.getGrantedAt())
                 .build();
     }
@@ -322,7 +322,7 @@ public class VetPetServiceImpl implements VetPetService {
                 .applicationDate(vaccine.getApplicationDate())
                 .nextDoseDate(vaccine.getNextDoseDate())
                 .description(vaccine.getDescription())
-                .petId(vaccine.getPet().getPetId())
+                .animalId(vaccine.getAnimal().getAnimalId())
                 .clinicId(vaccine.getClinic() != null ? vaccine.getClinic().getClinicId() : null)
                 .vaccineCatalogId(vaccine.getCatalog() != null ? vaccine.getCatalog().getVaccineCatalogId() : null)
                 .creationDate(vaccine.getCreationDate())

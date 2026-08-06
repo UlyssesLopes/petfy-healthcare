@@ -12,7 +12,7 @@ import java.util.UUID;
  * Estado anterior de uma vacina, gravado a cada correcao.
  *
  * Guarda o que era, e nao o que passou a ser: o estado atual esta na propria
- * vacina, entao repetir seria redundancia que pode divergir.
+ * vacina, entao reanimalir seria redundancia que pode divergir.
  */
 @Entity
 @Table(name = "vaccine_corrections")

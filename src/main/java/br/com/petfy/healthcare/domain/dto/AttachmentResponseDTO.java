@@ -24,7 +24,7 @@ public class AttachmentResponseDTO {
 
     private UUID attachmentId;
 
-    private UUID petId;
+    private UUID animalId;
 
     private UUID vaccineId;
 

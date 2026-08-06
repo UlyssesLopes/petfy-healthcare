@@ -4,14 +4,14 @@ import br.com.petfy.healthcare.domain.dto.AttachmentResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Attachment;
 import br.com.petfy.healthcare.domain.entity.AttachmentKind;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.AttachmentContent;
 import br.com.petfy.healthcare.service.AttachmentService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -40,14 +40,14 @@ public class AttachmentServiceImpl implements AttachmentService {
     private final VaccineRepository vaccineRepository;
     private final HealthRecordRepository healthRecordRepository;
     private final AttachmentStorage attachmentStorage;
-    private final PetAccessGuard petAccessGuard;
+    private final AnimalAccessGuard animalAccessGuard;
     private final CurrentOwnerProvider currentOwnerProvider;
 
     @Value("${petfy.attachments.max-size-bytes:10485760}")
     private long maxSizeBytes;
 
     /**
-     * Anexar e escrita: o arquivo passa a fazer parte do prontuario do pet, e quem so
+     * Anexar e escrita: o arquivo passa a fazer parte do prontuario do animal, e quem so
      * acompanha nao acrescenta nada a ele.
      *
      * A ordem e storage primeiro, banco depois. Invertida, o registro existiria
@@ -58,23 +58,23 @@ public class AttachmentServiceImpl implements AttachmentService {
      */
     @Override
     @Transactional
-    public AttachmentResponseDTO upload(UUID petId, MultipartFile file,
+    public AttachmentResponseDTO upload(UUID animalId, MultipartFile file,
                                         UUID vaccineId, UUID healthRecordId, String description) {
-        Pet pet = petAccessGuard.requireEscrita(petId);
+        Animal animal = animalAccessGuard.requireEscrita(animalId);
 
         recusarSeVazio(file);
         recusarSeGrandeDemais(file.getSize());
 
         AttachmentKind kind = detectarTipo(file);
 
-        Vaccine vaccine = vaccineId != null ? buscarVacinaDoPet(vaccineId, petId) : null;
+        Vaccine vaccine = vaccineId != null ? buscarVacinaDoAnimal(vaccineId, animalId) : null;
         HealthRecord healthRecord = healthRecordId != null
-                ? buscarAtendimentoDoPet(healthRecordId, petId)
+                ? buscarAtendimentoDoAnimal(healthRecordId, animalId)
                 : null;
 
         StoredFile armazenado;
         try (InputStream content = file.getInputStream()) {
-            armazenado = attachmentStorage.store(petId, content);
+            armazenado = attachmentStorage.store(animalId, content);
         } catch (IOException e) {
             throw falhaDeLeitura();
         }
@@ -84,7 +84,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         recusarSeGrandeDemais(armazenado.sizeBytes());
 
         Attachment anexo = attachmentRepository.save(Attachment.builder()
-                .pet(pet)
+                .animal(animal)
                 .vaccine(vaccine)
                 .healthRecord(healthRecord)
                 .originalFilename(nomeSeguro(file.getOriginalFilename()))
@@ -102,8 +102,8 @@ public class AttachmentServiceImpl implements AttachmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AttachmentResponseDTO> listByPet(UUID petId, UUID vaccineId, UUID healthRecordId) {
-        petAccessGuard.requireLeitura(petId);
+    public List<AttachmentResponseDTO> listByAnimal(UUID animalId, UUID vaccineId, UUID healthRecordId) {
+        animalAccessGuard.requireLeitura(animalId);
 
         List<Attachment> anexos;
 
@@ -112,23 +112,23 @@ public class AttachmentServiceImpl implements AttachmentService {
         } else if (healthRecordId != null) {
             anexos = attachmentRepository.findByHealthRecordHealthRecordIdOrderByCreationDateDesc(healthRecordId);
         } else {
-            anexos = attachmentRepository.findByPetPetIdOrderByCreationDateDesc(petId);
+            anexos = attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(animalId);
         }
 
-        // o filtro por pet vale mesmo quando a consulta foi por vacina ou atendimento:
-        // sem ele, passar o id de uma vacina de outro pet devolveria os anexos dela, e
-        // a autorizacao teria sido feita sobre o pet errado
+        // o filtro por animal vale mesmo quando a consulta foi por vacina ou atendimento:
+        // sem ele, passar o id de uma vacina de outro animal devolveria os anexos dela, e
+        // a autorizacao teria sido feita sobre o animal errado
         return anexos.stream()
-                .filter(a -> a.getPet().getPetId().equals(petId))
+                .filter(a -> a.getAnimal().getAnimalId().equals(animalId))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Autoriza pelo pet do anexo, e nao por um petId que o cliente informe.
+     * Autoriza pelo animal do anexo, e nao por um animalId que o cliente informe.
      *
-     * A rota de download nao tem petId justamente por isso: pedi-lo abriria a
-     * possibilidade de autorizar contra um pet e servir o arquivo de outro.
+     * A rota de download nao tem animalId justamente por isso: pedi-lo abriria a
+     * possibilidade de autorizar contra um animal e servir o arquivo de outro.
      */
     @Override
     @Transactional(readOnly = true)
@@ -136,7 +136,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         Attachment anexo = attachmentRepository.findById(attachmentId)
                 .orElseThrow(AttachmentServiceImpl::naoEncontrado);
 
-        petAccessGuard.requireLeitura(anexo.getPet().getPetId());
+        animalAccessGuard.requireLeitura(anexo.getAnimal().getAnimalId());
 
         return new AttachmentContent(
                 anexo.getOriginalFilename(),
@@ -158,7 +158,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         Attachment anexo = attachmentRepository.findById(attachmentId)
                 .orElseThrow(AttachmentServiceImpl::naoEncontrado);
 
-        petAccessGuard.requireEscrita(anexo.getPet().getPetId());
+        animalAccessGuard.requireEscrita(anexo.getAnimal().getAnimalId());
 
         String storageKey = anexo.getStorageKey();
 
@@ -195,25 +195,25 @@ public class AttachmentServiceImpl implements AttachmentService {
     }
 
     /**
-     * Vacina tem de ser do mesmo pet.
+     * Vacina tem de ser do mesmo animal.
      *
-     * Sem esta checagem, informar o id de uma vacina de outro pet penduraria o anexo
+     * Sem esta checagem, informar o id de uma vacina de outro animal penduraria o anexo
      * nela - o CHECK do banco nao pega isso, porque a coluna esta preenchida com um id
      * valido. A resposta e 404 e nao 403: quem pergunta nao pode descobrir que aquela
      * vacina existe.
      */
-    private Vaccine buscarVacinaDoPet(UUID vaccineId, UUID petId) {
+    private Vaccine buscarVacinaDoAnimal(UUID vaccineId, UUID animalId) {
         return vaccineRepository.findById(vaccineId)
-                .filter(v -> v.getPet().getPetId().equals(petId))
+                .filter(v -> v.getAnimal().getAnimalId().equals(animalId))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(),
                         HttpStatus.NOT_FOUND));
     }
 
-    private HealthRecord buscarAtendimentoDoPet(UUID healthRecordId, UUID petId) {
+    private HealthRecord buscarAtendimentoDoAnimal(UUID healthRecordId, UUID animalId) {
         return healthRecordRepository.findById(healthRecordId)
-                .filter(r -> r.getPet().getPetId().equals(petId))
+                .filter(r -> r.getAnimal().getAnimalId().equals(animalId))
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.HEALTH_RECORD_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.HEALTH_RECORD_NOT_FOUND.getCode(),
@@ -270,7 +270,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     private AttachmentResponseDTO toResponse(Attachment anexo) {
         return AttachmentResponseDTO.builder()
                 .attachmentId(anexo.getAttachmentId())
-                .petId(anexo.getPet().getPetId())
+                .animalId(anexo.getAnimal().getAnimalId())
                 .vaccineId(anexo.getVaccine() != null ? anexo.getVaccine().getVaccineId() : null)
                 .healthRecordId(anexo.getHealthRecord() != null
                         ? anexo.getHealthRecord().getHealthRecordId()

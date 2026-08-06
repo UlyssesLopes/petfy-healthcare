@@ -5,12 +5,12 @@ import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.entity.Attachment;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
-import br.com.petfy.healthcare.service.PetService;
+import br.com.petfy.healthcare.service.AnimalService;
 import br.com.petfy.healthcare.storage.AttachmentStorage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,9 +40,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Duas coisas que so o banco recusa: o CHECK que impede um anexo de documentar uma
  * vacina <b>e</b> um atendimento ao mesmo tempo, e as quatro chaves estrangeiras que a
  * tabela trouxe. As FKs sao a mesma familia de bug que travou o {@code DELETE /owners/me}
- * duas vezes e o {@code DELETE /pets/{id}} desde sempre.
+ * duas vezes e o {@code DELETE /animals/{id}} desde sempre.
  *
- * E uma que nenhum teste de banco pega sozinho: os <b>bytes</b> saindo junto com o pet.
+ * E uma que nenhum teste de banco pega sozinho: os <b>bytes</b> saindo junto com o animal.
  * O storage nao participa da transacao, e arquivo orfao com laudo dentro e dado pessoal
  * nao apagado.
  */
@@ -53,14 +53,14 @@ class AttachmentContainerTest extends PostgresContainerTest {
     @Autowired private AttachmentRepository attachmentRepository;
     @Autowired private AttachmentStorage attachmentStorage;
     @Autowired private OwnerRepository ownerRepository;
-    @Autowired private PetRepository petRepository;
+    @Autowired private AnimalRepository animalRepository;
     @Autowired private PetTutorRepository petTutorRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private HealthRecordRepository healthRecordRepository;
-    @Autowired private PetService petService;
+    @Autowired private AnimalService animalService;
 
     private Owner ulysses;
-    private Pet rex;
+    private Animal rex;
 
     @BeforeEach
     void setUp() {
@@ -70,11 +70,11 @@ class AttachmentContainerTest extends PostgresContainerTest {
                 .password("hash")
                 .build());
 
-        rex = petRepository.saveAndFlush(Pet.builder()
+        rex = animalRepository.saveAndFlush(Animal.builder()
                 .name("Rex").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
 
         petTutorRepository.saveAndFlush(PetTutor.builder()
-                .pet(rex).owner(ulysses).role(PetTutorRole.HOLDER)
+                .animal(rex).owner(ulysses).role(PetTutorRole.HOLDER)
                 .creationDate(LocalDateTime.now()).build());
 
         SecurityContextHolder.getContext().setAuthentication(
@@ -87,11 +87,11 @@ class AttachmentContainerTest extends PostgresContainerTest {
     }
 
     private Attachment.AttachmentBuilder anexo() {
-        var armazenado = attachmentStorage.store(rex.getPetId(),
+        var armazenado = attachmentStorage.store(rex.getAnimalId(),
                 new ByteArrayInputStream("%PDF-1.7 laudo".getBytes(StandardCharsets.US_ASCII)));
 
         return Attachment.builder()
-                .pet(rex)
+                .animal(rex)
                 .originalFilename("laudo.pdf")
                 .contentType("application/pdf")
                 .sizeBytes(armazenado.sizeBytes())
@@ -115,12 +115,12 @@ class AttachmentContainerTest extends PostgresContainerTest {
         @DisplayName("anexo nao pode documentar uma vacina e um atendimento ao mesmo tempo")
         void naoPodeTerOsDoisDonos() {
             var vacina = vaccineRepository.saveAndFlush(Vaccine.builder()
-                    .pet(rex).vaccineName("V10").applicationDate(LocalDate.now())
+                    .animal(rex).vaccineName("V10").applicationDate(LocalDate.now())
                     .creationDate(LocalDateTime.now()).build());
 
             var atendimento = healthRecordRepository.saveAndFlush(HealthRecord.builder()
                     .category(HealthEventCategory.CONSULTA)
-                    .pet(rex).eventType("Consulta").eventDate(LocalDate.now())
+                    .animal(rex).eventType("Consulta").eventDate(LocalDate.now())
                     .creationDate(LocalDateTime.now()).build());
 
             var invalido = anexo().vaccine(vacina).healthRecord(atendimento).build();
@@ -134,7 +134,7 @@ class AttachmentContainerTest extends PostgresContainerTest {
         @DisplayName("anexo so de vacina e aceito")
         void soDeVacinaEAceito() {
             var vacina = vaccineRepository.saveAndFlush(Vaccine.builder()
-                    .pet(rex).vaccineName("V10").applicationDate(LocalDate.now())
+                    .animal(rex).vaccineName("V10").applicationDate(LocalDate.now())
                     .creationDate(LocalDateTime.now()).build());
 
             var salvo = attachmentRepository.saveAndFlush(anexo().vaccine(vacina).build());
@@ -144,8 +144,8 @@ class AttachmentContainerTest extends PostgresContainerTest {
 
         @Test
         @Transactional
-        @DisplayName("anexo do pet, sem vacina nem atendimento, e aceito")
-        void doPetEmSiEAceito() {
+        @DisplayName("anexo do animal, sem vacina nem atendimento, e aceito")
+        void doAnimalEmSiEAceito() {
             var salvo = attachmentRepository.saveAndFlush(anexo().build());
 
             assertThat(salvo.getVaccine()).isNull();
@@ -168,15 +168,15 @@ class AttachmentContainerTest extends PostgresContainerTest {
     }
 
     /**
-     * O caminho que o {@code PetPurgerCoverageContainerTest} garante estar coberto - aqui
+     * O caminho que o {@code AnimalPurgerCoverageContainerTest} garante estar coberto - aqui
      * ele e exercitado de ponta a ponta, incluindo o disco.
      */
     @Nested
-    @DisplayName("apagar o pet leva o anexo e o arquivo")
-    class ApagarOPet {
+    @DisplayName("apagar o animal leva o anexo e o arquivo")
+    class ApagarOAnimal {
 
         @Test
-        @DisplayName("a linha e os bytes saem junto com o pet")
+        @DisplayName("a linha e os bytes saem junto com o animal")
         void linhaEBytesSaemJunto() {
             var salvo = attachmentRepository.saveAndFlush(anexo().build());
             String chave = salvo.getStorageKey();
@@ -184,10 +184,10 @@ class AttachmentContainerTest extends PostgresContainerTest {
             // o arquivo existe antes
             assertThat(attachmentStorage.read(chave)).isNotNull();
 
-            petService.deletePet(rex.getPetId());
+            animalService.deleteAnimal(rex.getAnimalId());
 
-            assertThat(petRepository.findById(rex.getPetId())).isEmpty();
-            assertThat(attachmentRepository.findByPetPetIdOrderByCreationDateDesc(rex.getPetId()))
+            assertThat(animalRepository.findById(rex.getAnimalId())).isEmpty();
+            assertThat(attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(rex.getAnimalId()))
                     .isEmpty();
 
             // e o arquivo tambem: laudo orfao no disco e dado pessoal nao apagado
@@ -198,40 +198,40 @@ class AttachmentContainerTest extends PostgresContainerTest {
         /**
          * Anexo pendurado numa vacina: sem sair antes dela, a FK
          * {@code fk_attachments_vaccine} segura o delete da vacina, que por sua vez segura
-         * o do pet.
+         * o do animal.
          */
         @Test
-        @DisplayName("anexo de vacina nao trava o delete do pet")
+        @DisplayName("anexo de vacina nao trava o delete do animal")
         void anexoDeVacinaNaoTrava() {
             var vacina = vaccineRepository.saveAndFlush(Vaccine.builder()
-                    .pet(rex).vaccineName("V10").applicationDate(LocalDate.now())
+                    .animal(rex).vaccineName("V10").applicationDate(LocalDate.now())
                     .creationDate(LocalDateTime.now()).build());
 
             attachmentRepository.saveAndFlush(anexo().vaccine(vacina).build());
 
-            petService.deletePet(rex.getPetId());
+            animalService.deleteAnimal(rex.getAnimalId());
 
-            assertThat(petRepository.findById(rex.getPetId())).isEmpty();
+            assertThat(animalRepository.findById(rex.getAnimalId())).isEmpty();
         }
 
         @Test
-        @DisplayName("anexo de atendimento nao trava o delete do pet")
+        @DisplayName("anexo de atendimento nao trava o delete do animal")
         void anexoDeAtendimentoNaoTrava() {
             var atendimento = healthRecordRepository.saveAndFlush(HealthRecord.builder()
                     .category(HealthEventCategory.CONSULTA)
-                    .pet(rex).eventType("Consulta").eventDate(LocalDate.now())
+                    .animal(rex).eventType("Consulta").eventDate(LocalDate.now())
                     .creationDate(LocalDateTime.now()).build());
 
             attachmentRepository.saveAndFlush(anexo().healthRecord(atendimento).build());
 
-            petService.deletePet(rex.getPetId());
+            animalService.deleteAnimal(rex.getAnimalId());
 
-            assertThat(petRepository.findById(rex.getPetId())).isEmpty();
+            assertThat(animalRepository.findById(rex.getAnimalId())).isEmpty();
         }
     }
 
     /**
-     * O anexo pertence ao <b>pet</b>, nao a quem fez o upload: num pet que sobrevive
+     * O anexo pertence ao <b>animal</b>, nao a quem fez o upload: num animal que sobrevive
      * porque tem outro tutor, apagar o laudo porque quem o subiu fechou a conta
      * destruiria dado de saude de um animal que continua tendo quem responda por ele.
      */

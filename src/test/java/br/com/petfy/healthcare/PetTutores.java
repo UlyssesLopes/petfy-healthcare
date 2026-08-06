@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare;
 
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 
@@ -13,8 +13,8 @@ import java.util.UUID;
 /**
  * Monta os vinculos de tutor nos testes.
  *
- * Ate a V15 bastava {@code Pet.builder().owner(alguem)}. Agora o vinculo e uma
- * entidade propria, e repetir a montagem dela em cada teste deixaria o teste
+ * Ate a V15 bastava {@code Animal.builder().owner(alguem)}. Agora o vinculo e uma
+ * entidade propria, e reanimalir a montagem dela em cada teste deixaria o teste
  * falando de tabela de juncao em vez de falar da regra que ele verifica.
  */
 public final class PetTutores {
@@ -45,11 +45,11 @@ public final class PetTutores {
                 .build();
     }
 
-    /** Liga os vinculos ao pet depois que ele existe, fechando os dois lados. */
-    public static Pet comTutores(Pet pet, List<PetTutor> tutores) {
-        tutores.forEach(t -> t.setPet(pet));
-        pet.setTutors(tutores);
-        return pet;
+    /** Liga os vinculos ao animal depois que ele existe, fechando os dois lados. */
+    public static Animal comTutores(Animal animal, List<PetTutor> tutores) {
+        tutores.forEach(t -> t.setAnimal(animal));
+        animal.setTutors(tutores);
+        return animal;
     }
 
 }

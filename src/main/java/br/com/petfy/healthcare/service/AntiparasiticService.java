@@ -17,9 +17,9 @@ public interface AntiparasiticService {
 
     AntiparasiticResponseDTO getById(UUID id);
 
-    List<AntiparasiticResponseDTO> listByPet(UUID petId);
+    List<AntiparasiticResponseDTO> listByAnimal(UUID animalId);
 
-    /** petId nulo devolve o catalogo inteiro; informado, filtra pela especie do pet. */
-    List<AntiparasiticCatalogResponseDTO> listCatalog(UUID petId);
+    /** animalId nulo devolve o catalogo inteiro; informado, filtra pela especie do animal. */
+    List<AntiparasiticCatalogResponseDTO> listCatalog(UUID animalId);
 
 }

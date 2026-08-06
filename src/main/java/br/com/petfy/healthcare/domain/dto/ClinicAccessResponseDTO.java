@@ -14,7 +14,7 @@ public class ClinicAccessResponseDTO {
 
     private UUID petClinicAccessId;
 
-    private UUID petId;
+    private UUID animalId;
 
     private UUID clinicId;
 

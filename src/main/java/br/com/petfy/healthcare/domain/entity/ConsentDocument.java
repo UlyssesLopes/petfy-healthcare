@@ -15,7 +15,7 @@ public enum ConsentDocument {
     /**
      * A que importa para a LGPD: e ela que descreve qual dado e tratado, para que, e
      * por quanto tempo. Dado de saude de animal ligado a nome e e-mail de pessoa
-     * fisica e dado pessoal do tutor, nao do pet.
+     * fisica e dado pessoal do tutor, nao do animal.
      */
     PRIVACY_POLICY
 

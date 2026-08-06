@@ -18,7 +18,7 @@ public class PetTutorInviteRequestDTO {
 
     /**
      * **Obrigatorio**, ao contrario do convite de clinica, onde e opcional. Um
-     * convite de pet da acesso ao historico de saude do animal e ao nome do
+     * convite de animal da acesso ao historico de saude do animal e ao nome do
      * tutor: link sem dono encaminhado por engano entrega dado pessoal a quem
      * passar por ele.
      */
@@ -34,7 +34,7 @@ public class PetTutorInviteRequestDTO {
     private PetTutorRole role;
 
     /**
-     * Janela curta por padrao. Convite de pet vale menos tempo que o de clinica:
+     * Janela curta por padrao. Convite de animal vale menos tempo que o de clinica:
      * o de clinica circula dentro de uma equipe, este vai por mensagem para uma
      * pessoa que responde na hora ou nao responde.
      */

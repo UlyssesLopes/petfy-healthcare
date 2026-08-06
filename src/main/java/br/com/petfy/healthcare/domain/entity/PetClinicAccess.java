@@ -27,7 +27,7 @@ public class PetClinicAccess {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pet_id", nullable = false)
-    private Pet pet;
+    private Animal animal;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "clinic_id", nullable = false)

@@ -4,7 +4,7 @@ import br.com.petfy.healthcare.PetTutores;
 import br.com.petfy.healthcare.domain.entity.Attachment;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
@@ -12,7 +12,7 @@ import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
-import br.com.petfy.healthcare.security.PetAccessGuard;
+import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import br.com.petfy.healthcare.storage.AttachmentStorage;
 import br.com.petfy.healthcare.storage.StoredFile;
@@ -52,12 +52,12 @@ class AttachmentServiceImplTest {
     @Mock private VaccineRepository vaccineRepository;
     @Mock private HealthRecordRepository healthRecordRepository;
     @Mock private AttachmentStorage attachmentStorage;
-    @Mock private PetAccessGuard petAccessGuard;
+    @Mock private AnimalAccessGuard animalAccessGuard;
     @Mock private CurrentOwnerProvider currentOwnerProvider;
 
     private AttachmentServiceImpl attachmentService;
 
-    private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final UUID VACCINE_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
     private static final UUID RECORD_ID = UUID.fromString("88888888-8888-8888-8888-888888888888");
@@ -66,7 +66,7 @@ class AttachmentServiceImplTest {
     @BeforeEach
     void setUp() {
         attachmentService = new AttachmentServiceImpl(attachmentRepository, vaccineRepository,
-                healthRecordRepository, attachmentStorage, petAccessGuard, currentOwnerProvider);
+                healthRecordRepository, attachmentStorage, animalAccessGuard, currentOwnerProvider);
         ReflectionTestUtils.setField(attachmentService, "maxSizeBytes", 1024L);
     }
 
@@ -74,8 +74,8 @@ class AttachmentServiceImplTest {
         return Owner.builder().ownerId(OWNER_ID).name("Ulysses").email("ulysses@petfy.com.br").build();
     }
 
-    private Pet pet() {
-        return Pet.builder().petId(PET_ID).name("Rex").species(Species.CANINA)
+    private Animal animal() {
+        return Animal.builder().animalId(ANIMAL_ID).name("Rex").species(Species.CANINA)
                 .tutors(PetTutores.titular(ulysses())).build();
     }
 
@@ -86,18 +86,18 @@ class AttachmentServiceImplTest {
     }
 
     private StoredFile armazenado() {
-        return new StoredFile("pets/" + PET_ID + "/" + UUID.randomUUID(), 26L, "a".repeat(64));
+        return new StoredFile("animals/" + ANIMAL_ID + "/" + UUID.randomUUID(), 26L, "a".repeat(64));
     }
 
-    private Attachment anexoDoPet() {
+    private Attachment anexoDoAnimal() {
         return Attachment.builder()
                 .attachmentId(ATTACHMENT_ID)
-                .pet(pet())
+                .animal(animal())
                 .originalFilename("laudo.pdf")
                 .contentType("application/pdf")
                 .sizeBytes(26L)
                 .checksumSha256("a".repeat(64))
-                .storageKey("pets/" + PET_ID + "/chave")
+                .storageKey("animals/" + ANIMAL_ID + "/chave")
                 .creationDate(LocalDateTime.now())
                 .build();
     }
@@ -109,14 +109,14 @@ class AttachmentServiceImplTest {
         @Test
         @DisplayName("guarda o arquivo e devolve o metadado")
         void guardaEDevolveMetadado() {
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
             when(currentOwnerProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = attachmentService.upload(PET_ID, pdf("laudo.pdf"), null, null, "exame de sangue");
+            var result = attachmentService.upload(ANIMAL_ID, pdf("laudo.pdf"), null, null, "exame de sangue");
 
-            assertThat(result.getPetId()).isEqualTo(PET_ID);
+            assertThat(result.getAnimalId()).isEqualTo(ANIMAL_ID);
             assertThat(result.getOriginalFilename()).isEqualTo("laudo.pdf");
             assertThat(result.getContentType()).isEqualTo("application/pdf");
             assertThat(result.getDescription()).isEqualTo("exame de sangue");
@@ -133,12 +133,12 @@ class AttachmentServiceImplTest {
             var mentiroso = new MockMultipartFile("file", "laudo.pdf", "image/png",
                     "%PDF-1.7 conteudo".getBytes(StandardCharsets.US_ASCII));
 
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
             when(currentOwnerProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = attachmentService.upload(PET_ID, mentiroso, null, null, null);
+            var result = attachmentService.upload(ANIMAL_ID, mentiroso, null, null, null);
 
             assertThat(result.getContentType()).isEqualTo("application/pdf");
         }
@@ -150,9 +150,9 @@ class AttachmentServiceImplTest {
             var executavel = new MockMultipartFile("file", "laudo.pdf", "application/pdf",
                     new byte[]{0x4D, 0x5A, (byte) 0x90, 0x00, 0, 0, 0, 0, 0, 0, 0, 0});
 
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
 
-            assertThatThrownBy(() -> attachmentService.upload(PET_ID, executavel, null, null, null))
+            assertThatThrownBy(() -> attachmentService.upload(ANIMAL_ID, executavel, null, null, null))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
                     .containsExactly(ErrorMessageEnum.ATTACHMENT_TYPE_NOT_ALLOWED.getCode(),
@@ -167,9 +167,9 @@ class AttachmentServiceImplTest {
         void arquivoVazioERecusado() {
             var vazio = new MockMultipartFile("file", "vazio.pdf", "application/pdf", new byte[0]);
 
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
 
-            assertThatThrownBy(() -> attachmentService.upload(PET_ID, vazio, null, null, null))
+            assertThatThrownBy(() -> attachmentService.upload(ANIMAL_ID, vazio, null, null, null))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code")
                     .isEqualTo(ErrorMessageEnum.ATTACHMENT_EMPTY.getCode());
@@ -184,9 +184,9 @@ class AttachmentServiceImplTest {
             System.arraycopy("%PDF-".getBytes(StandardCharsets.US_ASCII), 0, grande, 0, 5);
             var pesado = new MockMultipartFile("file", "grande.pdf", "application/pdf", grande);
 
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
 
-            assertThatThrownBy(() -> attachmentService.upload(PET_ID, pesado, null, null, null))
+            assertThatThrownBy(() -> attachmentService.upload(ANIMAL_ID, pesado, null, null, null))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
                     .containsExactly(ErrorMessageEnum.ATTACHMENT_TOO_LARGE.getCode(),
@@ -203,12 +203,12 @@ class AttachmentServiceImplTest {
         @Test
         @DisplayName("grava no storage antes do banco")
         void storageAntesDoBanco() {
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
             when(currentOwnerProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
-            attachmentService.upload(PET_ID, pdf("laudo.pdf"), null, null, null);
+            attachmentService.upload(ANIMAL_ID, pdf("laudo.pdf"), null, null, null);
 
             var ordem = inOrder(attachmentStorage, attachmentRepository);
             ordem.verify(attachmentStorage).store(any(), any());
@@ -216,39 +216,39 @@ class AttachmentServiceImplTest {
         }
 
         @Test
-        @DisplayName("anexo de vacina exige que a vacina seja do mesmo pet")
-        void anexoDeVacinaDoMesmoPet() {
-            var vacina = Vaccine.builder().vaccineId(VACCINE_ID).pet(pet()).vaccineName("V10").build();
+        @DisplayName("anexo de vacina exige que a vacina seja do mesmo animal")
+        void anexoDeVacinaDoMesmoAnimal() {
+            var vacina = Vaccine.builder().vaccineId(VACCINE_ID).animal(animal()).vaccineName("V10").build();
 
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
             when(currentOwnerProvider.require()).thenReturn(ulysses());
             when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(vacina));
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = attachmentService.upload(PET_ID, pdf("carteirinha.pdf"), VACCINE_ID, null, null);
+            var result = attachmentService.upload(ANIMAL_ID, pdf("carteirinha.pdf"), VACCINE_ID, null, null);
 
             assertThat(result.getVaccineId()).isEqualTo(VACCINE_ID);
         }
 
         /**
-         * Sem esta checagem, informar o id de uma vacina de outro pet penduraria o anexo
+         * Sem esta checagem, informar o id de uma vacina de outro animal penduraria o anexo
          * nela - o CHECK do banco nao pega, porque a coluna esta preenchida com id valido.
          */
         @Test
-        @DisplayName("vacina de outro pet responde 404 sem gravar nada")
-        void vacinaDeOutroPetERecusada() {
-            var deOutroPet = Vaccine.builder()
+        @DisplayName("vacina de outro animal responde 404 sem gravar nada")
+        void vacinaDeOutroAnimalERecusada() {
+            var deOutroAnimal = Vaccine.builder()
                     .vaccineId(VACCINE_ID)
-                    .pet(Pet.builder().petId(UUID.randomUUID()).name("Nina").build())
+                    .animal(Animal.builder().animalId(UUID.randomUUID()).name("Nina").build())
                     .build();
 
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
-            when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(deOutroPet));
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
+            when(vaccineRepository.findById(VACCINE_ID)).thenReturn(Optional.of(deOutroAnimal));
 
             var arquivo = pdf("laudo.pdf");
 
-            assertThatThrownBy(() -> attachmentService.upload(PET_ID, arquivo, VACCINE_ID, null, null))
+            assertThatThrownBy(() -> attachmentService.upload(ANIMAL_ID, arquivo, VACCINE_ID, null, null))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code", "httpStatus")
                     .containsExactly(ErrorMessageEnum.VACCINE_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
@@ -257,19 +257,19 @@ class AttachmentServiceImplTest {
         }
 
         @Test
-        @DisplayName("atendimento de outro pet responde 404 sem gravar nada")
-        void atendimentoDeOutroPetERecusado() {
-            var deOutroPet = HealthRecord.builder()
+        @DisplayName("atendimento de outro animal responde 404 sem gravar nada")
+        void atendimentoDeOutroAnimalERecusado() {
+            var deOutroAnimal = HealthRecord.builder()
                     .healthRecordId(RECORD_ID)
-                    .pet(Pet.builder().petId(UUID.randomUUID()).name("Nina").build())
+                    .animal(Animal.builder().animalId(UUID.randomUUID()).name("Nina").build())
                     .build();
 
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
-            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(deOutroPet));
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
+            when(healthRecordRepository.findById(RECORD_ID)).thenReturn(Optional.of(deOutroAnimal));
 
             var arquivo = pdf("laudo.pdf");
 
-            assertThatThrownBy(() -> attachmentService.upload(PET_ID, arquivo, null, RECORD_ID, null))
+            assertThatThrownBy(() -> attachmentService.upload(ANIMAL_ID, arquivo, null, RECORD_ID, null))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("code")
                     .isEqualTo(ErrorMessageEnum.HEALTH_RECORD_NOT_FOUND.getCode());
@@ -288,12 +288,12 @@ class AttachmentServiceImplTest {
             var comCaminho = new MockMultipartFile("file", "../../etc/passwd",
                     "application/pdf", "%PDF-1.7 x".getBytes(StandardCharsets.US_ASCII));
 
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
             when(currentOwnerProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = attachmentService.upload(PET_ID, comCaminho, null, null, null);
+            var result = attachmentService.upload(ANIMAL_ID, comCaminho, null, null, null);
 
             assertThat(result.getOriginalFilename())
                     .doesNotContain("/")
@@ -302,45 +302,45 @@ class AttachmentServiceImplTest {
     }
 
     @Nested
-    @DisplayName("listByPet")
-    class ListByPet {
+    @DisplayName("listByAnimal")
+    class ListByAnimal {
 
         @Test
-        @DisplayName("lista os anexos do pet")
-        void listaOsAnexosDoPet() {
-            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet());
-            when(attachmentRepository.findByPetPetIdOrderByCreationDateDesc(PET_ID))
-                    .thenReturn(List.of(anexoDoPet()));
+        @DisplayName("lista os anexos do animal")
+        void listaOsAnexosDoAnimal() {
+            when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenReturn(animal());
+            when(attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(ANIMAL_ID))
+                    .thenReturn(List.of(anexoDoAnimal()));
 
-            assertThat(attachmentService.listByPet(PET_ID, null, null)).hasSize(1);
+            assertThat(attachmentService.listByAnimal(ANIMAL_ID, null, null)).hasSize(1);
         }
 
         /**
-         * O filtro por pet vale mesmo na consulta por vacina: sem ele, passar o id de uma
-         * vacina de outro pet devolveria os anexos dela, e a autorizacao teria sido feita
-         * sobre o pet errado.
+         * O filtro por animal vale mesmo na consulta por vacina: sem ele, passar o id de uma
+         * vacina de outro animal devolveria os anexos dela, e a autorizacao teria sido feita
+         * sobre o animal errado.
          */
         @Test
-        @DisplayName("anexo de outro pet nao aparece, mesmo consultando por vacina")
-        void naoVazaAnexoDeOutroPet() {
-            var deOutroPet = Attachment.builder()
+        @DisplayName("anexo de outro animal nao aparece, mesmo consultando por vacina")
+        void naoVazaAnexoDeOutroAnimal() {
+            var deOutroAnimal = Attachment.builder()
                     .attachmentId(UUID.randomUUID())
-                    .pet(Pet.builder().petId(UUID.randomUUID()).name("Nina").build())
+                    .animal(Animal.builder().animalId(UUID.randomUUID()).name("Nina").build())
                     .originalFilename("da-nina.pdf")
                     .contentType("application/pdf")
                     .sizeBytes(10L)
                     .checksumSha256("b".repeat(64))
-                    .storageKey("pets/outro/chave")
+                    .storageKey("animals/outro/chave")
                     .creationDate(LocalDateTime.now())
                     .build();
 
-            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenReturn(animal());
             when(attachmentRepository.findByVaccineVaccineIdOrderByCreationDateDesc(VACCINE_ID))
-                    .thenReturn(List.of(anexoDoPet(), deOutroPet));
+                    .thenReturn(List.of(anexoDoAnimal(), deOutroAnimal));
 
-            assertThat(attachmentService.listByPet(PET_ID, VACCINE_ID, null))
+            assertThat(attachmentService.listByAnimal(ANIMAL_ID, VACCINE_ID, null))
                     .singleElement()
-                    .satisfies(a -> assertThat(a.getPetId()).isEqualTo(PET_ID));
+                    .satisfies(a -> assertThat(a.getAnimalId()).isEqualTo(ANIMAL_ID));
         }
     }
 
@@ -351,9 +351,9 @@ class AttachmentServiceImplTest {
         @Test
         @DisplayName("devolve o conteudo com nome e tipo do registro")
         void devolveOConteudo() {
-            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexoDoPet()));
-            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet());
-            when(attachmentStorage.read("pets/" + PET_ID + "/chave"))
+            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexoDoAnimal()));
+            when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenReturn(animal());
+            when(attachmentStorage.read("animals/" + ANIMAL_ID + "/chave"))
                     .thenReturn(new ByteArrayInputStream("laudo".getBytes(StandardCharsets.UTF_8)));
 
             var conteudo = attachmentService.download(ATTACHMENT_ID);
@@ -364,30 +364,30 @@ class AttachmentServiceImplTest {
         }
 
         /**
-         * A autorizacao sai do pet DO ANEXO, e nao de um petId informado pelo cliente - e
-         * por isso que a rota de download nao tem petId. Pedi-lo abriria a possibilidade
-         * de autorizar contra um pet e servir o arquivo de outro.
+         * A autorizacao sai do animal DO ANEXO, e nao de um animalId informado pelo cliente - e
+         * por isso que a rota de download nao tem animalId. Pedi-lo abriria a possibilidade
+         * de autorizar contra um animal e servir o arquivo de outro.
          */
         @Test
-        @DisplayName("autoriza pelo pet do proprio anexo")
-        void autorizaPeloPetDoAnexo() {
-            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexoDoPet()));
-            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet());
+        @DisplayName("autoriza pelo animal do proprio anexo")
+        void autorizaPeloAnimalDoAnexo() {
+            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexoDoAnimal()));
+            when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenReturn(animal());
             when(attachmentStorage.read(any()))
                     .thenReturn(new ByteArrayInputStream(new byte[0]));
 
             attachmentService.download(ATTACHMENT_ID);
 
-            verify(petAccessGuard).requireLeitura(PET_ID);
+            verify(animalAccessGuard).requireLeitura(ANIMAL_ID);
         }
 
         @Test
         @DisplayName("recusa do guard impede a leitura do storage")
         void recusaDoGuardNaoLeStorage() {
-            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexoDoPet()));
-            when(petAccessGuard.requireLeitura(PET_ID)).thenThrow(new PetfyHealthcareException(
-                    ErrorMessageEnum.PET_NOT_FOUND.getMessage(),
-                    ErrorMessageEnum.PET_NOT_FOUND.getCode(),
+            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexoDoAnimal()));
+            when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenThrow(new PetfyHealthcareException(
+                    ErrorMessageEnum.ANIMAL_NOT_FOUND.getMessage(),
+                    ErrorMessageEnum.ANIMAL_NOT_FOUND.getCode(),
                     HttpStatus.NOT_FOUND));
 
             assertThatThrownBy(() -> attachmentService.download(ATTACHMENT_ID))
@@ -406,7 +406,7 @@ class AttachmentServiceImplTest {
                     .extracting("code")
                     .isEqualTo(ErrorMessageEnum.ATTACHMENT_NOT_FOUND.getCode());
 
-            verifyNoInteractions(petAccessGuard);
+            verifyNoInteractions(animalAccessGuard);
         }
     }
 
@@ -422,9 +422,9 @@ class AttachmentServiceImplTest {
         @Test
         @DisplayName("apaga a linha antes do arquivo")
         void apagaALinhaAntesDoArquivo() {
-            var anexo = anexoDoPet();
+            var anexo = anexoDoAnimal();
             when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexo));
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
 
             attachmentService.delete(ATTACHMENT_ID);
 
@@ -437,13 +437,13 @@ class AttachmentServiceImplTest {
         @Test
         @DisplayName("remover anexo exige escrita, e nao apenas leitura")
         void removerExigeEscrita() {
-            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexoDoPet()));
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexoDoAnimal()));
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
 
             attachmentService.delete(ATTACHMENT_ID);
 
-            verify(petAccessGuard).requireEscrita(PET_ID);
-            verify(petAccessGuard, never()).requireLeitura(any());
+            verify(animalAccessGuard).requireEscrita(ANIMAL_ID);
+            verify(animalAccessGuard, never()).requireLeitura(any());
         }
     }
 
@@ -457,28 +457,28 @@ class AttachmentServiceImplTest {
         @Test
         @DisplayName("anexar exige escrita")
         void anexarExigeEscrita() {
-            when(petAccessGuard.requireEscrita(PET_ID)).thenReturn(pet());
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal());
             when(currentOwnerProvider.require()).thenReturn(ulysses());
             when(attachmentStorage.store(any(), any())).thenReturn(armazenado());
             when(attachmentRepository.save(any(Attachment.class))).thenAnswer(i -> i.getArgument(0));
 
-            attachmentService.upload(PET_ID, pdf("laudo.pdf"), null, null, null);
+            attachmentService.upload(ANIMAL_ID, pdf("laudo.pdf"), null, null, null);
 
-            verify(petAccessGuard).requireEscrita(PET_ID);
-            verify(petAccessGuard, never()).requireLeitura(any());
+            verify(animalAccessGuard).requireEscrita(ANIMAL_ID);
+            verify(animalAccessGuard, never()).requireLeitura(any());
         }
 
         /** Ver e baixar laudo e leitura: e para isso que o VIEWER existe. */
         @Test
         @DisplayName("listar e baixar exigem so leitura")
         void listarEBaixarExigemSoLeitura() {
-            when(petAccessGuard.requireLeitura(PET_ID)).thenReturn(pet());
-            when(attachmentRepository.findByPetPetIdOrderByCreationDateDesc(PET_ID)).thenReturn(List.of());
+            when(animalAccessGuard.requireLeitura(ANIMAL_ID)).thenReturn(animal());
+            when(attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(ANIMAL_ID)).thenReturn(List.of());
 
-            attachmentService.listByPet(PET_ID, null, null);
+            attachmentService.listByAnimal(ANIMAL_ID, null, null);
 
-            verify(petAccessGuard).requireLeitura(PET_ID);
-            verify(petAccessGuard, never()).requireEscrita(any());
+            verify(animalAccessGuard).requireLeitura(ANIMAL_ID);
+            verify(animalAccessGuard, never()).requireEscrita(any());
         }
     }
 

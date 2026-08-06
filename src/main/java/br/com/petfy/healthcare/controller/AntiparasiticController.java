@@ -48,26 +48,26 @@ public class AntiparasiticController {
     }
 
     /**
-     * Lista antiparasitarios de um pet especifico do tutor autenticado.
-     * petId e obrigatorio: a listagem e sempre escopada ao pet para evitar
-     * misturar vermifugos de pets diferentes numa lista plana.
+     * Lista antiparasitarios de um animal especifico do tutor autenticado.
+     * animalId e obrigatorio: a listagem e sempre escopada ao animal para evitar
+     * misturar vermifugos de animals diferentes numa lista plana.
      */
     @GetMapping
-    public ResponseEntity<List<AntiparasiticResponseDTO>> listByPet(@RequestParam UUID petId) {
-        return ResponseEntity.ok(antiparasiticService.listByPet(petId));
+    public ResponseEntity<List<AntiparasiticResponseDTO>> listByAnimal(@RequestParam UUID animalId) {
+        return ResponseEntity.ok(antiparasiticService.listByAnimal(animalId));
     }
 
     /**
      * Catalogo somente leitura, mantido por migration.
      *
-     * Filtrar por petId devolve apenas os produtos da especie daquele pet - o
+     * Filtrar por animalId devolve apenas os produtos da especie daquele animal - o
      * default para o cliente da UI, evitando que o tutor escolha antiparasitario
-     * que nao casa com o pet. Mesmo contrato do /vaccine-catalog.
+     * que nao casa com o animal. Mesmo contrato do /vaccine-catalog.
      */
     @GetMapping("/catalog")
     public ResponseEntity<List<AntiparasiticCatalogResponseDTO>> listCatalog(
-            @RequestParam(required = false) UUID petId) {
-        return ResponseEntity.ok(antiparasiticService.listCatalog(petId));
+            @RequestParam(required = false) UUID animalId) {
+        return ResponseEntity.ok(antiparasiticService.listCatalog(animalId));
     }
 
 }

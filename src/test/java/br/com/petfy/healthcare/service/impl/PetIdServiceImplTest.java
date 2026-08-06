@@ -1,6 +1,6 @@
 package br.com.petfy.healthcare.service.impl;
 
-import br.com.petfy.healthcare.domain.repository.PetRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +35,7 @@ class PetIdServiceImplTest {
     private ImageProcessorService imageProcessorService;
 
     @Mock
-    private PetRepository petRepository;
+    private AnimalRepository animalRepository;
 
     @Mock
     private CurrentOwnerProvider currentOwnerProvider;
@@ -44,8 +44,8 @@ class PetIdServiceImplTest {
     private PetIdServiceImpl petIdService;
 
     @Nested
-    @DisplayName("importPetFromIdCard")
-    class ImportPetFromIdCard {
+    @DisplayName("importAnimalFromIdCard")
+    class ImportAnimalFromIdCard {
 
         @Test
         @DisplayName("deve resolver o owner antes de processar a imagem, e nao aceitar id do cliente")
@@ -54,12 +54,12 @@ class PetIdServiceImplTest {
                     "Invalid email or password", 401, HttpStatus.UNAUTHORIZED));
             var file = new MockMultipartFile("file", "carteirinha.png", "image/png", new byte[]{1, 2, 3});
 
-            assertThatThrownBy(() -> petIdService.importPetFromIdCard(file))
+            assertThatThrownBy(() -> petIdService.importAnimalFromIdCard(file))
                     .isInstanceOf(PetfyHealthcareException.class)
                     .extracting("httpStatus")
                     .isEqualTo(HttpStatus.UNAUTHORIZED);
 
-            verifyNoInteractions(imageProcessorService, tesseractOcrService, petRepository);
+            verifyNoInteractions(imageProcessorService, tesseractOcrService, animalRepository);
         }
     }
 

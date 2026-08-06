@@ -43,7 +43,7 @@ public class FilesystemAttachmentStorage implements AttachmentStorage {
     }
 
     /**
-     * A chave e {@code pets/{petId}/{uuid}} - so valor gerado pelo servidor.
+     * A chave e {@code animals/{animalId}/{uuid}} - so valor gerado pelo servidor.
      *
      * O UUID novo, e nao o nome do arquivo, e o que impede duas coisas: travessia de
      * diretorio, porque nao ha string de terceiro no caminho; e colisao, porque dois
@@ -54,8 +54,8 @@ public class FilesystemAttachmentStorage implements AttachmentStorage {
      * banco - que so e gravado depois - nao saberia que aquilo existe.
      */
     @Override
-    public StoredFile store(UUID petId, InputStream content) {
-        String storageKey = "pets/" + petId + "/" + UUID.randomUUID();
+    public StoredFile store(UUID animalId, InputStream content) {
+        String storageKey = "animals/" + animalId + "/" + UUID.randomUUID();
         Path destino = resolver(storageKey);
 
         try {
@@ -94,7 +94,7 @@ public class FilesystemAttachmentStorage implements AttachmentStorage {
         for (String storageKey : storageKeys) {
             try {
                 // deleteIfExists, e nao delete: chave ausente nao e erro, senao uma
-                // exclusao que falhou no meio nao poderia ser repetida
+                // exclusao que falhou no meio nao poderia ser reanimalida
                 Files.deleteIfExists(resolver(storageKey));
             } catch (IOException e) {
                 throw falhaDeStorage("apagar", storageKey, e);

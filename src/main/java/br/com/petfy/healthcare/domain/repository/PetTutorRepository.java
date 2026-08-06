@@ -12,25 +12,25 @@ import java.util.UUID;
 @Repository
 public interface PetTutorRepository extends JpaRepository<PetTutor, UUID> {
 
-    Optional<PetTutor> findByPetPetIdAndOwnerOwnerId(UUID petId, UUID ownerId);
+    Optional<PetTutor> findByAnimalAnimalIdAndOwnerOwnerId(UUID animalId, UUID ownerId);
 
-    List<PetTutor> findByPetPetIdOrderByRoleAscCreationDateAsc(UUID petId);
+    List<PetTutor> findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(UUID animalId);
 
     List<PetTutor> findByOwnerOwnerId(UUID ownerId);
 
-    Optional<PetTutor> findByPetPetIdAndRole(UUID petId, PetTutorRole role);
+    Optional<PetTutor> findByAnimalAnimalIdAndRole(UUID animalId, PetTutorRole role);
 
-    boolean existsByPetPetIdAndOwnerOwnerId(UUID petId, UUID ownerId);
+    boolean existsByAnimalAnimalIdAndOwnerOwnerId(UUID animalId, UUID ownerId);
 
     /**
-     * Usado ao apagar a conta: um pet do qual esta pessoa e a unica tutora morre
-     * com ela; um pet que tem outros tutores sobrevive e so perde este vinculo.
+     * Usado ao apagar a conta: um animal do qual esta pessoa e a unica tutora morre
+     * com ela; um animal que tem outros tutores sobrevive e so perde este vinculo.
      */
-    long countByPetPetId(UUID petId);
+    long countByAnimalAnimalId(UUID animalId);
 
     void deleteByOwnerOwnerId(UUID ownerId);
 
-    /** Usado ao apagar o pet - ver {@code PetPurger}. */
-    void deleteByPetPetIdIn(List<UUID> petIds);
+    /** Usado ao apagar o animal - ver {@code AnimalPurger}. */
+    void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 
 }

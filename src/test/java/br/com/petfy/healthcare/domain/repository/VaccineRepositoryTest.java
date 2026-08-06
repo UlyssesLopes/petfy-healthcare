@@ -1,7 +1,7 @@
 package br.com.petfy.healthcare.domain.repository;
 
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Vale a pena porque e a query que alimenta a rotina de lembretes: se ela
  * trouxer de menos, o tutor nao e avisado; se trouxer de mais, vira spam. O
- * UuidQueriesContainerTest repete o caso contra Postgres.
+ * UuidQueriesContainerTest reanimale o caso contra Postgres.
  */
 @DataJpaTest
 @TestPropertySource(properties = {
@@ -37,26 +37,26 @@ class VaccineRepositoryTest {
     private VaccineRepository vaccineRepository;
 
     @Autowired
-    private PetRepository petRepository;
+    private AnimalRepository animalRepository;
 
     @Autowired
     private OwnerRepository ownerRepository;
 
     private static final LocalDate HOJE = LocalDate.now();
 
-    private Pet rex;
+    private Animal rex;
 
     @BeforeEach
     void setUp() {
         Owner owner = ownerRepository.save(Owner.builder()
                 .name("Ulysses").email("ulysses@petfy.com.br").password("hash").build());
 
-        rex = petRepository.save(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
+        rex = animalRepository.save(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(owner)).species(Species.CANINA).build());
     }
 
     private void gravarVacina(String nome, LocalDate proximaDose) {
         vaccineRepository.save(Vaccine.builder()
-                .pet(rex).vaccineName(nome).nextDoseDate(proximaDose).build());
+                .animal(rex).vaccineName(nome).nextDoseDate(proximaDose).build());
     }
 
     @Test
@@ -90,15 +90,15 @@ class VaccineRepositoryTest {
     }
 
     @Test
-    @DisplayName("deve devolver o pet e o dono junto, que e do que o lembrete precisa")
-    void deveDevolverPetEDonoJunto() {
+    @DisplayName("deve devolver o animal e o dono junto, que e do que o lembrete precisa")
+    void deveDevolverAnimalEDonoJunto() {
         gravarVacina("V10", HOJE.minusDays(1));
 
         var result = vaccineRepository.findByNextDoseDateLessThanEqual(HOJE);
 
         assertThat(result).singleElement().satisfies(vaccine -> {
-            assertThat(vaccine.getPet().getName()).isEqualTo("Rex");
-            assertThat(vaccine.getPet().getHolder().orElseThrow().getEmail()).isEqualTo("ulysses@petfy.com.br");
+            assertThat(vaccine.getAnimal().getName()).isEqualTo("Rex");
+            assertThat(vaccine.getAnimal().getHolder().orElseThrow().getEmail()).isEqualTo("ulysses@petfy.com.br");
         });
     }
 }

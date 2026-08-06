@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Anexos do pet.
+ * Anexos do animal.
  *
- * O upload e a listagem ficam sob {@code /pets/{petId}}, porque o pet e a ancora de
+ * O upload e a listagem ficam sob {@code /animals/{animalId}}, porque o animal e a ancora de
  * autorizacao. O download e a remocao ficam em {@code /attachments/{id}} <b>sem
- * petId</b>: o pet sai do proprio anexo, e pedi-lo abriria a possibilidade de autorizar
- * contra um pet e servir o arquivo de outro.
+ * animalId</b>: o animal sai do proprio anexo, e pedi-lo abriria a possibilidade de autorizar
+ * contra um animal e servir o arquivo de outro.
  */
 @RestController
 @RequiredArgsConstructor
@@ -32,31 +32,31 @@ public class AttachmentController {
 
     private final AttachmentService attachmentService;
 
-    @Operation(summary = "Anexa um arquivo ao pet",
+    @Operation(summary = "Anexa um arquivo ao animal",
                description = "Multipart. Aceita JPEG, PNG, WEBP e PDF, reconhecidos pelo CONTEUDO - o "
                              + "Content-Type declarado nao e consultado. vaccineId e healthRecordId sao "
                              + "opcionais e mutuamente exclusivos: dizem o que o arquivo documenta. Sem "
-                             + "nenhum dos dois, o anexo e do pet em si.")
-    @PostMapping(value = "/pets/{petId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+                             + "nenhum dos dois, o anexo e do animal em si.")
+    @PostMapping(value = "/animals/{animalId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AttachmentResponseDTO> upload(
-            @PathVariable UUID petId,
+            @PathVariable UUID animalId,
             @RequestParam("file") MultipartFile file,
             @RequestParam(required = false) UUID vaccineId,
             @RequestParam(required = false) UUID healthRecordId,
             @RequestParam(required = false) String description) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(attachmentService.upload(petId, file, vaccineId, healthRecordId, description));
+                .body(attachmentService.upload(animalId, file, vaccineId, healthRecordId, description));
     }
 
-    @Operation(summary = "Anexos do pet",
-               description = "Sem filtro, devolve todos os anexos do pet. Com vaccineId ou "
+    @Operation(summary = "Anexos do animal",
+               description = "Sem filtro, devolve todos os anexos do animal. Com vaccineId ou "
                              + "healthRecordId, devolve os daquele registro.")
-    @GetMapping("/pets/{petId}/attachments")
-    public ResponseEntity<List<AttachmentResponseDTO>> listByPet(
-            @PathVariable UUID petId,
+    @GetMapping("/animals/{animalId}/attachments")
+    public ResponseEntity<List<AttachmentResponseDTO>> listByAnimal(
+            @PathVariable UUID animalId,
             @RequestParam(required = false) UUID vaccineId,
             @RequestParam(required = false) UUID healthRecordId) {
-        return ResponseEntity.ok(attachmentService.listByPet(petId, vaccineId, healthRecordId));
+        return ResponseEntity.ok(attachmentService.listByAnimal(animalId, vaccineId, healthRecordId));
     }
 
     /**
@@ -68,7 +68,7 @@ public class AttachmentController {
      * fecha a porta.
      */
     @Operation(summary = "Baixa o conteudo do anexo",
-               description = "Autorizado a cada chamada pelo pet do anexo. Nao ha URL assinada: link "
+               description = "Autorizado a cada chamada pelo animal do anexo. Nao ha URL assinada: link "
                              + "encaminhado por engano daria acesso a dado de saude ate expirar.")
     @GetMapping("/attachments/{attachmentId}/content")
     public ResponseEntity<InputStreamResource> download(@PathVariable UUID attachmentId) {

@@ -18,8 +18,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AntiparasiticRequestDTO {
 
-    @NotNull(message = "petId e obrigatorio")
-    private UUID petId;
+    @NotNull(message = "animalId e obrigatorio")
+    private UUID animalId;
 
     /**
      * Quando informado, o nome, o kind e a data da proxima dose saem do catalogo.

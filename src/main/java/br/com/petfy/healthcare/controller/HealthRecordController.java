@@ -46,9 +46,9 @@ public class HealthRecordController {
         return ResponseEntity.ok(healthRecordService.listCorrections(healthRecordId));
     }
 
-    @GetMapping("/pet/{petId}")
-    public ResponseEntity<List<HealthRecordResponseDTO>> listByPet(@PathVariable UUID petId) {
-        return ResponseEntity.ok(healthRecordService.listHealthRecordsByPet(petId));
+    @GetMapping("/animal/{animalId}")
+    public ResponseEntity<List<HealthRecordResponseDTO>> listByAnimal(@PathVariable UUID animalId) {
+        return ResponseEntity.ok(healthRecordService.listHealthRecordsByAnimal(animalId));
     }
 
     /**

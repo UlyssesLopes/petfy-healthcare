@@ -3,7 +3,7 @@ package br.com.petfy.healthcare.notification;
 import br.com.petfy.healthcare.domain.entity.Clinic;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Owner;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,8 +50,8 @@ class ClinicActivityNotifierTest {
                 .vaccineName("V10")
                 .applicationDate(LocalDate.of(2026, 8, 1))
                 .nextDoseDate(LocalDate.of(2027, 8, 1))
-                .clinic(Clinic.builder().name("Clinica Pet Feliz").build())
-                .pet(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(dono)).build())
+                .clinic(Clinic.builder().name("Clinica Animal Feliz").build())
+                .animal(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(dono)).build())
                 .build();
     }
 
@@ -60,8 +60,8 @@ class ClinicActivityNotifierTest {
                 .eventType("Consulta")
                 .eventDate(LocalDate.of(2026, 8, 1))
                 .description("Checkup anual")
-                .clinic(Clinic.builder().name("Clinica Pet Feliz").build())
-                .pet(Pet.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(dono)).build())
+                .clinic(Clinic.builder().name("Clinica Animal Feliz").build())
+                .animal(Animal.builder().name("Rex").tutors(br.com.petfy.healthcare.PetTutores.titular(dono)).build())
                 .build();
     }
 
@@ -72,7 +72,7 @@ class ClinicActivityNotifierTest {
     }
 
     @Test
-    @DisplayName("vacina registrada deve virar aviso com pet, clinica e proxima dose")
+    @DisplayName("vacina registrada deve virar aviso com animal, clinica e proxima dose")
     void vacinaRegistradaDeveVirarAviso() {
         var dono = tutor(true);
 
@@ -81,7 +81,7 @@ class ClinicActivityNotifierTest {
         var notificacao = capturar();
         assertThat(notificacao.getToEmail()).isEqualTo("ulysses@petfy.com.br");
         assertThat(String.join(" ", notificacao.getLines()))
-                .contains("Clinica Pet Feliz")
+                .contains("Clinica Animal Feliz")
                 .contains("Rex")
                 .contains("V10")
                 .contains("2027-08-01");
@@ -89,7 +89,7 @@ class ClinicActivityNotifierTest {
 
     /**
      * A orientacao final e o que torna o aviso util: sem ela o tutor le que uma
-     * clinica escreveu no pet dele e nao sabe o que fazer a respeito.
+     * clinica escreveu no animal dele e nao sabe o que fazer a respeito.
      */
     @Test
     @DisplayName("todo aviso deve terminar com a orientacao de revogar o acesso")
@@ -102,7 +102,7 @@ class ClinicActivityNotifierTest {
 
     /**
      * O risco de notificar endereco nao confirmado nao e incomodo: e o nome do
-     * pet e do tutor chegando na caixa de um estranho.
+     * animal e do tutor chegando na caixa de um estranho.
      */
     @Test
     @DisplayName("nao deve notificar tutor que ainda nao confirmou o e-mail")
@@ -126,7 +126,7 @@ class ClinicActivityNotifierTest {
     }
 
     /**
-     * O efeito principal e o registro no historico do pet, que ja foi gravado
+     * O efeito principal e o registro no historico do animal, que ja foi gravado
      * quando este metodo roda. Deixar a excecao subir desfaria o registro por
      * causa de um aviso - trocar um problema pequeno por um grande.
      *

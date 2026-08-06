@@ -48,18 +48,18 @@ class OwnerExportServiceImplTest {
     @Mock private HealthRecordRepository healthRecordRepository;
     @Mock private HealthRecordCorrectionRepository healthRecordCorrectionRepository;
     @Mock private AntiparasiticRepository antiparasiticRepository;
-    @Mock private PetWeightHistoryRepository petWeightHistoryRepository;
+    @Mock private AnimalWeightHistoryRepository animalWeightHistoryRepository;
     @Mock private AttachmentRepository attachmentRepository;
-    @Mock private PetShareRepository petShareRepository;
+    @Mock private AnimalShareRepository animalShareRepository;
     @Mock private PetClinicAccessRepository petClinicAccessRepository;
     @Mock private SensitiveAccessLogRepository sensitiveAccessLogRepository;
-    @Mock private PetHealthConditionRepository petHealthConditionRepository;
+    @Mock private AnimalHealthConditionRepository animalHealthConditionRepository;
 
     @InjectMocks
     private OwnerExportServiceImpl exportService;
 
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID MARIA_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
 
     private Owner ulysses() {
@@ -76,38 +76,38 @@ class OwnerExportServiceImplTest {
         return Owner.builder().ownerId(MARIA_ID).name("Maria").email("maria@petfy.com.br").build();
     }
 
-    private Pet rex() {
-        return Pet.builder().petId(PET_ID).name("Rex").species(Species.CANINA)
+    private Animal rex() {
+        return Animal.builder().animalId(ANIMAL_ID).name("Rex").species(Species.CANINA)
                 .breed("Vira-lata").weight(12.5).microchip(true)
                 .creationDate(LocalDateTime.now().minusMonths(5)).build();
     }
 
     private PetTutor vinculo(Owner owner, PetTutorRole papel) {
         PetTutor v = PetTutores.vinculo(owner, papel);
-        v.setPet(rex());
+        v.setAnimal(rex());
         return v;
     }
 
-    /** O caminho normal: um tutor, um pet, coleções vazias. */
-    private void comUmPet(PetTutorRole meuPapel) {
+    /** O caminho normal: um tutor, um animal, coleções vazias. */
+    private void comUmAnimal(PetTutorRole meuPapel) {
         when(currentOwnerProvider.require()).thenReturn(ulysses());
         when(petTutorRepository.findByOwnerOwnerId(OWNER_ID))
                 .thenReturn(List.of(vinculo(ulysses(), meuPapel)));
-        when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+        when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
                 .thenReturn(List.of());
         when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
                 .thenReturn(List.of());
-        when(vaccineRepository.findByPetPetIdOrderByApplicationDateDesc(PET_ID)).thenReturn(List.of());
-        when(healthRecordRepository.findByPetPetIdOrderByEventDateDesc(PET_ID)).thenReturn(List.of());
-        when(antiparasiticRepository.findByPetPetIdOrderByApplicationDateDesc(PET_ID)).thenReturn(List.of());
-        when(petWeightHistoryRepository.findByPetPetIdOrderByMeasuredAtDesc(PET_ID)).thenReturn(List.of());
-        when(attachmentRepository.findByPetPetIdOrderByCreationDateDesc(PET_ID)).thenReturn(List.of());
-        when(petShareRepository.findByPetOrderByCreationDateDesc(any())).thenReturn(List.of());
-        when(petClinicAccessRepository.findByPetPetIdOrderByGrantedAtDesc(PET_ID)).thenReturn(List.of());
-        when(sensitiveAccessLogRepository.findByPetPetIdOrderByAccessedAtDesc(eq(PET_ID), any()))
+        when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID)).thenReturn(List.of());
+        when(healthRecordRepository.findByAnimalAnimalIdOrderByEventDateDesc(ANIMAL_ID)).thenReturn(List.of());
+        when(antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID)).thenReturn(List.of());
+        when(animalWeightHistoryRepository.findByAnimalAnimalIdOrderByMeasuredAtDesc(ANIMAL_ID)).thenReturn(List.of());
+        when(attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(ANIMAL_ID)).thenReturn(List.of());
+        when(animalShareRepository.findByAnimalOrderByCreationDateDesc(any())).thenReturn(List.of());
+        when(petClinicAccessRepository.findByAnimalAnimalIdOrderByGrantedAtDesc(ANIMAL_ID)).thenReturn(List.of());
+        when(sensitiveAccessLogRepository.findByAnimalAnimalIdOrderByAccessedAtDesc(eq(ANIMAL_ID), any()))
                 .thenReturn(Page.empty());
-        when(petHealthConditionRepository
-                .findByPetOrdenadasPorRelevancia(PET_ID))
+        when(animalHealthConditionRepository
+                .findByAnimalOrdenadasPorRelevancia(ANIMAL_ID))
                 .thenReturn(List.of());
     }
 
@@ -118,7 +118,7 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("os dados do tutor e a data de geracao")
         void dadosDoTutor() {
-            comUmPet(PetTutorRole.HOLDER);
+            comUmAnimal(PetTutorRole.HOLDER);
 
             var export = exportService.exportarDoAutenticado();
 
@@ -132,7 +132,7 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("os consentimentos, com a versao aceita")
         void consentimentos() {
-            comUmPet(PetTutorRole.HOLDER);
+            comUmAnimal(PetTutorRole.HOLDER);
             when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
                     .thenReturn(List.of(ConsentRecord.builder()
                             .owner(ulysses())
@@ -152,33 +152,33 @@ class OwnerExportServiceImplTest {
 
         /**
          * O papel importa: desde a V15 o titular do export pode ser apenas leitor de um
-         * pet, e um documento que nao diz isso sugere posse que ele nao tem.
+         * animal, e um documento que nao diz isso sugere posse que ele nao tem.
          */
         @Test
-        @DisplayName("o papel do titular em cada pet")
-        void oPapelEmCadaPet() {
-            comUmPet(PetTutorRole.VIEWER);
+        @DisplayName("o papel do titular em cada animal")
+        void oPapelEmCadaAnimal() {
+            comUmAnimal(PetTutorRole.VIEWER);
 
             var export = exportService.exportarDoAutenticado();
 
-            assertThat(export.pets()).singleElement()
+            assertThat(export.animals()).singleElement()
                     .satisfies(p -> assertThat(p.meuPapel()).isEqualTo(PetTutorRole.VIEWER));
         }
 
         /**
-         * Pet compartilhado entra: o titular tem acesso legitimo a ele, e omiti-lo daria
+         * Animal compartilhado entra: o titular tem acesso legitimo a ele, e omiti-lo daria
          * um export que contradiz o que o app mostra.
          */
         @Test
-        @DisplayName("pet compartilhado entra, com os co-tutores listados")
-        void petCompartilhadoEntra() {
-            comUmPet(PetTutorRole.EDITOR);
-            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+        @DisplayName("animal compartilhado entra, com os co-tutores listados")
+        void animalCompartilhadoEntra() {
+            comUmAnimal(PetTutorRole.EDITOR);
+            when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
                     .thenReturn(List.of(vinculo(maria(), PetTutorRole.HOLDER)));
 
             var export = exportService.exportarDoAutenticado();
 
-            assertThat(export.pets()).singleElement().satisfies(p -> {
+            assertThat(export.animals()).singleElement().satisfies(p -> {
                 assertThat(p.meuPapel()).isEqualTo(PetTutorRole.EDITOR);
                 assertThat(p.coTutores()).singleElement().satisfies(c -> {
                     assertThat(c.name()).isEqualTo("Maria");
@@ -195,11 +195,11 @@ class OwnerExportServiceImplTest {
         @DisplayName("as correcoes de vacina, com quem corrigiu")
         void correcoesDeVacina() {
             var vacina = Vaccine.builder()
-                    .vaccineId(UUID.randomUUID()).pet(rex()).vaccineName("Antirrabica")
+                    .vaccineId(UUID.randomUUID()).animal(rex()).vaccineName("Antirrabica")
                     .applicationDate(LocalDate.now().minusMonths(2)).build();
 
-            comUmPet(PetTutorRole.HOLDER);
-            when(vaccineRepository.findByPetPetIdOrderByApplicationDateDesc(PET_ID))
+            comUmAnimal(PetTutorRole.HOLDER);
+            when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(vacina));
             when(vaccineCorrectionRepository
                     .findByVaccineVaccineIdOrderByCorrectedAtDesc(vacina.getVaccineId()))
@@ -212,7 +212,7 @@ class OwnerExportServiceImplTest {
 
             var export = exportService.exportarDoAutenticado();
 
-            assertThat(export.pets().get(0).vacinas()).singleElement()
+            assertThat(export.animals().get(0).vacinas()).singleElement()
                     .satisfies(v -> assertThat(v.correcoes()).singleElement().satisfies(c -> {
                         assertThat(c.corrigidoPor()).isEqualTo("Dra. Marina");
                         assertThat(c.valorAnterior()).isEqualTo("Antirabica");
@@ -225,18 +225,18 @@ class OwnerExportServiceImplTest {
         void anexoComCaminho() {
             var anexoId = UUID.randomUUID();
 
-            comUmPet(PetTutorRole.HOLDER);
-            when(attachmentRepository.findByPetPetIdOrderByCreationDateDesc(PET_ID))
+            comUmAnimal(PetTutorRole.HOLDER);
+            when(attachmentRepository.findByAnimalAnimalIdOrderByCreationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(Attachment.builder()
-                            .attachmentId(anexoId).pet(rex())
+                            .attachmentId(anexoId).animal(rex())
                             .originalFilename("laudo.pdf").contentType("application/pdf")
                             .sizeBytes(1024L).checksumSha256("a".repeat(64))
-                            .storageKey("pets/" + PET_ID + "/chave-secreta")
+                            .storageKey("animals/" + ANIMAL_ID + "/chave-secreta")
                             .creationDate(LocalDateTime.now()).build()));
 
             var export = exportService.exportarDoAutenticado();
 
-            assertThat(export.pets().get(0).anexos()).singleElement().satisfies(a -> {
+            assertThat(export.animals().get(0).anexos()).singleElement().satisfies(a -> {
                 assertThat(a.downloadPath()).isEqualTo("/attachments/" + anexoId + "/content");
                 assertThat(a.checksumSha256()).hasSize(64);
             });
@@ -250,7 +250,7 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("o documento declara as proprias limitacoes")
         void declaraLimitacoes() {
-            comUmPet(PetTutorRole.HOLDER);
+            comUmAnimal(PetTutorRole.HOLDER);
 
             var export = exportService.exportarDoAutenticado();
 
@@ -279,7 +279,7 @@ class OwnerExportServiceImplTest {
 
         /**
          * O e-mail do co-tutor e dado pessoal de outra pessoa, e a portabilidade e dos
-         * dados do titular. O nome basta para ele saber com quem divide o pet.
+         * dados do titular. O nome basta para ele saber com quem divide o animal.
          */
         @Test
         @DisplayName("o e-mail do co-tutor nao aparece")
@@ -293,13 +293,13 @@ class OwnerExportServiceImplTest {
         @Test
         @DisplayName("nenhum e-mail de terceiro chega ao documento montado")
         void nenhumEmailDeTerceiroNoDocumento() {
-            comUmPet(PetTutorRole.EDITOR);
-            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+            comUmAnimal(PetTutorRole.EDITOR);
+            when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
                     .thenReturn(List.of(vinculo(maria(), PetTutorRole.HOLDER)));
 
             var export = exportService.exportarDoAutenticado();
 
-            assertThat(export.pets().get(0).coTutores())
+            assertThat(export.animals().get(0).coTutores())
                     .allSatisfy(c -> assertThat(c.name()).doesNotContain("@"));
         }
 
@@ -339,8 +339,8 @@ class OwnerExportServiceImplTest {
     class Borda {
 
         @Test
-        @DisplayName("tutor sem pet exporta o documento com a lista vazia")
-        void semPetExportaVazio() {
+        @DisplayName("tutor sem animal exporta o documento com a lista vazia")
+        void semAnimalExportaVazio() {
             when(currentOwnerProvider.require()).thenReturn(ulysses());
             when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of());
             when(consentRecordRepository.findByOwnerOwnerIdOrderByAcceptedAtDesc(OWNER_ID))
@@ -348,24 +348,24 @@ class OwnerExportServiceImplTest {
 
             var export = exportService.exportarDoAutenticado();
 
-            assertThat(export.pets()).isEmpty();
+            assertThat(export.animals()).isEmpty();
             assertThat(export.tutor().name()).isEqualTo("Ulysses");
             // as limitacoes continuam, porque descrevem o formato e nao o conteudo
             assertThat(export.limitacoes()).isNotEmpty();
         }
 
         /**
-         * O log cresce sem teto: uma clinica que acompanha pet cronico gera entrada toda
+         * O log cresce sem teto: uma clinica que acompanha animal cronico gera entrada toda
          * semana por anos. O corte esta declarado nas limitacoes - o que nao pode e
          * truncar em silencio.
          */
         @Test
         @DisplayName("o log de acesso vem truncado, e o corte esta declarado")
         void logDeAcessoVemTruncado() {
-            comUmPet(PetTutorRole.HOLDER);
-            when(sensitiveAccessLogRepository.findByPetPetIdOrderByAccessedAtDesc(eq(PET_ID), any()))
+            comUmAnimal(PetTutorRole.HOLDER);
+            when(sensitiveAccessLogRepository.findByAnimalAnimalIdOrderByAccessedAtDesc(eq(ANIMAL_ID), any()))
                     .thenReturn(new PageImpl<>(List.of(SensitiveAccessLog.builder()
-                            .pet(rex())
+                            .animal(rex())
                             .actorType(AccessActorType.VET)
                             .actorName("Dra. Marina")
                             .clinicName("Clinica Bicho Feliz")
@@ -376,7 +376,7 @@ class OwnerExportServiceImplTest {
 
             var export = exportService.exportarDoAutenticado();
 
-            assertThat(export.pets().get(0).acessosDeTerceiros()).singleElement()
+            assertThat(export.animals().get(0).acessosDeTerceiros()).singleElement()
                     .satisfies(a -> assertThat(a.actorName()).isEqualTo("Dra. Marina"));
             assertThat(String.join(" ", export.limitacoes())).contains("truncado");
         }
@@ -386,10 +386,10 @@ class OwnerExportServiceImplTest {
         @DisplayName("correcao de conta que ja saiu nao quebra o export")
         void correcaoSemAutorNaoQuebra() {
             var vacina = Vaccine.builder()
-                    .vaccineId(UUID.randomUUID()).pet(rex()).vaccineName("V10").build();
+                    .vaccineId(UUID.randomUUID()).animal(rex()).vaccineName("V10").build();
 
-            comUmPet(PetTutorRole.HOLDER);
-            when(vaccineRepository.findByPetPetIdOrderByApplicationDateDesc(PET_ID))
+            comUmAnimal(PetTutorRole.HOLDER);
+            when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(vacina));
             when(vaccineCorrectionRepository
                     .findByVaccineVaccineIdOrderByCorrectedAtDesc(vacina.getVaccineId()))
@@ -401,7 +401,7 @@ class OwnerExportServiceImplTest {
 
             var export = exportService.exportarDoAutenticado();
 
-            assertThat(export.pets().get(0).vacinas().get(0).correcoes())
+            assertThat(export.animals().get(0).vacinas().get(0).correcoes())
                     .singleElement()
                     .satisfies(c -> assertThat(c.corrigidoPor()).isNull());
         }

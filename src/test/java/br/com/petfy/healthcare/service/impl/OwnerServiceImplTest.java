@@ -4,7 +4,7 @@ import br.com.petfy.healthcare.domain.dto.OwnerRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OwnerResponseDTO;
 import br.com.petfy.healthcare.domain.dto.PasswordChangeRequestDTO;
 import br.com.petfy.healthcare.PetTutores;
-import br.com.petfy.healthcare.domain.entity.Pet;
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.PetTutor;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
@@ -18,8 +18,8 @@ import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.OwnerRepository;
 import br.com.petfy.healthcare.domain.repository.PasswordResetTokenRepository;
 import br.com.petfy.healthcare.domain.repository.PetClinicAccessRepository;
-import br.com.petfy.healthcare.domain.repository.PetRepository;
-import br.com.petfy.healthcare.domain.repository.PetShareRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalShareRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.domain.repository.VetRepository;
@@ -27,7 +27,7 @@ import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentOwnerProvider;
 import br.com.petfy.healthcare.service.ConsentService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
-import br.com.petfy.healthcare.service.PetPurger;
+import br.com.petfy.healthcare.service.AnimalPurger;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -80,7 +80,7 @@ class OwnerServiceImplTest {
     private PetTutorRepository petTutorRepository;
 
     @Mock
-    private PetPurger petPurger;
+    private AnimalPurger animalPurger;
 
     @Mock
     private ConsentService consentService;
@@ -98,7 +98,7 @@ class OwnerServiceImplTest {
     private OwnerServiceImpl ownerService;
 
     private static final UUID OWNER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    private static final UUID PET_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
     private static final UUID OUTRO_OWNER_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
     private static final String HASH = "$2a$10$hashDeMentiraParaOTeste";
 
@@ -342,38 +342,38 @@ class OwnerServiceImplTest {
 
         /**
          * A ordem importa e nao e detalhe de implementacao: as correcoes apontam
-         * para vacina e historico, esses apontam para pet, pet aponta para owner,
+         * para vacina e historico, esses apontam para animal, animal aponta para owner,
          * e os tokens apontam para owner tambem. Apagar fora da ordem faz o banco
          * recusar por violacao de chave estrangeira. Este teste com mock nao pega
          * isso sozinho - quem pega e o OwnerDeletionContainerTest, contra Postgres
          * de verdade - mas garante que a sequencia nao seja alterada por engano.
          */
         @Test
-        @DisplayName("pet sem outro tutor morre junto, na ordem netas -> filhas -> pets")
-        void petSemOutroTutorMorreJunto() {
+        @DisplayName("animal sem outro tutor morre junto, na ordem netas -> filhas -> animals")
+        void animalSemOutroTutorMorreJunto() {
             var autenticado = existingOwner();
             when(currentOwnerProvider.require()).thenReturn(autenticado);
 
-            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
             var vinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
-            vinculo.setPet(pet);
+            vinculo.setAnimal(animal);
 
             when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(vinculo));
-            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(1L);
+            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(1L);
 
             ownerService.deleteCurrentOwner();
 
-            // A sequencia de deletes do pet saiu daqui para o PetPurger, porque ela
-            // era identica a do DELETE /pets/{id} e as duas divergiram. O que este
+            // A sequencia de deletes do animal saiu daqui para o AnimalPurger, porque ela
+            // era identica a do DELETE /animals/{id} e as duas divergiram. O que este
             // teste guarda e a posicao do purge no fluxo da conta; a ordem interna
-            // dele esta no PetPurgerTest, e a recusa do banco no
-            // PetDeletionContainerTest.
-            var ordem = inOrder(petTutorRepository, petPurger,
+            // dele esta no AnimalPurgerTest, e a recusa do banco no
+            // AnimalDeletionContainerTest.
+            var ordem = inOrder(petTutorRepository, animalPurger,
                     passwordResetTokenRepository, emailVerificationTokenRepository, ownerRepository);
 
-            // os vinculos saem primeiro: seguram pet e owner ao mesmo tempo
+            // os vinculos saem primeiro: seguram animal e owner ao mesmo tempo
             ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
-            ordem.verify(petPurger).purge(List.of(PET_ID));
+            ordem.verify(animalPurger).purge(List.of(ANIMAL_ID));
             ordem.verify(passwordResetTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(emailVerificationTokenRepository).deleteByOwnerOwnerId(OWNER_ID);
             ordem.verify(ownerRepository).delete(autenticado);
@@ -381,62 +381,62 @@ class OwnerServiceImplTest {
 
         /**
          * O pedido de exclusao de um tutor nao autoriza destruir o historico de
-         * saude de um pet que continua tendo quem responda por ele.
+         * saude de um animal que continua tendo quem responda por ele.
          */
         @Test
-        @DisplayName("pet com outro tutor sobrevive: nada dele e apagado")
-        void petComOutroTutorSobrevive() {
+        @DisplayName("animal com outro tutor sobrevive: nada dele e apagado")
+        void animalComOutroTutorSobrevive() {
             var autenticado = existingOwner();
             when(currentOwnerProvider.require()).thenReturn(autenticado);
 
-            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
             var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.EDITOR);
-            meuVinculo.setPet(pet);
+            meuVinculo.setAnimal(animal);
 
             when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(2L);
+            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
 
             ownerService.deleteCurrentOwner();
 
             verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
-            // o purge roda com lista vazia: nenhum pet morre, e o convite de
-            // terceiro para este pet nao e desta conta - segue valendo para quem ficou
-            verify(petPurger).purge(List.of());
+            // o purge roda com lista vazia: nenhum animal morre, e o convite de
+            // terceiro para este animal nao e desta conta - segue valendo para quem ficou
+            verify(animalPurger).purge(List.of());
             verify(ownerRepository).delete(autenticado);
         }
 
         /**
-         * Convite aponta para o pet, para quem convidou e para quem aceitou. Como o
+         * Convite aponta para o animal, para quem convidou e para quem aceitou. Como o
          * schema nao tem ON DELETE CASCADE, cada uma dessas tres FKs segura um dos
          * deletes seguintes - e nenhuma delas aparece em teste de mock por si. O que
          * este caso trava e a ordem; a recusa de verdade esta no
          * OwnerDeletionContainerTest.
          */
         @Test
-        @DisplayName("os convites da conta saem antes dos vinculos e dos pets")
-        void convitesSaemAntesDosVinculosEDosPets() {
+        @DisplayName("os convites da conta saem antes dos vinculos e dos animals")
+        void convitesSaemAntesDosVinculosEDosAnimals() {
             var autenticado = existingOwner();
             when(currentOwnerProvider.require()).thenReturn(autenticado);
 
-            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
             var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
-            meuVinculo.setPet(pet);
+            meuVinculo.setAnimal(animal);
 
             when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(1L);
+            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(1L);
 
             ownerService.deleteCurrentOwner();
 
-            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, petPurger, ownerRepository);
+            var ordem = inOrder(petTutorInviteRepository, petTutorRepository, animalPurger, ownerRepository);
             ordem.verify(petTutorInviteRepository).deleteByCreatedByOwnerId(OWNER_ID);
             ordem.verify(petTutorInviteRepository).deleteByAcceptedByOwnerId(OWNER_ID);
             ordem.verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
-            ordem.verify(petPurger).purge(List.of(PET_ID));
+            ordem.verify(animalPurger).purge(List.of(ANIMAL_ID));
             ordem.verify(ownerRepository).delete(autenticado);
         }
 
         /**
-         * O indice do banco exige exatamente um HOLDER por pet, entao o titular
+         * O indice do banco exige exatamente um HOLDER por animal, entao o titular
          * nao pode simplesmente sumir: alguem herda.
          */
         @Test
@@ -445,24 +445,24 @@ class OwnerServiceImplTest {
             var autenticado = existingOwner();
             when(currentOwnerProvider.require()).thenReturn(autenticado);
 
-            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
 
             var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
-            meuVinculo.setPet(pet);
+            meuVinculo.setAnimal(animal);
             meuVinculo.setCreationDate(LocalDateTime.of(2026, 1, 1, 10, 0));
 
             var maria = Owner.builder().ownerId(OUTRO_OWNER_ID).name("Maria").build();
             var vinculoDaMaria = PetTutores.vinculo(maria, PetTutorRole.VIEWER);
-            vinculoDaMaria.setPet(pet);
+            vinculoDaMaria.setAnimal(animal);
             vinculoDaMaria.setCreationDate(LocalDateTime.of(2026, 2, 1, 10, 0));
 
             when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(2L);
+            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
             // devolve so quem fica: a consulta acontece depois de o vinculo de quem
             // sai ter sido apagado e descarregado, entao o banco nao teria como
             // trazer o proprio. Stubar os dois aqui foi o que deixou passar a
             // violacao do indice unico - ver OwnerDeletionContainerTest
-            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+            when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
                     .thenReturn(List.of(vinculoDaMaria));
 
             ownerService.deleteCurrentOwner();
@@ -475,7 +475,7 @@ class OwnerServiceImplTest {
 
         /**
          * A ordem e a regra, nao detalhe de implementacao: o indice unico parcial da
-         * V15 exige exatamente um HOLDER por pet, entao promover o sucessor antes de
+         * V15 exige exatamente um HOLDER por animal, entao promover o sucessor antes de
          * o vinculo de quem sai ter saido deixa dois na tabela e o Postgres recusa o
          * update - derrubando a exclusao inteira.
          */
@@ -485,20 +485,20 @@ class OwnerServiceImplTest {
             var autenticado = existingOwner();
             when(currentOwnerProvider.require()).thenReturn(autenticado);
 
-            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
 
             var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.HOLDER);
-            meuVinculo.setPet(pet);
+            meuVinculo.setAnimal(animal);
             meuVinculo.setCreationDate(LocalDateTime.of(2026, 1, 1, 10, 0));
 
             var maria = Owner.builder().ownerId(OUTRO_OWNER_ID).name("Maria").build();
             var vinculoDaMaria = PetTutores.vinculo(maria, PetTutorRole.VIEWER);
-            vinculoDaMaria.setPet(pet);
+            vinculoDaMaria.setAnimal(animal);
             vinculoDaMaria.setCreationDate(LocalDateTime.of(2026, 2, 1, 10, 0));
 
             when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(2L);
-            when(petTutorRepository.findByPetPetIdOrderByRoleAscCreationDateAsc(PET_ID))
+            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
+            when(petTutorRepository.findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(ANIMAL_ID))
                     .thenReturn(List.of(vinculoDaMaria));
 
             ownerService.deleteCurrentOwner();
@@ -516,18 +516,18 @@ class OwnerServiceImplTest {
             var autenticado = existingOwner();
             when(currentOwnerProvider.require()).thenReturn(autenticado);
 
-            var pet = Pet.builder().petId(PET_ID).name("Rex").build();
+            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
             var meuVinculo = PetTutores.vinculo(autenticado, PetTutorRole.EDITOR);
-            meuVinculo.setPet(pet);
+            meuVinculo.setAnimal(animal);
 
             when(petTutorRepository.findByOwnerOwnerId(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(petTutorRepository.countByPetPetId(PET_ID)).thenReturn(2L);
+            when(petTutorRepository.countByAnimalAnimalId(ANIMAL_ID)).thenReturn(2L);
 
             ownerService.deleteCurrentOwner();
 
             verify(petTutorRepository).deleteByOwnerOwnerId(OWNER_ID);
             verify(petTutorRepository, never()).save(any(PetTutor.class));
-            verify(petTutorRepository, never()).findByPetPetIdOrderByRoleAscCreationDateAsc(any());
+            verify(petTutorRepository, never()).findByAnimalAnimalIdOrderByRoleAscCreationDateAsc(any());
         }
     }
 }
