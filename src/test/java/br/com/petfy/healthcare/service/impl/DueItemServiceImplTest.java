@@ -8,6 +8,7 @@ import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.CareInstruction;
 import br.com.petfy.healthcare.domain.entity.CareInstructionFulfillment;
 import br.com.petfy.healthcare.domain.entity.DueItemKind;
+import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.domain.entity.PetTutorInvite;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
 import br.com.petfy.healthcare.domain.entity.Person;
@@ -39,6 +40,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -63,6 +65,7 @@ class DueItemServiceImplTest {
     @Mock private CareInstructionFulfillmentRepository fulfillmentRepository;
     @Mock private PetTutorInviteRepository petTutorInviteRepository;
     @Mock private ConsentService consentService;
+    @Mock private br.com.petfy.healthcare.domain.repository.DueItemSilenceRepository silenceRepository;
 
     @InjectMocks
     private DueItemServiceImpl service;
@@ -123,7 +126,7 @@ class DueItemServiceImplTest {
                             .nextDoseDate(LocalDate.now().minusDays(5))
                             .build()));
 
-            List<DueItemResponseDTO> itens = service.doAutenticado(30);
+            List<DueItemResponseDTO> itens = service.doAutenticado(30, false);
 
             assertThat(itens).hasSize(1);
             assertThat(itens.get(0).getKind()).isEqualTo(DueItemKind.DOSE_DE_VACINA);
@@ -145,7 +148,7 @@ class DueItemServiceImplTest {
                             .nextDoseDate(LocalDate.now().plusDays(90))
                             .build()));
 
-            assertThat(service.doAutenticado(30)).isEmpty();
+            assertThat(service.doAutenticado(30, false)).isEmpty();
         }
 
         @Test
@@ -159,7 +162,7 @@ class DueItemServiceImplTest {
                             .nextDoseDate(LocalDate.now())
                             .build()));
 
-            List<DueItemResponseDTO> itens = service.doAutenticado(30);
+            List<DueItemResponseDTO> itens = service.doAutenticado(30, false);
 
             assertThat(itens).extracting(DueItemResponseDTO::getKind)
                     .containsExactly(DueItemKind.ANTIPARASITARIO);
@@ -180,7 +183,7 @@ class DueItemServiceImplTest {
             when(careInstructionRepository.findVigentesNosAnimais(anyList(), any()))
                     .thenReturn(List.of(instrucao(1, comecou)));
 
-            List<DueItemResponseDTO> itens = service.doAutenticado(30);
+            List<DueItemResponseDTO> itens = service.doAutenticado(30, false);
 
             assertThat(itens).hasSize(1);
             assertThat(itens.get(0).getKind()).isEqualTo(DueItemKind.ORIENTACAO);
@@ -209,7 +212,7 @@ class DueItemServiceImplTest {
                             .recordedAt(LocalDateTime.now())
                             .build()));
 
-            assertThat(service.doAutenticado(30)).isEmpty();
+            assertThat(service.doAutenticado(30, false)).isEmpty();
         }
 
         /**
@@ -236,7 +239,7 @@ class DueItemServiceImplTest {
                             .recordedAt(LocalDateTime.now().minusDays(1))
                             .build()));
 
-            List<DueItemResponseDTO> itens = service.doAutenticado(30);
+            List<DueItemResponseDTO> itens = service.doAutenticado(30, false);
 
             assertThat(itens).hasSize(1);
             assertThat(itens.get(0).getDueOn()).isEqualTo(LocalDate.now());
@@ -259,7 +262,7 @@ class DueItemServiceImplTest {
             when(petTutorInviteRepository.findByAnimalAnimalIdOrderByCreationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(convite(pessoa())));
 
-            List<DueItemResponseDTO> itens = service.doAutenticado(30);
+            List<DueItemResponseDTO> itens = service.doAutenticado(30, false);
 
             assertThat(itens).extracting(DueItemResponseDTO::getKind)
                     .containsExactly(DueItemKind.CONVITE_PENDENTE);
@@ -276,7 +279,7 @@ class DueItemServiceImplTest {
             when(petTutorInviteRepository.findByAnimalAnimalIdOrderByCreationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(convite(outro)));
 
-            assertThat(service.doAutenticado(30)).isEmpty();
+            assertThat(service.doAutenticado(30, false)).isEmpty();
         }
 
         @Test
@@ -288,7 +291,7 @@ class DueItemServiceImplTest {
             when(petTutorInviteRepository.findByAnimalAnimalIdOrderByCreationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of(aceito));
 
-            assertThat(service.doAutenticado(30)).isEmpty();
+            assertThat(service.doAutenticado(30, false)).isEmpty();
         }
 
         private PetTutorInvite convite(Person criadoPor) {
@@ -327,7 +330,7 @@ class DueItemServiceImplTest {
                             .nextDoseDate(LocalDate.now().minusDays(30))
                             .build()));
 
-            List<DueItemResponseDTO> itens = service.doAutenticado(30);
+            List<DueItemResponseDTO> itens = service.doAutenticado(30, false);
 
             assertThat(itens).extracting(DueItemResponseDTO::getKind)
                     .containsExactly(DueItemKind.CONSENTIMENTO_PENDENTE, DueItemKind.DOSE_DE_VACINA);
@@ -339,7 +342,7 @@ class DueItemServiceImplTest {
         @Test
         @DisplayName("tudo aceito nao gera pendencia de consentimento")
         void tudoAceitoNaoGeraPendencia() {
-            assertThat(service.doAutenticado(30)).isEmpty();
+            assertThat(service.doAutenticado(30, false)).isEmpty();
         }
     }
 
@@ -361,7 +364,7 @@ class DueItemServiceImplTest {
                             .animal(animal()).vaccineName("Antes")
                             .nextDoseDate(LocalDate.now().minusDays(10)).build()));
 
-            assertThat(service.doAutenticado(30)).extracting(DueItemResponseDTO::getDescription)
+            assertThat(service.doAutenticado(30, false)).extracting(DueItemResponseDTO::getDescription)
                     .containsExactly("Antes", "Depois");
         }
 
@@ -375,12 +378,160 @@ class DueItemServiceImplTest {
         void semAnimalNaoConsulta() {
             when(animalRepository.findAlcancadosPor(eq(PERSON_ID), any())).thenReturn(List.of());
 
-            assertThat(service.doAutenticado(30)).isEmpty();
+            assertThat(service.doAutenticado(30, false)).isEmpty();
 
             org.mockito.Mockito.verify(careInstructionRepository, org.mockito.Mockito.never())
                     .findVigentesNosAnimais(anyList(), any());
             org.mockito.Mockito.verify(petTutorInviteRepository, org.mockito.Mockito.never())
                     .findByAnimalAnimalIdOrderByCreationDateDesc(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("silenciar")
+    class Silenciar {
+
+        private static final UUID VACINA_ID = UUID.fromString("77777777-7777-7777-7777-777777777777");
+
+        /** Uma dose vencendo, que e a pendencia mais simples de produzir. */
+        private void umaDoseVencendo() {
+            when(vaccineRepository.findAlcancadasPor(eq(PERSON_ID), any())).thenReturn(List.of(
+                    br.com.petfy.healthcare.domain.entity.Vaccine.builder()
+                            .vaccineId(VACINA_ID).animal(animal()).vaccineName("V10")
+                            .nextDoseDate(LocalDate.now().plusDays(5))
+                            .build()));
+        }
+
+        private br.com.petfy.healthcare.domain.entity.DueItemSilence silencioDaVacina() {
+            return br.com.petfy.healthcare.domain.entity.DueItemSilence.builder()
+                    .person(pessoa()).kind(DueItemKind.DOSE_DE_VACINA).sourceId(VACINA_ID)
+                    .silencedAt(java.time.LocalDateTime.now()).build();
+        }
+
+        @Test
+        @DisplayName("pendencia silenciada nao aparece no feed default")
+        void silenciadaNaoApareceNoFeed() {
+            umaDoseVencendo();
+            when(silenceRepository.findByPersonPersonId(PERSON_ID))
+                    .thenReturn(List.of(silencioDaVacina()));
+
+            assertThat(service.doAutenticado(30, false)).isEmpty();
+        }
+
+        /**
+         * Sem esta leitura silenciar seria <b>irreversivel pela tela</b>: a acao mora na
+         * pendencia (DESIGN 5.3), e uma pendencia que desapareceu de todo lugar nao tem onde
+         * oferecer "voltar a cobrar".
+         */
+        @Test
+        @DisplayName("com includeSilenced ela aparece marcada, para poder voltar a cobrar")
+        void comIncludeSilencedApareceMarcada() {
+            umaDoseVencendo();
+            when(silenceRepository.findByPersonPersonId(PERSON_ID))
+                    .thenReturn(List.of(silencioDaVacina()));
+
+            assertThat(service.doAutenticado(30, true)).singleElement()
+                    .satisfies(item -> {
+                        assertThat(item.getSourceId()).isEqualTo(VACINA_ID);
+                        assertThat(item.isSilenced()).isTrue();
+                    });
+        }
+
+        @Test
+        @DisplayName("silenciar grava o silencio da pessoa que pediu")
+        void silenciarGravaOSilencio() {
+            umaDoseVencendo();
+            when(silenceRepository.findByPersonPersonId(PERSON_ID)).thenReturn(List.of());
+            when(silenceRepository.findByPersonPersonIdAndKindAndSourceId(
+                    PERSON_ID, DueItemKind.DOSE_DE_VACINA, VACINA_ID)).thenReturn(java.util.Optional.empty());
+
+            service.silenciar(DueItemKind.DOSE_DE_VACINA, VACINA_ID);
+
+            var captor = org.mockito.ArgumentCaptor.forClass(
+                    br.com.petfy.healthcare.domain.entity.DueItemSilence.class);
+            org.mockito.Mockito.verify(silenceRepository).save(captor.capture());
+            assertThat(captor.getValue().getPerson().getPersonId()).isEqualTo(PERSON_ID);
+            assertThat(captor.getValue().getSourceId()).isEqualTo(VACINA_ID);
+        }
+
+        /** Idempotente: o cliente que reenvia a requisicao nao merece um erro. */
+        @Test
+        @DisplayName("silenciar duas vezes nao grava de novo nem falha")
+        void silenciarDuasVezesEIdempotente() {
+            umaDoseVencendo();
+            when(silenceRepository.findByPersonPersonId(PERSON_ID))
+                    .thenReturn(List.of(silencioDaVacina()));
+            when(silenceRepository.findByPersonPersonIdAndKindAndSourceId(
+                    PERSON_ID, DueItemKind.DOSE_DE_VACINA, VACINA_ID))
+                    .thenReturn(java.util.Optional.of(silencioDaVacina()));
+
+            service.silenciar(DueItemKind.DOSE_DE_VACINA, VACINA_ID);
+
+            org.mockito.Mockito.verify(silenceRepository, org.mockito.Mockito.never()).save(any());
+        }
+
+        /**
+         * <b>So se silencia o que esta sendo cobrado de voce.</b> A pendencia e derivada,
+         * entao nao ha chave estrangeira que recuse um par de tipo e id inventado - sem esta
+         * conferencia a tabela acumularia silencio de pendencia que nunca existiu.
+         */
+        @Test
+        @DisplayName("nao deve silenciar pendencia que nao esta na sua lista")
+        void naoSilenciaOQueNaoEstaNaLista() {
+            when(silenceRepository.findByPersonPersonId(PERSON_ID)).thenReturn(List.of());
+
+            assertThatThrownBy(() -> service.silenciar(DueItemKind.DOSE_DE_VACINA, UUID.randomUUID()))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasFieldOrPropertyWithValue("httpStatus", org.springframework.http.HttpStatus.NOT_FOUND);
+
+            org.mockito.Mockito.verify(silenceRepository, org.mockito.Mockito.never()).save(any());
+        }
+
+        /**
+         * O 4.2 diz que o consentimento <b>bloqueia o resto do produto</b>. Silencia-lo
+         * esconderia o bloqueio, e o usuario descobriria ao bater nele - o cenario que o
+         * documento descreve como o que nao pode acontecer.
+         */
+        @Test
+        @DisplayName("consentimento pendente nao pode ser silenciado")
+        void consentimentoNaoSeSilencia() {
+            assertThatThrownBy(() -> service.silenciar(DueItemKind.CONSENTIMENTO_PENDENTE, VACINA_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .hasFieldOrPropertyWithValue("httpStatus", org.springframework.http.HttpStatus.CONFLICT);
+
+            org.mockito.Mockito.verify(silenceRepository, org.mockito.Mockito.never()).save(any());
+        }
+
+        /**
+         * Voltar a cobrar nao confere se a pendencia existe: se o registro de origem saiu, o
+         * silencio dele e lixo e apagar e certo de qualquer forma. Exigir que exista deixaria
+         * a pessoa sem como limpar o que silenciou de algo que nao esta mais la.
+         */
+        @Test
+        @DisplayName("voltar a cobrar apaga o silencio, e nao exige que a pendencia exista")
+        void voltarACobrarApagaOSilencio() {
+            var silencio = silencioDaVacina();
+            when(silenceRepository.findByPersonPersonIdAndKindAndSourceId(
+                    PERSON_ID, DueItemKind.DOSE_DE_VACINA, VACINA_ID))
+                    .thenReturn(java.util.Optional.of(silencio));
+
+            service.voltarACobrar(DueItemKind.DOSE_DE_VACINA, VACINA_ID);
+
+            org.mockito.Mockito.verify(silenceRepository).delete(silencio);
+            org.mockito.Mockito.verify(vaccineRepository, org.mockito.Mockito.never())
+                    .findAlcancadasPor(any(), any());
+        }
+
+        @Test
+        @DisplayName("voltar a cobrar o que nao estava silenciado nao falha")
+        void voltarACobrarSemSilencioNaoFalha() {
+            when(silenceRepository.findByPersonPersonIdAndKindAndSourceId(
+                    PERSON_ID, DueItemKind.DOSE_DE_VACINA, VACINA_ID))
+                    .thenReturn(java.util.Optional.empty());
+
+            service.voltarACobrar(DueItemKind.DOSE_DE_VACINA, VACINA_ID);
+
+            org.mockito.Mockito.verify(silenceRepository, org.mockito.Mockito.never()).delete(any());
         }
     }
 

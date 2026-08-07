@@ -15,6 +15,7 @@ import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.ConsentRecordRepository;
+import br.com.petfy.healthcare.domain.repository.DueItemSilenceRepository;
 import br.com.petfy.healthcare.domain.repository.EmailVerificationTokenRepository;
 import br.com.petfy.healthcare.domain.repository.MembershipRepository;
 import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
@@ -68,6 +69,7 @@ public class PersonServiceImpl implements PersonService {
     private final AnimalPurger animalPurger;
     private final ConsentService consentService;
     private final ConsentRecordRepository consentRecordRepository;
+    private final DueItemSilenceRepository dueItemSilenceRepository;
     private final AttachmentRepository attachmentRepository;
 
     @Override
@@ -291,6 +293,12 @@ public class PersonServiceImpl implements PersonService {
         // Tokens da conta
         passwordResetTokenRepository.deleteByPersonPersonId(personId);
         emailVerificationTokenRepository.deleteByPersonPersonId(personId);
+
+        // O silencio de pendencia e da pessoa e sai com ela. Nao ha guarda de schema para
+        // FK que aponta para persons - existe para animals, no AnimalPurgerCoverageContainerTest
+        // -, entao esquecer esta linha faria DELETE /persons/me responder 500 para quem
+        // tivesse silenciado qualquer pendencia. Ha teste para o caso.
+        dueItemSilenceRepository.deleteByPersonPersonId(personId);
 
         // O registro de consentimento sai junto. A evidencia do aceite - IP, user
         // agent, data - e dado pessoal do titular, e guardar prova de consentimento

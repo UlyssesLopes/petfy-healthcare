@@ -5,6 +5,8 @@ import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.AntiparasiticKind;
 import br.com.petfy.healthcare.domain.entity.ConsentDocument;
 import br.com.petfy.healthcare.domain.entity.ConsentRecord;
+import br.com.petfy.healthcare.domain.entity.DueItemKind;
+import br.com.petfy.healthcare.domain.entity.DueItemSilence;
 import br.com.petfy.healthcare.domain.entity.EmailVerificationToken;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
@@ -182,6 +184,7 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
         @Autowired private AnimalWeightHistoryRepository animalWeightHistoryRepository;
         @Autowired private AntiparasiticRepository antiparasiticRepository;
         @Autowired private ConsentRecordRepository consentRecordRepository;
+        @Autowired private DueItemSilenceRepository dueItemSilenceRepository;
 
         private Person maria;
         private Animal rex;
@@ -316,6 +319,34 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
             assertThat(personRepository.findById(person.getPersonId())).isEmpty();
             assertThat(consentRecordRepository
                     .findByPersonPersonIdOrderByAcceptedAtDesc(person.getPersonId())).isEmpty();
+        }
+
+        /**
+         * <b>Nao existe guarda de schema para FK que aponta para {@code persons}.</b>
+         *
+         * Ela existe para {@code animals}, no {@code AnimalPurgerCoverageContainerTest}, que
+         * le o {@code information_schema} e cobra tabela nova. Para pessoa a cobertura e
+         * comportamental, e este teste e a linha que falta: sem apagar o silencio antes da
+         * pessoa, {@code DELETE /persons/me} responderia 500 para qualquer um que tivesse
+         * silenciado uma pendencia - e o silencio e a funcionalidade que existe justamente
+         * para o produto nao ser desinstalado.
+         */
+        @Test
+        @DisplayName("conta que silenciou pendencia e apagada, e o silencio sai junto")
+        void contaComSilencioEApagada() {
+            dueItemSilenceRepository.saveAndFlush(DueItemSilence.builder()
+                    .person(person)
+                    .kind(DueItemKind.DOSE_DE_VACINA)
+                    .sourceId(UUID.randomUUID())
+                    .silencedAt(LocalDateTime.now())
+                    .build());
+
+            autenticar(person);
+
+            personService.deleteCurrentPerson();
+
+            assertThat(personRepository.findById(person.getPersonId())).isEmpty();
+            assertThat(dueItemSilenceRepository.findByPersonPersonId(person.getPersonId())).isEmpty();
         }
 
         /** Co-tutor sai: o animal nao muda de titular e continua de pe. */

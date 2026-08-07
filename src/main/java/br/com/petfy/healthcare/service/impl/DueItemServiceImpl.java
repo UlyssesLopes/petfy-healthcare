@@ -4,8 +4,13 @@ import br.com.petfy.healthcare.domain.dto.DueItemResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.CareInstruction;
 import br.com.petfy.healthcare.domain.entity.DueItemKind;
+import br.com.petfy.healthcare.domain.entity.DueItemSilence;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
+import br.com.petfy.healthcare.domain.repository.DueItemSilenceRepository;
+import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
+import org.springframework.http.HttpStatus;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionFulfillmentRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
@@ -23,7 +28,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Tudo que cobra acao de alguem, num lugar so.
@@ -56,10 +63,20 @@ public class DueItemServiceImpl implements DueItemService {
     private final CareInstructionFulfillmentRepository fulfillmentRepository;
     private final PetTutorInviteRepository petTutorInviteRepository;
     private final ConsentService consentService;
+    private final DueItemSilenceRepository silenceRepository;
+
+    /**
+     * A janela usada para conferir se a pendencia existe antes de silenciar.
+     *
+     * Larga de proposito, e diferente do default do feed: o item pode estar fora dos 30 dias
+     * e ainda assim ser algo que a pessoa quer calar de vespera - a dose do ano que vem, por
+     * exemplo, que ela nao quer ver toda vez que abre a lista com janela grande.
+     */
+    private static final int JANELA_DE_CONFERENCIA_EM_DIAS = 3650;
 
     @Override
     @Transactional(readOnly = true)
-    public List<DueItemResponseDTO> doAutenticado(int windowDays) {
+    public List<DueItemResponseDTO> doAutenticado(int windowDays, boolean includeSilenced) {
         Person person = currentPersonProvider.require();
         LocalDate hoje = LocalDate.now();
         LocalDate limite = hoje.plusDays(windowDays);
@@ -75,6 +92,16 @@ public class DueItemServiceImpl implements DueItemService {
         itens.addAll(convitesPendentes(person, alcancados));
         itens.addAll(consentimentoPendente());
 
+        // Uma consulta para o feed inteiro, e nao uma por item: perguntar "esta silenciada?"
+        // por pendencia seria N consultas na leitura que a area do tutor faz todo dia.
+        Set<String> silenciadas = silenciadasDe(person);
+
+        itens.forEach(item -> item.setSilenced(silenciadas.contains(chave(item.getKind(), item.getSourceId()))));
+
+        if (!includeSilenced) {
+            itens.removeIf(DueItemResponseDTO::isSilenced);
+        }
+
         // do mais atrasado ao menos urgente. O que nao tem data vai primeiro: e o
         // consentimento, que bloqueia o resto - deixa-lo no fim faria o usuario percorrer
         // a lista inteira para descobrir por que nada funciona
@@ -82,6 +109,94 @@ public class DueItemServiceImpl implements DueItemService {
                 Comparator.nullsFirst(Comparator.naturalOrder())));
 
         return itens;
+    }
+
+    /**
+     * <b>So se silencia o que esta sendo cobrado de voce.</b>
+     *
+     * A pendencia e derivada, entao nao ha o que validar por chave estrangeira: sem esta
+     * conferencia qualquer par de tipo e id gravaria uma linha, e a tabela acumularia
+     * silencio de pendencia que nunca existiu. A regra tambem e a mais fiel ao 5.3 - a acao
+     * mora <i>na</i> pendencia, e nao existe silenciar algo que nao esta na sua lista.
+     *
+     * A janela usada na conferencia e larga de proposito: o item pode estar fora dos 30 dias
+     * do feed default e ainda assim ser algo que a pessoa quer calar de vespera.
+     */
+    @Override
+    @Transactional
+    public void silenciar(DueItemKind kind, UUID sourceId) {
+        recusarConsentimento(kind);
+
+        Person person = currentPersonProvider.require();
+
+        boolean existe = doAutenticado(JANELA_DE_CONFERENCIA_EM_DIAS, true).stream()
+                .anyMatch(item -> item.getKind() == kind && sourceId.equals(item.getSourceId()));
+
+        if (!existe) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.DUE_ITEM_NOT_FOUND.getMessage(),
+                    ErrorMessageEnum.DUE_ITEM_NOT_FOUND.getCode(),
+                    HttpStatus.NOT_FOUND);
+        }
+
+        // idempotente: silenciar duas vezes e o mesmo que silenciar uma, e o indice unico no
+        // banco garante isso mesmo em duas requisicoes simultaneas
+        if (silenceRepository.findByPersonPersonIdAndKindAndSourceId(
+                person.getPersonId(), kind, sourceId).isPresent()) {
+            return;
+        }
+
+        silenceRepository.save(DueItemSilence.builder()
+                .person(person)
+                .kind(kind)
+                .sourceId(sourceId)
+                .silencedAt(LocalDateTime.now())
+                .build());
+    }
+
+    /**
+     * Voltar a cobrar nao confere se a pendencia existe.
+     *
+     * <b>E deliberado:</b> se ela deixou de existir, o silencio dela e lixo e apagar e certo
+     * de qualquer forma. Exigir que exista deixaria a pessoa sem como limpar o que silenciou
+     * de um registro que ja saiu.
+     */
+    @Override
+    @Transactional
+    public void voltarACobrar(DueItemKind kind, UUID sourceId) {
+        Person person = currentPersonProvider.require();
+
+        silenceRepository.findByPersonPersonIdAndKindAndSourceId(person.getPersonId(), kind, sourceId)
+                .ifPresent(silenceRepository::delete);
+    }
+
+    /**
+     * Consentimento nao se silencia.
+     *
+     * O 4.2 diz que ele <b>bloqueia o resto do produto</b>, e o servico o devolve sem data,
+     * cobrando agora. Silencia-lo esconderia o bloqueio, e o usuario descobriria ao bater
+     * nele - exatamente o cenario que o documento descreve como o que nao pode acontecer. E
+     * ele nao tem {@code sourceId}, entao nao havia nem o que gravar.
+     */
+    private void recusarConsentimento(DueItemKind kind) {
+        if (kind == DueItemKind.CONSENTIMENTO_PENDENTE) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.CONSENT_CANNOT_BE_SILENCED.getMessage(),
+                    ErrorMessageEnum.CONSENT_CANNOT_BE_SILENCED.getCode(),
+                    HttpStatus.CONFLICT);
+        }
+    }
+
+    private Set<String> silenciadasDe(Person person) {
+        return silenceRepository.findByPersonPersonId(person.getPersonId())
+                .stream()
+                .map(s -> chave(s.getKind(), s.getSourceId()))
+                .collect(Collectors.toSet());
+    }
+
+    /** Tipo mais fonte, que e o que identifica uma pendencia derivada. */
+    private String chave(DueItemKind kind, UUID sourceId) {
+        return kind + ":" + sourceId;
     }
 
     private List<DueItemResponseDTO> dosesDeVacina(Person person, LocalDate hoje, LocalDate limite) {
