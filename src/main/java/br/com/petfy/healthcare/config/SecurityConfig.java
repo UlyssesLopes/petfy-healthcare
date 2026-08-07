@@ -6,6 +6,7 @@ import br.com.petfy.healthcare.security.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -32,6 +33,12 @@ public class SecurityConfig {
                                                    ProfessionalAccessManager professionalAccessManager)
             throws Exception {
         http
+                // O CorsFilter entra aqui, e a posicao dele importa: ele roda antes
+                // do jwtAuthenticationFilter, entao o preflight (OPTIONS) e respondido
+                // e encerrado ali. Se chegasse ate a autorizacao, tomaria 401 - o
+                // navegador nunca manda credencial no preflight -, e o efeito seria a
+                // requisicao de verdade nem sair. As origens vem do CorsConfig, por perfil
+                .cors(Customizer.withDefaults())
                 // API stateless com token no header: nao ha cookie de sessao
                 // para um site terceiro reaproveitar, entao CSRF nao se aplica
                 .csrf(csrf -> csrf.disable())
