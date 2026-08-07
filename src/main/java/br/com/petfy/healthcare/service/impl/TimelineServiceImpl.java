@@ -94,6 +94,10 @@ public class TimelineServiceImpl implements TimelineService {
                 // zero fora do escopo: a contagem de correcoes diria que houve retificacao
                 // num evento cujo conteudo quem le nao alcanca
                 .correctionCount(alcanca ? entrada.getCorrectionCount() : 0)
+                // o peso anterior tambem some fora do escopo: quem nao alcanca PESO nao
+                // recebe o valor atual, e entregar o anterior daria a curva pela porta
+                // dos fundos
+                .previousWeight(alcanca ? entrada.getPreviousWeight() : null)
                 .healthData(entrada.isHealthData())
                 .build();
     }

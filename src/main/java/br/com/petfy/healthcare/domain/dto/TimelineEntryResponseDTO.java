@@ -73,6 +73,16 @@ public class TimelineEntryResponseDTO {
     private long correctionCount;
 
     /**
+     * O peso da pesagem anterior, para o cliente calcular a variacao.
+     *
+     * Nulo fora de pesagem, nulo na primeira pesagem do animal, e nulo fora do escopo. A
+     * curva inteira mora em {@code GET /animals/{id}/weights} - aqui vai so o suficiente
+     * para a entrada dizer se o peso subiu ou desceu, que e o que a secao 5.2 do DESIGN
+     * cobra do evento.
+     */
+    private Double previousWeight;
+
+    /**
      * Se quem le alcanca o conteudo deste evento.
      *
      * Falso nao significa que o evento nao existe: significa que ele existe e nao foi

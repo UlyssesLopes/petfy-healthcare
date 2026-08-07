@@ -330,6 +330,64 @@ class TimelineContainerTest extends PostgresContainerTest {
     }
 
     /**
+     * A pesagem carrega a anterior, e com isso a variacao (DESIGN 5.2).
+     *
+     * <b>Nulo na primeira pesagem, e nao zero.</b> Zero diria "nao variou", que e um fato
+     * diferente de "nao ha com o que comparar" - e a tela que mostrasse "0,0 kg" na
+     * primeira pesagem da vida do animal estaria mentindo.
+     */
+    @Test
+    @DisplayName("a pesagem carrega a anterior, e a primeira nao carrega nada")
+    void pesagemCarregaAAnterior() {
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).recordedBy(ulysses).weight(12.0)
+                .measuredAt(LocalDate.now().minusDays(30))
+                .creationDate(LocalDateTime.now()).build());
+
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).recordedBy(ulysses).weight(12.5)
+                .measuredAt(LocalDate.now().minusDays(10))
+                .creationDate(LocalDateTime.now()).build());
+
+        // o summary do peso sai de weight::text, e o Postgres imprime 12.0 como "12" -
+        // formatacao e do cliente, e e por isso que previousWeight vai como numero
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .extracting(TimelineEntry::getSummary, TimelineEntry::getPreviousWeight)
+                .containsExactly(
+                        // a mais recente primeiro: 12,5 tem 12,0 como anterior
+                        org.assertj.core.groups.Tuple.tuple("12.5", 12.0),
+                        // a primeira da vida do animal nao tem anterior
+                        org.assertj.core.groups.Tuple.tuple("12", null));
+    }
+
+    /**
+     * Duas pesagens no mesmo dia nao produzem variacao entre si.
+     *
+     * <b>E decisao, e nao limitacao esquecida:</b> variacao de peso e leitura de
+     * tendencia, e diferenca entre duas medidas da mesma tarde e ruido de balanca - a
+     * mesma logica que faz a linha do tempo ordenar por quando aconteceu e nao por quando
+     * foi digitado.
+     */
+    @Test
+    @DisplayName("duas pesagens no mesmo dia nao geram variacao entre si")
+    void pesagensDoMesmoDiaNaoGeramVariacao() {
+        var hoje = LocalDate.now();
+
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).recordedBy(ulysses).weight(12.0).measuredAt(hoje)
+                .creationDate(LocalDateTime.now().minusHours(3)).build());
+
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).recordedBy(ulysses).weight(12.4).measuredAt(hoje)
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .allSatisfy(entrada -> assertThat(entrada.getPreviousWeight())
+                        .as("mesma data nao e serie: seria ruido de balanca, nao tendencia")
+                        .isNull());
+    }
+
+    /**
      * <b>Observacao tem escopo proprio, e nao o do prontuario.</b>
      *
      * Quem mais escreve observacao e a creche. Se ela caisse em PRONTUARIO, dar a creche

@@ -141,4 +141,18 @@ public class TimelineEntry {
     @Column(name = "correction_count", nullable = false)
     private long correctionCount;
 
+    /**
+     * O peso da pesagem anterior, quando esta entrada e uma pesagem.
+     *
+     * <b>So o anterior, e nao a serie.</b> O grafico precisa de N pontos e quem os serve e
+     * {@code GET /animals/{id}/weights}; o que a <i>entrada</i> precisa e outra coisa -
+     * "12,5 kg" sozinho nao diz se e boa ou ma noticia. Com o valor anterior o cliente
+     * calcula a variacao e a linha fica honesta, sem virar painel (DESIGN 5.2).
+     *
+     * Nulo fora de pesagem, e nulo na primeira pesagem do animal - zero diria "nao
+     * variou", que e diferente de "nao ha com o que comparar".
+     */
+    @Column(name = "previous_weight")
+    private Double previousWeight;
+
 }
