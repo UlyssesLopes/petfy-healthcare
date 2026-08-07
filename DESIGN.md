@@ -20,10 +20,12 @@ um retrato de uma tela, ele é a regra de todas.
 | 2 | A voz | **Aprovada** em 2026-08-06 |
 | 3 | Cor | **Aprovada**, reescrita em 2026-08-06 |
 | 4 | Tipografia e ritmo | **Aprovada**, reescrita em 2026-08-06 |
-| 5 | Os objetos que carregam a identidade | **Aprovada**, revisada em 2026-08-06; regra da série precisada em 2026-08-07 |
+| 5 | Os objetos que carregam a identidade | **Aprovada**, revisada em 2026-08-06; regra da série precisada em 2026-08-07, e escopo da v1 registrado em 2026-08-07 |
 | 6 | Acessibilidade e idioma | **Aprovada** em 2026-08-06 |
 
-**Documento fechado em 2026-08-06**, e emendado em 2026-08-07 na regra da série (5.2).
+**Documento fechado em 2026-08-06**, e emendado duas vezes em 2026-08-07: na regra da série
+(5.2), e no escopo da v1 (5.5), onde `Insight` e `Update` ficaram registrados como
+posteriores.
 
 **Documento fechado não é documento imutável, e a emenda registra a diferença.** A regra
 da série dizia *"o registro de peso carrega o próprio gráfico e a variação"*, e ao ser
@@ -483,6 +485,23 @@ não é fato (3.15), e o lugar de uma coisa na tela afirma o que ela é.
 
 **E o alerta da creche é observação com urgência** — não é ato clínico e não é vermelho
 (3.11, 4.5). Ganha peso pela posição no feed, não por cor de emergência.
+
+**Decidido em 2026-08-07, ao abrir a construção: `Insight` e `Update` são posteriores.** Os
+cinco objetos continuam sendo cinco — o que muda é que **a v1 carrega quatro deles**. Os
+dois que ficam de fora não existem no contrato, e cada um por um motivo diferente:
+
+- **Percepção não é tela, é regra.** As cinco percepções (4.6) precisam ser detectadas por
+  alguém, e isso é Horizonte 4 no `PRODUTO.md`. A coluna lateral sem elas seria moldura
+  vazia. **O que a tela faz desde já é reservar a posição** — fora do eixo do tempo —, para
+  que o dia em que a percepção chegar não desfaça o layout, que é justamente o que a regra
+  visual mais forte desta seção protege.
+- **Conteúdo é barato de modelar e inútil sem quem o publique.** Recado e foto vêm de
+  organização com vínculo, e a área de organização depende da decisão 15, sem resposta.
+  Construir o leitor de algo que ninguém pode publicar é construir para trás.
+
+**O que isso obriga:** onde este documento descreve a tela com os cinco objetos, ele
+descreve o destino, não a v1. A tabela acima fica como está — ela é a regra de todas as
+telas, e segue verdadeira quando os dois chegarem.
 
 ---
 

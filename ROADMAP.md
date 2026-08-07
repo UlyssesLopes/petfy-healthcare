@@ -1141,7 +1141,50 @@ decisão 15, que não tem resposta.
 - **`Insight` e `Update` não existem no contrato**, e são dois dos cinco objetos que
   a 5.5 do `DESIGN.md` elege como portadores da identidade. Ou o design registra que
   são posteriores, ou eles entram no escopo. **É decisão de produto**, e a tela 3 vai
-  encostar nela.
+  encostar nela. **Decidido em 2026-08-07: os dois são posteriores**, e o motivo de
+  cada um está na emenda da 5.5 do `DESIGN.md`. A v1 carrega quatro dos cinco.
+
+#### B0 — concluído em 2026-08-07
+
+**CORS existe, por perfil.** `local` traz a origem do Vite, os hospedados recebem a
+sua por `CORS_ALLOWED_ORIGINS`, e **vazio não libera ninguém** — fecha por omissão.
+`*` derruba a subida, pelo mesmo critério do `JWT_SECRET`: a regra deixou de depender
+de quem configura lembrar dela.
+
+Três coisas que só apareceram construindo, e as três viraram teste:
+
+- **`X-Petfy-Organization` precisa estar entre os headers aceitos.** É header
+  customizado, então toda requisição que o carrega vira preflight — e é por ele que a
+  área de organização age em nome de uma organização.
+- **`Content-Disposition` precisa ser exposto**, senão todo anexo baixado salva com
+  nome errado: o download passa pela API autenticada (passo 11), e o navegador não
+  entrega esse header ao JS por padrão.
+- **A posição do `CorsFilter` é o que impede o preflight de tomar 401.** O navegador
+  nunca manda credencial no preflight; se ele chegasse à autorização, a requisição de
+  verdade nem sairia, e o sintoma seria erro de CORS com o token correto o tempo todo.
+
+**O refresh fica adiado, com token em memória.** `localStorage` segue fora: é a
+exposição a XSS que este documento recusa.
+
+O motivo do adiamento não é custo de backend — é que **construir agora entregaria um
+mecanismo incompleto**. Front e API em domínios diferentes tornam o cookie
+*cross-site*, o que obriga `SameSite=None`, que Safari e Firefox já bloqueiam por
+padrão: o refresh falharia calado num navegador inteiro. Ele só fica correto quando
+front e API forem *same-site*, e isso depende do **domínio próprio**, que segue em
+aberto nas decisões deste documento.
+
+**O gatilho, no molde do BFF.** O refresh em cookie `httpOnly` entra no primeiro dos
+dois que acontecer:
+
+1. o domínio próprio entrar, pondo front e API sob o mesmo site;
+2. o login a cada recarga se mostrar insuportável no uso real.
+
+**A regra de dia um que mantém o custo baixo:** nenhuma tela lê token. A sessão mora
+numa camada só, com um `ensureFresh()` que hoje desloga e amanhã chama
+`/auth/refresh` — no dia da troca muda essa camada, não as telas. É irmã da regra que
+mantém o BFF possível.
+
+**Suíte:** 756 testes, 0 falhas, 0 pulados, com os de container contra Postgres real.
 
 **Pronto quando:** um tutor que nunca viu `curl` entra pelo navegador, vê o que
 precisa fazer hoje, registra uma dose e abre a linha do tempo do animal.
