@@ -5,13 +5,16 @@ import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthCondition;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionKind;
 import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
+import br.com.petfy.healthcare.domain.entity.CredentialStatus;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.entity.ProfessionalCredential;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.TimelineEntry;
 import br.com.petfy.healthcare.domain.entity.TimelineEventType;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
+import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,6 +54,8 @@ class TimelineContainerTest extends PostgresContainerTest {
     @Autowired private HealthRecordRepository healthRecordRepository;
     @Autowired private AnimalWeightHistoryRepository animalWeightHistoryRepository;
     @Autowired private AnimalHealthConditionRepository animalHealthConditionRepository;
+    @Autowired private ProfessionalCredentialRepository professionalCredentialRepository;
+    @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
 
     private Person ulysses;
     private Animal rex;
@@ -183,11 +188,105 @@ class TimelineContainerTest extends PostgresContainerTest {
                 .applicationDate(LocalDate.now().minusDays(2))
                 .creationDate(LocalDateTime.now()).build());
 
+        // o nome vem resolvido pela propria view desde a V29, e isso trava o fim de um
+        // N+1: o servico fazia personRepository.findById() por entrada, entao uma pagina
+        // de vinte eventos custava vinte consultas - na leitura que mais cresce aqui
         assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
-                .extracting(TimelineEntry::getSummary, TimelineEntry::getRecordedByPersonId)
+                .extracting(TimelineEntry::getSummary, TimelineEntry::getRecordedByPersonId,
+                        TimelineEntry::getRecordedByName)
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("Com autor", ulysses.getPersonId()),
-                        org.assertj.core.groups.Tuple.tuple("Sem autor", null));
+                        org.assertj.core.groups.Tuple.tuple("Com autor", ulysses.getPersonId(), "Ulysses"),
+                        org.assertj.core.groups.Tuple.tuple("Sem autor", null, null));
+    }
+
+    /**
+     * A credencial que a secao 5.2 do DESIGN cobra, com o estado dela.
+     *
+     * <b>O estado e o ponto, e nao o numero.</b> CRMV apenas informado tem de aparecer
+     * <i>como informado</i>: o produto nao pode dar selo de verificado que nao conferiu
+     * (5.10). Sem o status, a tela ou omite a credencial ou mente sobre ela.
+     */
+    @Test
+    @DisplayName("carrega a credencial de quem registrou, com o estado dela")
+    void carregaACredencialComEstado() {
+        professionalCredentialRepository.saveAndFlush(ProfessionalCredential.builder()
+                .person(ulysses).council("CRMV").uf("SP").number("12345")
+                .status(CredentialStatus.INFORMADO)
+                .creationDate(LocalDateTime.now()).build());
+
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Aplicada por quem tem CRMV")
+                .applicationDate(LocalDate.now())
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .singleElement()
+                .satisfies(entrada -> {
+                    assertThat(entrada.getCredentialLabel()).isEqualTo("CRMV-SP 12345");
+                    assertThat(entrada.getCredentialStatus()).isEqualTo(CredentialStatus.INFORMADO);
+                });
+    }
+
+    /**
+     * A credencial suspensa perde para a que autoriza ato clinico.
+     *
+     * <b>E deterministico de proposito.</b> A tabela admite mais de uma credencial por
+     * pessoa e a tela mostra uma linha; sem o {@code ORDER BY} da view a escolha seria a
+     * que o Postgres devolvesse primeiro, e a mesma tela mudaria de credencial entre duas
+     * leituras. Isto so falha contra banco de verdade.
+     */
+    @Test
+    @DisplayName("com duas credenciais deve escolher a que nao esta suspensa")
+    void escolheACredencialQueAutoriza() {
+        professionalCredentialRepository.saveAndFlush(ProfessionalCredential.builder()
+                .person(ulysses).council("CRMV").uf("RJ").number("99999")
+                .status(CredentialStatus.SUSPENSO)
+                .creationDate(LocalDateTime.now()).build());
+
+        professionalCredentialRepository.saveAndFlush(ProfessionalCredential.builder()
+                .person(ulysses).council("CRMV").uf("SP").number("11111")
+                .status(CredentialStatus.INFORMADO)
+                .creationDate(LocalDateTime.now().minusYears(5))
+                .build());
+
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("V10")
+                .applicationDate(LocalDate.now())
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .singleElement()
+                .satisfies(entrada -> assertThat(entrada.getCredentialLabel())
+                        .as("a suspensa e mais recente, e ainda assim perde: quem autoriza ato clinico vem primeiro")
+                        .isEqualTo("CRMV-SP 11111"));
+    }
+
+    /**
+     * A contagem de correcoes, para a tela marcar sucessao sem chamar a rota de correcoes
+     * de cada evento so para descobrir que a maioria nao tem nenhuma.
+     */
+    @Test
+    @DisplayName("conta as correcoes do evento, e zero em quem nao admite correcao")
+    void contaAsCorrecoes() {
+        var vacina = vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Corrigida")
+                .applicationDate(LocalDate.now())
+                .creationDate(LocalDateTime.now()).build());
+
+        vaccineCorrectionRepository.saveAndFlush(VaccineCorrection.builder()
+                .vaccine(vacina).correctedBy(ulysses)
+                .previousVaccineName("Nome errado")
+                .correctedAt(LocalDateTime.now()).build());
+
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).weight(12.5).measuredAt(LocalDate.now().minusDays(1))
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .extracting(TimelineEntry::getEventType, TimelineEntry::getCorrectionCount)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(TimelineEventType.VACINA, 1L),
+                        org.assertj.core.groups.Tuple.tuple(TimelineEventType.PESAGEM, 0L));
     }
 
     /**

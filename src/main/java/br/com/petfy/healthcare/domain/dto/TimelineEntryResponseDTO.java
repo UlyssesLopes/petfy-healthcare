@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.dto;
 
+import br.com.petfy.healthcare.domain.entity.CredentialStatus;
 import br.com.petfy.healthcare.domain.entity.TimelineEventType;
 import lombok.*;
 
@@ -36,6 +37,40 @@ public class TimelineEntryResponseDTO {
 
     /** Nulo fora do escopo. */
     private String summary;
+
+    /**
+     * Em nome de que organizacao o registro foi feito. Nulo fora do escopo, e nulo
+     * tambem quando quem registrou agia por si.
+     *
+     * <b>Fora do escopo tem de ser nulo, e nao e zelo:</b> dizer "Clinica Bicho Feliz"
+     * num evento que quem le nao pode abrir entregaria justamente o que o escopo
+     * esconde - que o animal foi atendido, e por quem.
+     */
+    private String organizationName;
+
+    /**
+     * A credencial de quem registrou, como {@code CRMV-SP 12345}. Nulo fora do escopo,
+     * e nulo quando quem registrou nao tem credencial.
+     */
+    private String credentialLabel;
+
+    /**
+     * O estado da credencial acima.
+     *
+     * A tela mostra credencial apenas informada <b>como</b> informada, em tinta
+     * secundaria - o produto nao pode dar selo de verificado que nao conferiu (5.10).
+     */
+    private CredentialStatus credentialStatus;
+
+    /**
+     * Quantas correcoes este evento sofreu, e zero quando nenhuma.
+     *
+     * Existe para a tela marcar sucessao sem chamar a rota de correcoes de cada evento
+     * para descobrir que a maioria nao tem nenhuma. O conteudo do valor anterior
+     * continua em {@code /vaccines/{id}/corrections} e
+     * {@code /health-records/{id}/corrections}.
+     */
+    private long correctionCount;
 
     /**
      * Se quem le alcanca o conteudo deste evento.
