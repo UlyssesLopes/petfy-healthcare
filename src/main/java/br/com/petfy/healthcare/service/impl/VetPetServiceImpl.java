@@ -29,6 +29,8 @@ import br.com.petfy.healthcare.service.VetPetService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -59,11 +61,33 @@ public class VetPetServiceImpl implements VetPetService {
     private int correctionWindowDays;
 
     @Override
-    public List<VetPetDTO> listAccessibleAnimals() {
-        return acessosAtivosDoContexto()
-                .stream()
-                .map(this::toVetPet)
-                .collect(Collectors.toList());
+    public Page<VetPetDTO> listAccessibleAnimals(String busca, Pageable pageable) {
+        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+        LocalDateTime agora = LocalDateTime.now();
+        String termo = termoDeBusca(busca);
+        UUID organizationId = contexto.atuaPorOrganizacao()
+                ? contexto.organization().getOrganizationId()
+                : null;
+
+        // o autonomo cai no ramo da pessoa, e e por isso que a area de organizacao
+        // nao exige organizacao nenhuma para funcionar (PRODUTO 9.3)
+        Page<Grant> pagina = organizationId != null
+                ? grantRepository.buscarVigentesDaClinica(organizationId, agora, termo, pageable)
+                : grantRepository.buscarVigentesDaPessoa(contexto.person().getPersonId(), agora, termo, pageable);
+
+        return pagina.map(this::toVetPet);
+    }
+
+    /**
+     * Busca em branco vira {@code %}, que casa com tudo.
+     *
+     * O ramo condicional fica aqui e nao no JPQL de proposito: {@code :busca is null}
+     * na consulta faz o Postgres reclamar que nao consegue inferir o tipo do
+     * parametro, e a alternativa seria duas consultas quase iguais. Assim o SQL e um
+     * so, e a regra de "sem busca lista tudo" mora em um lugar onde da para testar.
+     */
+    private String termoDeBusca(String busca) {
+        return busca == null || busca.isBlank() ? "%" : "%" + busca.trim().toLowerCase() + "%";
     }
 
     @Override

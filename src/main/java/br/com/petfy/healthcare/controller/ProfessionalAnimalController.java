@@ -8,7 +8,11 @@ import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
 import br.com.petfy.healthcare.service.VetPetService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +21,10 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Prefixo /vet separado do /animals do tutor de proposito: sao visoes diferentes do
- * mesmo recurso, com regras de acesso diferentes. Misturar as duas no mesmo path
- * faria a autorizacao depender de quem chamou, que e onde esse tipo de bug mora.
+ * Prefixo /professional separado do /animals do tutor de proposito: sao visoes
+ * diferentes do mesmo recurso, com regras de acesso diferentes. Misturar as duas no
+ * mesmo path faria a autorizacao depender de quem chamou, que e onde esse tipo de
+ * bug mora. (O prefixo era /vet ate a Fase 6 dissolver o papel.)
  *
  * Nao ha DELETE em nenhum dos dois recursos: apagar registro de saude nao e
  * correcao - ver README.
@@ -31,9 +36,20 @@ public class ProfessionalAnimalController {
 
     private final VetPetService vetPetService;
 
+    /**
+     * A leitura em largura da area de organizacao (PRODUTO 9.3): lista, busca e
+     * ordem. O teto de 100 por pagina nao esta aqui porque e global, em
+     * {@code spring.data.web.pageable.max-page-size}.
+     *
+     * Ordem default por nome do animal, e nao por quando o acesso foi concedido: o
+     * expediente procura um animal pelo nome que o tutor falou no balcao.
+     */
     @GetMapping
-    public ResponseEntity<List<VetPetDTO>> listAccessibleAnimals() {
-        return ResponseEntity.ok(vetPetService.listAccessibleAnimals());
+    @Operation(summary = "Os animais que o contexto ativo alcanca, com busca e ordem")
+    public ResponseEntity<Page<VetPetDTO>> listAccessibleAnimals(
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 20, sort = "animal.name") Pageable pageable) {
+        return ResponseEntity.ok(vetPetService.listAccessibleAnimals(q, pageable));
     }
 
     @GetMapping("/{animalId}/vaccines")
