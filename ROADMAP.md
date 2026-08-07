@@ -715,7 +715,7 @@ estrutura e stack, e é isto que esta seção passa a registrar.
 | 2 | **Stack** | Decidida em 2026-08-06 | Antes do design: metade das decisões de design se amarra a ela — componente, token, tema |
 | 3 | **Direção visual** | Feito — `DESIGN.md`, seis seções, mais `design/home-tutor.html` | Antes do contrato, porque a tela define quais leituras o backend precisa |
 | 4 | **Delta de contrato** | **Concluído em 2026-08-07** — P1 a P6 | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
-| 5 | **Construir** | — | — |
+| 5 | **Construir** | **Planejado em 2026-08-07, não iniciado** — plano no fim desta fase | Começa por dois pré-requisitos de backend que este roadmap decidiu e nunca construiu: CORS e o refresh em cookie `httpOnly` |
 
 **Por que o delta de contrato vem depois do design, e não antes.** O OpenAPI é gerado
 das anotações, então **ele está correto** — quem mente é o `README.md`. O design pode se
@@ -1078,6 +1078,73 @@ passo 5 — construir — está liberado.**
 
 **Pronto quando:** o cliente gerado do OpenAPI compila com as leituras que a home
 do tutor e a lista da organização exigem, e o `README.md` descreve o que existe.
+
+### Passo 5 — construir, planejado em 2026-08-07
+
+**Aberto e não iniciado.** Nenhuma linha de frontend existe. Este é o plano de
+execução, e ele começa com dois itens de **backend** — porque os dois foram
+decididos e nenhum foi construído.
+
+#### B0 — os dois pré-requisitos, levantados contra o código
+
+**Não são dívida encontrada por acaso: são decisões deste roadmap que ficaram sem
+implementação, e as duas aparecem na primeira tela.**
+
+**CORS não existe.** Zero ocorrências em `config/`. Um SPA do Vite em
+`localhost:5173` chamando a API em `localhost:8080` é *cross-origin*, e sem CORS **a
+primeira requisição da primeira tela falha no navegador** — antes de qualquer código
+de produto. Precisa ser por perfil: `local` libera a origem do Vite, `dev`/`stg`/`prd`
+liberam a origem do próprio front, e nunca `*`, porque a API responde com credencial.
+
+**O refresh em cookie `httpOnly` não existe.** A decisão está escrita neste documento
+na seção do BFF adiado: *"o único argumento de dia um seria autenticação — SPA
+guardando JWT em `localStorage` é exposição a XSS —, e isso sai mais barato resolvido
+no Spring que já existe, com refresh em cookie `httpOnly`"*. Hoje `/auth/login`
+devolve o JWT no corpo e não há refresh nenhum.
+
+**São dois caminhos, e a escolha é de produto, não de código:**
+
+| Caminho | O que custa | O que fica devendo |
+|---|---|---|
+| **Construir agora** | Endpoint de refresh, cookie `httpOnly` + `Secure` + `SameSite`, e rotação | Nada. A tela de login nasce definitiva |
+| **Adiar, com token em memória** | Zero backend. O token vive em memória do JS e morre no *refresh* da página | Login a cada recarga, e a tela de login será refeita quando o refresh chegar |
+
+**Guardar em `localStorage` não é opção**, e isso já está decidido: é a exposição a
+XSS que o documento nomeia. Token em memória é pior de usar e não é insegura; é a
+única forma de adiar sem contrariar a decisão.
+
+#### A ordem, e o que cada bloco entrega
+
+| # | Bloco | Entrega | Depende de |
+|---|---|---|---|
+| **B0** | Pré-requisitos | CORS por perfil, e o caminho de auth escolhido | — |
+| **1** | Fundação | Scaffold, tokens das seções 3 e 4 do `DESIGN.md`, cliente gerado do OpenAPI, i18n, rota tipada | B0 |
+| **2** | **Home do tutor** | O feed de pendências com silenciar. `GET /due-items` e `GET /me/context`. **É a tela que existe todo dia** (9.3), e a única com referência renderizada | 1 |
+| **3** | A linha do tempo | O objeto central (5.1 e 5.2): espinha contínua, evento assinado, credencial como informada, correção como sucessão | 1 |
+| **4** | A rede de quem cuida | 5.4, com **conceder acesso como ação de primeira linha** e a última contribuição | 1 |
+| **5** | Área de organização | A leitura em largura, com `/professional/animals` e a troca de contexto explícita | **Decisão 15** |
+
+**Por que a home do tutor primeiro, e não a área de organização.** É a área que
+existe todo dia (9.3), é a única com tela de referência aprovada
+(`design/home-tutor.html`), e o backend dela está inteiro — o feed já traz
+`lastFulfilledByName`, que é a parte difícil. A área de organização depende da
+decisão 15, que não tem resposta.
+
+#### O que o plano assume, e precisa ser conferido na hora
+
+- **O cliente é gerado, e o gerador não está escolhido.** A decisão de stack diz
+  *"cliente gerado do OpenAPI"* e para aí. Escolher é do bloco 1, e o critério é um
+  só: mudança de controller tem de quebrar o build do front.
+- **As mensagens de erro da API estão em inglês**, no `ErrorMessageEnum`, e o produto
+  é pt-BR. Elas têm **código numérico**, então o front mapeia por código em vez de
+  exibir a mensagem — e o i18n do bloco 1 já nasce com essa tabela.
+- **`Insight` e `Update` não existem no contrato**, e são dois dos cinco objetos que
+  a 5.5 do `DESIGN.md` elege como portadores da identidade. Ou o design registra que
+  são posteriores, ou eles entram no escopo. **É decisão de produto**, e a tela 3 vai
+  encostar nela.
+
+**Pronto quando:** um tutor que nunca viu `curl` entra pelo navegador, vê o que
+precisa fazer hoje, registra uma dose e abre a linha do tempo do animal.
 
 ## Fase 6 — a remodelagem que o `PRODUTO.md` cobra
 
