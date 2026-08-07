@@ -714,7 +714,7 @@ estrutura e stack, e é isto que esta seção passa a registrar.
 | 1 | **Estrutura do cliente** | Feito — seção 9 do `PRODUTO.md` | É insumo dos dois seguintes. Sem ela escrita, "de que área é esta tela?" volta a ser decidido em cada tela |
 | 2 | **Stack** | Decidida em 2026-08-06 | Antes do design: metade das decisões de design se amarra a ela — componente, token, tema |
 | 3 | **Direção visual** | Feito — `DESIGN.md`, seis seções, mais `design/home-tutor.html` | Antes do contrato, porque a tela define quais leituras o backend precisa |
-| 4 | **Delta de contrato** | **Em execução** — P1 a P3 fechados em 2026-08-07; faltam P4, P5 e P6 | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
+| 4 | **Delta de contrato** | **Concluído em 2026-08-07** — P1 a P6 | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
 | 5 | **Construir** | — | — |
 
 **Por que o delta de contrato vem depois do design, e não antes.** O OpenAPI é gerado
@@ -1026,11 +1026,55 @@ clínico"* ainda depende de quem registrou, o que continua sendo decisão de pro
 
 **Suíte:** 731 testes, 0 falhas, 0 pulados, com os de container contra Postgres real.
 
+#### P4, P5 e P6 — concluídos em 2026-08-07, fechando o passo
+
+| # | O que entrou | Onde |
+|---|---|---|
+| **P4** | `GET /animals/{id}/care-network` — quem alcança o animal, com a última contribuição | `CareNetworkController` |
+| **P5** | `V32`: silenciar pendência, por pessoa e por item, sem parar o registro | `DueItemSilence` |
+| **P6** | `summary` em todas as 90 operações, e o `README.md` deixando de duplicar o contrato | 19 controllers, `README.md` |
+
+**O P4 não era só juntar três rotas.** A de tutores filtra `holderPerson`, então um
+animal sob custódia de uma ONG aparecia **sem ninguém respondendo por ele** — e a
+3.4 admite custódia de organização desde o P2b. E a *última contribuição* não
+existia em nenhuma das três: são duas agregações sobre a view, uma por pessoa e uma
+por organização, e não uma consulta por membro.
+
+**Duas ausências deliberadas no P4:** sem e-mail nem telefone, porque a 5.4 diz
+*"quem tem alcance de fato, nunca uma lista de contatos"*; e sem link de
+compartilhamento, porque link é alcance anônimo e o **token dele é a credencial** —
+devolvê-lo numa leitura de tela entregaria a chave.
+
+**O P5 fechou uma pergunta que o documento não respondia:** silenciar é por pessoa e
+por **item**, não por tipo. Por pessoa porque dois tutores dividem o cuidado e
+dividem a cobrança, e um silenciar não pode calar o outro. Por item porque
+*"silenciar todas as doses"* seria preferência global disfarçada, que é o que a 5.3
+recusa — e como a pendência é derivada, o silêncio se resolve sozinho: registrada a
+próxima dose, nasce outra pendência e ela cobra. **Consentimento não se silencia**,
+porque bloqueia o resto do produto.
+
+**O P6 corrigiu a causa, e não só o sintoma.** O `README.md` mantinha à mão uma
+tabela de endpoints que o OpenAPI já gera das anotações — duas fontes para a mesma
+pergunta, e a que perde é sempre a escrita à mão. A tabela saiu; o que ficou é o
+vocabulário, as regras que atravessam rotas, e as leituras que o cliente não deve
+montar sozinho.
+
+**A dívida que sobra do P6, dita em voz alta:** os tutoriais de fluxo do README
+tiveram os caminhos corrigidos, mas a prosa ainda fala em *"vet"* e *"clínica"* onde
+o modelo diz pessoa com credencial e organização com capacidades. Não mente mais
+sobre rota, e ainda usa vocabulário velho.
+
+**Suíte no fim do passo:** 749 testes, 0 falhas.
+
 #### Ordem, e o critério de pronto
 
-P1 → P2 → P3 → P4 → P5 → P6. Os cinco primeiros são aditivos e independentes entre
-si, então podem ser fatiados em PRs próprios; **P1 é o único que muda contrato
-existente**, e por isso vai primeiro, enquanto não há cliente para quebrar.
+P1 → P2 → P3 → P4 → P5 → P6, e foi essa a ordem executada. Os cinco primeiros são
+aditivos e independentes entre si; **P1 foi o único que mudou contrato existente**, e
+por isso veio primeiro, enquanto não havia cliente para quebrar.
+
+**Pronto:** o contrato tem as leituras que a home do tutor e a lista da organização
+exigem, toda operação está documentada, e o `README.md` descreve o que existe. **O
+passo 5 — construir — está liberado.**
 
 **Pronto quando:** o cliente gerado do OpenAPI compila com as leituras que a home
 do tutor e a lista da organização exigem, e o `README.md` descreve o que existe.
