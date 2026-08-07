@@ -70,6 +70,11 @@ public enum ErrorMessageEnum {
     // revogada, ou fora do prazo. Aceitar zeraria a pendencia de um tratamento que nao
     // esta mais em curso
     CARE_INSTRUCTION_NOT_IN_EFFECT(140, "This care instruction was not in effect at the informed time"),
+    // so se silencia o que esta sendo cobrado de voce: a pendencia e derivada, entao nao ha
+    // chave estrangeira que recuse um par de tipo e id inventado
+    DUE_ITEM_NOT_FOUND(141, "There is no such pending item for you"),
+    // o consentimento bloqueia o resto do produto; silencia-lo esconderia o bloqueio
+    CONSENT_CANNOT_BE_SILENCED(142, "Pending consent cannot be silenced"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password");
 

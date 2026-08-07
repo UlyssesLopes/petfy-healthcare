@@ -22,16 +22,22 @@ public class AnimalController {
 
     private final AnimalService animalService;
 
+    @Operation(summary = "Cadastra um animal", description = "Quem cadastra passa a deter a custodia dele. Especie e obrigatoria porque o catalogo de vacina depende dela; identificacao - microchip, tatuagem, RGA - e toda opcional, porque metade dos animais do Brasil nao tem nenhuma.")
     @PostMapping
     public ResponseEntity<AnimalResponseDTO> createAnimal(@Valid @RequestBody AnimalRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(animalService.createAnimal(dto));
     }
 
+    @Operation(summary = "Um animal", description = "Animal fora do seu alcance responde 404 e nao 403: dizer que existe e voce nao pode ver ja e informacao sobre ele.")
     @GetMapping("/{animalId}")
     public ResponseEntity<AnimalResponseDTO> getAnimal(@PathVariable UUID animalId) {
         return ResponseEntity.ok(animalService.getAnimalById(animalId));
     }
 
+    @Operation(summary = "Os animais que eu alcanco",
+               description = "Por custodia ou por concessao vigente. Paginada, com teto de 100 por "
+                             + "pagina. A leitura em largura da area de organizacao, que le centenas, "
+                             + "e outra: /professional/animals, com busca e ordem.")
     @GetMapping
     public ResponseEntity<Page<AnimalResponseDTO>> listAll(
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
@@ -53,6 +59,7 @@ public class AnimalController {
         return ResponseEntity.ok(animalService.updateAnimal(animalId, dto));
     }
 
+    @Operation(summary = "Apaga o animal e todo o rastro dele", description = "Irreversivel, e apaga a carteira, o prontuario, o peso, os anexos e os arquivos no disco. Se houver outro tutor, o animal sobrevive e a titularidade passa a ele.")
     @DeleteMapping("/{animalId}")
     public ResponseEntity<Void> deleteAnimal(@PathVariable UUID animalId) {
         animalService.deleteAnimal(animalId);

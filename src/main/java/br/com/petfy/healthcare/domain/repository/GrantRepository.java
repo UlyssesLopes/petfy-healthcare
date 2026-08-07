@@ -1,6 +1,8 @@
 package br.com.petfy.healthcare.domain.repository;
 
 import br.com.petfy.healthcare.domain.entity.Grant;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -84,6 +86,44 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
             + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
     List<Grant> findVigentesDaPessoa(@Param("personId") UUID personId,
                                      @Param("agora") LocalDateTime agora);
+
+    /**
+     * As duas consultas abaixo sao as de cima com recorte, e existem por causa da
+     * area de organizacao: ela le centenas de animais, e sem pagina, busca e ordem
+     * e inutilizavel para o ator que a justifica (PRODUTO 9.3 e 9.5).
+     *
+     * <b>Por que sao metodos novos e nao a mesma consulta com {@code Pageable}:</b>
+     * as versoes {@code List} continuam servindo a exportacao LGPD, que precisa de
+     * <i>tudo</i> e nao de uma pagina - paginar ali seria exportar dado incompleto.
+     *
+     * <b>Por que o termo chega pronto como {@code %texto%} e nao como {@code :q is
+     * null}:</b> parametro nulo em comparacao de String faz o Postgres reclamar que
+     * nao consegue inferir o tipo. Busca vazia vira {@code %}, que casa com tudo, e
+     * o caminho e um so - sem ramo condicional dentro do SQL.
+     *
+     * A ordem nao esta na consulta de proposito: quem a decide e o {@code Pageable},
+     * porque a tela ordena por nome, por especie e por quando o acesso foi
+     * concedido, e nenhuma dessas e mais legitima que as outras.
+     */
+    @Query("select g from Grant g where g.granteeOrganization.organizationId = :organizationId "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora) "
+            + "and (lower(g.animal.name) like :termo "
+            + "or lower(coalesce(g.animal.generalRegistry, '')) like :termo "
+            + "or lower(coalesce(g.animal.microchipNumber, '')) like :termo)")
+    Page<Grant> buscarVigentesDaClinica(@Param("organizationId") UUID organizationId,
+                                        @Param("agora") LocalDateTime agora,
+                                        @Param("termo") String termo,
+                                        Pageable pageable);
+
+    @Query("select g from Grant g where g.granteePerson.personId = :personId "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora) "
+            + "and (lower(g.animal.name) like :termo "
+            + "or lower(coalesce(g.animal.generalRegistry, '')) like :termo "
+            + "or lower(coalesce(g.animal.microchipNumber, '')) like :termo)")
+    Page<Grant> buscarVigentesDaPessoa(@Param("personId") UUID personId,
+                                       @Param("agora") LocalDateTime agora,
+                                       @Param("termo") String termo,
+                                       Pageable pageable);
 
     /**
      * Devolve as concessoes para o purger apagar por entidade, e nao um delete em

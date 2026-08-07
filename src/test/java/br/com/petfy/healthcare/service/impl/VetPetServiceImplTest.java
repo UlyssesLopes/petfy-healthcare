@@ -30,6 +30,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -148,14 +152,16 @@ class VetPetServiceImplTest {
     @DisplayName("listAccessibleAnimals")
     class ListAccessibleAnimals {
 
+        private final Pageable primeiraPagina = PageRequest.of(0, 20);
+
         @Test
         @DisplayName("deve listar apenas os animals com concessao ativa para a clinica do vet")
         void deveListarAnimalsComConcessaoAtiva() {
             vetDaClinica(CLINIC_ID);
-            when(grantRepository.findVigentesDaClinica(eq(CLINIC_ID), any()))
-                    .thenReturn(List.of(acesso(null)));
+            when(grantRepository.buscarVigentesDaClinica(eq(CLINIC_ID), any(), any(), any()))
+                    .thenReturn(new PageImpl<>(List.of(acesso(null))));
 
-            var result = service.listAccessibleAnimals();
+            var result = service.listAccessibleAnimals(null, primeiraPagina);
 
             assertThat(result).singleElement().satisfies(p -> {
                 assertThat(p.getAnimalId()).isEqualTo(ANIMAL_ID);
@@ -175,13 +181,89 @@ class VetPetServiceImplTest {
         }
 
         @Test
-        @DisplayName("deve devolver lista vazia quando a clinica nao foi autorizada por ninguem")
+        @DisplayName("deve devolver pagina vazia quando a clinica nao foi autorizada por ninguem")
         void deveDevolverListaVaziaSemAutorizacoes() {
             vetDaClinica(CLINIC_ID);
-            when(grantRepository.findVigentesDaClinica(eq(CLINIC_ID), any()))
-                    .thenReturn(List.of());
+            when(grantRepository.buscarVigentesDaClinica(eq(CLINIC_ID), any(), any(), any()))
+                    .thenReturn(Page.empty());
 
-            assertThat(service.listAccessibleAnimals()).isEmpty();
+            assertThat(service.listAccessibleAnimals(null, primeiraPagina)).isEmpty();
+        }
+
+        /**
+         * O termo vira {@code %} e nao fica nulo: parametro nulo em comparacao de
+         * String faz o Postgres nao inferir o tipo, e foi por isso que o ramo
+         * condicional ficou no service em vez de dentro do JPQL.
+         */
+        @Test
+        @DisplayName("busca em branco deve virar o curinga que casa com tudo")
+        void buscaEmBrancoDeveVirarCuringa() {
+            vetDaClinica(CLINIC_ID);
+            when(grantRepository.buscarVigentesDaClinica(eq(CLINIC_ID), any(), any(), any()))
+                    .thenReturn(Page.empty());
+
+            service.listAccessibleAnimals("   ", primeiraPagina);
+
+            var termo = ArgumentCaptor.forClass(String.class);
+            verify(grantRepository).buscarVigentesDaClinica(eq(CLINIC_ID), any(), termo.capture(), any());
+            assertThat(termo.getValue()).isEqualTo("%");
+        }
+
+        @Test
+        @DisplayName("deve normalizar a busca para minuscula entre curingas")
+        void deveNormalizarABusca() {
+            vetDaClinica(CLINIC_ID);
+            when(grantRepository.buscarVigentesDaClinica(eq(CLINIC_ID), any(), any(), any()))
+                    .thenReturn(Page.empty());
+
+            service.listAccessibleAnimals("  ReX  ", primeiraPagina);
+
+            var termo = ArgumentCaptor.forClass(String.class);
+            verify(grantRepository).buscarVigentesDaClinica(eq(CLINIC_ID), any(), termo.capture(), any());
+            assertThat(termo.getValue()).isEqualTo("%rex%");
+        }
+
+        /**
+         * A pagina de 50 na posicao 1 e proposital: {@code PageImpl} reescreve o total
+         * quando {@code offset + pageSize} o ultrapassa, e a terceira pagina de 50 com
+         * 137 no total viraria 101. Aqui o total atravessa intacto, que e o ponto -
+         * quem conta e o banco, e nao uma lista carregada em memoria.
+         */
+        @Test
+        @DisplayName("deve repassar a pagina pedida em vez de paginar em memoria")
+        void deveRepassarAPaginaPedida() {
+            vetDaClinica(CLINIC_ID);
+            var segundaPagina = PageRequest.of(1, 50);
+            when(grantRepository.buscarVigentesDaClinica(eq(CLINIC_ID), any(), any(), eq(segundaPagina)))
+                    .thenReturn(new PageImpl<>(List.of(acesso(null)), segundaPagina, 137));
+
+            var result = service.listAccessibleAnimals(null, segundaPagina);
+
+            assertThat(result.getTotalElements()).isEqualTo(137);
+            assertThat(result.getNumber()).isEqualTo(1);
+            assertThat(result.getTotalPages()).isEqualTo(3);
+            verify(grantRepository).buscarVigentesDaClinica(eq(CLINIC_ID), any(), any(), eq(segundaPagina));
+        }
+
+        /**
+         * A regra dura da 9.3: <i>nada na area de organizacao pode exigir uma
+         * organizacao para funcionar.</i> O autonomo tem credencial e nenhum vinculo,
+         * e precisa atravessar a area inteira - entao a consulta que responde por ele
+         * e a da pessoa, e isso e afirmacao verificada, nao coincidencia.
+         */
+        @Test
+        @DisplayName("autonomo sem organizacao deve listar pelo proprio acesso, e nao pelo da clinica")
+        void autonomoDeveListarPeloProprioAcesso() {
+            var autonoma = Person.builder().personId(UUID.randomUUID()).name("Dra. Marina").build();
+            when(currentProfessionalProvider.requireContext())
+                    .thenReturn(br.com.petfy.healthcare.Contextos.autonomo(autonoma));
+            when(grantRepository.buscarVigentesDaPessoa(eq(autonoma.getPersonId()), any(), any(), any()))
+                    .thenReturn(new PageImpl<>(List.of(acesso(null))));
+
+            var result = service.listAccessibleAnimals(null, primeiraPagina);
+
+            assertThat(result).hasSize(1);
+            verify(grantRepository, never()).buscarVigentesDaClinica(any(), any(), any(), any());
         }
     }
 

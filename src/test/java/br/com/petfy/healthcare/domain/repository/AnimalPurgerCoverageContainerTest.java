@@ -66,7 +66,10 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             // care_instruction_fulfillments alcanca animals pela neta, como as correcoes:
             // aponta para care_instructions, que aponta para animals
             "care_instructions",
-            "care_instruction_fulfillments");
+            "care_instruction_fulfillments",
+            // filha direta, e sem neta: nada aponta para observations, entao o purger
+            // apaga em massa em vez de por entidade
+            "observations");
 
     /**
      * Quem chega a {@code animals}, direta ou indiretamente.

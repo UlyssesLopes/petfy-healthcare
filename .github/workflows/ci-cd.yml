@@ -1,20 +1,47 @@
-name: CI/CD Pipeline
+name: CI
+
+# ------------------------------------------------------------------ o que este pipeline e
+#
+# UM job, um proposito: rodar a suite contra Postgres de verdade antes de o codigo chegar
+# na main. Nada mais.
+#
+# POR QUE ELE EXISTE, SE O DEPLOY NAO PASSA POR AQUI. O Railway constroi do
+# repositorio e sobe a main sozinho - este pipeline nao publica, nao empacota e nao
+# implanta. O que ele faz e ser a unica coisa entre um commit ruim e o ambiente no ar: sem
+# ele, a primeira noticia de uma migration quebrada e a aplicacao nao subindo no dev.
+#
+# E ha um motivo especifico deste projeto: os testes de container falham de forma
+# INTERMITENTE no Windows - o daemon responde ao CLI e o isDockerAvailable() do
+# Testcontainers devolve false. Este runner e hoje o unico lugar onde as migrations rodam
+# contra Postgres sem depender de sorte.
+#
+# ------------------------------------------------------------------ o que saiu, e por que
+#
+# JOB docker (2026-08-07). Construia a imagem e publicava no ghcr. Ninguem puxava: o
+# Railway constroi do repositorio, e o registry privado nao tem onde receber credencial na
+# UI dele. Era deploy artifact sem consumidor - 199 MB por push na main, e o que estufou a
+# cota de armazenamento junto com o jar.
+#
+# UPLOAD DO RELATORIO (2026-08-07). Subia surefire e jacoco a cada corrida. Com a cota
+# cheia ele passou a falhar, e pintava de vermelho corridas com 749 testes passando - o
+# pior tipo de sinal, o que treina a ignorar. Quem precisar do relatorio roda
+# `mvn verify` e abre target/site/jacoco.
+#
+# PUSH EM TODA BRANCH (2026-08-07). Eram 143 corridas em 4 dias, 76 num unico dia, quase
+# todas push de branch em andamento. A pergunta que importa - "isto pode entrar na main?" -
+# se responde no PR. Push de branch continua sem corrida, e quem quiser conferir antes roda
+# a suite na maquina.
 
 on:
-  push:
-    branches: [ "**" ]
   pull_request:
+    branches: [ main ]
+  push:
     branches: [ main ]
 
 # corridas antigas do mesmo ref sao canceladas quando chega um push novo
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  # o ghcr.io rejeita maiuscula no nome da imagem e github.repository preserva
-  # o case do dono (UlyssesLopes), entao o caminho vai em minusculo na mao
-  IMAGE_NAME: ghcr.io/ulysseslopes/petfy-healthcare
 
 jobs:
   build-and-test:
@@ -31,34 +58,18 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # verify ja roda os testes e gera o relatorio do jacoco (a execucao 'report'
-      # esta amarrada na fase verify no pom), entao nao precisa de passo separado
+      # verify ja roda os testes e gera o relatorio do jacoco (a execucao 'report' esta
+      # amarrada na fase verify no pom), entao nao precisa de passo separado.
+      #
+      # NAO ha escape de container aqui, e a ausencia e deliberada: rodar com
+      # -Dpetfy.allow-skipping-container-tests=true tornaria este job capaz de passar sem
+      # validar nenhuma migration, que e exatamente a falsa confianca que a sentinela
+      # ContainerTestsHabilitadosTest existe para impedir.
       - name: Build e testes
         run: mvn -B clean verify
 
-      # retencao curta de proposito: relatorio de teste interessa no dia em que a
-      # corrida falha, e a retencao default do repositorio (90 dias) transformava
-      # cada push num deposito que ninguem abre
-      - name: Publica relatorios de teste e cobertura
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-reports
-          path: |
-            target/surefire-reports/
-            target/site/jacoco/
-          if-no-files-found: warn
-          retention-days: 5
-
-      # NAO existe passo que publique o jar como artefato, e a ausencia e
-      # deliberada: ele existia de quando o pipeline entregava jar pronto para a
-      # imagem consumir. Hoje o Dockerfile e multi-stage e compila de dentro do
-      # build, e o Railway constroi do repositorio - ninguem baixava aquilo.
-      # Eram 79 MB por push em toda branch, 9 GB acumulados ate 2026-08-07, o que
-      # levou a cota de armazenamento do Actions a 90%. O gate de que o jar
-      # empacota continua sendo o 'mvn verify' acima
-      # so roda quando SONAR_TOKEN estiver configurado no repositorio; sem isso
-      # o passo e pulado em vez de quebrar o pipeline inteiro
+      # so roda quando SONAR_TOKEN estiver configurado no repositorio; sem isso o passo e
+      # pulado em vez de quebrar o pipeline inteiro
       - name: Analise SonarQube
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -69,54 +80,3 @@ jobs:
           -Dsonar.projectKey=petfy-healthcare
           -Dsonar.host.url=$SONAR_HOST_URL
           -Dsonar.login=$SONAR_TOKEN
-
-  docker:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v7
-
-      # sem isso o build-push-action usa o driver docker padrao, que nao sabe
-      # exportar cache: o cache-to abaixo falha antes de o build comecar
-      - name: Prepara o buildx
-        uses: docker/setup-buildx-action@v4
-
-      # o login so e necessario para publicar; em PR o job constroi e descarta
-      - name: Login no GitHub Container Registry
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # o build roda em toda branch e em todo PR, porque a imagem e o artefato de
-      # deploy e quebra nela nao pode chegar na main sem ninguem ver. Publicar,
-      # esse sim, so a partir da main
-      - name: Build e push da imagem
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.IMAGE_NAME }}:latest
-          # o Dockerfile agora compila o jar dentro do build, entao sem cache
-          # cada execucao baixaria as dependencias do Maven de novo.
-          # mode=min e nao max: 'max' grava tambem as camadas intermediarias do
-          # stage de build do Maven, e foi o que levou o cache a 10,6 GB contra o
-          # teto de 10 GB do repositorio - passando do teto o GitHub evicta por
-          # LRU, entao pagava-se a gravacao e ainda se tomava miss
-          cache-from: type=gha
-          cache-to: type=gha,mode=min
-
-          # sem attestation de proveniencia: cada push publicava um manifesto
-          # extra no ghcr, que aparece na listagem 'sem tag' e nao e consumido por
-          # nada aqui - o Railway constroi do repositorio e nao puxa a imagem
-          provenance: false

@@ -275,6 +275,54 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
                     .containsExactly("Rex");
         }
 
+        /**
+         * A consulta com recorte, contra Postgres de verdade.
+         *
+         * <b>Existe porque mock nao prova JPQL.</b> Tres coisas aqui so falham no banco:
+         * o {@code coalesce} sobre coluna nula, o {@code like} com o termo ja montado
+         * como {@code %texto%} - se fosse parametro nulo o Postgres recusaria por nao
+         * inferir o tipo -, e sobretudo a <b>ordenacao por caminho aninhado</b>
+         * ({@code animal.name}), que depende de o Spring Data gerar o alias e o join
+         * certos. Nada disso aparece num teste de service com Mockito.
+         */
+        @Test
+        @DisplayName("a busca com recorte deve filtrar, ordenar e paginar no banco")
+        void buscaComRecorteFiltraOrdenaEPagina() {
+            grantRepository.save(Grant.builder()
+                    .animal(rex).granteeOrganization(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
+            grantRepository.save(Grant.builder()
+                    .animal(nina).granteeOrganization(bichoFeliz).level(GrantLevel.EDITOR).scopes(escopoCarteira()).grantedAt(LocalDateTime.now()).build());
+
+            var porNome = org.springframework.data.domain.PageRequest.of(
+                    0, 20, org.springframework.data.domain.Sort.by("animal.name"));
+
+            // o curinga lista os dois, e a ordem vem do caminho aninhado
+            assertThat(grantRepository
+                    .buscarVigentesDaClinica(bichoFeliz.getOrganizationId(), LocalDateTime.now(), "%", porNome))
+                    .extracting(g -> g.getAnimal().getName())
+                    .containsExactly("Nina", "Rex");
+
+            // busca por nome, insensivel a caixa
+            assertThat(grantRepository
+                    .buscarVigentesDaClinica(bichoFeliz.getOrganizationId(), LocalDateTime.now(), "%re%", porNome))
+                    .extracting(g -> g.getAnimal().getName())
+                    .containsExactly("Rex");
+
+            // termo que nao casa com ninguem devolve pagina vazia, e nao erro
+            var vazia = grantRepository.buscarVigentesDaClinica(
+                    bichoFeliz.getOrganizationId(), LocalDateTime.now(), "%nao-existe%", porNome);
+            assertThat(vazia).isEmpty();
+            assertThat(vazia.getTotalElements()).isZero();
+
+            // a pagina de um item conta os dois: quem conta e o banco
+            var primeiraDeUm = grantRepository.buscarVigentesDaClinica(
+                    bichoFeliz.getOrganizationId(), LocalDateTime.now(), "%",
+                    org.springframework.data.domain.PageRequest.of(0, 1, org.springframework.data.domain.Sort.by("animal.name")));
+            assertThat(primeiraDeUm.getContent()).hasSize(1);
+            assertThat(primeiraDeUm.getTotalElements()).isEqualTo(2);
+            assertThat(primeiraDeUm.getTotalPages()).isEqualTo(2);
+        }
+
         @Test
         @DisplayName("convites devem ser filtrados pela clinica")
         void convitesFiltradosPelaClinica() {

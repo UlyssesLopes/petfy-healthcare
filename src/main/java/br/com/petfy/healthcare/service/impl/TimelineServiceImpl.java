@@ -2,9 +2,7 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.TimelineEntryResponseDTO;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
-import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.TimelineEntry;
-import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.TimelineRepository;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.service.TimelineService;
@@ -35,7 +33,6 @@ public class TimelineServiceImpl implements TimelineService {
 
     private final TimelineRepository timelineRepository;
     private final AnimalAccessGuard animalAccessGuard;
-    private final PersonRepository personRepository;
 
     /**
      * <b>O escopo filtra o que aparece, e e aqui que ele finalmente vale para leitura.</b>
@@ -64,6 +61,13 @@ public class TimelineServiceImpl implements TimelineService {
                 .map(entrada -> toResponse(entrada, escopo));
     }
 
+    /**
+     * <b>Tudo que identifica autoria e mascarado fora do escopo, e isso e regra e nao
+     * zelo.</b> Dizer "Clinica Bicho Feliz" ou "CRMV-SP 12345" num evento que quem le
+     * nao pode abrir entregaria exatamente o que o escopo esconde - que o animal foi
+     * atendido, e por quem. O que atravessa e so o que a entrada opaca precisa dizer:
+     * que houve um evento daquele tipo, naquela data.
+     */
     private TimelineEntryResponseDTO toResponse(TimelineEntry entrada, Set<GrantScope> escopo) {
         boolean alcanca = escopo == null
                 || escopo.contains(entrada.getEventType().escopoExigido());
@@ -81,21 +85,21 @@ public class TimelineServiceImpl implements TimelineService {
                 // o que existe e sobre o que foi concedido.
                 .summary(alcanca ? entrada.getSummary() : null)
                 .visivel(alcanca)
-                .recordedByName(alcanca ? nomeDe(entrada.getRecordedByPersonId()) : null)
+                // vem da view desde a V29: era uma consulta por entrada, e uma pagina de
+                // vinte eventos custava vinte
+                .recordedByName(alcanca ? entrada.getRecordedByName() : null)
+                .organizationName(alcanca ? entrada.getOrganizationName() : null)
+                .credentialLabel(alcanca ? entrada.getCredentialLabel() : null)
+                .credentialStatus(alcanca ? entrada.getCredentialStatus() : null)
+                // zero fora do escopo: a contagem de correcoes diria que houve retificacao
+                // num evento cujo conteudo quem le nao alcanca
+                .correctionCount(alcanca ? entrada.getCorrectionCount() : 0)
+                // o peso anterior tambem some fora do escopo: quem nao alcanca PESO nao
+                // recebe o valor atual, e entregar o anterior daria a curva pela porta
+                // dos fundos
+                .previousWeight(alcanca ? entrada.getPreviousWeight() : null)
                 .healthData(entrada.isHealthData())
                 .build();
-    }
-
-    /**
-     * O nome de quem registrou, quando ha.
-     *
-     * Nulo nos eventos anteriores ao P4 - a migration nao inventou autor, e a resposta
-     * diz isso em vez de mostrar o titular atual como se ele tivesse registrado.
-     */
-    private String nomeDe(UUID personId) {
-        return personId == null
-                ? null
-                : personRepository.findById(personId).map(Person::getName).orElse(null);
     }
 
 }

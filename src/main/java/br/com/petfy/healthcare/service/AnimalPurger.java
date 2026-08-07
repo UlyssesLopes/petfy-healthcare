@@ -6,6 +6,7 @@ import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionFulfillmentRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
+import br.com.petfy.healthcare.domain.repository.ObservationRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
@@ -64,6 +65,7 @@ public class AnimalPurger {
     private final SensitiveAccessLogRepository sensitiveAccessLogRepository;
     private final AnimalHealthConditionRepository animalHealthConditionRepository;
     private final CareInstructionRepository careInstructionRepository;
+    private final ObservationRepository observationRepository;
     private final CareInstructionFulfillmentRepository careInstructionFulfillmentRepository;
 
     /**
@@ -129,6 +131,7 @@ public class AnimalPurger {
         sensitiveAccessLogRepository.deleteByAnimalAnimalIdIn(animalIds);
         animalHealthConditionRepository.deleteByAnimalAnimalIdIn(animalIds);
         careInstructionRepository.deleteByAnimalAnimalIdIn(animalIds);
+        observationRepository.deleteByAnimalAnimalIdIn(animalIds);
 
         // o convite sai antes da custodia por clareza, nao por dependencia: um
         // aponta para o animal, o outro tambem, e nenhum dos dois aponta para o outro

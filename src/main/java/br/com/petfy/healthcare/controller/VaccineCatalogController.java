@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import br.com.petfy.healthcare.domain.dto.VaccineCatalogResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
@@ -39,6 +40,11 @@ public class VaccineCatalogController {
     private final CurrentPersonProvider currentPersonProvider;
     private final AnimalAccessGuard animalAccessGuard;
 
+    @Operation(summary = "As vacinas que existem para esta especie",
+               description = "Com animalId, filtra pela especie dele - o catalogo de gato nao serve "
+                             + "para cao. Sem animalId, devolve tudo. E o insumo do protocolo de "
+                             + "filhote: sem catalogo, cada tutor digita o nome da vacina do seu jeito "
+                             + "e nao ha como saber que dose falta.")
     @GetMapping
     public ResponseEntity<List<VaccineCatalogResponseDTO>> list(@RequestParam(required = false) UUID animalId) {
         List<VaccineCatalog> catalogo = animalId == null

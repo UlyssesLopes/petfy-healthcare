@@ -25,6 +25,11 @@ public class VaccineController {
 
     private final VaccineService vaccineService;
 
+    @Operation(summary = "Registra uma vacina",
+               description = "applicationDate pode estar no passado: a carteirinha de papel de 2019 "
+                             + "entra aqui e aparece em 2019 na linha do tempo, e nao hoje. Sem "
+                             + "applicationDate e dose planejada, que fica na agenda e nao entra na "
+                             + "linha do tempo - nao aconteceu ainda.")
     @PostMapping
     public ResponseEntity<VaccineResponseDTO> createVaccine(@Valid @RequestBody VaccineRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(vaccineService.createVaccine(request));
@@ -45,17 +50,21 @@ public class VaccineController {
         return ResponseEntity.ok(vaccineService.updateVaccine(vaccineId, request));
     }
 
+    @Operation(summary = "Remove a vacina", description = "Para o registro criado por engano. Corrigir um dado e o PUT, que preserva o valor anterior - apagar nao e correcao.")
     @DeleteMapping("/{vaccineId}")
     public ResponseEntity<Void> deleteVaccine(@PathVariable UUID vaccineId) {
         vaccineService.deleteVaccine(vaccineId);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Uma vacina")
     @GetMapping("/{vaccineId}")
     public ResponseEntity<VaccineResponseDTO> getVaccineById(@PathVariable UUID vaccineId) {
         return ResponseEntity.ok(vaccineService.getVaccineById(vaccineId));
     }
 
+    @Operation(summary = "As vacinas que eu alcanco",
+               description = "Paginada, com teto de 100 por pagina.")
     @GetMapping
     public ResponseEntity<Page<VaccineResponseDTO>> listAllVaccines(
             @PageableDefault(size = 20, sort = "applicationDate") Pageable pageable) {
@@ -63,6 +72,7 @@ public class VaccineController {
     }
 
     /** Rastro de alteracoes: quem mudou o que, e quando. */
+    @Operation(summary = "O historico de correcoes da vacina", description = "Correcao e sucessao: o valor anterior fica legivel, com quem corrigiu e quando. A linha do tempo diz QUANTAS correcoes o evento sofreu; o conteudo delas esta aqui.")
     @GetMapping("/{vaccineId}/corrections")
     public ResponseEntity<List<VaccineCorrectionResponseDTO>> listCorrections(@PathVariable UUID vaccineId) {
         return ResponseEntity.ok(vaccineService.listCorrections(vaccineId));
@@ -73,6 +83,7 @@ public class VaccineController {
      * rota literal primeiro, mas para deixar visivel que as duas dividem o
      * mesmo nivel do path.
      */
+    @Operation(summary = "As proximas doses", description = "Caso particular do feed de pendencias, que e a lista geral - esta continua existindo com o contrato dela.")
     @GetMapping("/agenda")
     public ResponseEntity<VaccineAgendaResponseDTO> getAgenda(
             @RequestParam(defaultValue = "30") int windowDays) {

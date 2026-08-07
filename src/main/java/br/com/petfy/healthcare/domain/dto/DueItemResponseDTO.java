@@ -58,4 +58,17 @@ public class DueItemResponseDTO {
 
     private String lastFulfilledByName;
 
+    /**
+     * Se esta pessoa silenciou esta pendencia.
+     *
+     * <b>Sempre falso no feed default</b>, porque o que ela silenciou nao aparece la - e o
+     * ponto de silenciar. Vem verdadeiro em {@code ?includeSilenced=true}, que e como a tela
+     * oferece voltar a ser cobrada: sem essa leitura, silenciar seria irreversivel pela
+     * interface, e a acao mora <i>na</i> pendencia (DESIGN 5.3).
+     *
+     * Silenciar nao para o registro: a proxima dose continua calculada e a linha do tempo
+     * continua recebendo tudo (PRODUTO 4.2).
+     */
+    private boolean silenced;
+
 }

@@ -27,11 +27,13 @@ de a anterior fechar.
 | 6 | O que o Petfy não é | **Aprovada** em 2026-08-06 |
 | 7 | Horizonte | **Aprovada** em 2026-08-06 |
 | 8 | Decisões em aberto | **Consolidada** em 2026-08-06 — 12 de 14 resolvidas |
+| 9 | O lado do cliente | **Aprovada** em 2026-08-06, em cinco partes |
 
-**Documento fechado em 2026-08-06.** As oito seções estão aprovadas.
+**As oito primeiras seções fecharam em 2026-08-06**, e nenhuma delas mudou desde
+então. A seção 9 é posterior ao fechamento e não o contradiz — o porquê está na 9.1.
+Ela abriu as decisões 15, 16 e 17, que vivem na 9.5 e não na seção 8.
 
-**Retomar em:** o levantamento do delta de backend — endpoint por endpoint, entidade
-por entidade, contra este documento —, que vira fase nova no `ROADMAP.md`.
+**Retomar em:** a Fase 5 do `ROADMAP.md`, reescrita sobre esta seção.
 
 ---
 
@@ -493,6 +495,32 @@ prontuário, e o que ela viu chega a quem pode diagnosticar.
 Isso também dá o critério objetivo de **dado de saúde** para efeito de LGPD: ato
 clínico sempre é; observação quase sempre é; recado e foto não são. O
 `SensitiveAccessLog` passa a ter regra clara sobre o que cobre.
+
+#### Construída em 2026-08-07, e o "quase sempre" foi fechado
+
+Observação estava descrita aqui desde o documento fundador e **não existia no
+backend** — descoberto ao levantar o delta de contrato do passo 4. A ausência
+deixava três coisas desta seção sem lugar nenhum: a creche não tinha onde registrar
+o que viu, o ato clínico não tinha o que referenciar como evidência, e o alerta da
+creche não existia porque o que ele qualifica não existia.
+
+Duas decisões que o texto acima não tomava, e que a construção obrigou a fechar:
+
+**Observação é *sempre* dado de saúde.** O *"quase sempre"* era honesto como
+descrição e inviável como regra: ele abre uma classificação que teria de ser
+decidida por registro. Pelo autor, e a mesma frase muda de regime conforme quem
+digitou. Por um campo, e a classificação de dado sensível fica na mão de quem está
+com pressa no balcão. **Sempre** é mais restritivo do que o necessário em "brincou
+muito hoje", e nunca vaza por classificação errada — que é o erro que não tem
+conserto.
+
+**Observação tem escopo de concessão próprio**, e não o do prontuário. Quem mais
+escreve observação é a creche; colocá-la no prontuário faria com que dar à creche
+acesso ao que **ela mesma escreve** entregasse junto todo atendimento clínico do
+animal — exatamente o que a 3.5 e o escopo existem para impedir, e o caso que os
+originou. Consequência: concessão anterior a 2026-08-07 não tem esse escopo e não
+vê observação, o que é o padrão correto — ninguém concedeu acesso a algo que não
+existia quando concedeu.
 
 ### 3.12 Orientação (`CareInstruction`)
 
@@ -1117,6 +1145,178 @@ tutor**, antecipadamente, em vez de o sistema decidir por ele no susto.
 *A validar no levantamento: o cartão de emergência com escopo é item de v1, e não
 uma consequência que descobrimos depois.*
 
+## 9. O lado do cliente
+
+> Aberta em 2026-08-06, depois de o documento ter sido fechado com oito seções. O
+> fechamento continua verdadeiro sobre o que ele dizia: as oito seções estão
+> aprovadas e nenhuma mudou. Esta é seção nova, e o motivo dela está na 9.1.
+
+### 9.1 O critério
+
+**Esta seção existe apesar da regra do documento, e não contra ela.** O cabeçalho diz
+que tela e stack não entram aqui, e nenhuma das duas entra. O que se decide na seção 9
+é **quantas superfícies o produto tem, quem usa cada uma, e a que relação do modelo
+cada uma se ancora** — que é a mesma natureza de pergunta da seção 2, feita do outro
+lado. Tela é o que se desenha depois. Stack é o `ROADMAP.md`.
+
+**Por que ela vem antes do contrato.** A ordem intuitiva seria a inversa: o modelo está
+de pé, então especifique a API e desenhe a tela contra ela. Está errada, porque **a
+forma do cliente muda o que a API precisa responder**. Três perguntas que só a
+estrutura do cliente responde, e que o contrato não tem como responder sozinho:
+
+- **Quantas coisas uma tela pede de uma vez.** Um animal em profundidade e uma lista
+  longa de animais não têm a mesma resposta certa.
+- **Se agir em nome de uma organização é escolha por operação, ou estado de quem
+  entrou.** Uma pessoa com três vínculos (3.2) decide o contexto a cada ação, ou decide
+  uma vez ao entrar? São dois produtos diferentes sobre o mesmo modelo.
+- **Se uma lista é de três ou de duzentos.** O tutor responde por um a três animais; o
+  abrigo, por centenas. A mesma leitura serve para um e é inviável para o outro.
+
+Especificar o contrato antes é responder às três por adivinhação, e depois brigar com a
+própria resposta.
+
+**Seis atores, e não seis superfícies.** A seção 2 listou seis; esta seção chega em
+três. A redução não é economia — é o que o modelo já afirmava: clínica, creche, abrigo
+e rede de lares diferem por capacidade (3.6), não por natureza. Uma superfície por ator
+seria a mesma coisa que uma tabela por tipo de pessoa, que é o erro que a 3.1 desfez.
+
+**O que esta seção não decide:** tela, navegação, nome de rota, tecnologia, prazo. Onde
+o argumento precisou de um exemplo com nome de rota, ele está no `ROADMAP.md`, que é
+onde esse tipo de frase pode existir.
+
+### 9.2 As três superfícies
+
+**Três, e cada uma se ancora numa relação diferente do modelo.** Não é arrumação de
+produto: são as três formas que existem de alguém alcançar o registro de um animal, e a
+seção 3 já as havia separado antes de existir cliente.
+
+| Superfície | Ancorada em | Quem é | Volume | Granularidade |
+|---|---|---|---|---|
+| **Área do tutor** | Custódia (3.4), mais os acessos recebidos | Quem responde pelo animal | Um a três animais | Um animal em profundidade |
+| **Área de organização** | Membro (3.7), mais os acessos concedidos (3.5) | Quem atua por si ou em nome de uma organização | Dezenas a centenas | Lista, filtro, busca, lote |
+| **Cartão** | Um acesso com escopo (3.5), sem conta | Quem recebeu o link | Um animal | Leitura, escopo mínimo |
+
+**O teste que impede uma quarta aparecer:** superfície nova só existe se houver
+**relação nova no modelo**. Se alguém propuser uma, a pergunta é "ancorada em quê" — e
+se a resposta for "num tipo de usuário", é a 3.1 sendo desfeita pela porta dos fundos.
+
+**O cartão já existe, e não é hipótese.** É o compartilhamento por link sem conta, e é
+ele que a decisão 13 nomeou como compensação por não haver quebra-vidro: o tutor
+prepara de véspera, com escopo mínimo, e quem socorre lê sem depender de alguém acordar
+às 3h. É a única superfície sem conta — e por isso a única em que o escopo é a defesa
+inteira, sem senha atrás dele.
+
+**Regra dura:** o cartão nunca é indexável nem adivinhável. Registro de saúde atrás de
+um link que um buscador encontra é registro público, e nenhuma das promessas da seção 5
+sobrevive a isso.
+
+**O que as três compartilham, e é o ponto:** o mesmo registro. Não existe "versão
+simplificada" da linha do tempo para uma superfície — existe **escopo**. Entre elas muda
+o quanto se alcança e como se navega; nunca muda o que é verdade sobre o animal.
+
+### 9.3 Uma aplicação, duas áreas
+
+**Mesma aplicação, mesmo cadastro, mesma entrada.** As duas áreas não são dois
+produtos: são dois pontos de vista sobre o mesmo registro, e quem alterna entre elas é a
+mesma pessoa. A 3.1 decidiu que não existe conta de tutor nem conta de veterinário —
+dois logins desfariam isso logo na porta.
+
+**Regra dura: a área não vem de um campo de papel.** A pessoa chega numa área por causa
+do que ela **tem** — custódia de um animal, ou vínculo com uma organização —, nunca por
+causa de um tipo declarado no cadastro. O papel deixou de existir no modelo; se ele
+voltar como condicional na tela, ele voltou inteiro, e a 3.1 vira decoração.
+
+**A troca entre áreas é explícita e visível.** É o mesmo princípio do contexto (3.2): o
+registro guarda em nome de quem foi feito, e quem age precisa saber em nome de quem está
+agindo **antes** de agir. Área implícita é ato registrado no contexto errado — e contexto
+não é editável depois (5.7).
+
+**A área do tutor** é um animal em profundidade. O centro dela é o feed de pendências
+(decisão 2), porque é o único formato em que vencimento, orientação, recado e percepção
+cabem juntos sem virar quatro abas. É a área que existe todo dia.
+
+**A área de organização** é muitos animais em largura: lista, filtro, busca e ação sobre
+vários de uma vez. Clínica, creche, abrigo e rede de lares transitórios são **a mesma
+área**, diferindo pelas capacidades da organização (3.6) — quem gere turma e vaga vê
+turma; quem detém custódia vê os animais pelos quais responde; quem registra ato clínico
+tem onde registrar. É a área do expediente.
+
+**O profissional autônomo entra na área de organização sem organização nenhuma.** Ele é
+pessoa com credencial e sem vínculo (3.7), e **nada nessa área pode exigir uma
+organização para funcionar**. Quem o limita é a credencial dele, não a capacidade de um
+coletivo — foi isso que a decisão 5 resolveu.
+
+**Ter as duas é o caso comum, não o raro.** A veterinária que tem cachorro, o dono de
+creche que é tutor, o voluntário de abrigo com dois gatos. Ela cadastra o próprio animal
+numa área e atende na outra, e nenhuma das duas esconde a existência da outra.
+
+### 9.4 Web primeiro, app depois
+
+**Web primeiro, e o motivo é alcance:** é a única superfície que serve os seis atores da
+seção 2 sem exigir nada de ninguém. Quem recebe um link entra — não instala, não
+atualiza, não depende de loja aprovar.
+
+**E os atores pesados são de teclado.** Clínica, creche e abrigo trabalham em balcão,
+cadastram em série e olham lista. A área de organização não pede app; pede tela grande.
+
+**O app vem depois de uma v1 web robusta, e não busca paridade.** Ele existe para as
+duas coisas que o navegador faz mal, e as duas são do tutor:
+
+- **avisar** — a pendência (3.14) que chega sem o usuário ir procurar;
+- **confirmar num toque** — "dei o remédio", que é o cumprimento da orientação (3.12)
+  virando evento.
+
+É o loop diário do tutor, e é curto de propósito. Lançar a vacina de 2019 da carteirinha
+de papel continua na web — ninguém faz isso no ônibus.
+
+**Regra dura: o app não é o produto reduzido.** Ele é um recorte com propósito. App que
+tenta ser a web inteira numa tela menor faz as duas coisas mal, e a primeira a quebrar é
+justamente o loop diário, que é a razão de ele existir.
+
+**O cartão é a superfície mais móvel das três — e é a que nunca pode exigir app.** Ele
+nasce de um QR numa coleira, lido por quem socorre o animal, não tem conta, não tem o
+app e não vai instalar nada no meio de uma emergência. Navegador, e só.
+
+**Sobre o aviso, para não soar como adiamento:** notificação não espera o app — o
+navegador já notifica, e a 4.2 registra o canal além do e-mail como falta desde antes
+desta seção existir. O que o app muda é a **confiabilidade** disso. Enquanto ele não
+existe, o aviso funciona; depois dele, o aviso deixa de ser frágil.
+
+### 9.5 O que a estrutura cobra, e o que fica em aberto
+
+Nada aqui é implementação — é o que as quatro seções anteriores tornam obrigatório. O
+detalhamento, rota por rota, é do `ROADMAP.md`.
+
+**Leitura em volume.** Tudo que existe hoje foi desenhado para quem responde por três
+animais. A área de organização lê centenas, e precisa de recorte, busca e ordem — não
+por conforto, mas porque sem isso ela é inutilizável para o ator que a justifica.
+
+**Contexto ativo como estado, e não como escolha a cada ação.** A 9.3 decidiu que a
+troca de área é explícita e visível. A consequência é que agir em nome de uma
+organização passa a ser algo que a pessoa **escolheu antes** — a ambiguidade deixa de ser
+erro devolvido no meio de uma operação e vira decisão tomada na entrada.
+
+**Nada na área de organização pode exigir organização.** O autônomo (9.3) atravessa a
+área inteira, e isso precisa ser afirmação verificada, não coincidência de quais
+funcionalidades foram construídas primeiro.
+
+**O cartão preparado, com escopo.** A decisão 13 prometeu-o como compensação por não
+haver quebra-vidro, e a 9.2 o transformou em superfície. Ele deixa de ser consequência
+descoberta depois e passa a ser item de v1, como a própria seção 8 já suspeitava.
+
+**O feed de pendências como leitura, e não como soma feita na tela.** A 3.14 já dizia
+que pendência é derivada; a 9.3 a coloca no centro da área do tutor. Se o cliente montar
+esse feed juntando fontes por conta própria, cada cliente novo — o app, depois — remonta
+a mesma regra e erra diferente.
+
+**Três decisões em aberto, todas da área de organização:**
+
+| # | Decisão | Por que não se decide aqui |
+|---|---|---|
+| 15 | **Quem cria uma organização, e como entra o primeiro membro?** | O convite de membro existe no modelo, mas o começo da cadeia nunca foi exercitado. É a primeira coisa que a área de organização encontra, e não tem resposta ainda |
+| 16 | **Como o adotante sem e-mail à mão recebe o convite de custódia?** | A adoção acontece no balcão. Decidiu-se que a organização convida em vez de criar conta pela pessoa (2.6, 4.3), e a fricção disso é real — a resposta é de fluxo, e o fluxo ainda não foi desenhado |
+| 17 | **O que compõe o escopo mínimo do cartão?** | Alergia, medicação em curso, condições e contato são o candidato óbvio. Fechar a lista é decisão clínica, e merece ser tomada com um veterinário na frente |
+
 ---
 
 ## Anexo — insumos já levantados para o delta de backend
@@ -1124,6 +1324,14 @@ uma consequência que descobrimos depois.*
 Nada aqui é decisão de produto. É o que a leitura do código em 2026-08-05
 apontou como restrição ou lacuna, guardado para o levantamento que vem depois da
 seção 8.
+
+> ⚠️ **Este anexo está vencido, e planejar por ele é planejar para trás.** Ele é de
+> 2026-08-05, **anterior à Fase 6**, e cinco das oito lacunas que ele lista já estão
+> fechadas — entre elas *"pet exige dono, não há animal sem tutor humano"*, que a
+> `Custody` resolveu, e *"não há linha do tempo do animal"*, que a view `animal_timeline`
+> resolveu. A conferência item por item, feita contra o contrato publicado em 2026-08-07,
+> está no `ROADMAP.md`, na seção do passo 4. **Leia lá antes de usar qualquer coisa
+> daqui.**
 
 **Restrições que o backend já impõe a qualquer cliente:**
 

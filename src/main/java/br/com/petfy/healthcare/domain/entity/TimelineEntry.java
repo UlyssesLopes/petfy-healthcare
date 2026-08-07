@@ -95,4 +95,64 @@ public class TimelineEntry {
     @Column(name = "summary")
     private String summary;
 
+    /**
+     * O nome de quem registrou, resolvido pela view.
+     *
+     * <b>Vem daqui e nao de uma consulta por entrada.</b> O servico fazia
+     * {@code personRepository.findById()} para cada linha, entao uma pagina de vinte
+     * eventos custava vinte consultas - e a linha do tempo e a leitura que mais cresce
+     * neste produto. Nulo nos eventos anteriores ao P4, que nao tem autor.
+     */
+    @Column(name = "recorded_by_name")
+    private String recordedByName;
+
+    /**
+     * Em nome de que organizacao o registro foi feito, quando houve uma.
+     *
+     * "A Ana, pela Clinica Norte, registrou" carrega responsabilidade institucional, e
+     * "a Ana registrou" nao (PRODUTO 3.2). Nulo quando quem registrou agia por si.
+     */
+    @Column(name = "organization_name")
+    private String organizationName;
+
+    /** A credencial de quem registrou, ja formatada como {@code CRMV-SP 12345}. */
+    @Column(name = "credential_label")
+    private String credentialLabel;
+
+    /**
+     * O estado da credencial.
+     *
+     * <b>Vai junto do rotulo de proposito.</b> A secao 5.2 do DESIGN cobra que CRMV
+     * apenas informado apareca <i>como informado</i>, sem selo de verificado que o
+     * produto nao pode dar (5.10) - e sem este campo a tela ou omite a credencial ou
+     * mente sobre ela.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "credential_status")
+    private CredentialStatus credentialStatus;
+
+    /**
+     * Quantas vezes este evento foi corrigido.
+     *
+     * Contagem, e nao a cadeia: a tela precisa saber <i>que</i> houve sucessao para
+     * marcar o evento (DESIGN 5.2), e o valor anterior continua nas rotas de correcao.
+     * Zero nos tipos que nao admitem correcao.
+     */
+    @Column(name = "correction_count", nullable = false)
+    private long correctionCount;
+
+    /**
+     * O peso da pesagem anterior, quando esta entrada e uma pesagem.
+     *
+     * <b>So o anterior, e nao a serie.</b> O grafico precisa de N pontos e quem os serve e
+     * {@code GET /animals/{id}/weights}; o que a <i>entrada</i> precisa e outra coisa -
+     * "12,5 kg" sozinho nao diz se e boa ou ma noticia. Com o valor anterior o cliente
+     * calcula a variacao e a linha fica honesta, sem virar painel (DESIGN 5.2).
+     *
+     * Nulo fora de pesagem, e nulo na primeira pesagem do animal - zero diria "nao
+     * variou", que e diferente de "nao ha com o que comparar".
+     */
+    @Column(name = "previous_weight")
+    private Double previousWeight;
+
 }

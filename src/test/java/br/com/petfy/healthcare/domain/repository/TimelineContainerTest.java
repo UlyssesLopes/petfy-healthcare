@@ -5,13 +5,18 @@ import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthCondition;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionKind;
 import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
+import br.com.petfy.healthcare.domain.entity.CredentialStatus;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
+import br.com.petfy.healthcare.domain.entity.Observation;
 import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.entity.ProfessionalCredential;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.TimelineEntry;
 import br.com.petfy.healthcare.domain.entity.TimelineEventType;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
+import br.com.petfy.healthcare.domain.entity.VaccineCorrection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,6 +56,9 @@ class TimelineContainerTest extends PostgresContainerTest {
     @Autowired private HealthRecordRepository healthRecordRepository;
     @Autowired private AnimalWeightHistoryRepository animalWeightHistoryRepository;
     @Autowired private AnimalHealthConditionRepository animalHealthConditionRepository;
+    @Autowired private ProfessionalCredentialRepository professionalCredentialRepository;
+    @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
+    @Autowired private ObservationRepository observationRepository;
 
     private Person ulysses;
     private Animal rex;
@@ -183,11 +191,279 @@ class TimelineContainerTest extends PostgresContainerTest {
                 .applicationDate(LocalDate.now().minusDays(2))
                 .creationDate(LocalDateTime.now()).build());
 
+        // o nome vem resolvido pela propria view desde a V29, e isso trava o fim de um
+        // N+1: o servico fazia personRepository.findById() por entrada, entao uma pagina
+        // de vinte eventos custava vinte consultas - na leitura que mais cresce aqui
         assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
-                .extracting(TimelineEntry::getSummary, TimelineEntry::getRecordedByPersonId)
+                .extracting(TimelineEntry::getSummary, TimelineEntry::getRecordedByPersonId,
+                        TimelineEntry::getRecordedByName)
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("Com autor", ulysses.getPersonId()),
-                        org.assertj.core.groups.Tuple.tuple("Sem autor", null));
+                        org.assertj.core.groups.Tuple.tuple("Com autor", ulysses.getPersonId(), "Ulysses"),
+                        org.assertj.core.groups.Tuple.tuple("Sem autor", null, null));
+    }
+
+    /**
+     * A credencial que a secao 5.2 do DESIGN cobra, com o estado dela.
+     *
+     * <b>O estado e o ponto, e nao o numero.</b> CRMV apenas informado tem de aparecer
+     * <i>como informado</i>: o produto nao pode dar selo de verificado que nao conferiu
+     * (5.10). Sem o status, a tela ou omite a credencial ou mente sobre ela.
+     */
+    @Test
+    @DisplayName("carrega a credencial de quem registrou, com o estado dela")
+    void carregaACredencialComEstado() {
+        professionalCredentialRepository.saveAndFlush(ProfessionalCredential.builder()
+                .person(ulysses).council("CRMV").uf("SP").number("12345")
+                .status(CredentialStatus.INFORMADO)
+                .creationDate(LocalDateTime.now()).build());
+
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Aplicada por quem tem CRMV")
+                .applicationDate(LocalDate.now())
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .singleElement()
+                .satisfies(entrada -> {
+                    assertThat(entrada.getCredentialLabel()).isEqualTo("CRMV-SP 12345");
+                    assertThat(entrada.getCredentialStatus()).isEqualTo(CredentialStatus.INFORMADO);
+                });
+    }
+
+    /**
+     * A credencial suspensa perde para a que autoriza ato clinico.
+     *
+     * <b>E deterministico de proposito.</b> A tabela admite mais de uma credencial por
+     * pessoa e a tela mostra uma linha; sem o {@code ORDER BY} da view a escolha seria a
+     * que o Postgres devolvesse primeiro, e a mesma tela mudaria de credencial entre duas
+     * leituras. Isto so falha contra banco de verdade.
+     */
+    @Test
+    @DisplayName("com duas credenciais deve escolher a que nao esta suspensa")
+    void escolheACredencialQueAutoriza() {
+        professionalCredentialRepository.saveAndFlush(ProfessionalCredential.builder()
+                .person(ulysses).council("CRMV").uf("RJ").number("99999")
+                .status(CredentialStatus.SUSPENSO)
+                .creationDate(LocalDateTime.now()).build());
+
+        professionalCredentialRepository.saveAndFlush(ProfessionalCredential.builder()
+                .person(ulysses).council("CRMV").uf("SP").number("11111")
+                .status(CredentialStatus.INFORMADO)
+                .creationDate(LocalDateTime.now().minusYears(5))
+                .build());
+
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("V10")
+                .applicationDate(LocalDate.now())
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .singleElement()
+                .satisfies(entrada -> assertThat(entrada.getCredentialLabel())
+                        .as("a suspensa e mais recente, e ainda assim perde: quem autoriza ato clinico vem primeiro")
+                        .isEqualTo("CRMV-SP 11111"));
+    }
+
+    /**
+     * A contagem de correcoes, para a tela marcar sucessao sem chamar a rota de correcoes
+     * de cada evento so para descobrir que a maioria nao tem nenhuma.
+     */
+    @Test
+    @DisplayName("conta as correcoes do evento, e zero em quem nao admite correcao")
+    void contaAsCorrecoes() {
+        var vacina = vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Corrigida")
+                .applicationDate(LocalDate.now())
+                .creationDate(LocalDateTime.now()).build());
+
+        vaccineCorrectionRepository.saveAndFlush(VaccineCorrection.builder()
+                .vaccine(vacina).correctedBy(ulysses)
+                .previousVaccineName("Nome errado")
+                .correctedAt(LocalDateTime.now()).build());
+
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).weight(12.5).measuredAt(LocalDate.now().minusDays(1))
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .extracting(TimelineEntry::getEventType, TimelineEntry::getCorrectionCount)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(TimelineEventType.VACINA, 1L),
+                        org.assertj.core.groups.Tuple.tuple(TimelineEventType.PESAGEM, 0L));
+    }
+
+    /**
+     * A observacao entra na linha do tempo, e entra pelo instante em que foi VISTA.
+     *
+     * <b>O caso e o da creche:</b> registra as 18h o que viu as 9h. Se a view usasse
+     * {@code recorded_at}, o que a creche viu de manha apareceria depois do atendimento da
+     * tarde - e a ordem dos fatos de saude e justamente o que permite perceber padrao
+     * (3.9).
+     */
+    @Test
+    @DisplayName("observacao entra na linha do tempo pelo instante em que foi vista")
+    void observacaoEntraPeloInstanteVisto() {
+        var asNove = LocalDateTime.now().withHour(9).withMinute(0).withSecond(0).withNano(0);
+
+        observationRepository.saveAndFlush(Observation.builder()
+                .animal(rex).recordedBy(ulysses)
+                .description("Mancou da direita")
+                .observedAt(asNove)
+                // digitado nove horas depois, como acontece no fim do expediente
+                .recordedAt(asNove.plusHours(9))
+                .creationDate(asNove.plusHours(9))
+                .build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .singleElement()
+                .satisfies(entrada -> {
+                    assertThat(entrada.getEventType()).isEqualTo(TimelineEventType.OBSERVACAO);
+                    assertThat(entrada.getSummary()).isEqualTo("Mancou da direita");
+                    assertThat(entrada.getOccurredAt()).isEqualTo(asNove);
+                    assertThat(entrada.getRecordedAt()).isEqualTo(asNove.plusHours(9));
+                    assertThat(entrada.getRecordedByName()).isEqualTo("Ulysses");
+                    assertThat(entrada.isHealthData())
+                            .as("observacao e sempre dado de saude: o quase do 3.11 abriria "
+                                + "classificacao por linha, e o lado seguro e o restritivo")
+                            .isTrue();
+                });
+    }
+
+    /**
+     * A pesagem carrega a anterior, e com isso a variacao (DESIGN 5.2).
+     *
+     * <b>Nulo na primeira pesagem, e nao zero.</b> Zero diria "nao variou", que e um fato
+     * diferente de "nao ha com o que comparar" - e a tela que mostrasse "0,0 kg" na
+     * primeira pesagem da vida do animal estaria mentindo.
+     */
+    @Test
+    @DisplayName("a pesagem carrega a anterior, e a primeira nao carrega nada")
+    void pesagemCarregaAAnterior() {
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).recordedBy(ulysses).weight(12.0)
+                .measuredAt(LocalDate.now().minusDays(30))
+                .creationDate(LocalDateTime.now()).build());
+
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).recordedBy(ulysses).weight(12.5)
+                .measuredAt(LocalDate.now().minusDays(10))
+                .creationDate(LocalDateTime.now()).build());
+
+        // o summary do peso sai de weight::text, e o Postgres imprime 12.0 como "12" -
+        // formatacao e do cliente, e e por isso que previousWeight vai como numero
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .extracting(TimelineEntry::getSummary, TimelineEntry::getPreviousWeight)
+                .containsExactly(
+                        // a mais recente primeiro: 12,5 tem 12,0 como anterior
+                        org.assertj.core.groups.Tuple.tuple("12.5", 12.0),
+                        // a primeira da vida do animal nao tem anterior
+                        org.assertj.core.groups.Tuple.tuple("12", null));
+    }
+
+    /**
+     * Duas pesagens no mesmo dia nao produzem variacao entre si.
+     *
+     * <b>E decisao, e nao limitacao esquecida:</b> variacao de peso e leitura de
+     * tendencia, e diferenca entre duas medidas da mesma tarde e ruido de balanca - a
+     * mesma logica que faz a linha do tempo ordenar por quando aconteceu e nao por quando
+     * foi digitado.
+     */
+    @Test
+    @DisplayName("duas pesagens no mesmo dia nao geram variacao entre si")
+    void pesagensDoMesmoDiaNaoGeramVariacao() {
+        var hoje = LocalDate.now();
+
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).recordedBy(ulysses).weight(12.0).measuredAt(hoje)
+                .creationDate(LocalDateTime.now().minusHours(3)).build());
+
+        animalWeightHistoryRepository.saveAndFlush(AnimalWeightHistory.builder()
+                .animal(rex).recordedBy(ulysses).weight(12.4).measuredAt(hoje)
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .allSatisfy(entrada -> assertThat(entrada.getPreviousWeight())
+                        .as("mesma data nao e serie: seria ruido de balanca, nao tendencia")
+                        .isNull());
+    }
+
+    /**
+     * <b>Observacao tem escopo proprio, e nao o do prontuario.</b>
+     *
+     * Quem mais escreve observacao e a creche. Se ela caisse em PRONTUARIO, dar a creche
+     * acesso ao que ela mesma escreve entregaria junto todo atendimento clinico do animal
+     * - o exemplo que a doc do GrantScope usa como o problema que o escopo veio resolver.
+     */
+    @Test
+    @DisplayName("observacao exige o escopo de observacoes, e nao o de prontuario")
+    void observacaoTemEscopoProprio() {
+        assertThat(TimelineEventType.OBSERVACAO.escopoExigido())
+                .isEqualTo(GrantScope.OBSERVACOES)
+                .isNotEqualTo(GrantScope.PRONTUARIO);
+    }
+
+    /**
+     * As agregacoes que alimentam a ultima contribuicao da rede de quem cuida (DESIGN 5.4).
+     *
+     * <b>Mock nao prova nenhuma das duas.</b> Sao JPQL com {@code max()} e {@code group by}
+     * devolvendo <i>projecao por interface</i> - se o alias da consulta nao casar com o nome
+     * do getter, o Hibernate falha em runtime e nao na compilacao. Um mock do repositorio
+     * confirmaria apenas que o servico o chama.
+     */
+    @Test
+    @DisplayName("agrega a ultima contribuicao por pessoa, pela data de digitacao")
+    void agregaUltimaContribuicaoPorPessoa() {
+        var outraPessoa = personRepository.saveAndFlush(Person.builder()
+                .name("Dra. Marina").email("marina-" + UUID.randomUUID() + "@petfy.com.br")
+                .password("hash").build());
+
+        // duas do Ulysses: vale a mais recente por recorded_at
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Antiga")
+                .applicationDate(LocalDate.now().minusDays(20))
+                .creationDate(LocalDateTime.now().minusDays(20)).build());
+
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Recente")
+                .applicationDate(LocalDate.now().minusDays(1))
+                .creationDate(LocalDateTime.now().minusHours(2)).build());
+
+        healthRecordRepository.saveAndFlush(HealthRecord.builder()
+                .animal(rex).recordedBy(outraPessoa).category(HealthEventCategory.CONSULTA)
+                .eventType("Consulta").eventDate(LocalDate.now().minusDays(5))
+                .creationDate(LocalDateTime.now().minusDays(5)).build());
+
+        var porPessoa = timelineRepository.ultimaContribuicaoPorPessoa(rex.getAnimalId());
+
+        assertThat(porPessoa).hasSize(2);
+        assertThat(porPessoa)
+                .filteredOn(c -> c.getPessoaId().equals(ulysses.getPersonId()))
+                .singleElement()
+                .satisfies(c -> assertThat(c.getEm())
+                        .as("vale a digitacao mais recente: quem lanca hoje a vacina de 2019 "
+                            + "contribuiu hoje")
+                        .isAfter(LocalDateTime.now().minusDays(1)));
+    }
+
+    /**
+     * O mesmo por organizacao - "a Clinica Norte registrou ontem".
+     *
+     * Evento sem organizacao nao entra na agregacao: quem registrou agindo por si nao faz a
+     * organizacao parecer ativa.
+     */
+    @Test
+    @DisplayName("agrega por organizacao, e ignora evento sem organizacao")
+    void agregaPorOrganizacaoEIgnoraSemOrganizacao() {
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Registrada pela pessoa, sem organizacao")
+                .applicationDate(LocalDate.now().minusDays(2))
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.ultimaContribuicaoPorOrganizacao(rex.getAnimalId()))
+                .as("nenhum evento tem organizacao, entao nao ha organizacao contribuindo")
+                .isEmpty();
+        assertThat(timelineRepository.ultimaContribuicaoPorPessoa(rex.getAnimalId()))
+                .hasSize(1);
     }
 
     /**

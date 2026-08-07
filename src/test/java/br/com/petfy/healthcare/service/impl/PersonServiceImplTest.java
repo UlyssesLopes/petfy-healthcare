@@ -111,6 +111,9 @@ class PersonServiceImplTest {
     private ConsentRecordRepository consentRecordRepository;
 
     @Mock
+    private br.com.petfy.healthcare.domain.repository.DueItemSilenceRepository dueItemSilenceRepository;
+
+    @Mock
     private AttachmentRepository attachmentRepository;
 
     @Mock
