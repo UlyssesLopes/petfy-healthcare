@@ -108,13 +108,23 @@ public class CurrentProfessionalProvider {
      * pessoa nao pretendia nao se corrige depois. Quem quer assinar, declara.
      */
     public Optional<Organization> organizacaoDeclarada(Person person) {
-        String escolhido = organizacaoPedida();
+        return organizacaoDeclarada(person, organizacaoPedida());
+    }
 
-        if (escolhido == null) {
+    /**
+     * A mesma coisa, com o valor vindo de fora em vez de ser lido do request.
+     *
+     * <b>Existe para o controller poder declarar o header.</b> Header declarado em
+     * {@code @RequestHeader} aparece no OpenAPI, e a stack do cliente gera o codigo a
+     * partir dele - um header que so este provider le seria invisivel para quem gera
+     * o cliente. A validacao de vinculo e o 403 continuam aqui, num lugar so.
+     */
+    public Optional<Organization> organizacaoDeclarada(Person person, String declarada) {
+        if (declarada == null || declarada.isBlank()) {
             return Optional.empty();
         }
 
-        UUID organizationId = parseOrganizationId(escolhido);
+        UUID organizationId = parseOrganizationId(declarada.trim());
 
         return Optional.of(membershipRepository
                 .findAtivoDaPessoaNaOrganizacao(person.getPersonId(), organizationId)
