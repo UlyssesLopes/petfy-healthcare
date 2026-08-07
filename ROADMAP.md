@@ -1419,24 +1419,58 @@ branch sai de base velha e os testes verdes não provam nada.
 
 ## Dívidas com relógio
 
-- **O CI/CD estourou a cota de armazenamento do GitHub Actions.** Aviso recebido em
-  2026-08-06: **0,46 GB de 0,5 GB** usados no ciclo, que reseta em 2026-09-01. Passando
-  disso, ou vira cobrança ou o Actions trava — e travar o CI é travar o fechamento de
-  qualquer passo. **O suspeito principal já está escrito neste documento:** o pipeline
-  publica a imagem no ghcr a cada push e *nada a consome*, porque o Railway constrói a
-  partir do repositório. Ou seja, estamos pagando armazenamento por um artefato de deploy
-  que não é usado por ninguém. A investigar junto: retenção de artefato de build e
-  acúmulo de cache. **Não é só limpar — é remodelar a abordagem**, e fica para uma sessão
-  própria.
+- ~~**O CI/CD estourou a cota de armazenamento do GitHub Actions.**~~ **Remodelado em
+  2026-08-07, e a hipótese deste documento estava errada.** A cota não chegou a 90%: ela
+  **estourou**, e o GitHub passou a recusar upload com *"Artifact storage quota has been
+  hit"*, pintando de vermelho corridas com 749 testes verdes.
 
-- **O `README.md` descreve uma API que morreu na Fase 6.** Ele documenta `/vet/pets`,
-  `/vet/clinic-invites`, `ROLE_VET`, `Owner` e `Pet`, e não menciona `Person`,
-  `Animal`, `Custody`, `Grant`, `Organization`, `Membership`, `Timeline`,
-  `CareInstruction` nem `DueItem`. **É a dívida mais urgente das três**, e não por
-  capricho de documentação: o README é o contrato que o cliente lê, e a Fase 5 começa
-  por ele. Quem escrever tela contra o README de hoje escreve contra endpoints que não
-  existem. Inclui reconferir o OpenAPI, que é gerado das anotações e portanto está
-  correto — o que expõe que os dois divergiram.
+  **Medido, em vez de suposto:**
+
+  | Bucket | Tamanho | Quem consumia |
+  |---|---|---|
+  | `app-jar` — 129 artefatos | **9.027 MB** | **Ninguém** |
+  | Cache do Actions — 210 entradas | **10.658 MB**, contra teto de 10.000 | O build da imagem |
+  | ghcr — 87 versões | ~2,2 GB (camadas deduplicam) | Ninguém |
+  | `test-reports` — 135 artefatos | 135 MB | Só no dia da falha |
+
+  **O `app-jar` era 98,5% dos 9,2 GB**, e o documento não o mencionava. Ele sobrou de
+  quando o pipeline entregava jar pronto para a imagem consumir; hoje o `Dockerfile` é
+  multi-stage e compila de dentro do build. Eram **79 MB por push, em toda branch**, com
+  a retenção default de 90 dias.
+
+  **Nada estava configurado errado, e isso é o que vale registrar.** Publicar o build
+  output é o padrão do starter workflow de Java do próprio GitHub; `cache-to: mode=max` é
+  o que a doc do `build-push-action` recomenda; os 90 dias são o default da plataforma.
+  O que colide é a aritmética: conta pessoal com **500 MB**, fat jar de 79 MB — **seis
+  pushes esgotam a cota inteira** — e **143 corridas em quatro dias**, 76 num só dia.
+
+  **O pipeline foi remodelado para um job e um propósito** (PR #37 e a rodada seguinte):
+  saiu o `app-jar`, saiu o job `docker` que publicava imagem que ninguém puxa, saiu o
+  upload de relatório que virou a fonte do vermelho, e o gatilho deixou de ser
+  `branches: ["**"]` para ser PR e `main`. O que ficou é `mvn verify` com os testes de
+  container — que é a única coisa entre um commit ruim e o `dev`, porque o Railway sobe a
+  `main` sozinho.
+
+  **Uma armadilha encontrada na medição, para quem for limpar o acumulado:** o `:latest`
+  no ghcr não é uma imagem, é um índice OCI com dois filhos — a imagem amd64 e um
+  `attestation-manifest`. Essa attestation aparece na listagem **como "sem tag"** (56 sem
+  tag contra 31 com tag). A receita comum *"apague todas as versões sem tag"*
+  **quebraria o `:latest`**. O critério tem de ser idade, não ausência de tag.
+
+  **O acumulado não foi apagado**, por decisão: os 9 GB vencem sozinhos pela retenção de
+  90 dias, no começo de novembro.
+
+- ~~**O `README.md` descreve uma API que morreu na Fase 6.**~~ **Corrigido em 2026-08-07,
+  no P6 do passo 4** — e a correção foi na causa, não no sintoma. O README mantinha à mão
+  uma tabela de endpoints que o OpenAPI já gera das anotações: duas fontes para a mesma
+  pergunta, e a que perde é sempre a escrita à mão. **A tabela saiu.** O que ficou é o
+  que o OpenAPI não sabe dizer — o vocabulário, as regras que atravessam rotas, e as
+  leituras que o cliente não deve montar sozinho. Junto, `summary` nas 90 operações,
+  porque é de lá que o cliente do frontend é gerado.
+
+  **O que sobra dessa dívida:** os tutoriais de fluxo tiveram os caminhos corrigidos, mas
+  a prosa ainda fala em *"vet"* e *"clínica"* onde o modelo diz pessoa com credencial e
+  organização com capacidades. Não mente mais sobre rota, e ainda usa vocabulário velho.
 - ~~**Spring Boot 2.7.18 saiu do suporte OSS.**~~ Migrado para Boot 3.3.5 em
   2026-08-04 (PR #16).
 - ~~**Actions com Node 20 deprecado.**~~ Bump para v7/v5/v4/v7/v4/v7 feito na
