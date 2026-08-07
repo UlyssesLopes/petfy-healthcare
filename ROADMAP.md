@@ -714,7 +714,7 @@ estrutura e stack, e é isto que esta seção passa a registrar.
 | 1 | **Estrutura do cliente** | Feito — seção 9 do `PRODUTO.md` | É insumo dos dois seguintes. Sem ela escrita, "de que área é esta tela?" volta a ser decidido em cada tela |
 | 2 | **Stack** | Decidida em 2026-08-06 | Antes do design: metade das decisões de design se amarra a ela — componente, token, tema |
 | 3 | **Direção visual** | Feito — `DESIGN.md`, seis seções, mais `design/home-tutor.html` | Antes do contrato, porque a tela define quais leituras o backend precisa |
-| 4 | **Delta de contrato** | **Próximo** | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
+| 4 | **Delta de contrato** | **Em execução** — plano no fim desta fase | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
 | 5 | **Construir** | — | — |
 
 **Por que o delta de contrato vem depois do design, e não antes.** O OpenAPI é gerado
@@ -838,6 +838,158 @@ A direção fechada, a paleta com contraste medido e a lista de proibições est
 
 **Pronto quando:** alguém que nunca viu `curl` cadastra um animal e vê a próxima
 dose.
+
+### Passo 4 — o delta de contrato, levantado em 2026-08-07
+
+O levantamento foi feito **contra o contrato publicado**, não contra o `README.md`:
+`GET /v3/api-docs` do `dev`, que é gerado das anotações e portanto é a verdade.
+**60 caminhos, 90 operações.** Cada item abaixo tem a evidência ao lado, e a ordem
+é de prioridade — o que trava mais tela vem primeiro.
+
+#### O anexo do `PRODUTO.md` venceu, e isto corrige o registro
+
+O anexo *"insumos já levantados para o delta de backend"* é de 2026-08-05,
+**anterior à Fase 6**. Metade das lacunas que ele lista já não existe, e quem
+planejar por ele planeja para trás:
+
+| Lacuna que o anexo lista | Hoje, verificado no contrato e no código |
+|---|---|
+| `Clinic` específica demais para creche e abrigo | **Fechada** — `Organization` com capacidades |
+| Não existe orientação atribuída com prazo e confirmação | **Fechada** — `/animals/{id}/care-instructions` e `/fulfillments` |
+| Seis leituras separadas, não há linha do tempo | **Fechada** — `GET /animals/{id}/timeline`, paginada |
+| `Vet.clinic` singular, vet em duas clínicas precisa de duas contas | **Fechada** — `Membership` |
+| Pet exige dono; não há animal sem tutor humano | **Fechada** — `Custody.holderPerson` é exclusivo com `holderOrganization`, com `CHECK` no banco |
+| Não existe conteúdo não clínico dirigido ao tutor (`Update`) | **Aberta** — nenhum endpoint, nenhum schema |
+| Espécie tem dois valores | **Aberta**, e fica fora deste passo |
+| Raça é texto livre | **Aberta**, e fica fora deste passo |
+
+**Espécie e raça saem deste passo de propósito:** são mudança de modelo com
+migration, não delta de contrato, e já estão em *"Ainda não levantado com você"*.
+
+#### P1 — Leitura em volume na área de organização
+
+**A única cobrança que o 9.5 já dava como certa, e é a pior.**
+
+`GET /professional/animals` **retorna array e não aceita um único parâmetro.** Sem
+página, sem busca, sem ordem, sem filtro. A 9.3 define essa área como *"muitos
+animais em largura: lista, filtro, busca e ação sobre vários de uma vez"*, e a 9.5
+diz que sem recorte ela é *"inutilizável para o ator que a justifica"*.
+
+O contraste com as vizinhas mostra que é esquecimento, não decisão: `/animals`,
+`/organizations`, `/vaccines` e o próprio `/timeline` já são `Page` com `pageable`.
+A rota da área que lê centenas é a única que ficou array.
+
+**Entra:** `Page`, `q` de busca por nome e registro geral, ordem, e o filtro que a
+tela pedir. **Teto de 100 por página**, como as outras.
+
+**Cuidado registrado:** isto muda o contrato de uma rota já publicada, de `List`
+para `Page` — exatamente a colisão que a paginação causou no passo 4 anterior. Sai
+de graça porque **não existe cliente ainda**, e é por isso que tem de ser agora.
+
+#### P2 — Contexto ativo como estado
+
+**Não existe nenhuma rota de contexto ativo.** Nem para ler, nem para trocar —
+procurado por `context`, `active`, `switch` e `me/org` no contrato, zero.
+
+A 9.3 é dura sobre isso: *"a troca entre áreas é explícita e visível… quem age
+precisa saber em nome de quem está agindo antes de agir. Área implícita é ato
+registrado no contexto errado"*. E a 5.7 diz que **contexto não é editável depois**.
+Ou seja: sem isto, o primeiro registro feito em nome errado é permanente.
+
+**Entra:** ler o contexto ativo com as opções disponíveis da pessoa, e trocá-lo.
+**A regra que precisa ser verificada, não presumida:** *nada na área de organização
+pode exigir organização* (9.3) — o autônomo atravessa a área inteira com contexto
+próprio, sem vínculo. Isso é teste, não comentário.
+
+#### P3 — A linha do tempo que a tela 5.2 exige
+
+A rota existe e é paginada. O que falta é o **conteúdo do registro**:
+`TimelineEntryResponseDTO` tem `eventId`, `eventType`, `occurredAt`, `recordedAt`,
+`recordedByName`, `summary`, `visivel` e `healthData`. A seção 5.2 do `DESIGN.md`
+cobra quatro coisas que não estão lá:
+
+| A tela exige | Hoje |
+|---|---|
+| **Ato clínico com bloco de acento**, distinto de observação "sem precisar ler o autor" | Só `eventType` como string. A natureza (3.11) não vem no DTO |
+| **Linha de credencial**, e o CRMV apenas informado aparecendo *como informado* (5.10) | Não existe campo de credencial |
+| **Correção é sucessão, e se vê** — valor anterior legível, correção abaixo, com autor e data | Correção mora em `/vaccines/{id}/corrections` e `/health-records/{id}/corrections`, **separadas**. A linha do tempo custaria **N+1 chamadas** |
+| **Série mora dentro do evento** — peso carrega o próprio gráfico e a variação | A série vem de `/animals/{id}/weights`, fora do evento |
+
+**Por que P3 e não P1:** é a tela central do produto, mas ela **se desenha
+degradada** — dá para mostrar a espinha e o fato sem a credencial. A área de
+organização, sem P1, não abre.
+
+#### P4 — A rede de quem cuida
+
+A 5.4 diz *"as pessoas em volta do animal vêm antes dos dados"* e que o que aparece
+é **quem tem alcance de fato**. Hoje isso são **três rotas** que o cliente teria de
+juntar: `/animals/{id}/tutors`, `/animals/{id}/shares` e
+`/animals/{id}/organization-access`.
+
+E falta o campo que dá vida à tela: *"cada pessoa aparece com iniciais, papel e **a
+última contribuição** — registrou hoje, registrou ontem"*. Nenhuma das três traz
+última contribuição.
+
+**Mesmo argumento do feed de pendências (9.5):** se o cliente montar a rede
+juntando fontes por conta própria, **o app remonta a mesma regra e erra diferente**.
+
+#### P5 — Silenciar pendência
+
+`DueItemResponseDTO` já atende a 5.3 quase inteira: `dueOn`, `overdue`, `kind`,
+`description`, e — o item mais importante — `lastFulfilledByName`, que é o *"nunca
+cobrar duas pessoas sem dizer que a outra já fez. Dose dupla é dano, não
+incômodo"*. **Isso já está pronto, e é a parte difícil.**
+
+Falta uma coisa: *"silenciar mora na pendência, não em preferências. Silêncio é
+funcionalidade (4.2), e funcionalidade escondida em configuração não é oferecida —
+é escondida."* Não há rota de silenciar.
+
+#### P6 — O `README.md`, e as 68 operações sem `summary`
+
+**A dívida mais urgente das três, e ainda assim é P6.** O motivo é ordem, não
+importância: o README precisa descrever o contrato **final**, e reescrevê-lo antes
+de P1 a P5 é reescrevê-lo duas vezes. O que o desbloqueia enquanto isso é o
+OpenAPI, que está correto.
+
+Ele documenta `/vet/pets`, `/vet/clinic-invites`, `ROLE_VET`, `Owner` e `Pet` — API
+que morreu na Fase 6 — e não menciona `Person`, `Animal`, `Custody`, `Grant`,
+`Organization`, `Membership`, `Timeline`, `CareInstruction` nem `DueItem`.
+
+**E um achado que não estava previsto: 68 das 90 operações não têm `summary`.** Com
+a stack decidida gerando **o cliente a partir do OpenAPI**, isso deixa de ser
+capricho de documentação e passa a ser a ergonomia do código do front — o nome e a
+doc de cada método saem daí.
+
+#### O que fica bloqueado, e por quem
+
+Não é dívida: é decisão de produto que o backend não tem como tomar sozinho.
+
+| # | Decisão em aberto | O que ela trava |
+|---|---|---|
+| 15 | Quem cria uma organização, e como entra o primeiro membro | O começo da área de organização. `POST /organizations` e `/organizations/invites` existem, mas a cadeia nunca foi exercitada |
+| 16 | Como o adotante sem e-mail à mão recebe o convite de custódia | O fluxo de adoção no balcão |
+| 17 | O que compõe o escopo mínimo do cartão | `GET /share/{token}` existe **sem escopo**. Fechar a lista é decisão clínica, e a 9.5 pede um veterinário na frente |
+
+#### A tensão entre o `DESIGN.md` e o backend, registrada
+
+A 5.5 do `DESIGN.md` elege cinco objetos que carregam a identidade, e **dois deles
+não existem no contrato**: `Insight` (percepção, na coluna lateral, fora do eixo do
+tempo) e `Update` (conteúdo — recado e foto da creche, o único objeto em que a
+imagem é grande).
+
+Isso é coerente com o `PRODUTO.md` — percepção é Horizonte 4 — mas significa que
+**a tela de referência descreve algo que a v1 não entrega**. Ou o design registra
+que os dois são posteriores, ou eles entram no escopo. **É decisão de produto, e
+não se resolve aqui.**
+
+#### Ordem, e o critério de pronto
+
+P1 → P2 → P3 → P4 → P5 → P6. Os cinco primeiros são aditivos e independentes entre
+si, então podem ser fatiados em PRs próprios; **P1 é o único que muda contrato
+existente**, e por isso vai primeiro, enquanto não há cliente para quebrar.
+
+**Pronto quando:** o cliente gerado do OpenAPI compila com as leituras que a home
+do tutor e a lista da organização exigem, e o `README.md` descreve o que existe.
 
 ## Fase 6 — a remodelagem que o `PRODUTO.md` cobra
 
