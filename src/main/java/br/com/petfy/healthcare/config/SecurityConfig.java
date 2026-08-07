@@ -17,6 +17,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.util.stream.Stream;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -43,30 +45,21 @@ public class SecurityConfig {
                 // para um site terceiro reaproveitar, entao CSRF nao se aplica
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                        // recuperacao de senha e publica por definicao: quem esqueceu a
-                        // senha nao tem como se autenticar para pedir a troca
-                        .requestMatchers(HttpMethod.POST, "/auth/password-reset").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/password-reset/confirm").permitAll()
-                        // confirmar e-mail tambem: quem clica no link pode nem ter feito
-                        // login ainda, e o token do e-mail e a credencial do fluxo
-                        .requestMatchers(HttpMethod.POST, "/auth/email-verification/resend").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/email-verification/confirm").permitAll()
-                        // cadastro precisa ser publico, senao nao existe primeiro usuario
-                        .requestMatchers(HttpMethod.POST, "/persons").permitAll()
-                        // documentacao da API: o Swagger UI e a spec OpenAPI devem
-                        // abrir sem token, senao nao servem para explorar a API
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/swagger-ui.html").permitAll()
-                        // carteira compartilhada: quem recebe o link nao tem conta. O
-                        // token no path faz o papel da credencial
-                        .requestMatchers(HttpMethod.GET, "/share/*").permitAll()
-                        // o provedor de hospedagem chama o health check sem credencial
-                        // para decidir se a instancia esta viva. So o health: os demais
-                        // endpoints do actuator seguem exigindo token
-                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                .authorizeHttpRequests(auth -> {
+                        // A lista mora no RotasPublicas, e nao aqui, porque o contrato
+                        // OpenAPI precisa declarar as mesmas rotas como publicas. Duas
+                        // listas escritas a mao divergiriam, e a que perde e sempre a
+                        // documentacao - foi o que aconteceu com o README antes do passo 4
+                        Stream.concat(RotasPublicas.DE_API.stream(), RotasPublicas.DE_INFRA.stream())
+                                .forEach(rota -> {
+                                    if (rota.metodo() == null) {
+                                        auth.requestMatchers(rota.padrao()).permitAll();
+                                    } else {
+                                        auth.requestMatchers(rota.metodo(), rota.padrao()).permitAll();
+                                    }
+                                });
+
+                        auth
                         // era hasRole("VET") em /vet/**, com o papel vindo do token. O papel morreu
                         // no P1, e o espaco /vet/** morreu no P3b: nao ha area de um tipo de
                         // conta, ha operacao que exige credencial. Quem alcanca e quem tem
@@ -75,7 +68,8 @@ public class SecurityConfig {
                         // CurrentProfessionalProvider repete a checagem mais adiante, e as
                         // duas camadas seguem sendo deliberadas
                         .requestMatchers("/professional/**", "/organizations/invites/**").access(professionalAccessManager)
-                        .anyRequest().authenticated())
+                        .anyRequest().authenticated();
+                })
                 // sem entry point explicito o Spring Security devolve 403 para
                 // quem nao esta autenticado; 401 e o correto - o cliente nao
                 // esta proibido, esta sem credencial
