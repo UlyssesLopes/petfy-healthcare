@@ -4,9 +4,14 @@ Sistema para gestão de vacinação digital de pets, clínicas veterinárias, tu
 histórico de saúde animal. Java 21 + Spring Boot 3.3.5 + PostgreSQL, com uma
 feature de importação de RG animal por OCR.
 
-Um pet tem **vários tutores** com papéis distintos, e quem alcança o pet de quem é
-decidido por uma peça única (`PetAccessGuard`). Toda escrita de clínica deixa rastro
-e avisa o tutor; toda **leitura** de terceiro fica registrada.
+Um animal tem **quem responde por ele** e **quem recebe acesso a parte dele**, e as
+duas coisas são conceitos separados: quem alcança o quê é decidido por uma peça única
+(`AnimalAccessGuard`), e acesso concedido tem escopo e às vezes prazo. Toda escrita de
+organização deixa rastro e avisa o tutor; toda **leitura** de terceiro fica registrada.
+
+**A linha do tempo do animal atravessa tudo** — custódias, organizações, prestadores —
+e não recomeça quando o animal muda de mão: o adotante recebe a vida inteira, e não
+uma ficha em branco com a data de hoje.
 
 O histórico de saúde é prontuário e não lista de texto: atendimento com categoria e
 diagnóstico, alergia e condição crônica em destaque, e **anexo** para o papel que o tutor
@@ -83,21 +88,23 @@ lembrete deixa a dose elegível para a próxima varredura.
 
 ## Autenticação e autorização
 
-Existem **dois tipos de conta**: `OWNER` (tutor) e `VET` (veterinário, vinculado
-a uma clínica). Cada um tem sua tabela — tutor e veterinário têm dados e ciclos
-de vida diferentes, e uni-los numa conta genérica obrigaria a reescrever
-autenticação e todas as checagens de propriedade que já existem.
+**Existe um tipo de conta: pessoa.** Não há conta de tutor nem conta de
+veterinário — a `Person` é uma só, e o que ela pode fazer vem do que ela **tem**,
+nunca de um tipo declarado no cadastro:
 
-Os dois entram pelo **mesmo** `POST /auth/login`. O papel sai de qual tabela o
-e-mail aparece, nunca de um campo do request — deixar o cliente declarar o
-próprio papel seria deixá-lo escolher a própria permissão. O token carrega o
-papel, e o `LoginResponseDTO` devolve `role` para o cliente saber que tela abrir.
+| O que ela tem | O que isso lhe dá |
+|---|---|
+| **Custódia** de um animal (`Custody`) | Responde por ele: alcança tudo, convida co-tutor, transfere titularidade |
+| **Concessão** sobre um animal (`Grant`) | Alcança a parte que o escopo permite, e pelo prazo que ele definir |
+| **Vínculo** com uma organização (`Membership`) | Age em nome dela — e é isso que abre a área de organização |
+| **Credencial profissional** (`ProfessionalCredential`) | Pratica ato clínico. É atributo da pessoa, e não do vínculo com a clínica |
 
-O preço de duas tabelas é que a unicidade de e-mail entre elas não é garantida
-pelo banco: o cadastro de vet checa os dois lados, senão o login ficaria ambíguo.
+Uma pessoa costuma ter mais de um: a veterinária que tem cachorro, o dono de
+creche que é tutor. **Ter as duas áreas é o caso comum, não o raro.**
 
-A API é stateless. Cadastro de owner, cadastro de vet, login e a carteira
-compartilhada são públicos; todo o resto exige `Authorization: Bearer <token>`.
+A API é stateless. Públicos: `POST /persons`, `POST /auth/login`, a recuperação de
+senha, a confirmação de e-mail, o cartão em `GET /share/{token}` e o
+`/actuator/health`. Todo o resto exige `Authorization: Bearer <token>`.
 
 **Trocar a senha derruba as sessões abertas.** Ser stateless significa que não há
 sessão no servidor para encerrar, então o token emitido antes da troca
@@ -112,25 +119,32 @@ de segundo e a troca é gravada com fração de segundo, então o empate é amb�
 Recusar custa um login novo; aceitar deixaria viva a sessão que a troca deveria
 ter derrubado.
 
-Autenticar não basta: **cada pessoa só enxerga os pets de que é tutora**. Desde a
-V15 um pet tem vários tutores, com três papéis — `HOLDER` (titular), `EDITOR` e
-`VIEWER` —, e quem alcança o pet de quem é decidido num lugar só, o
-`PetAccessGuard`. Vacinas, histórico, peso e antiparasitário herdam esse alcance.
+Autenticar não basta: **quem alcança qual animal é decidido num lugar só**, o
+`AnimalAccessGuard`. Vacina, prontuário, peso, antiparasitário, condição, anexo,
+orientação e observação herdam esse alcance.
 
-Pet que a pessoa não alcança responde **`404`**, e não `403` — um `403` confirmaria
-que aquele id existe, o que permitiria varrer ids para descobrir o que há na base. O
-`403` aparece só quando ela **já é tutora** e falta nível, quando não revela nada que
-ela ainda não soubesse.
+**Animal que a pessoa não alcança responde `404`, e não `403`** — um `403`
+confirmaria que aquele id existe, o que permitiria varrer ids para descobrir o que
+há na base. O `403` aparece só quando ela **já alcança** e falta capacidade, quando
+não revela nada que ela ainda não soubesse.
 
-Quem manda no pet vem sempre do token, nunca do payload: por isso `PetRequestDTO` não
-tem `ownerId` e a importação por OCR não recebe o tutor como parâmetro. E como uma
-conta só acessa a si mesma, não existem `GET /owners/{id}` nem `GET /owners` — só
-`/owners/me`.
+**Escopo delimita concessão** (`GrantScope`): `CARTEIRA`, `CONDICOES`, `PRONTUARIO`,
+`PESO`, `ANEXOS`, `OBSERVACOES` e `CONTATO`. Matricular o cachorro numa creche não
+pode entregar a ela o prontuário inteiro, e é para isso que o escopo existe. Quem
+detém a **custódia** não tem escopo, porque alcança tudo.
+
+**Quem age em nome de uma organização declara isso no header
+`X-Petfy-Organization`.** Com mais de um vínculo e sem o header, uma escrita
+responde `409`: escolher em silêncio faria um ato clínico sair assinado por uma
+organização que a pessoa não pretendia, e assinatura não se corrige depois. Para
+não descobrir isso no meio de uma operação, o cliente lê `GET /me/context` na
+entrada — ele diz em nome de quem se está agindo, em nome de quem se poderia, e as
+capacidades de cada opção.
 
 ```bash
 # cadastro (acceptedTerms e obrigatorio: sem aceite nao ha base legal para tratar
 # dado de saude - ver a secao de consentimento)
-curl -X POST localhost:8080/owners \
+curl -X POST localhost:8080/persons \
   -H 'Content-Type: application/json' \
   -d '{"name":"Ulysses","email":"ulysses@exemplo.com","password":"s3nhaForte","acceptedTerms":true}'
 
@@ -139,47 +153,87 @@ curl -X POST localhost:8080/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"ulysses@exemplo.com","password":"s3nhaForte"}'
 
-# rota protegida
-curl localhost:8080/pets -H "Authorization: Bearer $TOKEN"
+# em nome de quem eu estou agindo?
+curl localhost:8080/me/context -H "Authorization: Bearer $TOKEN"
+
+# rota protegida, agindo em nome de uma organizacao
+curl localhost:8080/professional/animals \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Petfy-Organization: $ORGANIZATION_ID"
 ```
 
-## Endpoints
+## O contrato
 
-Todos os domínios seguem o mesmo formato REST: `POST /{recurso}`,
-`GET /{recurso}/{id}`, `GET /{recurso}`, `PUT /{recurso}/{id}`,
-`DELETE /{recurso}/{id}`.
+**A lista de rotas não mora aqui, e isso é decisão.** Este README manteve por meses
+uma tabela de endpoints copiada à mão, e ela apodreceu: descrevia `/professional/animals`,
+`/owners`, `ROLE_VET`, `Owner` e `Pet` — nomes que a remodelação de 2026-08-06
+aposentou —, enquanto o OpenAPI, que é **gerado das anotações**, seguia correto.
+Duas fontes para a mesma pergunta e a que perde é sempre a escrita à mão.
 
-| Recurso | Base | Extras |
+**A fonte é `GET /v3/api-docs`**, com Swagger UI em `/swagger-ui.html`. Toda operação
+tem `summary` e, onde há regra que o cliente erraria sozinho, `description`. É de lá
+que o cliente do frontend é gerado.
+
+O que fica aqui é o que o OpenAPI não sabe dizer: **o vocabulário, as regras que
+atravessam rotas, e por que as coisas são como são.**
+
+### O vocabulário
+
+Os nomes são os do `PRODUTO.md`, seção 3 — que é onde eles estão definidos com o
+raciocínio inteiro. Aqui vai o mapa curto:
+
+| Conceito | É | Rota principal |
 |---|---|---|
-| Autenticação | `/auth` | `POST /auth/login`, `/auth/password-reset`, `/auth/password-reset/confirm`, `/auth/email-verification/resend` e `/auth/email-verification/confirm` (todos públicos) |
-| Owners | `/owners` | `POST /owners` (público, **exige `acceptedTerms: true`**), `GET`/`PUT`/`DELETE /owners/me` e `PUT /owners/me/password` |
-| Consentimento | `/consents` | `GET /consents/me` e `POST /consents/accept` — aceites registrados e o que falta aceitar |
-| Pets | `/pets` | escopado a quem é tutor, em qualquer papel |
-| Tutores do pet | `/pets/{petId}/tutors` | listar, convidar, trocar papel, remover e `POST .../{ownerId}/transfer-holder` |
-| Aceite de convite | `/pet-tutor-invites/{token}/accept` | autenticado; o e-mail da conta tem de ser o do convite |
-| Log de acesso | `/pets/{petId}/access-log` | quem **de fora** leu o dado de saúde do pet |
-| Veterinários | `/vets` | `POST /vets` (público, exige convite ou clínica nova) e `GET /vets/me` |
-| Convites de clínica | `/vet/clinic-invites` | vet emite, lista e revoga |
-| Acesso de clínicas | `/pets/{petId}/clinic-access` | tutor concede, lista e revoga |
-| Área do veterinário | `/vet/pets` | pets autorizados, vacinas e atendimentos |
-| Clínicas | `/clinics` | leitura e criação abertas; **editar e remover exigem ser vet da clínica** |
-| Vacinas | `/vaccines` | listagem em `GET /vaccines`, escopada pelo dono do pet |
-| Agenda de vacinas | `/vaccines/agenda` | `?windowDays=30` — o que está vencido ou vencendo |
-| Catálogo de vacinas | `/vaccine-catalog` | somente leitura, mantido por migration; `?petId=` filtra pela espécie do pet |
-| Antiparasitários | `/antiparasitics` | `GET /antiparasitics?petId=` (obrigatório), escopado pelo dono do pet |
-| Catálogo de antiparasitários | `/antiparasitics/catalog` | somente leitura; `?petId=` filtra pela espécie do pet |
-| Histórico de peso | `/pets/{petId}/weights` | série de medições; `Pet.weight` é o espelho da mais recente |
-| Histórico de saúde | `/health-records` | `GET /health-records/pet/{petId}`; `category` é **obrigatória** na criação |
-| Alergias e condições | `/pets/{petId}/conditions` | ativas primeiro; encerra-se com `resolvedAt`, não com `DELETE` |
-| Anexos | `/pets/{petId}/attachments` | multipart; `GET /attachments/{id}/content` baixa, `DELETE /attachments/{id}` remove |
-| Exportação LGPD | `/owners/me/export` | tudo que o Petfy guarda sobre o titular, num documento |
-| Importação por OCR | `/pet-id` | `POST /pet-id/import-pet-id-card` (multipart) |
-| Compartilhamento | `/pets/{petId}/shares` | criar e listar links; `DELETE /shares/{id}` revoga |
-| Carteira compartilhada | `/share/{token}` | **público** — não exige autenticação |
+| `Person` | A pessoa. Não há tipo | `/persons` |
+| `Animal` | O animal | `/animals` |
+| `Custody` | Quem **responde** pelo animal. Pode ser pessoa ou organização | derivada em `/animals/{id}/care-network` |
+| `Grant` | Acesso **concedido**, com escopo e às vezes prazo | `/animals/{id}/organization-access`, `/animals/{id}/tutors`, `/animals/{id}/shares` |
+| `Organization` | Clínica, creche, abrigo, rede de lares. A mesma entidade, diferindo por **capacidades** | `/organizations` |
+| `Membership` | O vínculo de uma pessoa com uma organização | `/organizations/invites` |
+| `Timeline` | A vida do animal em ordem, atravessando custódias e organizações | `/animals/{id}/timeline` |
+| `Observation` | O que alguém **viu**. Não é ato clínico | `/animals/{id}/observations` |
+| `CareInstruction` | Alguém mandou fazer algo, com prazo e confirmação | `/animals/{id}/care-instructions` |
+| `DueItem` | O que cobra ação de você. **Derivada**, não gravada | `/due-items` |
 
-O `PUT` é parcial de propósito: campos ausentes no payload são preservados. Por
-isso a validação de payload (`@Valid`) vale apenas nos `POST` — os dois
-compartilham o mesmo DTO.
+### As regras que atravessam rotas
+
+Estas o OpenAPI não tem como afirmar, e o cliente as descobriria uma a uma:
+
+- **`PUT` é parcial de propósito:** campo ausente no payload preserva o valor. Por
+  isso `@Valid` vale apenas nos `POST` — os dois compartilham o mesmo DTO.
+- **Correção é sucessão, não reescrita.** O valor anterior fica gravado e legível.
+  A linha do tempo diz **quantas** correções o evento sofreu; o conteúdo delas está
+  nas rotas `/corrections`.
+- **Nada se apaga como forma de corrigir.** `DELETE` existe para o registro criado
+  por engano, e não para consertar um campo.
+- **Contexto nunca é editável.** Todo evento sabe quem o registrou e em nome de
+  quem, e isso não se altera depois.
+- **Revogação é idempotente.** Revogar duas vezes não é erro, e a primeira data é a
+  que vale.
+- **Download de anexo passa pela API autenticada**, e não por URL assinada.
+- **Consentimento pendente é estado, não erro.** Política nova exige aceite antes de
+  seguir, e essa pendência é a única que **não** pode ser silenciada.
+- **Trocar a senha derruba as sessões abertas**, então o cliente recebe `401` num
+  token que ainda não expirou — e precisa distinguir isso de expiração.
+
+### As leituras que o cliente não deve montar sozinho
+
+Estas existem porque a regra é do domínio, e não formatação de tela. Se o cliente as
+montasse juntando fontes, **cada cliente novo remontaria e erraria diferente** — e o
+app seria o segundo a errar.
+
+| Rota | Por que ela existe |
+|---|---|
+| `GET /animals/{id}/timeline` | A cronologia sairia de nove chamadas ordenadas em memória. Traz autoria, organização, credencial com estado, contagem de correções e o peso anterior |
+| `GET /due-items` | O feed de pendências cruza cinco fontes e é **derivado**, nunca gravado — uma tabela divergiria e cobraria o que já foi feito |
+| `GET /animals/{id}/care-network` | Quem alcança o animal sairia de três rotas, e nenhuma delas tem a última contribuição |
+| `GET /me/context` | Em nome de quem se está agindo. Sem ela, a ambiguidade só aparece como `409` no meio de uma escrita |
+
+**Silenciar mora na pendência**, e não em preferências:
+`PUT /due-items/{kind}/{sourceId}/silence` para de cobrar **de você** — sem parar o
+registro. A próxima dose continua sendo calculada e a linha do tempo continua
+recebendo tudo. Consentimento pendente é a única pendência que não se silencia,
+porque bloqueia o resto do produto.
 
 Erros são padronizados por `ErrorMessageEnum` e tratados no
 `GlobalExceptionHandler`. Campos de auditoria (`creationDate`, `updateDate`)
@@ -187,9 +241,10 @@ existem em todas as entidades.
 
 ### Listagens são paginadas
 
-`GET /pets`, `GET /vaccines`, `GET /health-records` e `GET /clinics` devolvem
-`Page`, não um array — **mudança de contrato**, feita antes de existir cliente
-justamente para não quebrar nenhum depois:
+`GET /animals`, `GET /vaccines`, `GET /health-records`, `GET /organizations`,
+`GET /animals/{id}/timeline` e `GET /professional/animals` devolvem `Page`, não um
+array — **mudança de contrato**, feita antes de existir cliente justamente para não
+quebrar nenhum depois:
 
 ```jsonc
 // antes:  [ {...}, {...} ]
@@ -208,11 +263,21 @@ acima disso o Spring corta para o teto em vez de recusar, então `?size=999999`
 devolve 100, e não um erro. O teto existe para o cliente não conseguir empurrar
 o problema de volume para o banco.
 
-As listagens escopadas por pet — `GET /health-records/pet/{petId}`,
-`GET /antiparasitics?petId=`, `GET /pets/{petId}/weights` — **continuam como
-array**. São naturalmente pequenas (o histórico de um pet), e paginá-las custaria
-ao cliente um laço para montar a carteira. A agenda de vacinas também não é
-paginada: ela produz uma resposta calculada, não uma listagem de tabela.
+As listagens escopadas por animal — `GET /health-records/animal/{animalId}`,
+`GET /antiparasitics?animalId=`, `GET /animals/{id}/weights`,
+`GET /animals/{id}/observations`, `GET /animals/{id}/conditions` — **continuam como
+array**. São naturalmente pequenas (o histórico de um animal), e paginá-las custaria
+ao cliente um laço para montar a carteira.
+
+**A linha do tempo é a exceção, e é paginada:** ela é a única coleção que cresce
+para sempre, e a de um animal de dez anos é a maior leitura que este produto serve.
+
+O feed de pendências (`GET /due-items`) e a agenda (`GET /vaccines/agenda`) não são
+paginados: produzem resposta calculada, e não listagem de tabela.
+
+**A leitura em largura da área de organização é `GET /professional/animals`**, que
+aceita `?q=` — nome, registro geral ou microchip — e ordem. Ela lê centenas de
+animais, e é a única listagem desenhada para isso.
 
 ## Agenda de vacinas
 
@@ -253,15 +318,16 @@ para uma clínica existente:
 
 ```bash
 # vet de dentro emite (opcionalmente endereçado a um e-mail)
-curl -X POST localhost:8080/vet/clinic-invites \
+curl -X POST localhost:8080/organizations/invites \
   -H "Authorization: Bearer $TOKEN_VET" -H 'Content-Type: application/json' \
   -d '{"email":"nova@vet.com.br","expiresInDays":3}'
 
-# a pessoa convidada se cadastra
-curl -X POST localhost:8080/vets \
+# a pessoa convidada se cadastra como PESSOA - nao existe cadastro de veterinario.
+# O CRMV e credencial DELA, e nao do vinculo com a clinica
+curl -X POST localhost:8080/persons \
   -H 'Content-Type: application/json' \
   -d '{"name":"Dra. Marina","email":"nova@vet.com.br","password":"s3nhaForte",
-       "crmv":"SP-12345","inviteToken":"..."}'
+       "acceptedTerms":true,"crmv":"SP-12345","inviteToken":"..."}'
 ```
 
 **Por que isso importa:** antes bastava saber o `clinicId` — que aparece em
@@ -287,20 +353,20 @@ clínica passa então a ver e registrar vacinas ali, carimbadas com a clínica.
 
 ```bash
 # tutor concede
-curl -X POST localhost:8080/pets/$PET_ID/clinic-access \
+curl -X POST localhost:8080/animals/$ANIMAL_ID/clinic-access \
   -H "Authorization: Bearer $TOKEN_TUTOR" -H 'Content-Type: application/json' \
   -d "{\"clinicId\":\"$CLINIC_ID\"}"
 
 # vet lista os pets que a clínica dele atende
-curl localhost:8080/vet/pets -H "Authorization: Bearer $TOKEN_VET"
+curl localhost:8080/professional/animals -H "Authorization: Bearer $TOKEN_VET"
 
 # vet registra a vacina
-curl -X POST localhost:8080/vet/pets/$PET_ID/vaccines \
+curl -X POST localhost:8080/professional/animals/$PET_ID/vaccines \
   -H "Authorization: Bearer $TOKEN_VET" -H 'Content-Type: application/json' \
   -d '{"vaccineCatalogId":"...","applicationDate":"2026-08-01"}'
 
 # tutor revoga quando quiser
-curl -X DELETE localhost:8080/pets/$PET_ID/clinic-access/$CLINIC_ID \
+curl -X DELETE localhost:8080/animals/$ANIMAL_ID/clinic-access/$CLINIC_ID \
   -H "Authorization: Bearer $TOKEN_TUTOR"
 ```
 
@@ -310,22 +376,26 @@ haver verificação de identidade profissional: quem se cadastra como vet de uma
 clínica só alcança os pets que aquela clínica já foi autorizada a atender.
 
 A clínica da vacina vem **do vet autenticado, nunca do payload** — mesmo
-princípio do `ownerId` no pet. O `petId` vem do path; o que vier no corpo é
+princípio do `personId` no pet. O `animalId` vem do path; o que vier no corpo é
 ignorado. Pet sem concessão ativa responde `404`, não `403`: para o veterinário,
 um pet que sua clínica não atende é indistinguível de um pet que não existe.
 
-As rotas `/vet/**` exigem `ROLE_VET` na cadeia de filtros, além da checagem do
-`CurrentVetProvider` — a autorização não depende só de a busca falhar na tabela
-certa.
+As rotas `/professional/**` exigem **credencial profissional ativa** na cadeia de
+filtros, além da checagem do `CurrentProfessionalProvider`. Não é papel: é o CRMV da
+pessoa, e é por isso que ele é atributo dela e não do vínculo com a clínica.
+
+**A área de organização não exige organização.** O profissional autônomo tem
+credencial e nenhum vínculo, e atravessa a área inteira — quem o limita é a
+credencial dele, não a capacidade de um coletivo que ele não tem.
 
 O veterinário registra **vacinas e atendimentos** (consulta, cirurgia, exame) —
-`POST /vet/pets/{petId}/vaccines` e `POST /vet/pets/{petId}/health-records`. Os
-dois seguem a mesma regra: clínica do vet autenticado, `petId` do path, tutor
+`POST /professional/animals/{animalId}/vaccines` e `POST /professional/animals/{animalId}/health-records`. Os
+dois seguem a mesma regra: clínica do vet autenticado, `animalId` do path, tutor
 notificado.
 
 ### Corrigir um registro
 
-`PUT /vet/pets/{petId}/vaccines/{vaccineId}` — correção, não reescrita:
+`PUT /professional/animals/{animalId}/vaccines/{vaccineId}` — correção, não reescrita:
 
 - **só registro da própria clínica.** Vacina lançada pelo tutor não é da clínica
   corrigir.
@@ -351,7 +421,7 @@ O rastro é legível pelos dois lados:
 curl localhost:8080/vaccines/$VACCINE_ID/corrections -H "Authorization: Bearer $TOKEN_TUTOR"
 
 # vet, sobre uma vacina de um pet que a clínica atende
-curl localhost:8080/vet/pets/$PET_ID/vaccines/$VACCINE_ID/corrections \
+curl localhost:8080/professional/animals/$PET_ID/vaccines/$VACCINE_ID/corrections \
   -H "Authorization: Bearer $TOKEN_VET"
 ```
 
@@ -369,7 +439,7 @@ manda para quem pediu — quem recebe **não precisa ter conta**.
 
 ```bash
 # gerar (autenticado). expiresInDays é opcional, default 30, teto 365
-curl -X POST localhost:8080/pets/$PET_ID/shares \
+curl -X POST localhost:8080/animals/$ANIMAL_ID/shares \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"expiresInDays":7}'
 
@@ -377,7 +447,7 @@ curl -X POST localhost:8080/pets/$PET_ID/shares \
 curl localhost:8080/share/$SHARE_TOKEN
 
 # listar e revogar
-curl localhost:8080/pets/$PET_ID/shares -H "Authorization: Bearer $TOKEN"
+curl localhost:8080/animals/$ANIMAL_ID/shares -H "Authorization: Bearer $TOKEN"
 curl -X DELETE localhost:8080/shares/$SHARE_ID -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -543,7 +613,7 @@ viram máquina de mandar mensagem para terceiro:
 | Grupo | Rotas | Default |
 |---|---|---|
 | Login | `POST /auth/login` | 10/min (`RATE_LIMIT_LOGIN`) |
-| Cadastro e recuperação | `POST /owners`, `/vets`, `/auth/password-reset`, `/auth/email-verification/resend` | 5/min (`RATE_LIMIT_RESTRITO`) |
+| Cadastro e recuperação | `POST /persons`, `/auth/password-reset`, `/auth/email-verification/resend` | 5/min (`RATE_LIMIT_RESTRITO`) |
 
 Estourar responde `429` no mesmo formato de erro do resto da API. Só `POST` é
 limitado: `GET` no mesmo path passa.
@@ -681,7 +751,7 @@ mostrar o que mudou.
 nenhuma migration pode inventar consentimento que nunca foi dado.
 
 **Não há rota para revogar.** Sem consentimento não há base legal para tratar dado de
-saúde, então revogar é sair — `DELETE /owners/me`. Uma rota que deixasse a conta de pé
+saúde, então revogar é sair — `DELETE /persons/me`. Uma rota que deixasse a conta de pé
 criaria um estado em que a aplicação guarda dado sem poder tratá-lo. O registro sai com
 a conta: guardar prova de consentimento de quem pediu para ser esquecido inverteria o
 propósito da prova.
@@ -695,7 +765,7 @@ nunca saberia.
 
 ```bash
 # quem, de fora, leu o dado de saude deste pet
-curl "localhost:8080/pets/$PET_ID/access-log?page=0&size=20" -H "Authorization: Bearer $TOKEN"
+curl "localhost:8080/animals/$ANIMAL_ID/access-log?page=0&size=20" -H "Authorization: Bearer $TOKEN"
 ```
 
 Registra acesso de **terceiro**: veterinário de clínica autorizada e abertura do link
@@ -729,7 +799,7 @@ ele digitava o que estava no papel, e o papel seguia sendo a fonte de verdade.
 ```bash
 # anexar (multipart). vaccineId e healthRecordId sao opcionais e exclusivos entre si:
 # dizem o que o arquivo documenta. Sem nenhum dos dois, o anexo e do pet em si
-curl -X POST "localhost:8080/pets/$PET_ID/attachments" -H "Authorization: Bearer $TOKEN" \
+curl -X POST "localhost:8080/animals/$ANIMAL_ID/attachments" -H "Authorization: Bearer $TOKEN" \
   -F "file=@laudo.pdf" -F "description=hemograma"
 
 # baixar
@@ -744,7 +814,7 @@ SVG fica fora apesar de ser imagem: é XML com script dentro.
 **Não há URL assinada.** É o padrão para arquivo público, mas para dado de saúde troca
 "checar autorização a cada download" por "quem tiver o link entra até expirar" — e link
 encaminhado por engano é o que o multi-tutor passou o passo 8 inteiro evitando. O download
-passa pela API, pelo `PetAccessGuard`, e sempre como `Content-Disposition: attachment`:
+passa pela API, pelo `AnimalAccessGuard`, e sempre como `Content-Disposition: attachment`:
 PDF renderizado no domínio da API vira vetor de XSS com conteúdo que outra pessoa subiu.
 
 A chave de storage é **gerada pelo servidor** — nada do nome enviado pelo cliente entra
@@ -774,12 +844,12 @@ se descobre que faltava depois de um procedimento.
 
 ```bash
 # alergia, com gravidade
-curl -X POST "localhost:8080/pets/$PET_ID/conditions" -H "Authorization: Bearer $TOKEN" \
+curl -X POST "localhost:8080/animals/$ANIMAL_ID/conditions" -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"kind":"ALERGIA","description":"Anestesico local","severity":"GRAVE"}'
 
 # encerrar uma condicao: preenche resolvedAt, nao apaga
-curl -X PUT "localhost:8080/pets/$PET_ID/conditions/$ID" -H "Authorization: Bearer $TOKEN" \
+curl -X PUT "localhost:8080/animals/$ANIMAL_ID/conditions/$ID" -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -d '{"resolvedAt":"2026-08-05"}'
 ```
 
@@ -798,7 +868,7 @@ parcial para busca de animal perdido) e **castração com data**.
 ## Exportação
 
 ```bash
-curl localhost:8080/owners/me/export -H "Authorization: Bearer $TOKEN"
+curl localhost:8080/persons/me/export -H "Authorization: Bearer $TOKEN"
 ```
 
 Portabilidade pela LGPD, irmã da exclusão: sair do sistema sem poder levar o histórico de
@@ -819,7 +889,7 @@ abre meses depois não tem esta documentação ao lado.
 - **Os testes de container não rodam sem Docker.** Localmente eles pulam; quem
   precisa de garantia sobre migrations e consultas por UUID depende do pipeline
   ou de ter Docker no ar.
-- **Apagar a conta só funciona para quem não tem pet.** `DELETE /owners/me` limpa
+- **Apagar a conta só funciona para quem não tem pet.** `DELETE /persons/me` limpa
   os tokens de recuperação e de confirmação, mas `pets` também aponta para
   `owners` por chave estrangeira, então uma conta com pet cadastrado é recusada
   pelo banco. Decidir o que acontece com o histórico do pet nesse caso é parte do
