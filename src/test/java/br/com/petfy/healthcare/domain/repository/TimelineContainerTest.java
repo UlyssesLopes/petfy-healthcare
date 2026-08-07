@@ -403,6 +403,70 @@ class TimelineContainerTest extends PostgresContainerTest {
     }
 
     /**
+     * As agregacoes que alimentam a ultima contribuicao da rede de quem cuida (DESIGN 5.4).
+     *
+     * <b>Mock nao prova nenhuma das duas.</b> Sao JPQL com {@code max()} e {@code group by}
+     * devolvendo <i>projecao por interface</i> - se o alias da consulta nao casar com o nome
+     * do getter, o Hibernate falha em runtime e nao na compilacao. Um mock do repositorio
+     * confirmaria apenas que o servico o chama.
+     */
+    @Test
+    @DisplayName("agrega a ultima contribuicao por pessoa, pela data de digitacao")
+    void agregaUltimaContribuicaoPorPessoa() {
+        var outraPessoa = personRepository.saveAndFlush(Person.builder()
+                .name("Dra. Marina").email("marina-" + UUID.randomUUID() + "@petfy.com.br")
+                .password("hash").build());
+
+        // duas do Ulysses: vale a mais recente por recorded_at
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Antiga")
+                .applicationDate(LocalDate.now().minusDays(20))
+                .creationDate(LocalDateTime.now().minusDays(20)).build());
+
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Recente")
+                .applicationDate(LocalDate.now().minusDays(1))
+                .creationDate(LocalDateTime.now().minusHours(2)).build());
+
+        healthRecordRepository.saveAndFlush(HealthRecord.builder()
+                .animal(rex).recordedBy(outraPessoa).category(HealthEventCategory.CONSULTA)
+                .eventType("Consulta").eventDate(LocalDate.now().minusDays(5))
+                .creationDate(LocalDateTime.now().minusDays(5)).build());
+
+        var porPessoa = timelineRepository.ultimaContribuicaoPorPessoa(rex.getAnimalId());
+
+        assertThat(porPessoa).hasSize(2);
+        assertThat(porPessoa)
+                .filteredOn(c -> c.getPessoaId().equals(ulysses.getPersonId()))
+                .singleElement()
+                .satisfies(c -> assertThat(c.getEm())
+                        .as("vale a digitacao mais recente: quem lanca hoje a vacina de 2019 "
+                            + "contribuiu hoje")
+                        .isAfter(LocalDateTime.now().minusDays(1)));
+    }
+
+    /**
+     * O mesmo por organizacao - "a Clinica Norte registrou ontem".
+     *
+     * Evento sem organizacao nao entra na agregacao: quem registrou agindo por si nao faz a
+     * organizacao parecer ativa.
+     */
+    @Test
+    @DisplayName("agrega por organizacao, e ignora evento sem organizacao")
+    void agregaPorOrganizacaoEIgnoraSemOrganizacao() {
+        vaccineRepository.saveAndFlush(Vaccine.builder()
+                .animal(rex).recordedBy(ulysses).vaccineName("Registrada pela pessoa, sem organizacao")
+                .applicationDate(LocalDate.now().minusDays(2))
+                .creationDate(LocalDateTime.now()).build());
+
+        assertThat(timelineRepository.ultimaContribuicaoPorOrganizacao(rex.getAnimalId()))
+                .as("nenhum evento tem organizacao, entao nao ha organizacao contribuindo")
+                .isEmpty();
+        assertThat(timelineRepository.ultimaContribuicaoPorPessoa(rex.getAnimalId()))
+                .hasSize(1);
+    }
+
+    /**
      * A view e somente leitura, e {@code @Immutable} e o que faz o Hibernate recusar
      * antes de o banco recusar. Sem isso, uma escrita acidental viraria erro de SQL em
      * producao em vez de erro de uso no desenvolvimento.
