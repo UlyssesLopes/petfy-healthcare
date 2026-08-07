@@ -20,10 +20,16 @@ um retrato de uma tela, ele é a regra de todas.
 | 2 | A voz | **Aprovada** em 2026-08-06 |
 | 3 | Cor | **Aprovada**, reescrita em 2026-08-06 |
 | 4 | Tipografia e ritmo | **Aprovada**, reescrita em 2026-08-06 |
-| 5 | Os objetos que carregam a identidade | **Aprovada**, revisada em 2026-08-06 |
+| 5 | Os objetos que carregam a identidade | **Aprovada**, revisada em 2026-08-06; regra da série precisada em 2026-08-07 |
 | 6 | Acessibilidade e idioma | **Aprovada** em 2026-08-06 |
 
-**Documento fechado em 2026-08-06.**
+**Documento fechado em 2026-08-06**, e emendado em 2026-08-07 na regra da série (5.2).
+
+**Documento fechado não é documento imutável, e a emenda registra a diferença.** A regra
+da série dizia *"o registro de peso carrega o próprio gráfico e a variação"*, e ao ser
+construída mostrou que as duas coisas não cabem no mesmo lugar. O que mudou está escrito
+no próprio 5.2, com o motivo — a regra antiga fica legível ao lado da nova, que é a mesma
+postura que este produto exige dos registros dele (`PRODUTO.md` 5.2: correção é sucessão).
 
 ### A primeira versão estava errada, e o erro fica registrado
 
@@ -408,9 +414,30 @@ nunca é "ver detalhes" (5.7).
   Quando coincidem, não se diz nada — ruído não é transparência.
 - **Correção é sucessão, e se vê** (5.2). O valor anterior continua legível e a correção
   fica logo abaixo, com autor e data. Nada de aba "histórico", nada de `(editado)`.
-- **Série mora dentro do evento.** O registro de peso carrega o próprio gráfico e a
-  variação — peso *é* série (3.9), então o lugar dela é a linha do registro, não um painel
-  à parte. Vale para qualquer medida que vier a ser série.
+- **Série mora dentro do evento.** O registro de peso carrega a **variação** — peso *é*
+  série (3.9), então o lugar dela é a linha do registro, não um painel à parte. Vale para
+  qualquer medida que vier a ser série.
+
+  **Precisado em 2026-08-07, ao construir:** a redação original dizia *"carrega o próprio
+  gráfico e a variação"*, e as duas coisas não cabem no mesmo lugar. **A variação cabe na
+  linha** — "12,5 kg · +0,4 desde a última" é o fato mais o seu contexto imediato, e sem
+  ela o número sozinho não diz se é boa ou má notícia. **A curva não cabe:** uma curva de
+  anos responde uma pergunta que a linha não responde — *"está engordando desde a
+  castração?"* — e enfiá-la numa linha entrega as duas coisas mal.
+
+  Então são **dois lugares com dois papéis**: variação (e no máximo um *sparkline*) dentro
+  do evento, e a curva inteira numa tela própria de peso, alcançável de qualquer evento de
+  pesagem.
+
+  **E dois lugares onde a curva não vai**, porque os dois quebram regras deste documento:
+  não na home do tutor, cujo centro é o feed de pendências (9.3) e onde gráfico é
+  exatamente o *painel* que a seção 1 recusa; e não no cabeçalho do animal, porque a 5.4
+  diz que **as pessoas em volta do animal vêm antes dos dados**, e um gráfico ali empurra
+  a rede para baixo.
+
+  **Duas medidas do mesmo dia não geram variação entre si.** Variação de peso é leitura de
+  tendência, e diferença entre duas pesagens da mesma tarde é ruído de balança. É a mesma
+  razão pela qual a linha ordena por quando aconteceu, e não por quando foi digitado.
 
 ### 5.3 A pendência
 

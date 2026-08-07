@@ -496,6 +496,32 @@ Isso também dá o critério objetivo de **dado de saúde** para efeito de LGPD:
 clínico sempre é; observação quase sempre é; recado e foto não são. O
 `SensitiveAccessLog` passa a ter regra clara sobre o que cobre.
 
+#### Construída em 2026-08-07, e o "quase sempre" foi fechado
+
+Observação estava descrita aqui desde o documento fundador e **não existia no
+backend** — descoberto ao levantar o delta de contrato do passo 4. A ausência
+deixava três coisas desta seção sem lugar nenhum: a creche não tinha onde registrar
+o que viu, o ato clínico não tinha o que referenciar como evidência, e o alerta da
+creche não existia porque o que ele qualifica não existia.
+
+Duas decisões que o texto acima não tomava, e que a construção obrigou a fechar:
+
+**Observação é *sempre* dado de saúde.** O *"quase sempre"* era honesto como
+descrição e inviável como regra: ele abre uma classificação que teria de ser
+decidida por registro. Pelo autor, e a mesma frase muda de regime conforme quem
+digitou. Por um campo, e a classificação de dado sensível fica na mão de quem está
+com pressa no balcão. **Sempre** é mais restritivo do que o necessário em "brincou
+muito hoje", e nunca vaza por classificação errada — que é o erro que não tem
+conserto.
+
+**Observação tem escopo de concessão próprio**, e não o do prontuário. Quem mais
+escreve observação é a creche; colocá-la no prontuário faria com que dar à creche
+acesso ao que **ela mesma escreve** entregasse junto todo atendimento clínico do
+animal — exatamente o que a 3.5 e o escopo existem para impedir, e o caso que os
+originou. Consequência: concessão anterior a 2026-08-07 não tem esse escopo e não
+vê observação, o que é o padrão correto — ninguém concedeu acesso a algo que não
+existia quando concedeu.
+
 ### 3.12 Orientação (`CareInstruction`)
 
 **Instrução dada a quem cuida do animal, com prazo e confirmação de cumprimento.**
@@ -1298,6 +1324,14 @@ a mesma regra e erra diferente.
 Nada aqui é decisão de produto. É o que a leitura do código em 2026-08-05
 apontou como restrição ou lacuna, guardado para o levantamento que vem depois da
 seção 8.
+
+> ⚠️ **Este anexo está vencido, e planejar por ele é planejar para trás.** Ele é de
+> 2026-08-05, **anterior à Fase 6**, e cinco das oito lacunas que ele lista já estão
+> fechadas — entre elas *"pet exige dono, não há animal sem tutor humano"*, que a
+> `Custody` resolveu, e *"não há linha do tempo do animal"*, que a view `animal_timeline`
+> resolveu. A conferência item por item, feita contra o contrato publicado em 2026-08-07,
+> está no `ROADMAP.md`, na seção do passo 4. **Leia lá antes de usar qualquer coisa
+> daqui.**
 
 **Restrições que o backend já impõe a qualquer cliente:**
 

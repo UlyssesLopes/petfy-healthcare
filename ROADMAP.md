@@ -714,7 +714,7 @@ estrutura e stack, e é isto que esta seção passa a registrar.
 | 1 | **Estrutura do cliente** | Feito — seção 9 do `PRODUTO.md` | É insumo dos dois seguintes. Sem ela escrita, "de que área é esta tela?" volta a ser decidido em cada tela |
 | 2 | **Stack** | Decidida em 2026-08-06 | Antes do design: metade das decisões de design se amarra a ela — componente, token, tema |
 | 3 | **Direção visual** | Feito — `DESIGN.md`, seis seções, mais `design/home-tutor.html` | Antes do contrato, porque a tela define quais leituras o backend precisa |
-| 4 | **Delta de contrato** | **Em execução** — plano no fim desta fase | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
+| 4 | **Delta de contrato** | **Em execução** — P1 a P3 fechados em 2026-08-07; faltam P4, P5 e P6 | Só depois de saber **quais** telas existem é que se sabe quais leituras o backend precisa. A única cobrança já certa é a leitura em volume (9.5) |
 | 5 | **Construir** | — | — |
 
 **Por que o delta de contrato vem depois do design, e não antes.** O OpenAPI é gerado
@@ -981,6 +981,50 @@ Isso é coerente com o `PRODUTO.md` — percepção é Horizonte 4 — mas signi
 **a tela de referência descreve algo que a v1 não entrega**. Ou o design registra
 que os dois são posteriores, ou eles entram no escopo. **É decisão de produto, e
 não se resolve aqui.**
+
+#### P1, P2 e P3 — concluídos em 2026-08-07
+
+| # | O que entrou | Onde |
+|---|---|---|
+| **P1** | `/professional/animals` vira `Page`, com busca por nome, registro geral e microchip, e ordem pelo `Pageable` | `GrantRepository`, `VetPetService` |
+| **P2** | `GET /me/context` — contexto ativo, opções disponíveis, capacidades e `ambiguous` | `ActiveContextController` |
+| **P3** | `V29`: nome de quem registrou, organização, credencial com estado, e contagem de correção na linha do tempo | view `animal_timeline` |
+| **P3b** | `V30`: **observação passa a existir**, com escopo próprio e alerta de urgência | `Observation`, `GrantScope.OBSERVACOES` |
+| **P3c** | `V31`: a pesagem carrega a anterior, e a linha ganha a variação | view `animal_timeline` |
+
+**O P2 mudou de forma ao ser lido, e o registro importa.** O plano dizia *"ler o
+contexto ativo e trocá-lo"* — **a troca já existia** desde a Fase 6, no header
+`X-Petfy-Organization`, com a regra certa e sem escolher em silêncio. Faltava só a
+leitura, e o 409 `AMBIGUOUS_CONTEXT` era literalmente *"a ambiguidade devolvida no
+meio de uma operação"* que o 9.5 proíbe. Por isso **não há rota de troca**: um
+contexto ativo guardado no servidor seria uma segunda fonte de verdade, e a que
+perde é sempre a que o registro não usou.
+
+**O P3 cresceu porque faltava um objeto, não um campo.** O levantamento dizia que o
+DTO da linha do tempo era magro. Era — mas a causa de fundo é que
+`TimelineEventType` não tinha `OBSERVACAO`, embora o `PRODUTO.md` 3.11 a definisse
+desde o documento fundador e o `DESIGN.md` 5.5 chame essa distinção de *"a mais
+importante do produto"*. As duas decisões de produto que a construção obrigou a
+fechar — observação é **sempre** dado de saúde, e tem **escopo próprio** — estão
+registradas no `PRODUTO.md` 3.11, não aqui, porque são de produto.
+
+**Um N+1 consertado de passagem, e ele já existia:** o `TimelineServiceImpl`
+resolvia o nome do autor com `personRepository.findById()` **por entrada** — vinte
+eventos, vinte consultas, na leitura que mais cresce no produto. Acrescentar
+organização e credencial no mesmo padrão teria feito disso N+3.
+
+**A rede de segurança cobrou duas coisas que teriam passado**, e as duas existem por
+causa da família de seis bugs da Fase 4: o `AnimalPurgerCoverageContainerTest` leu o
+`information_schema` e apontou `observations` como tabela nova apontando para
+`animals` sem cobertura no purger — apagar animal ou conta responderia **500 na
+primeira observação registrada**. E o `AnimalPurgerTest` quebrou por falta do mock.
+
+**O que ficou de fora do P3, por decisão:** a **natureza do evento** como campo
+derivado. Com `OBSERVACAO` existindo como tipo e a credencial já no DTO, o cliente
+tem como fazer a distinção da 5.5 — e mapear `ORIENTACAO` ou `VACINA` para *"ato
+clínico"* ainda depende de quem registrou, o que continua sendo decisão de produto.
+
+**Suíte:** 731 testes, 0 falhas, 0 pulados, com os de container contra Postgres real.
 
 #### Ordem, e o critério de pronto
 
