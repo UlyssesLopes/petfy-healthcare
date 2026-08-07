@@ -1186,6 +1186,54 @@ mantém o BFF possível.
 
 **Suíte:** 756 testes, 0 falhas, 0 pulados, com os de container contra Postgres real.
 
+#### Bloco 1 — o gerador escolhido, e a guarda que faz o critério valer
+
+**O gerador é o `openapi-typescript`, e o cliente é só tipo.** Ele gera um arquivo de
+tipos com as 96 operações e os 84 schemas; a camada de dados é escrita por nós, fina,
+sobre `openapi-fetch`.
+
+**Por que não um gerador de SDK e hooks** (Orval, `@hey-api`), que economizaria
+escrita e já entregaria hooks de TanStack Query: nesse desenho o que a tela importa é
+o **hook gerado**, ou seja, a camada de dados única passa a ser gerada. No dia do BFF
+ela é regenerada com outra forma, e a mudança encosta em toda tela — que é
+exatamente o que a regra *"nenhuma tela chama HTTP"* existe para impedir. Com o
+gerador de tipos, o gerado é só o tipo, e a costura continua sendo nossa.
+
+**A parte que nenhum gerador entrega, e sem a qual o critério é intenção.** O
+`/v3/api-docs` só existe com a aplicação no ar, então o front geraria contra um
+contrato velho — ou nem geraria — e compilaria verde enquanto a API já responde outra
+coisa. Por isso o contrato virou **`contract/openapi.json`, versionado**, com o
+`OpenApiContractTest` quebrando o build de quem muda controller e não regenera.
+Regenerar é explícito:
+
+```
+mvn test -Dtest=OpenApiContractTest -Dpetfy.openapi.update=true
+```
+
+Duas normalizações, as duas contra falha intermitente: **chaves ordenadas**, porque a
+ordem do springdoc segue a descoberta dos handlers e `getDeclaredMethods` não promete
+ordem entre execuções; e o nó **`servers` removido**, porque ele carrega a URL de quem
+gerou, enquanto o contrato descreve a forma da API e não onde ela está.
+
+**O contrato deixou de ser omisso sobre autenticação:** entra o esquema `bearer-jwt`,
+a exigência global, e `security: []` nas sete rotas públicas. Não é daqui que o token
+sai para a rede — o cliente é só tipo, e quem põe o header é a camada de dados. A
+lista das públicas virou `RotasPublicas`, lida pelo `SecurityConfig` **e** pelo
+`OpenApiConfig`: duas listas escritas à mão divergem, e a que perde é sempre a
+documentação. Rota declarada pública que não exista no contrato derruba a subida.
+
+**Suíte:** 759 testes, 0 falhas, 0 pulados.
+
+**O que falta do bloco 1, e é tudo front:** scaffold do Vite, tokens das seções 3 e 4
+do `DESIGN.md`, i18n com a tabela de código de erro do `ErrorMessageEnum`, rota
+tipada, e a camada de dados sobre os tipos gerados. Mais os dois custos do
+repositório único que este documento já listou: o filtro por caminho no CI e o
+segundo serviço no Railway.
+
+**Duas decisões pequenas em aberto, e as duas são de convenção:** o nome da pasta do
+front, e se o filtro por caminho no CI entra junto do scaffold ou depois da primeira
+tela. Hoje qualquer push roda os 759 testes Java, e mudança de CSS vai disparar isso.
+
 **Pronto quando:** um tutor que nunca viu `curl` entra pelo navegador, vê o que
 precisa fazer hoje, registra uma dose e abre a linha do tempo do animal.
 
