@@ -36,6 +36,9 @@ jobs:
       - name: Build e testes
         run: mvn -B clean verify
 
+      # retencao curta de proposito: relatorio de teste interessa no dia em que a
+      # corrida falha, e a retencao default do repositorio (90 dias) transformava
+      # cada push num deposito que ninguem abre
       - name: Publica relatorios de teste e cobertura
         if: always()
         uses: actions/upload-artifact@v7
@@ -45,14 +48,15 @@ jobs:
             target/surefire-reports/
             target/site/jacoco/
           if-no-files-found: warn
+          retention-days: 5
 
-      - name: Publica o jar
-        uses: actions/upload-artifact@v7
-        with:
-          name: app-jar
-          path: target/*.jar
-          if-no-files-found: error
-
+      # NAO existe passo que publique o jar como artefato, e a ausencia e
+      # deliberada: ele existia de quando o pipeline entregava jar pronto para a
+      # imagem consumir. Hoje o Dockerfile e multi-stage e compila de dentro do
+      # build, e o Railway constroi do repositorio - ninguem baixava aquilo.
+      # Eram 79 MB por push em toda branch, 9 GB acumulados ate 2026-08-07, o que
+      # levou a cota de armazenamento do Actions a 90%. O gate de que o jar
+      # empacota continua sendo o 'mvn verify' acima
       # so roda quando SONAR_TOKEN estiver configurado no repositorio; sem isso
       # o passo e pulado em vez de quebrar o pipeline inteiro
       - name: Analise SonarQube
@@ -104,6 +108,15 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:latest
           # o Dockerfile agora compila o jar dentro do build, entao sem cache
-          # cada execucao baixaria as dependencias do Maven de novo
+          # cada execucao baixaria as dependencias do Maven de novo.
+          # mode=min e nao max: 'max' grava tambem as camadas intermediarias do
+          # stage de build do Maven, e foi o que levou o cache a 10,6 GB contra o
+          # teto de 10 GB do repositorio - passando do teto o GitHub evicta por
+          # LRU, entao pagava-se a gravacao e ainda se tomava miss
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
+
+          # sem attestation de proveniencia: cada push publicava um manifesto
+          # extra no ghcr, que aparece na listagem 'sem tag' e nao e consumido por
+          # nada aqui - o Railway constroi do repositorio e nao puxa a imagem
+          provenance: false
