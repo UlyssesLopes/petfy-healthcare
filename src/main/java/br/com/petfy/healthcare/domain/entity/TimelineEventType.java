@@ -20,6 +20,17 @@ public enum TimelineEventType {
 
     ATENDIMENTO(GrantScope.PRONTUARIO),
 
+    /**
+     * O que alguem viu, e nao o que alguem concluiu (3.11).
+     *
+     * <b>A distincao com ato clinico e "a mais importante do produto"</b> (DESIGN 5.5), e
+     * ela nao se faz por quem escreveu: observacao e um tipo proprio porque e um fato de
+     * natureza diferente. Observacao nunca vira ato clinico sozinha - pode ser
+     * referenciada por um como evidencia, e e isso que faz o que a creche viu chegar a
+     * quem pode diagnosticar.
+     */
+    OBSERVACAO(GrantScope.OBSERVACOES),
+
     PESAGEM(GrantScope.PESO),
 
     CONDICAO(GrantScope.CONDICOES),

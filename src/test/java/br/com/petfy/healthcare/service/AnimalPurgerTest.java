@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
+import br.com.petfy.healthcare.domain.repository.ObservationRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
@@ -64,6 +65,7 @@ class AnimalPurgerTest {
     @Mock private AnimalHealthConditionRepository animalHealthConditionRepository;
     @Mock private CareInstructionRepository careInstructionRepository;
     @Mock private CareInstructionFulfillmentRepository careInstructionFulfillmentRepository;
+    @Mock private ObservationRepository observationRepository;
 
     @InjectMocks
     private AnimalPurger animalPurger;
@@ -79,6 +81,7 @@ class AnimalPurgerTest {
                 grantRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
                 careInstructionRepository, careInstructionFulfillmentRepository,
+                observationRepository,
                 petTutorInviteRepository, custodyRepository,
                 animalRepository, attachmentStorage);
     }
@@ -120,6 +123,7 @@ class AnimalPurgerTest {
             ordem.verify(sensitiveAccessLogRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(animalHealthConditionRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(careInstructionRepository).deleteByAnimalAnimalIdIn(UM_PET);
+            ordem.verify(observationRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(petTutorInviteRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(custodyRepository).deleteAll(any());
 
@@ -174,6 +178,7 @@ class AnimalPurgerTest {
                     grantRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
                     careInstructionRepository, careInstructionFulfillmentRepository,
+                    observationRepository,
                     petTutorInviteRepository, custodyRepository,
                     animalRepository, attachmentStorage);
         }

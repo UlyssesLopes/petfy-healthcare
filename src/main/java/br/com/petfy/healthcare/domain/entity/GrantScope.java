@@ -23,6 +23,16 @@ public enum GrantScope {
     /** Atendimentos, categoria e diagnostico. O prontuario clinico. */
     PRONTUARIO,
 
+    /**
+     * O que alguem viu: nao comeu, mancou, vomitou, brigou (3.11).
+     *
+     * <b>Escopo proprio, e nao PRONTUARIO.</b> Quem mais escreve observacao e a creche, e
+     * po-la no prontuario faria com que dar acesso ao que ela mesma escreve entregasse
+     * junto todo atendimento clinico do animal - o exemplo que a doc desta enum usa como
+     * o problema que o escopo veio resolver.
+     */
+    OBSERVACOES,
+
     /** A serie de pesagens. */
     PESO,
 

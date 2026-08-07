@@ -8,6 +8,8 @@ import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
 import br.com.petfy.healthcare.domain.entity.CredentialStatus;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
+import br.com.petfy.healthcare.domain.entity.GrantScope;
+import br.com.petfy.healthcare.domain.entity.Observation;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.ProfessionalCredential;
 import br.com.petfy.healthcare.domain.entity.Species;
@@ -56,6 +58,7 @@ class TimelineContainerTest extends PostgresContainerTest {
     @Autowired private AnimalHealthConditionRepository animalHealthConditionRepository;
     @Autowired private ProfessionalCredentialRepository professionalCredentialRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
+    @Autowired private ObservationRepository observationRepository;
 
     private Person ulysses;
     private Animal rex;
@@ -287,6 +290,58 @@ class TimelineContainerTest extends PostgresContainerTest {
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple(TimelineEventType.VACINA, 1L),
                         org.assertj.core.groups.Tuple.tuple(TimelineEventType.PESAGEM, 0L));
+    }
+
+    /**
+     * A observacao entra na linha do tempo, e entra pelo instante em que foi VISTA.
+     *
+     * <b>O caso e o da creche:</b> registra as 18h o que viu as 9h. Se a view usasse
+     * {@code recorded_at}, o que a creche viu de manha apareceria depois do atendimento da
+     * tarde - e a ordem dos fatos de saude e justamente o que permite perceber padrao
+     * (3.9).
+     */
+    @Test
+    @DisplayName("observacao entra na linha do tempo pelo instante em que foi vista")
+    void observacaoEntraPeloInstanteVisto() {
+        var asNove = LocalDateTime.now().withHour(9).withMinute(0).withSecond(0).withNano(0);
+
+        observationRepository.saveAndFlush(Observation.builder()
+                .animal(rex).recordedBy(ulysses)
+                .description("Mancou da direita")
+                .observedAt(asNove)
+                // digitado nove horas depois, como acontece no fim do expediente
+                .recordedAt(asNove.plusHours(9))
+                .creationDate(asNove.plusHours(9))
+                .build());
+
+        assertThat(timelineRepository.findDoAnimal(rex.getAnimalId(), PageRequest.of(0, 20)))
+                .singleElement()
+                .satisfies(entrada -> {
+                    assertThat(entrada.getEventType()).isEqualTo(TimelineEventType.OBSERVACAO);
+                    assertThat(entrada.getSummary()).isEqualTo("Mancou da direita");
+                    assertThat(entrada.getOccurredAt()).isEqualTo(asNove);
+                    assertThat(entrada.getRecordedAt()).isEqualTo(asNove.plusHours(9));
+                    assertThat(entrada.getRecordedByName()).isEqualTo("Ulysses");
+                    assertThat(entrada.isHealthData())
+                            .as("observacao e sempre dado de saude: o quase do 3.11 abriria "
+                                + "classificacao por linha, e o lado seguro e o restritivo")
+                            .isTrue();
+                });
+    }
+
+    /**
+     * <b>Observacao tem escopo proprio, e nao o do prontuario.</b>
+     *
+     * Quem mais escreve observacao e a creche. Se ela caisse em PRONTUARIO, dar a creche
+     * acesso ao que ela mesma escreve entregaria junto todo atendimento clinico do animal
+     * - o exemplo que a doc do GrantScope usa como o problema que o escopo veio resolver.
+     */
+    @Test
+    @DisplayName("observacao exige o escopo de observacoes, e nao o de prontuario")
+    void observacaoTemEscopoProprio() {
+        assertThat(TimelineEventType.OBSERVACAO.escopoExigido())
+                .isEqualTo(GrantScope.OBSERVACOES)
+                .isNotEqualTo(GrantScope.PRONTUARIO);
     }
 
     /**
