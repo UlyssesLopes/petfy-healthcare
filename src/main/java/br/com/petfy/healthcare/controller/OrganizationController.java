@@ -22,16 +22,19 @@ public class OrganizationController {
 
     private final OrganizationService organizationService;
 
+    @Operation(summary = "Cria uma organizacao", description = "Clinica, creche, abrigo e rede de lares transitorios sao a MESMA entidade - o que as diferencia sao as capacidades dela, e nao um tipo declarado.")
     @PostMapping
     public ResponseEntity<OrganizationResponseDTO> createOrganization(@Valid @RequestBody OrganizationRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(organizationService.createOrganization(request));
     }
 
+    @Operation(summary = "Uma organizacao")
     @GetMapping("/{organizationId}")
     public ResponseEntity<OrganizationResponseDTO> getOrganizationById(@PathVariable UUID organizationId) {
         return ResponseEntity.ok(organizationService.getOrganizationById(organizationId));
     }
 
+    @Operation(summary = "As organizacoes", description = "Paginada, com teto de 100 por pagina.")
     @GetMapping
     public ResponseEntity<Page<OrganizationResponseDTO>> listAll(
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
@@ -53,6 +56,7 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.updateOrganization(organizationId, request));
     }
 
+    @Operation(summary = "Apaga a organizacao")
     @DeleteMapping("/{organizationId}")
     public ResponseEntity<Void> deleteOrganization(@PathVariable UUID organizationId) {
         organizationService.deleteOrganization(organizationId);

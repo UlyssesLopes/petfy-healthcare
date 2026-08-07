@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import br.com.petfy.healthcare.domain.dto.PetTutorResponseDTO;
 import br.com.petfy.healthcare.service.PetTutorService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,10 @@ public class PetTutorInviteController {
 
     private final PetTutorService petTutorService;
 
+    @Operation(summary = "Aceita o convite de co-tutor",
+               description = "Quem aceita passa a alcancar o animal por concessao - nao vira titular. "
+                             + "A titularidade se transfere por rota propria, e e um fato diferente: "
+                             + "dividir o cuidado nao e passar a responsabilidade.")
     @PostMapping("/{token}/accept")
     public ResponseEntity<PetTutorResponseDTO> accept(@PathVariable String token) {
         return ResponseEntity.status(HttpStatus.CREATED).body(petTutorService.accept(token));

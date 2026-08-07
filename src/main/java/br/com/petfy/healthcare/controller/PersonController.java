@@ -23,11 +23,13 @@ public class PersonController {
     private final PersonExportService personExportService;
 
     /** Unica rota publica de person: sem ela nao existe o primeiro usuario. */
+    @Operation(summary = "Cria a conta", description = "Rota publica. Nao existe conta de tutor nem conta de veterinario: e uma pessoa so, e o que ela pode fazer vem do que ela TEM - custodia de um animal, vinculo com uma organizacao, credencial profissional -, nunca de um tipo escolhido no cadastro.")
     @PostMapping
     public ResponseEntity<PersonResponseDTO> createPerson(@Valid @RequestBody PersonRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(personService.createPerson(request));
     }
 
+    @Operation(summary = "Meus dados")
     @GetMapping("/me")
     public ResponseEntity<PersonResponseDTO> getCurrentPerson() {
         return ResponseEntity.ok(personService.getCurrentPerson());
@@ -52,6 +54,7 @@ public class PersonController {
      * Separado do PUT /me porque aqui a validacao vale sempre: o PUT e parcial e
      * preserva campo ausente, o que nao serve para uma troca de senha.
      */
+    @Operation(summary = "Troca a minha senha", description = "Exige a senha atual, e derruba as sessoes abertas: quem trocou porque desconfiou de acesso indevido nao teria ganhado nada se o token do invasor continuasse valendo. O cliente recebe 401 em token que ainda nao expirou.")
     @PutMapping("/me/password")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequestDTO request) {
         personService.changePassword(request);
@@ -75,6 +78,7 @@ public class PersonController {
         return ResponseEntity.ok(personExportService.exportarDoAutenticado());
     }
 
+    @Operation(summary = "Apaga a minha conta", description = "Irreversivel. Animal com outro tutor sobrevive e a titularidade passa a ele; animal que so eu tinha morre com a carteira inteira. O registro de consentimento sai junto - guardar prova de aceite de quem pediu para ser esquecido inverteria o proposito da prova.")
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteCurrentPerson() {
         personService.deleteCurrentPerson();

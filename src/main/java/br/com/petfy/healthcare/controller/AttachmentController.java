@@ -88,6 +88,7 @@ public class AttachmentController {
                 .body(new InputStreamResource(conteudo.content()));
     }
 
+    @Operation(summary = "Apaga o anexo", description = "Apaga a linha e os BYTES no disco. Arquivo orfao com laudo dentro e dado pessoal nao apagado, que e o oposto do que um pedido de exclusao pede.")
     @DeleteMapping("/attachments/{attachmentId}")
     public ResponseEntity<Void> delete(@PathVariable UUID attachmentId) {
         attachmentService.delete(attachmentId);

@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import br.com.petfy.healthcare.domain.dto.TimelineEntryResponseDTO;
 import br.com.petfy.healthcare.service.TimelineService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,14 @@ public class TimelineController {
 
     private final TimelineService timelineService;
 
+    @Operation(summary = "A vida do animal em ordem, atravessando custodias e organizacoes",
+               description = "Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina "
+                             + "de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o "
+                             + "adotante recebe a vida inteira. Cada entrada traz quem registrou, em "
+                             + "nome de que organizacao, a credencial com o estado dela, quantas "
+                             + "correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora "
+                             + "do escopo de quem le aparece SEM conteudo em vez de desaparecer, com "
+                             + "visivel=false - sumir diria que o animal nunca foi ao veterinario.")
     @GetMapping("/{animalId}/timeline")
     public ResponseEntity<Page<TimelineEntryResponseDTO>> timeline(@PathVariable UUID animalId,
                                                                   Pageable pageable) {

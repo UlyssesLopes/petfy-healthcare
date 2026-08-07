@@ -24,16 +24,22 @@ public class HealthRecordController {
 
     private final HealthRecordService healthRecordService;
 
+    @Operation(summary = "Registra um atendimento",
+               description = "eventDate e quando o atendimento aconteceu, e nao quando foi digitado. A "
+                             + "autoria fica gravada e nunca e editavel - e o que separa um registro "
+                             + "que um veterinario aceita de um caderno digital.")
     @PostMapping
     public ResponseEntity<HealthRecordResponseDTO> createHealthRecord(@Valid @RequestBody HealthRecordRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(healthRecordService.createHealthRecord(request));
     }
 
+    @Operation(summary = "Um atendimento")
     @GetMapping("/{healthRecordId}")
     public ResponseEntity<HealthRecordResponseDTO> getHealthRecordById(@PathVariable UUID healthRecordId) {
         return ResponseEntity.ok(healthRecordService.getHealthRecordById(healthRecordId));
     }
 
+    @Operation(summary = "Os atendimentos que eu alcanco", description = "Paginada, com teto de 100 por pagina.")
     @GetMapping
     public ResponseEntity<Page<HealthRecordResponseDTO>> listAll(
             @PageableDefault(size = 20, sort = "eventDate") Pageable pageable) {
@@ -41,11 +47,13 @@ public class HealthRecordController {
     }
 
     /** Rastro de alteracoes: quem mudou o que, e quando. */
+    @Operation(summary = "O historico de correcoes do atendimento")
     @GetMapping("/{healthRecordId}/corrections")
     public ResponseEntity<List<HealthRecordCorrectionResponseDTO>> listCorrections(@PathVariable UUID healthRecordId) {
         return ResponseEntity.ok(healthRecordService.listCorrections(healthRecordId));
     }
 
+    @Operation(summary = "Os atendimentos de um animal")
     @GetMapping("/animal/{animalId}")
     public ResponseEntity<List<HealthRecordResponseDTO>> listByAnimal(@PathVariable UUID animalId) {
         return ResponseEntity.ok(healthRecordService.listHealthRecordsByAnimal(animalId));
@@ -67,6 +75,9 @@ public class HealthRecordController {
         return ResponseEntity.ok(healthRecordService.updateHealthRecord(healthRecordId, request));
     }
 
+    @Operation(summary = "Remove o atendimento",
+               description = "Para o registro criado por engano. Apagar registro de saude nao e "
+                             + "correcao: corrigir e o PUT, que preserva o valor anterior.")
     @DeleteMapping("/{healthRecordId}")
     public ResponseEntity<Void> deleteHealthRecord(@PathVariable UUID healthRecordId) {
         healthRecordService.deleteHealthRecord(healthRecordId);
