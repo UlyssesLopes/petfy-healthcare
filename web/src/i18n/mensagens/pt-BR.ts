@@ -99,6 +99,68 @@ export const mensagens = {
    */
   "erro.desconhecido": "Não conseguimos completar agora. Tente de novo em instantes.",
 
+  // ---------------------------------------------------------------------------- entrar
+  //
+  // A validacao de campo e NOSSA e acontece antes de enviar - o servidor devolve
+  // `campo: motivo` com o nome do campo em ingles, e isso nao e exibivel (DESIGN.md 6,
+  // emenda de 2026-08-07). As frases seguem a secao 2: dizem o que falta, sem culpar.
+  "entrar.titulo": "Entrar",
+  "entrar.email": "E-mail",
+  "entrar.senha": "Senha",
+  "entrar.acao": "Entrar",
+  "entrar.enviando": "Entrando…",
+  "entrar.email.faltando": "Informe o seu e-mail.",
+  "entrar.email.incompleto": "Esse e-mail não parece completo — falta o @",
+  "entrar.senha.faltando": "Informe a sua senha.",
+
+  // Os dois motivos de encerramento que a pessoa precisa distinguir. Nenhum e erro: o
+  // segundo e a consequencia esperada de trocar a senha, e dizer isso evita que ela
+  // pareca uma falha do produto.
+  "entrar.sessaoExpirada": "Sua sessão expirou. Entre de novo para continuar.",
+  "entrar.sessaoInvalidada": "Sua senha mudou, então a sessão anterior foi encerrada.",
+
+  // ------------------------------------------------------------------- home do tutor
+  "home.sair": "Sair",
+  "home.pendencias.titulo": "Precisa da sua atenção",
+  "home.pendencias.carregando": "Carregando o que precisa da sua atenção…",
+
+  // O vazio nao e uma falha, e o texto nao pede desculpa por ele. Tambem nao comemora:
+  // a secao 1 proibe comemorar ato de saude, e "tudo em dia!" e a versao disso.
+  "home.pendencias.vazio": "Nada precisa da sua atenção agora.",
+  "home.pendencias.vazio.apoio": "Quando uma dose ou uma orientação vencer, ela aparece aqui.",
+
+  // Plural pela regra do idioma, e nao por "s" no fim (DESIGN.md 6).
+  "home.estado.vencida": "{dias, plural, one {Vencida há # dia} other {Vencida há # dias}}",
+  "home.estado.venceHoje": "Vence hoje",
+  "home.estado.aVencer": "{dias, plural, one {Vence amanhã} other {Vence em # dias}}",
+
+  // A regra 5.3: nunca cobrar duas pessoas sem dizer que a outra ja fez. Dose dupla e
+  // dano, e nao incomodo.
+  "home.jaFeito": "Já feito por {nome}, {quando}.",
+
+  // O dia, e nao a hora: o `lastFulfilledAt` viaja como LocalDateTime, sem fuso nenhum.
+  // Dizer "às 7h40" seria inventar uma precisao que o dado nao tem — e erraria em horas
+  // se o servidor nao estiver no mesmo fuso de quem le.
+  "home.quando.hoje": "hoje",
+  "home.quando.ontem": "ontem",
+  "home.quando.em": "em {data}",
+
+  // O animal vai numa linha propria, e nao dentro do fato ("Antirrábica do Code"), porque
+  // o DTO da pendencia nao traz o sexo do animal — e a secao 6 diz que onde o sexo nao
+  // for conhecido a frase se reescreve para nao precisar dele, nunca se chuta.
+  "home.animal": "{nome}",
+
+  "home.convite.naoAceito": "{email} ainda não aceitou o convite.",
+  "home.consentimento": "Você precisa aceitar a versão atual dos termos e da política de privacidade.",
+
+  "home.acao.silenciar": "Silenciar",
+  "home.acao.voltarACobrar": "Voltar a cobrar",
+  "home.acao.cumprir": "Confirmar que dei",
+  "home.acao.cumprindo": "Confirmando…",
+  "home.silenciada": "Silenciada",
+  "home.mostrarSilenciadas": "Mostrar as silenciadas",
+  "home.ocultarSilenciadas": "Ocultar as silenciadas",
+
   // ------------------------------------------------------------------------ navegacao
   //
   // Nao e erro da API, e por isso nao tem codigo: e um endereco que nao existe. O texto
