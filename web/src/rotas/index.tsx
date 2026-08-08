@@ -5,6 +5,7 @@ import { useIntl, type IntlShape } from "react-intl";
 import { LinhaDoTempo } from "../componentes/LinhaDoTempo.tsx";
 import { Pata } from "../componentes/Pata.tsx";
 import { Rede } from "../componentes/Rede.tsx";
+import { RegistrarDose } from "../componentes/RegistrarDose.tsx";
 import { useAnimais, type Animal } from "../dados/animais.ts";
 import { useSair } from "../dados/autenticacao.ts";
 import { useMeuContexto } from "../dados/contexto.ts";
@@ -303,6 +304,8 @@ function ItemDePendencia({ pendencia }: { pendencia: Pendencia }) {
   const deixarDeSilenciar = useDeixarDeSilenciar();
   const cumprir = useCumprirOrientacao();
 
+  const [registrando, setRegistrando] = useState(false);
+
   const estado = estadoDe(pendencia);
 
   /*
@@ -332,6 +335,16 @@ function ItemDePendencia({ pendencia }: { pendencia: Pendencia }) {
       ) : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-3.5">
+        {pendencia.kind === "DOSE_DE_VACINA" && !registrando ? (
+          <button
+            type="button"
+            onClick={() => setRegistrando(true)}
+            className="text-interface inline-flex min-h-toque items-center rounded-pilula bg-acento px-[18px] font-bold text-sobre-acento"
+          >
+            {intl.formatMessage({ id: "dose.acao" })}
+          </button>
+        ) : null}
+
         {pendencia.kind === "ORIENTACAO" ? (
           <button
             type="button"
@@ -366,6 +379,14 @@ function ItemDePendencia({ pendencia }: { pendencia: Pendencia }) {
           </button>
         ) : null}
       </div>
+
+      {registrando && pendencia.animalId !== undefined && pendencia.sourceId !== undefined ? (
+        <RegistrarDose
+          animalId={pendencia.animalId}
+          vaccineId={pendencia.sourceId}
+          aoFechar={() => setRegistrando(false)}
+        />
+      ) : null}
     </article>
   );
 }

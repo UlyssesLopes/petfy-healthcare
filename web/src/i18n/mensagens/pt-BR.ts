@@ -161,6 +161,22 @@ export const mensagens = {
   "home.convite.naoAceito": "{email} ainda não aceitou o convite.",
   "home.consentimento": "Você precisa aceitar a versão atual dos termos e da política de privacidade.",
 
+  // ----------------------------------------------------------------- registrar a dose
+  "dose.acao": "Registrar dose",
+  "dose.titulo": "Registrar a dose de {vacina}",
+  "dose.aplicadaEm": "Aplicada em",
+  "dose.proximaDose": "Próxima dose",
+  "dose.proximaDose.apoio": "Se você souber. Dá para preencher depois.",
+  "dose.confirmar": "Registrar",
+  "dose.confirmando": "Registrando…",
+  "dose.cancelar": "Cancelar",
+  "dose.carregando": "Buscando a dose anterior…",
+
+  // A validacao e nossa e antes de enviar. As frases dizem o que falta, sem culpar.
+  "dose.erro.semData": "Informe o dia em que a dose foi aplicada.",
+  "dose.erro.futuro": "Essa data ainda não chegou — a dose foi aplicada quando?",
+  "dose.erro.proximaAntes": "A próxima dose precisa vir depois da aplicação.",
+
   "home.acao.silenciar": "Silenciar",
   "home.acao.voltarACobrar": "Voltar a cobrar",
   "home.acao.cumprir": "Confirmar que dei",
