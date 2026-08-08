@@ -1,0 +1,90 @@
+name: CI web
+
+# ------------------------------------------------------------------ o que este pipeline e
+#
+# A contraparte do ci-cd.yml para o front. Mesmo criterio do irmao: um job, e o que ele
+# responde e "isto pode entrar na main?".
+#
+# ELE OUVE `contract/` ALEM DE `web/`, e essa e a parte que importa. O cliente do front e
+# gerado do contrato e fica versionado; quando um controller muda, o contrato muda junto
+# no mesmo commit, e e ESTE pipeline que descobre se o `api.d.ts` ficou para tras. Sem
+# ouvir `contract/`, a guarda existiria e nunca correria no momento em que serve.
+#
+# AS DUAS VERIFICACOES DE FRESCOR seguem o molde do OpenApiContractTest: regenerar e
+# comparar. Elas usam `git status --porcelain`, e nao `git diff`, porque diff nao enxerga
+# arquivo ainda nao rastreado - e o dia em que alguem esquecer de commitar o gerado e
+# exatamente o dia em que a guarda precisa falar.
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'web/**'
+      - 'contract/**'
+      - '.github/workflows/ci-web.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'web/**'
+      - 'contract/**'
+      - '.github/workflows/ci-web.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # ci, e nao install: instala exatamente o que o lock diz, e falha se package.json e
+      # lock divergirem, em vez de resolver de novo e seguir.
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: O cliente gerado esta atualizado
+        run: |
+          npm run gerar:api
+          if [ -n "$(git status --porcelain -- src/dados/gerado/api.d.ts)" ]; then
+            echo "::error::O contrato mudou e o cliente gerado ficou para tras."
+            echo "Regenere e commite junto:  cd web && npm run gerar:api"
+            git --no-pager diff -- src/dados/gerado/api.d.ts | head -60
+            exit 1
+          fi
+
+      # O plugin do roteador escreve a arvore durante o build, entao este passo faz as
+      # duas coisas: produz o bundle e regenera o arquivo que o passo seguinte confere.
+      - name: Build
+        run: npx vite build
+
+      - name: A arvore de rotas esta atualizada
+        run: |
+          if [ -n "$(git status --porcelain -- src/arvore-de-rotas.gen.ts)" ]; then
+            echo "::error::Uma rota foi criada ou removida e a arvore ficou para tras."
+            echo "Regenere e commite junto:  cd web && npx vite build"
+            git --no-pager diff -- src/arvore-de-rotas.gen.ts | head -60
+            exit 1
+          fi
+
+      # Depois do build, e nao antes: o tsc precisa da arvore de rotas recem-gerada para
+      # que `to="/algo"` seja conferido contra as rotas que existem de fato.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Testes
+        run: npm test
