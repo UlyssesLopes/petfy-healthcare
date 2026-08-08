@@ -1,0 +1,181 @@
+[ {
+  "nome" : "PERSON_NOT_FOUND",
+  "codigo" : 101,
+  "mensagemDaApi" : "Person not found"
+}, {
+  "nome" : "ANIMAL_NOT_FOUND",
+  "codigo" : 102,
+  "mensagemDaApi" : "Animal not found"
+}, {
+  "nome" : "CLINIC_NOT_FOUND",
+  "codigo" : 103,
+  "mensagemDaApi" : "Organization not found"
+}, {
+  "nome" : "VACCINE_NOT_FOUND",
+  "codigo" : 104,
+  "mensagemDaApi" : "Vaccine not found"
+}, {
+  "nome" : "HEALTH_RECORD_NOT_FOUND",
+  "codigo" : 105,
+  "mensagemDaApi" : "Health record not found"
+}, {
+  "nome" : "VACCINE_CATALOG_NOT_FOUND",
+  "codigo" : 106,
+  "mensagemDaApi" : "Vaccine catalog entry not found"
+}, {
+  "nome" : "SHARE_NOT_FOUND",
+  "codigo" : 107,
+  "mensagemDaApi" : "Share link not found or no longer valid"
+}, {
+  "nome" : "EMAIL_ALREADY_USED",
+  "codigo" : 108,
+  "mensagemDaApi" : "Email already registered"
+}, {
+  "nome" : "NOT_CLINIC_MEMBER",
+  "codigo" : 109,
+  "mensagemDaApi" : "Only a vet from this organization can do that"
+}, {
+  "nome" : "CLINIC_ACCESS_NOT_FOUND",
+  "codigo" : 110,
+  "mensagemDaApi" : "Organization access not found"
+}, {
+  "nome" : "INVITE_NOT_FOUND",
+  "codigo" : 111,
+  "mensagemDaApi" : "Invite not found or no longer valid"
+}, {
+  "nome" : "CORRECTION_WINDOW_EXPIRED",
+  "codigo" : 112,
+  "mensagemDaApi" : "Correction window for this record has expired"
+}, {
+  "nome" : "CURRENT_PASSWORD_DOES_NOT_MATCH",
+  "codigo" : 113,
+  "mensagemDaApi" : "Current password does not match"
+}, {
+  "nome" : "NEW_PASSWORD_MUST_DIFFER",
+  "codigo" : 114,
+  "mensagemDaApi" : "New password must be different from the current one"
+}, {
+  "nome" : "RESET_TOKEN_NOT_FOUND",
+  "codigo" : 115,
+  "mensagemDaApi" : "Reset token not found or no longer valid"
+}, {
+  "nome" : "VERIFICATION_TOKEN_NOT_FOUND",
+  "codigo" : 116,
+  "mensagemDaApi" : "Verification token not found or no longer valid"
+}, {
+  "nome" : "SPECIES_MISMATCH",
+  "codigo" : 117,
+  "mensagemDaApi" : "Catalog species does not match the animal species"
+}, {
+  "nome" : "ANTIPARASITIC_CATALOG_NOT_FOUND",
+  "codigo" : 118,
+  "mensagemDaApi" : "Antiparasitic catalog entry not found"
+}, {
+  "nome" : "INSUFFICIENT_ANIMAL_ROLE",
+  "codigo" : 119,
+  "mensagemDaApi" : "Your role on this animal does not allow this action"
+}, {
+  "nome" : "PET_TUTOR_INVITE_NOT_FOUND",
+  "codigo" : 120,
+  "mensagemDaApi" : "Invite not found or no longer valid"
+}, {
+  "nome" : "ALREADY_A_TUTOR",
+  "codigo" : 121,
+  "mensagemDaApi" : "This person is already a tutor of this animal"
+}, {
+  "nome" : "CANNOT_REMOVE_HOLDER",
+  "codigo" : 122,
+  "mensagemDaApi" : "The holder cannot be removed; transfer the holder role first"
+}, {
+  "nome" : "TRANSFER_REQUIRED_FOR_HOLDER",
+  "codigo" : 123,
+  "mensagemDaApi" : "Use the holder transfer endpoint to change the holder"
+}, {
+  "nome" : "TUTOR_NOT_FOUND",
+  "codigo" : 124,
+  "mensagemDaApi" : "This person is not a tutor of this animal"
+}, {
+  "nome" : "ATTACHMENT_NOT_FOUND",
+  "codigo" : 125,
+  "mensagemDaApi" : "Attachment not found"
+}, {
+  "nome" : "ATTACHMENT_TYPE_NOT_ALLOWED",
+  "codigo" : 126,
+  "mensagemDaApi" : "Attachment must be a JPEG, PNG, WEBP or PDF file"
+}, {
+  "nome" : "ATTACHMENT_TOO_LARGE",
+  "codigo" : 127,
+  "mensagemDaApi" : "Attachment exceeds the maximum allowed size"
+}, {
+  "nome" : "ATTACHMENT_STORAGE_FAILURE",
+  "codigo" : 128,
+  "mensagemDaApi" : "Could not store or read the attachment"
+}, {
+  "nome" : "ATTACHMENT_EMPTY",
+  "codigo" : 129,
+  "mensagemDaApi" : "Attachment file is empty"
+}, {
+  "nome" : "CONDITION_NOT_FOUND",
+  "codigo" : 130,
+  "mensagemDaApi" : "Health condition not found"
+}, {
+  "nome" : "SEVERITY_ONLY_FOR_ALLERGY",
+  "codigo" : 131,
+  "mensagemDaApi" : "Severity applies to allergies only"
+}, {
+  "nome" : "CONDITION_KIND_IS_IMMUTABLE",
+  "codigo" : 132,
+  "mensagemDaApi" : "The condition kind cannot be changed; create a new record instead"
+}, {
+  "nome" : "PROFESSIONAL_CREDENTIAL_REQUIRED",
+  "codigo" : 133,
+  "mensagemDaApi" : "An active professional credential is required for this action"
+}, {
+  "nome" : "CREDENTIAL_ALREADY_REGISTERED",
+  "codigo" : 134,
+  "mensagemDaApi" : "This professional credential is already registered"
+}, {
+  "nome" : "NOT_ORGANIZATION_MEMBER",
+  "codigo" : 135,
+  "mensagemDaApi" : "You are not an active member of this organization"
+}, {
+  "nome" : "AMBIGUOUS_CONTEXT",
+  "codigo" : 136,
+  "mensagemDaApi" : "You act for more than one organization; inform X-Petfy-Organization"
+}, {
+  "nome" : "CAPABILITY_NOT_GRANTED",
+  "codigo" : 137,
+  "mensagemDaApi" : "This organization cannot perform this action"
+}, {
+  "nome" : "ORGANIZATION_CONTEXT_REQUIRED",
+  "codigo" : 138,
+  "mensagemDaApi" : "This action requires acting on behalf of an organization"
+}, {
+  "nome" : "CARE_INSTRUCTION_NOT_FOUND",
+  "codigo" : 139,
+  "mensagemDaApi" : "Care instruction not found"
+}, {
+  "nome" : "CARE_INSTRUCTION_NOT_IN_EFFECT",
+  "codigo" : 140,
+  "mensagemDaApi" : "This care instruction was not in effect at the informed time"
+}, {
+  "nome" : "DUE_ITEM_NOT_FOUND",
+  "codigo" : 141,
+  "mensagemDaApi" : "There is no such pending item for you"
+}, {
+  "nome" : "CONSENT_CANNOT_BE_SILENCED",
+  "codigo" : 142,
+  "mensagemDaApi" : "Pending consent cannot be silenced"
+}, {
+  "nome" : "INVALID_REQUEST",
+  "codigo" : 400,
+  "mensagemDaApi" : "Invalid request"
+}, {
+  "nome" : "INVALID_CREDENTIALS",
+  "codigo" : 401,
+  "mensagemDaApi" : "Invalid email or password"
+}, {
+  "nome" : "INTERNAL_ERROR",
+  "codigo" : 500,
+  "mensagemDaApi" : "Internal server error"
+} ]
