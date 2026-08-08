@@ -1,0 +1,99 @@
+/* ------------------------------------------------------------------ os tokens
+ *
+ * Os valores saem das secoes 3 e 4 do DESIGN.md, e nenhum foi inventado aqui. Os
+ * numeros de contraste ao lado de cada par foram CONFERIDOS contra o calculo WCAG
+ * 2.x antes de este arquivo existir, e nao copiados da tabela: os seis pares
+ * bateram na segunda casa decimal.
+ *
+ * A REGRA QUE ESTE ARQUIVO CARREGA: nenhuma cor entra sem o numero, nos dois
+ * temas. Cor nova sem contraste medido nao entra aqui, e a secao 6 do DESIGN.md e
+ * quem cobra isso.
+ *
+ * O ESCURO NAO E INVERSAO (DESIGN.md 3). E um segundo papel: superficie
+ * quase-preta quente, tinta que nao e branco puro, acento clareado para manter
+ * contraste. Por isso os dois temas sao escritos por extenso, um ao lado do
+ * outro, em vez de derivados por filtro.
+ *
+ * COMO O TEMA TROCA, e sao tres estados:
+ *   - sem nada declarado, vale a preferencia do sistema;
+ *   - [data-theme="dark"] e [data-theme="light"] sobrepoem a preferencia.
+ * O :not([data-theme="light"]) dentro da media query e o que faz a escolha
+ * explicita por claro ganhar de um sistema em escuro.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ---- neutros de pelo. Nunca cinza de framework (DESIGN.md 3) ---- */
+  --petfy-superficie: #fdfbf9;
+  --petfy-superficie-elevada: #f7f1eb;
+  --petfy-contorno: #eadfd4;
+  --petfy-marca-neutra: #efe8e1;
+  --petfy-tinta: #22201e;
+  --petfy-tinta-secundaria: #7a706a;
+
+  /* ---- acento: petroleo esverdeado, e nao o azul da categoria ---- */
+  --petfy-acento: #125e63;
+  --petfy-sobre-acento: #ffffff;
+  --petfy-fundo-acento: #e4f0ef;
+
+  /* ---- urgencia: vencido, e so. Nunca em botao (DESIGN.md 3, regra 1) ---- */
+  --petfy-urgencia: #a93f2f;
+  --petfy-fundo-urgencia: #f9e7e2;
+}
+
+/* Contraste no tema claro, conferido:
+ *   tinta sobre superficie ................ 15.73
+ *   tinta secundaria sobre superficie .......4.67
+ *   acento sobre superficie ................ 7.25
+ *   sobre-acento dentro do botao ........... 7.48
+ *   urgencia sobre o fundo dela ............ 5.11   <- o par mais fragil da paleta
+ *   tinta sobre fundo de acento ........... 13.92
+ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --petfy-superficie: #141311;
+    --petfy-superficie-elevada: #1b1916;
+    --petfy-contorno: #2c2823;
+    --petfy-marca-neutra: #211e1a;
+    --petfy-tinta: #f3efea;
+    --petfy-tinta-secundaria: #a79c93;
+
+    --petfy-acento: #4fb6ae;
+    --petfy-sobre-acento: #052422;
+    --petfy-fundo-acento: #152827;
+
+    --petfy-urgencia: #ff8b72;
+    --petfy-fundo-urgencia: #2b1d1a;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --petfy-superficie: #141311;
+  --petfy-superficie-elevada: #1b1916;
+  --petfy-contorno: #2c2823;
+  --petfy-marca-neutra: #211e1a;
+  --petfy-tinta: #f3efea;
+  --petfy-tinta-secundaria: #a79c93;
+
+  --petfy-acento: #4fb6ae;
+  --petfy-sobre-acento: #052422;
+  --petfy-fundo-acento: #152827;
+
+  --petfy-urgencia: #ff8b72;
+  --petfy-fundo-urgencia: #2b1d1a;
+}
+
+/* Contraste no tema escuro, conferido:
+ *   tinta sobre superficie ................ 16.22
+ *   tinta secundaria sobre superficie ...... 6.91
+ *   acento sobre superficie ................ 7.63
+ *   sobre-acento dentro do botao ........... 6.74
+ *   urgencia sobre o fundo dela ............ 7.10
+ *   tinta sobre fundo de acento ........... 13.44
+ */
