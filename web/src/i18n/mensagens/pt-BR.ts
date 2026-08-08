@@ -121,6 +121,14 @@ export const mensagens = {
 
   // ------------------------------------------------------------------- home do tutor
   "home.sair": "Sair",
+  "home.nav.inicio": "Início",
+  "home.contexto.voce": "Você",
+
+  // A idade em anos, pela regra do idioma. Fica ao lado da raça, separada por ponto
+  // medio — sao itens de uma lista curta, e nao uma frase montada por concatenacao.
+  "home.idade": "{anos, plural, =0 {menos de um ano} one {# ano} other {# anos}}",
+  "home.especie.CANINA": "Cão",
+  "home.especie.FELINA": "Gato",
   "home.pendencias.titulo": "Precisa da sua atenção",
   "home.pendencias.carregando": "Carregando o que precisa da sua atenção…",
 
@@ -160,6 +168,48 @@ export const mensagens = {
   "home.silenciada": "Silenciada",
   "home.mostrarSilenciadas": "Mostrar as silenciadas",
   "home.ocultarSilenciadas": "Ocultar as silenciadas",
+
+  // -------------------------------------------------------------- quem cuida (5.4)
+  //
+  // As pessoas em volta do animal vem ANTES dos dados: e a tese da secao 1 do PRODUTO.md
+  // virando tela — o registro e o fio que liga quem cuida.
+  "rede.titulo": "Quem cuida do {animal}",
+  "rede.responde": "Responde pelo {animal}",
+  "rede.respondeComVoce": "Responde pelo {animal} com você",
+  "rede.acesso": "Tem acesso",
+  "rede.conceder": "Conceder acesso",
+  "rede.conceder.apoio": "Clínica, creche, alguém de confiança",
+  "rede.contagem": "{quantas, plural, one {# pessoa cuida} other {# pessoas cuidam}}",
+
+  // -------------------------------------------------------------- a vida do animal (5.1)
+  "linha.titulo": "A vida do {animal}",
+  "linha.carregando": "Carregando os registros…",
+  "linha.vazia": "Ainda não há registros na vida do {animal}.",
+  "linha.vazia.apoio": "Uma vacina, um peso, uma observação — tudo o que for registrado aparece aqui, em ordem.",
+  "linha.resumo": "{registros, plural, one {# registro} other {# registros}}",
+
+  // A credencial diz o que e. CRMV apenas informado aparece COMO INFORMADO, em tinta
+  // secundaria — sem selo de "verificado" que o produto nao pode dar (5.10).
+  "linha.credencial.INFORMADO": "{credencial} · informado",
+  "linha.credencial.VERIFICADO": "{credencial} · verificado",
+  "linha.credencial.SUSPENSO": "{credencial} · suspenso",
+
+  // Correcao e sucessao, e se ve (5.2). Nada de aba "historico", nada de "(editado)".
+  "linha.correcoes": "{quantas, plural, one {# correção} other {# correções}}",
+
+  // Os dois instantes, quando divergem. Quando coincidem, nao se diz nada — ruido nao e
+  // transparencia (5.2).
+  "linha.registradoEm": "registrado em {data}",
+
+  // A variacao cabe na linha; a curva nao (5.2, emenda de 2026-08-07).
+  "linha.peso.variacao": "{sinal}{diferenca} kg desde a última",
+
+  // A orientacao e o cumprimento dela chegam com o MESMO texto — a view usa a descricao
+  // da orientacao nos dois. Sem distinguir, a linha mostraria "Amoxicilina, 8h" duas
+  // vezes em dias diferentes, e o leitor nao saberia qual e qual. Nao e rotulo de tipo
+  // como estrutura (o que a 5.1 recusa): e o fato dizendo o que aconteceu.
+  "linha.orientacao.emitida": "Orientação: {o que}",
+  "linha.orientacao.cumprida": "Cumprido: {o que}",
 
   // ------------------------------------------------------------------------ navegacao
   //

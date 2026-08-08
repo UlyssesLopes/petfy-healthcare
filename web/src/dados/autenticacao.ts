@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { cliente } from "./cliente.ts";
+import { corpoDe } from "./resposta.ts";
 import { encerrarSessao, iniciarSessao } from "./sessao.ts";
 
 /**
@@ -13,18 +14,11 @@ import { encerrarSessao, iniciarSessao } from "./sessao.ts";
 export function useEntrar() {
   return useMutation({
     mutationFn: async (credenciais: { email: string; senha: string }) => {
-      const { data, error } = await cliente.POST("/auth/login", {
-        body: { email: credenciais.email, password: credenciais.senha },
-      });
-
-      if (error !== undefined) {
-        throw error;
-      }
-      if (data === undefined) {
-        throw new Error("O login respondeu sem corpo.");
-      }
-
-      return data;
+      return corpoDe(
+        await cliente.POST("/auth/login", {
+          body: { email: credenciais.email, password: credenciais.senha },
+        }),
+      );
     },
     onSuccess: (resposta) => {
       iniciarSessao(resposta);

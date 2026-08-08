@@ -29,6 +29,28 @@ export function dataLocalDe(iso: string): Date {
 }
 
 /**
+ * Quantos anos inteiros se passaram desde a data — a idade do animal.
+ *
+ * Conta por aniversario, e nao dividindo dias por 365: quem nasceu em 29 de fevereiro
+ * tem idade, e ano bissexto nao pode fazer a idade pular um dia antes da hora.
+ */
+export function anosDesde(iso: string, hoje: Date = new Date()): number {
+  const nascimento = dataLocalDe(iso);
+
+  let anos = hoje.getFullYear() - nascimento.getFullYear();
+
+  const mesesAntes = hoje.getMonth() < nascimento.getMonth();
+  const mesmoMesEDiaAntes =
+    hoje.getMonth() === nascimento.getMonth() && hoje.getDate() < nascimento.getDate();
+
+  if (mesesAntes || mesmoMesEDiaAntes) {
+    anos -= 1;
+  }
+
+  return Math.max(anos, 0);
+}
+
+/**
  * Quantos dias inteiros faltam para a data, contando por <b>dia do calendario</b> e nao
  * por 24 horas: quem abre a tela as 23h e quem abre as 7h leem o mesmo "vence amanha".
  *

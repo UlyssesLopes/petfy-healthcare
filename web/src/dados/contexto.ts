@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { cliente } from "./cliente.ts";
 import type { components } from "./gerado/api";
+import { corpoDe } from "./resposta.ts";
 
 export type MeuContexto = components["schemas"]["ActiveContextResponseDTO"];
 
@@ -17,16 +18,7 @@ export function useMeuContexto() {
   return useQuery({
     queryKey: ["meu-contexto"],
     queryFn: async () => {
-      const { data, error } = await cliente.GET("/me/context", {});
-
-      if (error !== undefined) {
-        throw error;
-      }
-      if (data === undefined) {
-        throw new Error("O contexto respondeu sem corpo.");
-      }
-
-      return data;
+      return corpoDe(await cliente.GET("/me/context", {}));
     },
   });
 }

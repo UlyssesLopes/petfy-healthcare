@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { cliente } from "./cliente.ts";
 import type { components } from "./gerado/api";
+import { corpoDe } from "./resposta.ts";
 
 export type Pendencia = components["schemas"]["DueItemResponseDTO"];
 export type TipoDePendencia = NonNullable<Pendencia["kind"]>;
@@ -24,15 +25,11 @@ export function usePendencias(incluirSilenciadas: boolean) {
   return useQuery({
     queryKey: [...CHAVE, { incluirSilenciadas }],
     queryFn: async () => {
-      const { data, error } = await cliente.GET("/due-items", {
-        params: { query: { includeSilenced: incluirSilenciadas } },
-      });
-
-      if (error !== undefined) {
-        throw error;
-      }
-
-      return data ?? [];
+      return corpoDe(
+        await cliente.GET("/due-items", {
+          params: { query: { includeSilenced: incluirSilenciadas } },
+        }),
+      );
     },
   });
 }
