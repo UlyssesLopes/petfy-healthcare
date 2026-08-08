@@ -1230,9 +1230,70 @@ tipada, e a camada de dados sobre os tipos gerados. Mais os dois custos do
 repositório único que este documento já listou: o filtro por caminho no CI e o
 segundo serviço no Railway.
 
-**Duas decisões pequenas em aberto, e as duas são de convenção:** o nome da pasta do
+~~**Duas decisões pequenas em aberto, e as duas são de convenção:** o nome da pasta do
 front, e se o filtro por caminho no CI entra junto do scaffold ou depois da primeira
-tela. Hoje qualquer push roda os 759 testes Java, e mudança de CSS vai disparar isso.
+tela.~~ **Decididas em 2026-08-07:** a pasta é **`web/`** — a 9.4 do `PRODUTO.md` decide
+"web primeiro, app depois", então o nome já diz qual superfície é e deixa `app/` livre;
+`client/` colidiria com dois sentidos já ocupados (o cliente gerado do OpenAPI, e quem
+usa o produto). O **filtro por caminho entrou junto do scaffold**, e o que decidiu foi um
+fato conferido: a `main` **não tem branch protection** (repositório privado em plano
+free), então o risco clássico — *required check* filtrado por caminho ficando pendente
+para sempre — não existe hoje.
+
+#### Bloco 1 — concluído em 2026-08-07, e uma ressalva ao critério que este documento escreveu
+
+O scaffold está de pé em `web/`: Vite, React, TypeScript, tokens, i18n, camada de dados
+e rota tipada. **761 testes no backend, 0 falhas, 0 pulados**, e o pipeline do front
+verde. PR #42.
+
+**A ressalva, e ela corrige uma afirmação deste documento.** A seção acima diz que o
+critério do gerador é um só — *"mudança de controller tem de quebrar o build do front"* —
+e apresenta o contrato versionado como o que faz esse critério valer. **Vale pela
+metade**, e a outra metade só apareceu ao construir: o contrato descreve **apenas o
+caminho feliz**. `ErrorResponse` não está entre os 84 schemas, e nenhuma rota declara
+resposta de erro. Ou seja, mudar a forma do corpo de erro **não quebra build nenhum**, e
+o tipo dele é cópia escrita à mão no front.
+
+**O que fechou o buraco por ora**, e o que continua aberto:
+
+- **Fechou a tradução.** `contract/error-codes.json` é versionado, com o
+  `ErrorCodesContractTest` quebrando o build de quem mexe no `ErrorMessageEnum` sem
+  regenerar, e um teste do lado do front recusando código sem tradução. Regenerar é
+  explícito, no mesmo molde do contrato:
+
+  ```
+  mvn test -Dtest=ErrorCodesContractTest -Dpetfy.errorcodes.update=true
+  ```
+
+- **Continua aberta a forma do corpo.** `RespostaDeErro` no front é cópia sem guarda.
+  Fechá-la é anotar resposta de erro nas 96 operações — caro, e não bloqueia tela
+  nenhuma. Fica registrado para não ser redescoberto.
+
+**O `500` estava fora do enum**, escrito à mão dentro do `handleGenericException` — uma
+segunda fonte para a mesma pergunta, e um código que a tabela do front não teria como
+cobrir. Virou `INTERNAL_ERROR`, sem mudar código, mensagem nem status.
+
+**O `400` não é traduzível por código, e isso vira requisito de tela.** A validação de
+campo devolve `campo: motivo`, com nome de campo em inglês e sem acento — não é exibível
+nem pela regra de nunca mostrar a mensagem do servidor, nem pela seção 2 do `DESIGN.md`.
+A consequência é que **validar antes de enviar deixou de ser conveniência e passou a ser
+obrigação da camada de formulário**: o `400` que voltar é rede de segurança, e vira uma
+frase genérica nossa.
+
+**O TypeScript ficou em 5.9, e não no 7.** O 7 não expõe `createPrinter` nem `factory` —
+a API clássica do compilador saiu, e o que existe está sob `./unstable/*` —, e o
+`openapi-typescript` emite o `.d.ts` por ela. Não é preferência: com o 7, o gerador
+escolhido neste documento não roda.
+
+**Cinco guardas nasceram, e nenhuma entrou só escrita.** Todas foram vistas reprovando
+antes de serem commitadas — código sem tradução, chave órfã, mensagem em inglês copiada,
+tela chamando `fetch` cru, e endereço de rota que não existe. É a lição do teste de
+container que passava sem executar, aplicada antes de custar.
+
+**Dívida com relógio:** o `openapi-typescript` puxa `js-yaml` com CVE de CPU quadrático
+em `!!omap`. Só em `devDependencies` — `npm audit --omit=dev` dá zero —, e o gerador lê
+um JSON do próprio repositório, sem entrada de terceiro. Não há correção disponível; some
+quando o `@redocly/openapi-core` atualizar.
 
 **Pronto quando:** um tutor que nunca viu `curl` entra pelo navegador, vê o que
 precisa fazer hoje, registra uma dose e abre a linha do tempo do animal.

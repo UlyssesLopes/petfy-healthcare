@@ -21,11 +21,12 @@ um retrato de uma tela, ele é a regra de todas.
 | 3 | Cor | **Aprovada**, reescrita em 2026-08-06 |
 | 4 | Tipografia e ritmo | **Aprovada**, reescrita em 2026-08-06 |
 | 5 | Os objetos que carregam a identidade | **Aprovada**, revisada em 2026-08-06; regra da série precisada em 2026-08-07, e escopo da v1 registrado em 2026-08-07 |
-| 6 | Acessibilidade e idioma | **Aprovada** em 2026-08-06 |
+| 6 | Acessibilidade e idioma | **Aprovada** em 2026-08-06; a validação de campo precisada em 2026-08-07 |
 
-**Documento fechado em 2026-08-06**, e emendado duas vezes em 2026-08-07: na regra da série
-(5.2), e no escopo da v1 (5.5), onde `Insight` e `Update` ficaram registrados como
-posteriores.
+**Documento fechado em 2026-08-06**, e emendado três vezes em 2026-08-07: na regra da série
+(5.2), no escopo da v1 (5.5), onde `Insight` e `Update` ficaram registrados como
+posteriores, e na validação de formulário (6), quando a construção do i18n mostrou que o
+erro de campo não tem como vir do servidor.
 
 **Documento fechado não é documento imutável, e a emenda registra a diferença.** A regra
 da série dizia *"o registro de peso carrega o próprio gráfico e a variação"*, e ao ser
@@ -552,6 +553,14 @@ acontecer com uma mão, com o cachorro na outra.
 
 **Formulário com rótulo sempre visível.** Placeholder não é rótulo — some quando se digita,
 e é onde o erro nasce. Mensagem de erro amarrada ao campo, escrita como manda a seção 2.
+
+> **Acrescentado em 2026-08-07, ao construir a camada de i18n.** A mensagem por campo tem
+> de ser **nossa, e antes de enviar** — não é escolha de sofisticação. Os erros da API
+> viajam com código numérico, e o front traduz por ele; mas o erro de **validação de
+> campo** não tem código: o servidor devolve `campo: motivo`, com o nome do campo em
+> inglês. Não é exibível nem pela regra de nunca mostrar a mensagem do servidor, nem por
+> esta seção. Então a validação de campo é do cliente, e o erro que voltar do servidor
+> vira uma frase genérica — rede de segurança, não a mensagem que a pessoa lê.
 
 **O gráfico de série tem texto ao lado.** A variação é dita em palavras — "subiu 12% em 6
 meses" —, porque a linha sozinha não é legível por leitor de tela nem por quem não
