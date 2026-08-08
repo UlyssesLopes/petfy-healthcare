@@ -535,4 +535,132 @@ class DueItemServiceImplTest {
         }
     }
 
+    /**
+     * A serie de aplicacoes, e por que ela existe.
+     *
+     * <b>Descoberto ao construir a home do tutor, em 2026-08-08</b>, com a tela no ar
+     * contra a API de verdade: o tutor registrava a dose de hoje e a pendencia <i>nao
+     * saia do feed</i>. Cada registro de vacina cobrava por si, entao a dose do ano
+     * passado continuava dizendo "proxima em 2026-08-04" para sempre.
+     *
+     * Era o gesto que o passo 5 do ROADMAP elege como pronto-quando - "registra uma
+     * dose" - sem produzir efeito nenhum na tela.
+     */
+    @Nested
+    @DisplayName("a dose mais recente cala as anteriores")
+    class SerieDeAplicacoes {
+
+        private static final UUID DOSE_ANTIGA = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001");
+        private static final UUID DOSE_NOVA = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000002");
+
+        @Test
+        @DisplayName("a dose de hoje tira do feed a cobranca da dose anterior")
+        void doseNovaEncerraACobrancaDaAnterior() {
+            when(currentPersonProvider.require()).thenReturn(pessoa());
+            when(animalRepository.findAlcancadosPor(eq(PERSON_ID), any())).thenReturn(List.of(animal()));
+            when(vaccineRepository.findAlcancadasPor(eq(PERSON_ID), any())).thenReturn(List.of(
+                    // a de 2025, que venceu e vinha cobrando
+                    Vaccine.builder()
+                            .vaccineId(DOSE_ANTIGA)
+                            .animal(animal())
+                            .vaccineName("Antirrabica")
+                            .applicationDate(LocalDate.now().minusYears(1))
+                            .nextDoseDate(LocalDate.now().minusDays(4))
+                            .build(),
+                    // a que o tutor acabou de registrar
+                    Vaccine.builder()
+                            .vaccineId(DOSE_NOVA)
+                            .animal(animal())
+                            .vaccineName("Antirrabica")
+                            .applicationDate(LocalDate.now())
+                            .nextDoseDate(LocalDate.now().plusYears(1))
+                            .build()));
+
+            List<DueItemResponseDTO> feed = service.doAutenticado(30, false);
+
+            assertThat(feed)
+                    .as("a serie inteira deixa de cobrar quando a dose mais recente esta em dia")
+                    .noneMatch(item -> item.getKind() == DueItemKind.DOSE_DE_VACINA);
+        }
+
+        @Test
+        @DisplayName("o nome com caixa e espaco diferentes continua sendo a mesma serie")
+        void nomeNormalizadoAgrupaAMesmaVacina() {
+            when(currentPersonProvider.require()).thenReturn(pessoa());
+            when(animalRepository.findAlcancadosPor(eq(PERSON_ID), any())).thenReturn(List.of(animal()));
+            when(vaccineRepository.findAlcancadasPor(eq(PERSON_ID), any())).thenReturn(List.of(
+                    Vaccine.builder()
+                            .vaccineId(DOSE_ANTIGA)
+                            .animal(animal())
+                            .vaccineName("Antirrabica ")
+                            .applicationDate(LocalDate.now().minusYears(1))
+                            .nextDoseDate(LocalDate.now().minusDays(4))
+                            .build(),
+                    Vaccine.builder()
+                            .vaccineId(DOSE_NOVA)
+                            .animal(animal())
+                            .vaccineName("antirrabica")
+                            .applicationDate(LocalDate.now())
+                            .nextDoseDate(LocalDate.now().plusYears(1))
+                            .build()));
+
+            assertThat(service.doAutenticado(30, false))
+                    .noneMatch(item -> item.getKind() == DueItemKind.DOSE_DE_VACINA);
+        }
+
+        @Test
+        @DisplayName("vacina diferente do mesmo animal continua cobrando por si")
+        void vacinaDiferenteNaoEhCalada() {
+            when(currentPersonProvider.require()).thenReturn(pessoa());
+            when(animalRepository.findAlcancadosPor(eq(PERSON_ID), any())).thenReturn(List.of(animal()));
+            when(vaccineRepository.findAlcancadasPor(eq(PERSON_ID), any())).thenReturn(List.of(
+                    Vaccine.builder()
+                            .vaccineId(DOSE_ANTIGA)
+                            .animal(animal())
+                            .vaccineName("V10")
+                            .applicationDate(LocalDate.now().minusYears(1))
+                            .nextDoseDate(LocalDate.now().minusDays(4))
+                            .build(),
+                    Vaccine.builder()
+                            .vaccineId(DOSE_NOVA)
+                            .animal(animal())
+                            .vaccineName("Antirrabica")
+                            .applicationDate(LocalDate.now())
+                            .nextDoseDate(LocalDate.now().plusYears(1))
+                            .build()));
+
+            assertThat(service.doAutenticado(30, false))
+                    .as("calar a V10 porque a antirrabica foi aplicada esconderia uma dose vencida")
+                    .anyMatch(item -> item.getKind() == DueItemKind.DOSE_DE_VACINA
+                            && DOSE_ANTIGA.equals(item.getSourceId()));
+        }
+
+        @Test
+        @DisplayName("registro sem data de aplicacao nao cala a dose que tem data")
+        void semDataDeAplicacaoNaoGanhaDaQueTemData() {
+            when(currentPersonProvider.require()).thenReturn(pessoa());
+            when(animalRepository.findAlcancadosPor(eq(PERSON_ID), any())).thenReturn(List.of(animal()));
+            when(vaccineRepository.findAlcancadasPor(eq(PERSON_ID), any())).thenReturn(List.of(
+                    Vaccine.builder()
+                            .vaccineId(DOSE_ANTIGA)
+                            .animal(animal())
+                            .vaccineName("Antirrabica")
+                            .applicationDate(null)
+                            .nextDoseDate(LocalDate.now().plusYears(1))
+                            .build(),
+                    Vaccine.builder()
+                            .vaccineId(DOSE_NOVA)
+                            .animal(animal())
+                            .vaccineName("Antirrabica")
+                            .applicationDate(LocalDate.now().minusYears(1))
+                            .nextDoseDate(LocalDate.now().minusDays(4))
+                            .build()));
+
+            assertThat(service.doAutenticado(30, false))
+                    .as("a sem data nao pode virar a mais recente e esconder a vencida")
+                    .anyMatch(item -> item.getKind() == DueItemKind.DOSE_DE_VACINA
+                            && DOSE_NOVA.equals(item.getSourceId()));
+        }
+    }
+
 }
