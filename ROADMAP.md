@@ -1295,8 +1295,71 @@ em `!!omap`. Só em `devDependencies` — `npm audit --omit=dev` dá zero —, e
 um JSON do próprio repositório, sem entrada de terceiro. Não há correção disponível; some
 quando o `@redocly/openapi-core` atualizar.
 
+#### Blocos 2, 3 e 4 — concluídos em 2026-08-08, e o que a tela achou no modelo
+
+**A home do tutor está de pé, com dados reais.** Login, feed de pendências com silenciar,
+cumprir orientação, registrar dose, a rede de quem cuida e a linha do tempo. **765 testes
+no backend, 0 falhas, 0 pulados.**
+
+**O "pronto quando" desta fase fechou** — e quase não fechou, porque a construção
+descobriu que o gesto central dele não funcionava.
+
+**O defeito que a tela revelou, e ele era de produto.** Registrar uma dose **não tirava a
+cobrança do feed**. O `DueItemServiceImpl` olhava cada registro de vacina isoladamente,
+filtrando por `nextDoseDate`: a dose de 2025 seguia dizendo *"próxima em 2026-08-04"* para
+sempre, e o tutor que registrasse a dose de hoje veria a pendência intacta. Medido contra
+a API antes e depois, na mesma base: 4 pendências continuavam 4.
+
+**A correção é derivação, não schema.** As aplicações passam a ser agrupadas em **série**
+— animal mais identidade da vacina —, e só a mais recente cobra. Vale igual para
+antiparasitário, que tinha o mesmo furo. Nenhuma migration, nenhum dado reescrito, e o
+histórico das doses continua inteiro na linha do tempo, que é onde ele vale.
+
+**Uma consequência que a tela teve de respeitar:** a série é identificada pelo catálogo
+quando ele existe. Registrar a dose nova como texto livre a poria em outra série, e a
+anterior voltaria a cobrar para sempre — então o formulário lê a dose que está vencendo e
+herda o catálogo dela.
+
+#### Duas decisões de produto tomadas em 2026-08-08
+
+**O onboarding em passos é v2, e o motivo é sequência.** A ideia é boa — um *stepper* que
+guia quem chega — mas as etapas dele apontam para telas que não existem: cadastrar o
+primeiro animal, convidar quem mais cuida, declarar credencial. Onboarding é o caminho
+entre cômodos, e construí-lo antes dos cômodos é construir para trás. **Quando entrar,
+entra depois do login**, e não como porta: um *stepper* antes do valor é fricção antes do
+valor, e este produto só fica interessante quando existe um animal com histórico na tela.
+O cadastro fica de um passo, com os quatro campos que o `POST /persons` já exige.
+
+**Verificação de telefone fica fora**, e não por custo de tela: ela não existe no backend
+— nem rota, nem provider de SMS — e nenhum documento a pediu. O telefone segue campo de
+contato opcional. Coletá-lo sem verificar seria guardar um dado que parece conferido e não
+é, que é o oposto do que a 5.10 faz com o CRMV.
+
+#### As dívidas que a construção do cliente levantou
+
+Nenhuma delas bloqueia tela, e as cinco são de contrato ou de modelo — não de front.
+
+| # | O que | Por que dói |
+|---|---|---|
+| 1 | **O contrato não declara `required` em resposta** | 19 dos 84 schemas têm `required`, e os 19 são `*RequestDTO`: quem os gera é o `@NotNull` da validação de entrada. Então todo campo de resposta chega opcional no tipo gerado |
+| 2 | **E o backend manda `null` em vez de omitir** | O schema também não diz `nullable`. Os dois juntos fazem o TypeScript **aprovar código que quebra em runtime** — foi assim que a home caiu na primeira vez que abriu com dados de verdade. A mentira para hoje no `corpoDe()` do front |
+| 3 | **`LocalDateTime` viaja sem fuso** | A tela mostra *"ontem"* em vez da hora, porque dizer "às 7h40" seria inventar precisão que o dado não tem |
+| 4 | **`Pageable` é documentado como um parâmetro** | O springdoc o descreve como `pageable`; o Spring lê `page`, `size` e `sort` soltos. Seguir o contrato ao pé da letra manda `?pageable=…`, que o servidor ignora — funciona por acidente na área do tutor e vai falhar calado na de organização |
+| 5 | **JSON malformado responde `500`** | O `HttpMessageNotReadableException` cai no handler genérico. Corpo inválido é erro do cliente, e hoje o front o traduz como *"não conseguimos salvar agora"*, que mente sobre a causa |
+
+**A correção de raiz das duas primeiras é uma linha de cada vez:**
+`spring.jackson.default-property-inclusion=non_null` faz o campo nulo deixar de ser
+enviado, e o tipo `campo?: T` passa a ser verdadeiro; ou `required` declarado nos DTOs de
+resposta, que é mais explícito e mais trabalhoso.
+
+**E uma lacuna de modelo, que não é dívida de contrato:** a **credencial profissional só
+pode ser declarada no `POST /persons`**. Quem não marcou na hora — ou se formou depois —
+não tem como declarar. Pede `POST /persons/me/credentials`, é pequeno, e destrava o
+onboarding da v2.
+
 **Pronto quando:** um tutor que nunca viu `curl` entra pelo navegador, vê o que
 precisa fazer hoje, registra uma dose e abre a linha do tempo do animal.
+**Cumprido em 2026-08-08.**
 
 ## Fase 6 — a remodelagem que o `PRODUTO.md` cobra
 

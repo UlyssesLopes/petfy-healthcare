@@ -4,88 +4,87 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-07, no fim da sessão que fechou o B0 e a parte de backend do bloco 1.
+> Escrito em 2026-08-08, no fim da sessão que pôs a home do tutor no ar.
 
 ## Onde o trabalho parou
 
-**Passo 5 da Fase 5 — construir.** O B0 fechou e o bloco 1 fechou do lado do backend.
-Nenhuma linha de frontend existe ainda: o próximo passo é o scaffold.
+**Passo 5 da Fase 5 — construir.** O `pronto quando` da fase **fechou**: um tutor entra
+pelo navegador, vê o que precisa fazer hoje, registra uma dose e abre a linha do tempo.
 
-| # | O que | Estado |
+| # | Bloco | Estado |
 |---|---|---|
-| B0 | CORS por perfil | **Feito** — PR #40, mergeado |
-| B0 | Caminho de auth | **Decidido:** adiado, token em memória, com gatilho escrito |
-| 1 | Gerador do cliente OpenAPI | **Decidido:** `openapi-typescript`, só tipos |
-| 1 | Contrato versionado com guarda | **Feito** — PR #41 |
-| 1 | Scaffold, tokens, i18n, rota, camada de dados | **Não iniciado** |
-| 2 | Home do tutor | Depende do 1 |
+| B0 | CORS e caminho de auth | **Feito** — PR #40 |
+| 1 | Fundação do front | **Feito** — PR #42 |
+| 2 | Home do tutor, com login | **Feito** |
+| 3 | Linha do tempo | **Feito** |
+| 4 | Rede de quem cuida | **Feito** (leitura; conceder acesso ainda não age) |
+| 5 | Área de organização | **Não iniciado** — depende da decisão 15 |
 
-**Suíte:** 759 testes, 0 falhas, 0 pulados. CI verde nos dois PRs.
+**Suíte:** 765 testes, 0 falhas, 0 pulados. Front: 23 testes.
 
 ## O que ler antes de planejar, e nesta ordem
 
-1. **`ROADMAP.md`, "Passo 5 — construir"** — o plano, os blocos, e as duas seções novas
-   de fechamento (`B0 — concluído` e `Bloco 1 — o gerador escolhido`).
-2. **`DESIGN.md` inteiro**, mais `design/home-tutor.html`. Divergiram? O documento manda.
-   A 5.5 agora registra que `Insight` e `Update` são posteriores: **a v1 carrega quatro
-   dos cinco objetos**, e a tela reserva a posição da percepção.
-3. **`PRODUTO.md` seção 9** — as três superfícies, as duas áreas, e o que a 9.5 cobra.
-4. **`contract/openapi.json`** — agora é o contrato, no repositório. Não precisa mais
-   chamar o `dev` para lê-lo. O `README.md` **não** é fonte de rota.
+1. **`ROADMAP.md`, "Passo 5 — construir"**, com as três seções de fechamento novas:
+   *Blocos 2, 3 e 4*, *Duas decisões de produto* e *As dívidas que a construção levantou*.
+2. **`DESIGN.md`** inteiro, mais `design/home-tutor.html`. A emenda da seção 6 registra que
+   **a validação de campo é do cliente**, porque a do servidor não é exibível.
+3. **`PRODUTO.md` seção 9** — as três superfícies e as duas áreas.
+4. **`contract/openapi.json`** e **`contract/error-codes.json`**, os dois versionados e com
+   guarda dos dois lados.
 
-## O primeiro passo da próxima sessão
+## O primeiro passo da próxima sessão, e há três candidatos
 
-**O scaffold do front.** O que a stack já decidiu, sem reabrir: Vite + React +
-TypeScript (SPA), TanStack Query, TanStack Router, TanStack Table, Tailwind com tokens
-próprios, componente headless (Radix ou React Aria), i18n desde a primeira tela.
+**Nenhum é obviamente o certo — a escolha é sua.**
 
-O que precisa nascer junto, e é o que evita retrabalho:
+1. **Pagar as dívidas de contrato** (tabela no `ROADMAP.md`). A mais barata e a que mais
+   rende: `spring.jackson.default-property-inclusion=non_null` faz o tipo gerado deixar de
+   mentir sobre nulo. Hoje a mentira para no `corpoDe()` do front, o que é um remendo bom
+   e no lugar errado.
+2. **Fechar o que a tela ainda não faz.** *Conceder acesso* aparece na rede mas não age;
+   não há como cadastrar um animal nem convidar co-tutor. São as três ações que faltam
+   para a área do tutor ser autossuficiente — e são o destino do onboarding da v2.
+3. **A área de organização** (bloco 5), que **depende da decisão 15** — quem cria uma
+   organização e como entra o primeiro membro. Sem resposta, não começa.
 
-- **Os tokens saem das seções 3 e 4 do `DESIGN.md`** — a paleta com contraste já medido
-  nos dois temas, a escala tipográfica, o raio escalonado, a base de 4 px. Nada de
-  inventar cor: nenhuma entra sem o número.
-- **A camada de dados é única, e nenhuma tela chama HTTP.** É a regra que mantém o BFF
-  possível. Dentro dela mora a sessão, com um `ensureFresh()` que hoje desloga.
-- **O token vive em memória.** `localStorage` está fora — é a exposição a XSS que a
-  decisão recusa. Login a cada recarga é o custo aceito, e o gatilho do refresh está no
-  `ROADMAP.md`.
-- **i18n com a tabela de código de erro.** As mensagens da API estão em inglês no
-  `ErrorMessageEnum`, mas têm código numérico: o front mapeia por código e nunca exibe a
-  mensagem do servidor.
+## O que fica no ar, e como subir
 
-## Duas decisões pequenas que ficaram abertas
+O ambiente local **não sobe sozinho**, e a máquina tem duas armadilhas próprias:
 
-Nenhuma trava o começo, mas as duas ficam mais caras depois:
+- **Um PostgreSQL nativo do Windows já ocupa a 5432.** A aplicação fala com ele e toma
+  `password authentication failed`. Suba o banco noutra porta:
+  `docker run -d --name petfy-pg-sessao -e POSTGRES_DB=petfy -e POSTGRES_USER=petfy -e POSTGRES_PASSWORD=petfy -p 5433:5432 postgres:14`
+  e rode a aplicação com `DB_PORT=5433`.
+- **O volume `postgres_data` do `docker-local` tem um cluster antigo**, sem os roles
+  `petfy` nem `postgres`: o Postgres só aplica `POSTGRES_USER` na primeira inicialização,
+  com o diretório vazio. **Não foi apagado** — é decisão de quem for limpar.
 
-1. **O nome da pasta do front.** `web/`, `front/` ou `client/`.
-2. **O filtro por caminho no CI entra junto do scaffold, ou depois da primeira tela?**
-   Hoje qualquer push roda os 759 testes Java, e mudança de CSS vai disparar isso.
+```
+docker run -d --name petfy-pg-sessao ... -p 5433:5432 postgres:14
+DB_PORT=5433 mvn spring-boot:run -Dspring-boot.run.profiles=local
+cd web && npm run dev      # http://localhost:5173
+```
 
-## Armadilhas desta máquina, confirmadas nesta sessão
+**Parar a aplicação exige matar o processo Java à mão.** Encerrar o Maven deixa o filho
+vivo segurando a 8080, e a subida seguinte falha com *"Port 8080 was already in use"*.
 
-- **Testcontainers devolve `false` com o Docker no ar.** Aconteceu **duas vezes
-  seguidas** e passou na terceira, sem mexer em nada. Tente de novo antes de
-  investigar, e **nunca** use `-Dpetfy.allow-skipping-container-tests=true` para
-  declarar algo verificado.
-- **Rodar com `-Dtest=` desliga a rede de segurança.** O `ContainerTestsHabilitadosTest`
-  falha quando os testes de container são pulados — mas se a seleção o deixar de fora,
-  o build fica verde com zero validação. Foi o que aconteceu aqui.
-- **PowerShell quebra `-D` com ponto.** `mvn -Dpetfy.openapi.update=true` vira lixo;
-  use aspas: `mvn "-Dpetfy.openapi.update=true"`.
-- **`Select-Object -First N` corta o pipeline** e devolve exit 255 mesmo com o Maven
-  bem-sucedido. Use `Out-String` no fim.
-- **`Set-Content -Encoding utf8` escreve BOM** no PowerShell 5.1, e o `javac` recusa com
-  `illegal character: ﻿`. Use `UTF8Encoding($false)`.
-- **O CI só dispara em `pull_request` para `main`.** Commit numa branch cujo PR já foi
-  mergeado não roda nada: abra um PR novo, senão a suíte local verde é tudo que existe.
+## Armadilhas confirmadas nesta sessão
 
-## Como regenerar o contrato
+- **O `clean verify` apaga o `target/` embaixo da aplicação em execução.** Derrube antes.
+- **Acento pelo Git Bash sai em Latin-1** e o backend responde **500** — que é outra
+  dívida: JSON malformado devia ser `400`. Mande corpo com `--data-binary @arquivo`.
+- **PowerShell quebra `-D` com ponto.** Use aspas: `mvn "-Dpetfy.openapi.update=true"`.
+- **`Select-Object -First N` corta o pipeline** e devolve exit 255 com o Maven bem-sucedido.
+- **`Set-Content -Encoding utf8` escreve BOM** e o `javac` recusa.
+- **Em `pull_request`, o filtro por caminho olha o diff do PR inteiro**, e não o último
+  commit: num PR misto os dois pipelines correm a cada push, inclusive num commit só de
+  `.md`. O ganho aparece em PR focado.
 
-Quando um controller mudar de forma — e só então:
+## Como regenerar o que é gerado
 
 ```
 mvn test -Dtest=OpenApiContractTest -Dpetfy.openapi.update=true
+mvn test -Dtest=ErrorCodesContractTest -Dpetfy.errorcodes.update=true
+cd web && npm run gerar:api
 ```
 
-O `contract/openapi.json` entra no **mesmo commit** da mudança, para a revisão ver o
-delta de contrato ao lado do código que o causou.
+Os três entram no **mesmo commit** da mudança que os causou.

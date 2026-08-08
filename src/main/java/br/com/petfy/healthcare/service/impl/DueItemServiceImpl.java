@@ -2,7 +2,9 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.DueItemResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.CareInstruction;
+import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.DueItemKind;
 import br.com.petfy.healthcare.domain.entity.DueItemSilence;
 import br.com.petfy.healthcare.domain.entity.Person;
@@ -28,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -202,6 +205,13 @@ public class DueItemServiceImpl implements DueItemService {
     private List<DueItemResponseDTO> dosesDeVacina(Person person, LocalDate hoje, LocalDate limite) {
         return vaccineRepository.findAlcancadasPor(person.getPersonId(), LocalDateTime.now())
                 .stream()
+                .collect(Collectors.groupingBy(v -> serie(
+                        v.getAnimal().getAnimalId(),
+                        v.getCatalog() != null ? v.getCatalog().getVaccineCatalogId() : null,
+                        v.getVaccineName())))
+                .values()
+                .stream()
+                .map(serie -> maisRecente(serie, Vaccine::getApplicationDate))
                 .filter(v -> v.getNextDoseDate() != null && !v.getNextDoseDate().isAfter(limite))
                 .map(v -> item(DueItemKind.DOSE_DE_VACINA, v.getVaccineId(), v.getAnimal(),
                         v.getVaccineName(), v.getNextDoseDate(), hoje))
@@ -211,10 +221,56 @@ public class DueItemServiceImpl implements DueItemService {
     private List<DueItemResponseDTO> antiparasitarios(Person person, LocalDate hoje, LocalDate limite) {
         return antiparasiticRepository.findAlcancadosPor(person.getPersonId(), LocalDateTime.now())
                 .stream()
+                .collect(Collectors.groupingBy(a -> serie(
+                        a.getAnimal().getAnimalId(),
+                        a.getCatalog() != null ? a.getCatalog().getAntiparasiticCatalogId() : null,
+                        a.getName())))
+                .values()
+                .stream()
+                .map(serie -> maisRecente(serie, Antiparasitic::getApplicationDate))
                 .filter(a -> a.getNextDoseDate() != null && !a.getNextDoseDate().isAfter(limite))
                 .map(a -> item(DueItemKind.ANTIPARASITARIO, a.getAntiparasiticId(), a.getAnimal(),
                         a.getName(), a.getNextDoseDate(), hoje))
                 .toList();
+    }
+
+    /**
+     * A chave que diz "estas aplicacoes sao a mesma coisa, repetida no tempo".
+     *
+     * <b>Por que ela precisa existir</b>, descoberto ao construir a home do tutor em
+     * 2026-08-08: sem ela, cada registro de vacina cobrava por si. O tutor registrava a
+     * dose de hoje, a dose do ano passado continuava dizendo "proxima em 2026-08-04", e a
+     * pendencia <i>nao saia do feed</i> - o gesto que o passo 5 elege como pronto-quando
+     * nao produzia efeito nenhum na tela.
+     *
+     * <b>Catalogo quando existe, nome quando nao.</b> O catalogo e a identidade forte, e
+     * ele e nulo para vacina digitada em texto livre e para tudo anterior ao catalogo. O
+     * nome e o que sobra, e por isso e comparado sem diferenca de caixa nem de espaco -
+     * "Antirrabica " e "antirrabica" sao a mesma vacina para quem digitou.
+     *
+     * <b>O que esta chave NAO resolve:</b> nome escrito diferente continua sendo outra
+     * serie, e o tutor veria duas cobrancas. E o preco de o nome ser texto livre, e a
+     * saida definitiva e o catalogo - que ja existe, e que a tela de registro deve
+     * preferir sempre que houver entrada para a especie.
+     */
+    private String serie(UUID animalId, UUID catalogoId, String nome) {
+        String identidade = catalogoId != null
+                ? "catalogo:" + catalogoId
+                : "nome:" + (nome == null ? "" : nome.trim().toLowerCase(Locale.ROOT));
+
+        return animalId + "|" + identidade;
+    }
+
+    /**
+     * A aplicacao mais recente da serie, e ela e a unica que cobra.
+     *
+     * Data nula vai para o fim: registro sem data de aplicacao nao tem como ser "o mais
+     * recente" de nada, e deixa-lo ganhar faria uma dose antiga calar a atual.
+     */
+    private <T> T maisRecente(List<T> serie, java.util.function.Function<T, LocalDate> aplicadaEm) {
+        return serie.stream()
+                .max(Comparator.comparing(aplicadaEm, Comparator.nullsFirst(Comparator.naturalOrder())))
+                .orElseThrow();
     }
 
     /**
