@@ -75,6 +75,12 @@ public enum ErrorMessageEnum {
     DUE_ITEM_NOT_FOUND(141, "There is no such pending item for you"),
     // o consentimento bloqueia o resto do produto; silencia-lo esconderia o bloqueio
     CONSENT_CANNOT_BE_SILENCED(142, "Pending consent cannot be silenced"),
+    // corpo que o Jackson nao consegue ler: JSON truncado, aspas soltas, charset errado.
+    // Nao e regra de negocio, e mesmo assim mora nesta faixa - porque o cliente traduz POR
+    // CODIGO, e reusar INVALID_REQUEST faria a tela dizer "confira os campos marcados"
+    // quando nao ha campo marcado nenhum. Quem manda corpo ilegivel raramente e o usuario:
+    // e o cliente que montou a requisicao errado
+    MALFORMED_REQUEST_BODY(143, "Request body is not readable JSON"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

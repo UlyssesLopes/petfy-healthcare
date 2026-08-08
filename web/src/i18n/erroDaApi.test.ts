@@ -33,7 +33,9 @@ const tabela: LinhaDaTabela[] = tabelaCommitada;
 const chavesDeCodigo = Object.keys(mensagens).filter((chave) => /^erro\.\d+$/.test(chave));
 
 describe("a tabela de codigo de erro", () => {
-  it("tem os 45 codigos do enum, e nenhum a menos", () => {
+  // Sem numero no nome de proposito: "os 45 codigos" ja estava desatualizado na primeira
+  // vez que o enum cresceu, e nome de teste que mente e pior que nome vago.
+  it("traduz todo codigo que o enum tem", () => {
     expect(tabela.length).toBeGreaterThan(0);
 
     const semTraducao = tabela

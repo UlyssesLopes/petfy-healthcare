@@ -1361,6 +1361,43 @@ onboarding da v2.
 precisa fazer hoje, registra uma dose e abre a linha do tempo do animal.
 **Cumprido em 2026-08-08.**
 
+#### Dívidas 1, 2 e 5 — pagas em 2026-08-08
+
+**As duas primeiras saíram na linha prevista**, `spring.jackson.default-property-inclusion=non_null`,
+e o efeito interessante é o que **não** aconteceu: o `contract/openapi.json` ficou
+idêntico. O springdoc não lê a configuração do Jackson, então o tipo gerado continua
+`campo?: T` — e é esse o ponto. **O tipo não mudou; ele passou a ser verdade.**
+
+Com isso o `semNulos()` saiu do front, e com ele os três testes que o cobriam. Ele era um
+conserto no lugar errado, e tinha um custo escondido além do óbvio: **enquanto existisse,
+apagar a linha do `application.properties` não quebraria nada** — o remendo absorveria a
+volta do defeito, e a mentira só reapareceria numa tela, no navegador de alguém.
+
+**Por isso a garantia virou teste, e não confiança.** O `RespostaOmiteNulosTest` afirma
+sobre o `ObjectMapper` **injetado** — o mesmo que serializa toda resposta da API —, e não
+sobre a string da propriedade: ler o `Environment` provaria apenas que alguém escreveu a
+linha, não que o JSON sai sem nulo. Conferido ao contrário também, que é o que dá valor à
+guarda: com `default-property-inclusion=always`, os três testes falham.
+
+**A dívida 5 revelou uma escolha que a tabela acima não previa.** Reusar `INVALID_REQUEST`
+teria corrigido o status e criado outra mentira: o front traduz **por código**, e o texto
+do 400 é *"Confira os campos marcados"* — só que num corpo ilegível não houve objeto, logo
+não há campo marcado. Daí `MALFORMED_REQUEST_BODY(143)`, que existe pelo mesmo motivo que
+o `INTERNAL_ERROR` existe no enum: mensagem distinta exige código distinto.
+
+Dois detalhes que o teste fixa. **A mensagem do Jackson não vai no corpo** — ela carrega
+trecho do payload recebido, e no `POST /persons` esse trecho inclui a senha. E o caso do
+**acento em Latin-1**, a armadilha que esta máquina produz pelo Git Bash, agora responde
+`400` com *"Invalid UTF-8 middle byte"* no log, em vez do `500` que fez parecer defeito de
+servidor durante a construção do cliente.
+
+**O que continua em aberto, e por quê:**
+
+| # | Estado |
+|---|---|
+| 3 | `LocalDateTime` sem fuso — adiada por decisão: mexe em DTO, contrato e tela, e merece PR próprio |
+| 4 | `Pageable` — **medida e não corrigida.** O contrato o declara `required: true`, então o cliente gerado é obrigado a mandar um parâmetro que o servidor ignora. Corrigir exige regenerar o `openapi.json`, e o `OpenApiContractTest` sobe o contexto contra Postgres real: ficou bloqueado pelo Testcontainers desta máquina, não pelo código |
+
 ## Fase 6 — a remodelagem que o `PRODUTO.md` cobra
 
 **Aberta em 2026-08-06.** O número vem depois da Fase 5, mas **a execução vem

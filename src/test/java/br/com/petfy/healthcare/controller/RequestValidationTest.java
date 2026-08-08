@@ -184,4 +184,55 @@ class RequestValidationTest {
 
         verify(personService).changePassword(any());
     }
+
+    /**
+     * Corpo que o Jackson nem chega a desserializar e um caso a parte da validacao: nao ha
+     * campo para marcar, porque nao houve objeto. Ate a correcao isso voltava <b>500</b>, e
+     * a diferenca importa em tres lugares - o alerta de erro do servidor deixa de contar
+     * como falha nossa, o cliente para de receber "tente de novo" para algo que vai falhar
+     * igual, e o service nao e chamado.
+     */
+    @Test
+    @DisplayName("corpo que nao e JSON valido responde 400 com codigo proprio, e nao 500")
+    void corpoIlegivelResponde400() throws Exception {
+        mockMvc.perform(post("/persons").contentType(MediaType.APPLICATION_JSON).content("{\"name\": "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value(143));
+
+        verify(personService, never()).createPerson(any());
+    }
+
+    /**
+     * O acento em Latin-1 e o caso real: mandar payload acentuado pelo Git Bash produz
+     * bytes que nao formam UTF-8 valido, e a API respondia 500 - o que fez parecer defeito
+     * de servidor durante a construcao do cliente.
+     */
+    @Test
+    @DisplayName("corpo com byte que nao e UTF-8 valido tambem responde 400")
+    void corpoEmOutroCharsetResponde400() throws Exception {
+        var latin1 = "{\"name\":\"Ulysses\",\"email\":\"a@b.com\",\"password\":\"s3nhaForte\",\"acceptedTerms\":true,\"cidade\":\"São Paulo\"}"
+                .getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+
+        mockMvc.perform(post("/persons").contentType(MediaType.APPLICATION_JSON).content(latin1))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(143));
+
+        verify(personService, never()).createPerson(any());
+    }
+
+    /**
+     * A mensagem do Jackson carrega trecho do payload, e payload desta API tem dado
+     * pessoal. Se alguem "melhorar" o handler repassando `ex.getMessage()`, o corpo do erro
+     * passa a vazar o que foi enviado - inclusive senha, neste mesmo endpoint.
+     */
+    @Test
+    @DisplayName("o erro nao devolve o trecho do payload recebido")
+    void corpoIlegivelNaoVazaOPayload() throws Exception {
+        var comSenha = "{\"password\":\"s3nhaSecreta\", ";
+
+        mockMvc.perform(post("/persons").contentType(MediaType.APPLICATION_JSON).content(comSenha))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Request body is not readable JSON"));
+    }
 }
