@@ -76,7 +76,11 @@ public enum ErrorMessageEnum {
     // o consentimento bloqueia o resto do produto; silencia-lo esconderia o bloqueio
     CONSENT_CANNOT_BE_SILENCED(142, "Pending consent cannot be silenced"),
     INVALID_REQUEST(400, "Invalid request"),
-    INVALID_CREDENTIALS(401, "Invalid email or password");
+    INVALID_CREDENTIALS(401, "Invalid email or password"),
+    // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma
+    // segunda fonte para a mesma pergunta. O cliente traduz POR CODIGO, entao um codigo
+    // que nao aparece aqui e um codigo que a tabela do front nao tem como cobrir
+    INTERNAL_ERROR(500, "Internal server error");
 
     private final int code;
     private final String message;

@@ -1,9 +1,14 @@
-name: CI
+name: CI backend
 
 # ------------------------------------------------------------------ o que este pipeline e
 #
 # UM job, um proposito: rodar a suite contra Postgres de verdade antes de o codigo chegar
 # na main. Nada mais.
+#
+# O nome ganhou "backend" em 2026-08-07, quando o front nasceu e passou a existir um
+# segundo pipeline (ci-web.yml). Sao dois arquivos, e nao dois jobs no mesmo, porque
+# `paths` no GitHub Actions filtra o WORKFLOW inteiro - nao da para um job ouvir `web/` e
+# o outro ouvir `src/` dentro do mesmo arquivo sem uma action de terceiro no meio.
 #
 # POR QUE ELE EXISTE, SE O DEPLOY NAO PASSA POR AQUI. O Railway constroi do
 # repositorio e sobe a main sozinho - este pipeline nao publica, nao empacota e nao
@@ -32,11 +37,40 @@ name: CI
 # se responde no PR. Push de branch continua sem corrida, e quem quiser conferir antes roda
 # a suite na maquina.
 
+# FILTRO POR CAMINHO (2026-08-07). Sem ele, mudanca de CSS dispara 761 testes Java com
+# Postgres em container. O que fica de fora e so o que nao pode alterar o comportamento do
+# backend.
+#
+# `contract/` NAO esta na lista, e a ausencia e deliberada: os dois arquivos de la sao
+# gerados pelo OpenApiContractTest e pelo ErrorCodesContractTest, entao quem os editar a
+# mao precisa exatamente que estes testes rodem e reprovem.
+#
+# COMO O FILTRO E AVALIADO, e isso rende menos do que parece: em `pull_request` o GitHub
+# compara o diff do PR INTEIRO (base...head), e nao o ultimo commit. Num PR misto - que
+# toca web/ e src/ - os dois pipelines correm a cada push, inclusive quando o push so
+# mexeu num .md. Medido neste PR em 2026-08-07. O ganho aparece em PR focado: um so de
+# front nao roda Java, um so de documento nao roda nada.
+#
+# CONSEQUENCIA A SABER: num PR que so toca o front, este pipeline nao corre - e nao
+# aparece corrida nenhuma dele na pagina do PR. Isso hoje nao trava nada porque a `main`
+# nao tem branch protection (repositorio privado em plano free). No dia em que tiver, um
+# check exigido e filtrado por caminho fica pendente para sempre, e a saida e um job
+# "sentinela" que sempre roda e reporta sucesso.
 on:
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - 'web/**'
+      - 'design/**'
+      - '**.md'
+      - '.github/workflows/ci-web.yml'
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'web/**'
+      - 'design/**'
+      - '**.md'
+      - '.github/workflows/ci-web.yml'
 
 # corridas antigas do mesmo ref sao canceladas quando chega um push novo
 concurrency:
