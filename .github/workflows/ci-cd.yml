@@ -45,6 +45,12 @@ name: CI backend
 # gerados pelo OpenApiContractTest e pelo ErrorCodesContractTest, entao quem os editar a
 # mao precisa exatamente que estes testes rodem e reprovem.
 #
+# COMO O FILTRO E AVALIADO, e isso rende menos do que parece: em `pull_request` o GitHub
+# compara o diff do PR INTEIRO (base...head), e nao o ultimo commit. Num PR misto - que
+# toca web/ e src/ - os dois pipelines correm a cada push, inclusive quando o push so
+# mexeu num .md. Medido neste PR em 2026-08-07. O ganho aparece em PR focado: um so de
+# front nao roda Java, um so de documento nao roda nada.
+#
 # CONSEQUENCIA A SABER: num PR que so toca o front, este pipeline nao corre - e nao
 # aparece corrida nenhuma dele na pagina do PR. Isso hoje nao trava nada porque a `main`
 # nao tem branch protection (repositorio privado em plano free). No dia em que tiver, um
