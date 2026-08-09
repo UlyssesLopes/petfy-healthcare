@@ -3,7 +3,6 @@ package br.com.petfy.healthcare.domain.dto;
 import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import lombok.*;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
@@ -24,13 +23,18 @@ public class HealthRecordRequestDTO {
     @NotNull(message = "animalId e obrigatorio")
     private UUID animalId;
 
-    @NotBlank(message = "tipo do evento e obrigatorio")
     /**
      * Classificacao do atendimento, obrigatoria na criacao.
      *
      * Nao substitui {@link #eventType}, que continua sendo o rotulo livre: a categoria
      * responde "o que este animal ja passou", e o rotulo continua dizendo como aquele
      * atendimento se chamou.
+     *
+     * <b>Aqui havia um @NotBlank, e ele derrubava a rota inteira.</b> O @NotBlank so sabe
+     * validar CharSequence; sobre um enum, o Hibernate Validator nao acha validador e
+     * lanca UnexpectedTypeException ANTES de olhar o corpo. O resultado era 500 em todo
+     * POST /health-records, com corpo valido ou nao. A anotacao sobrou de quando o campo
+     * ali era texto livre, e ficou pendurada quando o enum entrou no lugar.
      */
     @NotNull(message = "category e obrigatoria (CONSULTA, RETORNO, EXAME, CIRURGIA, INTERNACAO, EMERGENCIA, PROCEDIMENTO ou OUTRO)")
     private HealthEventCategory category;
