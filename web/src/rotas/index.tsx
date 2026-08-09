@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useIntl, type IntlShape } from "react-intl";
 
@@ -218,7 +218,14 @@ function Heroi({ animal }: { animal: Animal }) {
       </span>
 
       <div className="min-w-0">
-        <h1 className="text-nome-animal text-tinta">{animal.name}</h1>
+        {/* O nome leva a vida do animal. Sem este link a rota existiria e ninguem
+            chegaria nela: o token vive em memoria, entao abrir a URL direto cai no
+            /entrar e volta para ca. */}
+        <h1 className="text-nome-animal text-tinta">
+          <Link to="/animais/$animalId" params={{ animalId: animal.animalId! }}>
+            {animal.name}
+          </Link>
+        </h1>
         {partes.length > 0 ? (
           <p className="text-rotulo mt-0.5 text-tinta-secundaria">{partes.join(" · ")}</p>
         ) : null}
