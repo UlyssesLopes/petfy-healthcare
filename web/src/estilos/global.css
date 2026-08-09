@@ -44,9 +44,20 @@
 
   --color-papel: var(--petfy-papel);
   --color-superficie: var(--petfy-superficie);
-  --color-linha: var(--petfy-linha);
+
   --color-tinta: var(--petfy-tinta);
+  --color-tinta-forte: var(--petfy-tinta-forte);
+  --color-tinta-media: var(--petfy-tinta-media);
   --color-tinta-secundaria: var(--petfy-tinta-secundaria);
+  --color-tinta-fraca: var(--petfy-tinta-fraca);
+
+  --color-linha: var(--petfy-linha);
+  --color-linha-media: var(--petfy-linha-media);
+  --color-linha-forte: var(--petfy-linha-forte);
+  --color-fundo-sutil: var(--petfy-fundo-sutil);
+
+  --color-marcador-neutro: var(--petfy-marcador-neutro);
+  --color-barra: var(--petfy-barra);
 
   --color-musgo: var(--petfy-musgo);
   --color-musgo-pressionado: var(--petfy-musgo-pressionado);
@@ -100,9 +111,26 @@
   --text-corpo-denso--line-height: 1.5;
   --text-corpo-denso--font-weight: 400;
 
-  --text-rotulo: 0.8125rem; /* 13px — rotulo e legenda. O piso da secao 03 e 12 */
+  /* Os tres degraus abaixo vieram das telas, nao da secao 03 — ela nomeia cinco
+   * especimes e as telas usam oito. Cada um aqui carrega o trabalho que faz na
+   * Tela 02, que e onde eles aparecem primeiro. */
+
+  --text-evento: 1.1875rem; /* 19px — titulo de evento na linha do tempo, serifado */
+  --text-evento--line-height: 1.3;
+  --text-evento--font-weight: 500;
+
+  --text-apoio: 0.875rem; /* 14px — meta do cabecalho, chip, legenda de carteira */
+  --text-apoio--line-height: 1.45;
+  --text-apoio--font-weight: 400;
+
+  --text-rotulo: 0.8125rem; /* 13px — a linha de autoria do evento */
   --text-rotulo--line-height: 1.3;
-  --text-rotulo--font-weight: 500;
+  --text-rotulo--font-weight: 400;
+
+  --text-etiqueta: 0.75rem; /* 12px — rotulo de secao em caixa alta. O piso da 03 */
+  --text-etiqueta--line-height: 1.2;
+  --text-etiqueta--font-weight: 500;
+  --text-etiqueta--letter-spacing: 0.05em;
 
   --text-dado: 0.9375rem; /* 15px — microchip, RGA, hora, identificador */
   --text-dado--line-height: 1.4;

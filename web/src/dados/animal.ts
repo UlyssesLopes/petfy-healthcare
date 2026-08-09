@@ -23,9 +23,14 @@ export function useLinhaDoTempo(animalId: string | undefined) {
     queryFn: async () =>
       corpoDe(
         await cliente.GET("/animals/{animalId}/timeline", {
-          // Sem `page` nem `size`: valem os defaults do servidor, que o contrato agora
-          // declara. Ver a nota em `animais.ts`.
-          params: { path: { animalId: animalId! } },
+          /*
+           * 200 em vez dos 20 do servidor. A Tela 02 nao pagina a vida do animal — ela
+           * filtra por tipo e mostra a faixa de anos no cabecalho, e as duas coisas
+           * precisam da serie inteira em maos. Um animal de 7 anos com consulta
+           * semestral, vacina anual e observacao de creche nao chega perto disso; quando
+           * chegar, quem pagina e a area de organizacao, que ja le centenas.
+           */
+          params: { path: { animalId: animalId! }, query: { size: 200 } },
         }),
       ).content ?? [],
   });

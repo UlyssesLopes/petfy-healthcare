@@ -28,12 +28,33 @@
   /* ---- neutros de papel, matiz 150. Nunca cinza de framework (secao 02) ----
    * O `papel` e o fundo da aplicacao; a `superficie` e o branco puro do que se
    * levanta sobre ele — cartao, pendencia, modal.
+   *
+   * A RAMPA E EMPIRICA, e nao um degrade escolhido por mim. A secao 02 nomeia
+   * quatro neutros; as 20 telas oficiais usam onze. Entao cada degrau abaixo foi
+   * extraido das telas por FREQUENCIA DE USO, e o numero entre parenteses e quantas
+   * vezes ele aparece — e o que separa um degrau de verdade de um acidente de
+   * exportacao. O `tinta-secundaria` mudou de 0.52 para 0.50 por isso: 0.50 aparece
+   * 178 vezes, e 0.52 aparece uma.
    */
   --petfy-papel: oklch(0.985 0.004 120);
   --petfy-superficie: oklch(1 0 0);
-  --petfy-linha: oklch(0.9 0.008 150);
-  --petfy-tinta: oklch(0.25 0.02 150);
-  --petfy-tinta-secundaria: oklch(0.52 0.015 150);
+
+  --petfy-tinta: oklch(0.25 0.02 150); /* x32  — nome, titulo, texto forte */
+  --petfy-tinta-forte: oklch(0.35 0.018 150); /* x37  — descricao de evento */
+  /* Absorve tambem o 0.45 0.015 (x46): 0.03 de luminosidade e a mesma funcao —
+   * texto secundario de corpo. Dois degraus ai seriam ruido de exportacao virando
+   * token, e a rampa ja tem cinco tintas. */
+  --petfy-tinta-media: oklch(0.42 0.015 150); /* x107 — texto de controle e meta */
+  --petfy-tinta-secundaria: oklch(0.5 0.015 150); /* x178 — rotulo, apoio */
+  --petfy-tinta-fraca: oklch(0.55 0.015 150); /* x56  — dia da semana, tracejado */
+
+  --petfy-linha: oklch(0.9 0.008 150); /* x143 — divisoria, contorno em repouso */
+  --petfy-linha-media: oklch(0.86 0.008 150); /* x31  — contorno de container */
+  --petfy-linha-forte: oklch(0.82 0.012 150); /* x33  — borda de botao secundario */
+  --petfy-fundo-sutil: oklch(0.94 0.006 150); /* x29  — faixa, celula alternada */
+
+  --petfy-marcador-neutro: oklch(0.72 0.012 150); /* x4 — evento sem gravidade */
+  --petfy-barra: oklch(0.88 0.03 150); /* x5 — barra de peso anterior */
 
   /* ---- musgo: a UNICA cor de acao (secao 02) ----
    * "Se algo e musgo, e clicavel ou e o Petfy falando de si." Nao ha segunda cor
@@ -55,29 +76,36 @@
   --petfy-ocre-texto: oklch(0.55 0.09 70);
   --petfy-fundo-ocre: oklch(0.975 0.012 70);
 
-  /* ---- telha: vencido, irregular ---- */
+  /* ---- telha: vencido, irregular ----
+   * O `telha-texto` e 0.45, e nao 0.52 como eu tinha posto: a Tela 02 escreve
+   * "venceu ha 23 dias" em oklch(0.45 0.13 30).
+   */
   --petfy-telha: oklch(0.55 0.14 30);
-  --petfy-telha-texto: oklch(0.52 0.13 30);
+  --petfy-telha-texto: oklch(0.45 0.13 30);
   --petfy-fundo-telha: oklch(0.97 0.012 30);
 }
 
-/* Contraste no tema claro, calculado:
- *   tinta sobre papel ..................... 15.24
- *   tinta sobre superficie ................ 15.90
- *   tinta secundaria sobre papel ........... 5.24
- *   tinta secundaria sobre superficie ...... 5.47
- *   musgo sobre papel ...................... 6.56
- *   musgo sobre superficie ................. 6.84
- *   musgo sobre fundo de musgo ............. 6.11
+/* Contraste no tema claro, calculado. Os degraus de texto, sobre papel:
+ *   tinta ................................. 15.24
+ *   tinta-forte ........................... 10.75
+ *   tinta-media ............................ 8.05
+ *   tinta-secundaria ....................... 5.71
+ *   tinta-fraca ............................ 4.62   <- o neutro mais fragil
+ *   telha-texto ............................ 7.61
+ *   ocre-texto ............................. 4.74   <- o par mais fragil da paleta
+ *   musgo .................................. 6.56
  *   sobre-musgo dentro do botao ............ 6.56
  *   sobre-musgo no botao pressionado ....... 8.86
  *   tinta sobre fundo de musgo ............ 14.18
- *   ocre-texto sobre papel ................. 4.74   <- o par mais fragil da paleta
  *   ocre-texto sobre fundo de ocre ......... 4.59
- *   telha sobre papel ...................... 4.98
- *   telha-texto sobre fundo de telha ....... 5.36
  *
- * O `ocre` marcador rende 3.57 sobre papel e o `linha` rende 1.29 — os dois de
- * proposito. Nenhum dos dois carrega texto: um e forma geometrica, o outro e
- * contorno em repouso, e a secao 04 diz que cartao parado usa linha, nao sombra.
+ * OS DEGRAUS DE LINHA NAO CARREGAM TEXTO, e por isso rendem pouco: linha 1.29,
+ * linha-media 1.46, linha-forte 1.67. Cartao em repouso usa linha e nao sombra
+ * (secao 04), e contorno decorativo nao tem piso de contraste.
+ *
+ * <b>Uma excecao merece registro:</b> o `linha-forte` delimita o botao secundario,
+ * e a 1.4.11 pede 3:1 de quem delimita controle. Fica com o valor da tela — o botao
+ * tem rotulo em `tinta` a 15.24 e ganha borda em musgo no hover, entao a borda nao e
+ * o unico jeito de saber que ali ha um controle. Registrado para nao passar por
+ * descuido, e para voltar a mesa se a entrega revisar esse degrau.
  */
