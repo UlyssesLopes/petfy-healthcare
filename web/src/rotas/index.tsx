@@ -1,13 +1,12 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useState } from "react";
-import { useIntl, type IntlShape } from "react-intl";
+import { useState, type ReactNode } from "react";
+import { useIntl } from "react-intl";
 
-import { LinhaDoTempo } from "../componentes/LinhaDoTempo.tsx";
-import { Pata } from "../componentes/Pata.tsx";
-import { Rede } from "../componentes/Rede.tsx";
+import { DeRelance } from "../componentes/DeRelance.tsx";
 import { RegistrarDose } from "../componentes/RegistrarDose.tsx";
 import { useAnimais, type Animal } from "../dados/animais.ts";
 import { useSair } from "../dados/autenticacao.ts";
+import { useRedeDeCuidado } from "../dados/carteira.ts";
 import { useMeuContexto } from "../dados/contexto.ts";
 import {
   podeSilenciar,
@@ -18,8 +17,23 @@ import {
   type Pendencia,
 } from "../dados/pendencias.ts";
 import { lerSessao } from "../dados/sessao.ts";
-import { anosDesde, dataLocalDe, diasAte } from "../i18n/datas.ts";
+import { anosDesde, diasAte } from "../i18n/datas.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
+
+/* ------------------------------------------------------------------ o que este arquivo e
+ *
+ * A "Tela 01 · web, tela grande — Area do tutor, o feed de pendencias", de
+ * `design/IdentidadeVisual/Telas Petfy.dc.html`, com o backend ligado nela.
+ *
+ * O markup vem do arquivo: os estilos foram convertidos por script, entao as tres colunas
+ * (264 / 1fr / 320), os cartoes de 12 px e os quatro marcadores sao os do desenho.
+ *
+ * <b>DOIS BLOCOS DO DESENHO NAO ESTAO AQUI, e a ausencia e escolha.</b> "Da Creche
+ * Quintal, hoje" (foto, recado e avaliacao do dia) e "Uma leitura do Petfy" (a percepcao)
+ * <b>nao tem backend nenhum</b> — nao e uma rota vazia, e um modelo que nao existe.
+ * Desenhar a moldura deles agora criaria uma caixa que nunca preenche, e a secao 06 e
+ * explicita sobre nao confundir "vazio" com "nao existe". Eles entram junto com o modelo.
+ */
 
 export const Route = createFileRoute("/")({
   /*
@@ -65,6 +79,19 @@ function estadoDe(pendencia: Pendencia): Estado {
   return dias <= DIAS_DE_ANTECEDENCIA ? "aVencer" : "semMarca";
 }
 
+function useHover() {
+  const [sobre, setSobre] = useState(false);
+  return {
+    sobre,
+    props: {
+      onMouseEnter: () => setSobre(true),
+      onMouseLeave: () => setSobre(false),
+      onFocus: () => setSobre(true),
+      onBlur: () => setSobre(false),
+    },
+  };
+}
+
 function Inicio() {
   const intl = useIntl();
   const contexto = useMeuContexto();
@@ -74,69 +101,123 @@ function Inicio() {
   const [incluirSilenciadas, setIncluirSilenciadas] = useState(false);
   const [animalEscolhido, setAnimalEscolhido] = useState<string | undefined>(undefined);
 
+  const pendencias = usePendencias(incluirSilenciadas);
+
   const lista = animais.data ?? [];
   const ativo = lista.find((a) => a.animalId === animalEscolhido) ?? lista[0];
 
+  const cadastrar = useHover();
+
+  const doAtivo = (pendencias.data ?? []).filter(
+    (p) => ativo?.animalId === undefined || p.animalId === ativo.animalId,
+  );
+  const pedindo = doAtivo.filter((p) => p.silenced !== true);
+
   return (
-    // O fundo da pagina e a superficie; o conteiner da aplicacao tem raio de 16 px e
-    // contorno de 1 px — o raio escalonado e identidade (DESIGN.md 4), nao decoracao.
-    <div className="min-h-dvh bg-superficie p-4 sm:p-6">
-      <div className="mx-auto max-w-5xl overflow-hidden rounded-bloco border border-linha bg-superficie">
-        <header className="flex items-center gap-4 border-b border-linha bg-superficie px-5 py-3.5 sm:gap-[18px]">
-          {/* Nome de marca nao se traduz: e o unico texto literal da tela. */}
-          <span className="text-secao text-musgo">Petfy</span>
+    <div style={{ padding: "40px 24px" }}>
+      <div style={{ maxWidth: "1360px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
 
-          <nav className="flex gap-[18px]">
-            <span className="text-corpo-denso text-tinta">
-              {intl.formatMessage({ id: "home.nav.inicio" })}
-            </span>
-          </nav>
+        {/* ------------------------------------------------------------------------ topo */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ width: "26px", height: "26px", borderRadius: "999px", border: "2.5px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: "8px", height: "8px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
+              </div>
+              {/* Nome de marca nao se traduz: e o unico texto literal da tela. */}
+              <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
+            </div>
 
-          <span className="text-rotulo ml-auto hidden text-tinta-secundaria sm:inline">
-            {contexto.data?.personName ?? intl.formatMessage({ id: "home.contexto.voce" })}
-          </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "8px", padding: "8px 14px", minHeight: "44px", background: "oklch(0.975 0.004 150)" }}>
+              <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
+                {intl.formatMessage({ id: "home.agindoComo" })}
+              </span>
+              <span style={{ fontSize: "15px", fontWeight: 500 }}>
+                {contexto.data?.personName ?? ""}
+              </span>
+              <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
+                {contexto.data?.active?.organizationName === undefined
+                  ? intl.formatMessage({ id: "home.contexto.voce" })
+                  : intl.formatMessage(
+                      { id: "home.contexto.pela" },
+                      { org: contexto.data.active.organizationName },
+                    )}
+              </span>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={sair}
-            className="text-corpo-denso text-tinta-secundaria hover:underline"
-          >
-            {intl.formatMessage({ id: "home.sair" })}
-          </button>
-        </header>
+          <div style={{ display: "flex", alignItems: "center", gap: "20px", fontSize: "15px" }}>
+            {/* "Meus animais" e o `href="#carteira"` do desenho: ele leva a Tela 02. Sem
+                ele a vida do animal fica inalcancavel — o token vive em memoria, entao
+                colar a URL cai no /entrar e volta para ca. */}
+            {ativo?.animalId !== undefined ? (
+              <Link
+                to="/animais/$animalId"
+                params={{ animalId: ativo.animalId }}
+                style={{ color: "oklch(0.46 0.085 150)" }}
+              >
+                {intl.formatMessage({ id: "home.nav.meusAnimais" })}
+              </Link>
+            ) : null}
 
-        {lista.length > 0 ? (
-          <div className="flex flex-wrap gap-2 px-5 pt-3.5">
+            <button
+              type="button"
+              disabled
+              style={{ fontFamily: "inherit", background: "none", border: "none", cursor: "not-allowed", fontSize: "15px", color: "oklch(0.46 0.085 150)", opacity: 0.55 }}
+            >
+              {intl.formatMessage({ id: "home.nav.quemCuida" })}
+            </button>
+
+            <button type="button" onClick={sair} style={{ fontFamily: "inherit", background: "none", border: "none", cursor: "pointer", fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
+              {intl.formatMessage({ id: "home.sair" })}
+            </button>
+            <div aria-hidden style={{ width: "34px", height: "34px", borderRadius: "999px", background: "oklch(0.90 0.03 150)" }}></div>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "264px 1fr 320px", minHeight: "720px" }}>
+
+          {/* ------------------------------------------------------ trilho: sob sua custodia */}
+          <div style={{ borderRight: "1px solid oklch(0.90 0.008 150)", padding: "24px 20px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)", padding: "0 12px 10px" }}>
+              {intl.formatMessage({ id: "home.custodia" })}
+            </div>
+
             {lista.map((animal) => (
-              <BotaoDeAnimal
+              <ItemDeAnimal
                 key={animal.animalId}
                 animal={animal}
                 ativo={animal.animalId === ativo?.animalId}
+                pendencias={(pendencias.data ?? []).filter((p) => p.animalId === animal.animalId)}
                 aoEscolher={() => setAnimalEscolhido(animal.animalId)}
               />
             ))}
+
+            <div style={{ height: "1px", background: "oklch(0.92 0.006 150)", margin: "12px 0" }}></div>
+
+            <button
+              type="button"
+              disabled
+              {...cadastrar.props}
+              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.84 0.012 150)", borderRadius: "8px", padding: "12px", minHeight: "44px", cursor: "not-allowed", textAlign: "left", opacity: 0.55 }}
+            >
+              {intl.formatMessage({ id: "home.cadastrarAnimal" })}
+            </button>
+            <div style={{ fontSize: "13px", lineHeight: 1.5, color: "oklch(0.5 0.015 150)", padding: "0 2px" }}>
+              {intl.formatMessage({ id: "home.cadastrarAnimal.porque" })}
+            </div>
           </div>
-        ) : null}
 
-        {/*
-          Duas colunas, e a segunda esta reservada para a percepcao (5.5): ela vive FORA do
-          eixo do tempo, e a posicao existe desde ja para que o dia em que ela chegar nao
-          desfaca o layout. Nao ha caixa vazia aqui — a propria 5.5 chama isso de moldura
-          vazia.
-        */}
-        <div className="grid gap-[22px] px-5 pb-6 pt-[18px] lg:grid-cols-[1fr_292px]">
-          <main className="min-w-0">
-            {ativo !== undefined ? <Heroi animal={ativo} /> : null}
-
-            <div className="mt-6 flex flex-wrap items-baseline gap-3">
-              <h2 className="text-rotulo uppercase text-tinta-secundaria">
-                {intl.formatMessage({ id: "home.pendencias.titulo" })}
-              </h2>
-
+          {/* ---------------------------------------------------------------- centro: hoje */}
+          <div style={{ padding: "32px 36px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "8px" }}>
+              <h1 style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "30px", fontWeight: 500, margin: 0, letterSpacing: "-0.02em" }}>
+                {intl.formatMessage({ id: "home.hoje" })}
+              </h1>
               <button
                 type="button"
                 onClick={() => setIncluirSilenciadas((atual) => !atual)}
-                className="text-rotulo ml-auto text-tinta-secundaria hover:underline"
+                style={{ fontFamily: "inherit", fontSize: "14px", color: "oklch(0.45 0.015 150)", background: "transparent", border: "none", cursor: "pointer", minHeight: "44px" }}
               >
                 {intl.formatMessage({
                   id: incluirSilenciadas ? "home.ocultarSilenciadas" : "home.mostrarSilenciadas",
@@ -144,338 +225,315 @@ function Inicio() {
               </button>
             </div>
 
-            <Feed incluirSilenciadas={incluirSilenciadas} animalId={ativo?.animalId} />
+            <p style={{ fontSize: "15px", color: "oklch(0.45 0.015 150)", margin: "0 0 24px" }}>
+              {pendencias.isPending
+                ? intl.formatMessage({ id: "home.pendencias.carregando" })
+                : intl.formatMessage({ id: "home.quantas" }, { total: pedindo.length })}
+            </p>
 
-            {/*
-              A ordem das secoes e a tese da 5.4 virando layout: quem cuida vem ANTES dos
-              dados. O feed fica no topo porque e o centro da area do tutor (9.3), e a
-              linha do tempo fecha — ela e o objeto central do produto, e nao a abertura
-              da tela.
-            */}
+            {pendencias.isError ? (
+              <Aviso>{intl.formatMessage({ id: chaveDoErro(pendencias.error) })}</Aviso>
+            ) : null}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {doAtivo.length === 0 && !pendencias.isPending ? (
+                <Vazio />
+              ) : (
+                doAtivo.map((pendencia) => (
+                  <CartaoDePendencia
+                    key={`${pendencia.kind}:${pendencia.sourceId}`}
+                    pendencia={pendencia}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* ------------------------------------------------------------- trilho: de relance */}
+          <div style={{ borderLeft: "1px solid oklch(0.90 0.008 150)", padding: "32px 24px", display: "flex", flexDirection: "column", gap: "24px" }}>
             {ativo?.animalId !== undefined && ativo.name !== undefined ? (
               <>
-                <Rede animalId={ativo.animalId} animalNome={ativo.name} />
-                <LinhaDoTempo animalId={ativo.animalId} animalNome={ativo.name} />
+                <DeRelance animalId={ativo.animalId} nome={ativo.name} />
+                <QuemAlcanca animalId={ativo.animalId} />
               </>
             ) : null}
-          </main>
-
-          <aside />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function BotaoDeAnimal({
-  animal,
-  ativo,
-  aoEscolher,
-}: {
-  animal: Animal;
-  ativo: boolean;
-  aoEscolher: () => void;
-}) {
+/* ------------------------------------------------------------------------------ pedacos */
+
+function Aviso({ children }: { children: ReactNode }) {
   return (
-    <button
-      type="button"
-      onClick={aoEscolher}
-      aria-pressed={ativo}
-      className={`flex items-center gap-2 rounded-controle py-1.5 pl-1.5 pr-3.5 text-[0.875rem] font-medium ${
-        ativo
-          ? "bg-fundo-musgo text-tinta"
-          : "border border-linha text-tinta-secundaria hover:text-tinta"
-      }`}
-    >
-      <span className="grid size-[26px] place-items-center rounded-ser bg-fundo-musgo text-musgo">
-        <Pata className="size-[15px]" />
-      </span>
-      {animal.name}
-    </button>
+    <p role="alert" style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.45 0.13 30)", background: "oklch(0.97 0.012 30)", borderRadius: "8px", padding: "12px 14px", margin: "0 0 12px" }}>
+      {children}
+    </p>
   );
 }
 
-/** O animal e o protagonista visual, e a tela abre por ele — nao por dados (DESIGN.md 1). */
-function Heroi({ animal }: { animal: Animal }) {
+/** O vazio de verdade da secao 06: linha tracejada, e nao fundo cheio. */
+function Vazio() {
   const intl = useIntl();
 
-  const partes: string[] = [];
-
-  if (animal.breed !== undefined) {
-    partes.push(animal.breed);
-  } else if (animal.species !== undefined) {
-    partes.push(intl.formatMessage({ id: `home.especie.${animal.species}` }));
-  }
-
-  if (animal.bornDate !== undefined) {
-    partes.push(intl.formatMessage({ id: "home.idade" }, { anos: anosDesde(animal.bornDate) }));
-  }
-
   return (
-    <div className="flex items-center gap-4">
-      <span className="grid size-[60px] shrink-0 place-items-center rounded-ser bg-fundo-musgo text-musgo">
-        <Pata className="size-8" />
-      </span>
-
-      <div className="min-w-0">
-        {/* O nome leva a vida do animal. Sem este link a rota existiria e ninguem
-            chegaria nela: o token vive em memoria, entao abrir a URL direto cai no
-            /entrar e volta para ca. */}
-        <h1 className="text-nome-animal text-tinta">
-          <Link to="/animais/$animalId" params={{ animalId: animal.animalId! }}>
-            {animal.name}
-          </Link>
-        </h1>
-        {partes.length > 0 ? (
-          <p className="text-rotulo mt-0.5 text-tinta-secundaria">{partes.join(" · ")}</p>
-        ) : null}
+    <div style={{ border: "1px dashed oklch(0.90 0.008 150)", borderRadius: "12px", padding: "24px", fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
+      <div style={{ marginBottom: "4px" }}>{intl.formatMessage({ id: "home.pendencias.vazio" })}</div>
+      <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
+        {intl.formatMessage({ id: "home.pendencias.vazio.apoio" })}
       </div>
     </div>
   );
 }
 
-function Feed({
-  incluirSilenciadas,
-  animalId,
+/** O pior estado entre as pendencias do animal e o que vira marcador no trilho. */
+function marcadorDoAnimal(pendencias: Pendencia[]) {
+  const ativas = pendencias.filter((p) => p.silenced !== true);
+
+  if (ativas.some((p) => estadoDe(p) === "vencida")) {
+    return <div aria-hidden style={{ marginLeft: "auto", width: "12px", height: "12px", background: "oklch(0.55 0.14 30)", transform: "rotate(45deg)", flex: "none" }} />;
+  }
+  if (ativas.some((p) => estadoDe(p) === "venceHoje" || estadoDe(p) === "aVencer")) {
+    return <div aria-hidden style={{ marginLeft: "auto", width: "12px", height: "12px", borderRadius: "999px", border: "2px solid oklch(0.62 0.11 70)", flex: "none" }} />;
+  }
+  return <div aria-hidden style={{ marginLeft: "auto", width: "12px", height: "12px", borderRadius: "999px", background: "oklch(0.46 0.085 150)", flex: "none" }} />;
+}
+
+function ItemDeAnimal({
+  animal,
+  ativo,
+  pendencias,
+  aoEscolher,
 }: {
-  incluirSilenciadas: boolean;
-  animalId: string | undefined;
+  animal: Animal;
+  ativo: boolean;
+  pendencias: Pendencia[];
+  aoEscolher: () => void;
 }) {
   const intl = useIntl();
-  const pendencias = usePendencias(incluirSilenciadas);
 
-  if (pendencias.isPending) {
-    return (
-      <p className="text-rotulo mt-3 text-tinta-secundaria">
-        {intl.formatMessage({ id: "home.pendencias.carregando" })}
-      </p>
-    );
-  }
+  const especie =
+    animal.species === undefined
+      ? undefined
+      : intl.formatMessage({ id: `home.especie.${animal.species}` });
 
-  if (pendencias.isError) {
-    return (
-      <p
-        role="alert"
-        className="text-corpo mt-3 rounded-bloco bg-fundo-telha p-4 text-telha-texto"
-      >
-        {intl.formatMessage({ id: chaveDoErro(pendencias.error) })}
-      </p>
-    );
-  }
-
-  /*
-   * O seletor filtra o feed pelo animal escolhido, e o que NAO tem animal fica sempre —
-   * hoje isso e o consentimento, que bloqueia o resto do produto e nao pode sumir por
-   * causa de um filtro. Filtrar nao e montar: a ordem e o conteudo continuam vindo do
-   * servidor, que e o que a 9.5 exige deste feed.
-   */
-  const visiveis = pendencias.data.filter(
-    (p) => p.animalId === undefined || animalId === undefined || p.animalId === animalId,
-  );
-
-  if (visiveis.length === 0) {
-    return (
-      <div className="mt-3 rounded-bloco border border-linha p-5">
-        <p className="text-corpo text-tinta">
-          {intl.formatMessage({ id: "home.pendencias.vazio" })}
-        </p>
-        <p className="text-rotulo mt-1 text-tinta-secundaria">
-          {intl.formatMessage({ id: "home.pendencias.vazio.apoio" })}
-        </p>
-      </div>
-    );
-  }
+  const idade =
+    animal.bornDate === undefined
+      ? undefined
+      : intl.formatMessage({ id: "home.idade" }, { anos: anosDesde(animal.bornDate) });
 
   return (
-    <ul className="mt-3 flex flex-col gap-2.5">
-      {visiveis.map((pendencia) => (
-        <li key={`${pendencia.kind}-${pendencia.sourceId}`}>
-          <ItemDePendencia pendencia={pendencia} />
-        </li>
-      ))}
-    </ul>
+    <button
+      type="button"
+      onClick={aoEscolher}
+      aria-pressed={ativo}
+      style={{ fontFamily: "inherit", textAlign: "left", width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "12px", borderRadius: "8px", background: ativo ? "oklch(0.94 0.02 150)" : "transparent", border: "none", minHeight: "44px", cursor: "pointer" }}
+    >
+      <div aria-hidden style={{ width: "38px", height: "38px", borderRadius: "999px", background: ativo ? "oklch(0.86 0.03 150)" : "oklch(0.90 0.012 150)", flex: "none" }}></div>
+
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "130px" }}>
+          {animal.name}
+        </div>
+        <div style={{ fontSize: "13px", color: "oklch(0.45 0.015 150)" }}>
+          {[especie, idade].filter(Boolean).join(" · ")}
+        </div>
+      </div>
+
+      {marcadorDoAnimal(pendencias)}
+    </button>
   );
 }
 
-/** O fundo diz o estado, e a palavra tambem: cor nunca e o unico portador (DESIGN.md 3). */
-const FUNDO: Record<Estado, string> = {
-  vencida: "bg-fundo-telha",
-  venceHoje: "bg-fundo-musgo",
-  aVencer: "bg-fundo-musgo",
-  semMarca: "border border-linha",
-};
-
-function ItemDePendencia({ pendencia }: { pendencia: Pendencia }) {
+/**
+ * O cartao de pendencia — "o componente mais usado do produto" (secao 06).
+ *
+ * <b>O terceiro estado e a regra virando componente:</b> quando outra pessoa cumpriu, a
+ * pendencia NAO some — ela conta quem fez e quando. E o "nunca cobrar a mesma coisa de
+ * duas pessoas em silencio" deixando de ser principio e virando pixel.
+ */
+function CartaoDePendencia({ pendencia }: { pendencia: Pendencia }) {
   const intl = useIntl();
+
   const silenciar = useSilenciar();
   const deixarDeSilenciar = useDeixarDeSilenciar();
   const cumprir = useCumprirOrientacao();
-
+  const acao = useHover();
   const [registrando, setRegistrando] = useState(false);
 
   const estado = estadoDe(pendencia);
+  const cumprida = pendencia.lastFulfilledAt !== undefined;
+  const silenciada = pendencia.silenced === true;
 
-  /*
-   * O `!` aqui nao e descuido, e a causa dele nao esta nesta tela: o contrato nao declara
-   * `required` em nenhum schema, entao todo campo de resposta chega opcional no tipo
-   * gerado — inclusive os que o backend sempre preenche. A divida esta no ROADMAP.md.
-   */
   const alvo = { kind: pendencia.kind!, sourceId: pendencia.sourceId! };
 
+  const borda =
+    estado === "vencida" && !cumprida ? "oklch(0.86 0.03 30)" : "oklch(0.90 0.008 150)";
+  const fundo =
+    estado === "vencida" && !cumprida
+      ? "oklch(0.985 0.008 30)"
+      : cumprida || silenciada
+        ? "oklch(0.975 0.004 150)"
+        : "oklch(1 0 0)";
+
   return (
-    <article className={`rounded-bloco px-[17px] py-[15px] ${FUNDO[estado]}`}>
-      <Etiqueta pendencia={pendencia} estado={estado} />
+    <div style={{ border: `1px solid ${borda}`, background: fundo, borderRadius: "12px", padding: "20px 22px", display: "grid", gridTemplateColumns: "auto 1fr auto", gap: "18px", alignItems: "center" }}>
+      {cumprida ? (
+        <div aria-hidden style={{ width: "13px", height: "13px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }} />
+      ) : estado === "vencida" ? (
+        <div aria-hidden style={{ width: "13px", height: "13px", background: "oklch(0.55 0.14 30)", transform: "rotate(45deg)" }} />
+      ) : (
+        <div aria-hidden style={{ width: "13px", height: "13px", borderRadius: "999px", border: "3px solid oklch(0.62 0.11 70)" }} />
+      )}
 
-      <p className="text-corpo text-tinta">{fatoDe(pendencia, intl)}</p>
+      <div>
+        <div style={{ fontSize: "17px", fontWeight: 500, marginBottom: "4px", color: cumprida ? "oklch(0.42 0.015 150)" : "oklch(0.25 0.02 150)" }}>
+          {pendencia.animalName === undefined
+            ? pendencia.description
+            : intl.formatMessage(
+                { id: "home.pendencia.titulo" },
+                { o_que: pendencia.description ?? "", animal: pendencia.animalName },
+              )}
+        </div>
 
-      {/* A regra 5.3: nunca cobrar duas pessoas sem dizer que a outra ja fez. */}
-      {pendencia.lastFulfilledByName !== undefined && pendencia.lastFulfilledAt !== undefined ? (
-        <p className="text-rotulo mt-1 text-tinta-secundaria">
-          {intl.formatMessage(
-            { id: "home.jaFeito" },
-            {
-              nome: pendencia.lastFulfilledByName,
-              quando: quandoDe(pendencia.lastFulfilledAt, intl),
-            },
-          )}
-        </p>
-      ) : null}
+        <div style={{ fontSize: "14px", color: "oklch(0.45 0.015 150)" }}>
+          {cumprida
+            ? intl.formatMessage(
+                { id: "home.jaFeito" },
+                {
+                  nome: pendencia.lastFulfilledByName ?? "",
+                  quando: intl.formatDate(new Date(pendencia.lastFulfilledAt!), {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  }),
+                },
+              )
+            : pendencia.dueOn !== undefined
+              ? intl.formatMessage(
+                  { id: `home.estado.${estado === "semMarca" ? "aVencer" : estado}` },
+                  { dias: Math.abs(diasAte(pendencia.dueOn)) },
+                )
+              : ""}
+        </div>
+      </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3.5">
-        {pendencia.kind === "DOSE_DE_VACINA" && !registrando ? (
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        {silenciada ? (
           <button
             type="button"
-            onClick={() => setRegistrando(true)}
-            className="text-corpo-denso inline-flex min-h-toque items-center rounded-controle bg-musgo px-[18px] font-medium text-sobre-musgo"
+            onClick={() => deixarDeSilenciar.mutate(alvo)}
+            style={{ fontFamily: "inherit", fontSize: "14px", color: "oklch(0.45 0.015 150)", background: "transparent", border: "none", cursor: "pointer", minHeight: "44px" }}
           >
-            {intl.formatMessage({ id: "dose.acao" })}
+            {intl.formatMessage({ id: "home.acao.voltarACobrar" })}
           </button>
-        ) : null}
+        ) : cumprida ? (
+          <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
+            {intl.formatMessage({ id: "home.silenciada.cumprido" })}
+          </span>
+        ) : (
+          <>
+            {podeSilenciar(pendencia) && (
+              <button
+                type="button"
+                onClick={() => silenciar.mutate(alvo)}
+                style={{ fontFamily: "inherit", fontSize: "14px", color: "oklch(0.45 0.015 150)", background: "transparent", border: "none", cursor: "pointer", minHeight: "44px" }}
+              >
+                {intl.formatMessage({ id: "home.acao.silenciar" })}
+              </button>
+            )}
 
-        {pendencia.kind === "ORIENTACAO" ? (
-          <button
-            type="button"
-            disabled={cumprir.isPending}
-            onClick={() =>
-              cumprir.mutate({
-                animalId: pendencia.animalId!,
-                careInstructionId: pendencia.sourceId!,
-              })
-            }
-            className="text-corpo-denso inline-flex min-h-toque items-center rounded-controle bg-musgo px-[18px] font-medium text-sobre-musgo disabled:opacity-70"
-          >
-            {intl.formatMessage({
-              id: cumprir.isPending ? "home.acao.cumprindo" : "home.acao.cumprir",
-            })}
-          </button>
-        ) : null}
-
-        {podeSilenciar(pendencia) ? (
-          <button
-            type="button"
-            onClick={() =>
-              pendencia.silenced === true
-                ? deixarDeSilenciar.mutate(alvo)
-                : silenciar.mutate(alvo)
-            }
-            className="text-corpo-denso inline-flex min-h-toque items-center text-tinta-secundaria hover:underline"
-          >
-            {intl.formatMessage({
-              id: pendencia.silenced === true ? "home.acao.voltarACobrar" : "home.acao.silenciar",
-            })}
-          </button>
-        ) : null}
+            {pendencia.kind === "ORIENTACAO" ? (
+              <button
+                type="button"
+                onClick={() =>
+                  cumprir.mutate({
+                    careInstructionId: pendencia.sourceId!,
+                    animalId: pendencia.animalId!,
+                  })
+                }
+                disabled={cumprir.isPending}
+                {...acao.props}
+                style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: acao.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: `1px solid ${acao.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.82 0.012 150)"}`, borderRadius: "8px", padding: "12px 20px", minHeight: "44px", cursor: "pointer" }}
+              >
+                {intl.formatMessage({ id: cumprir.isPending ? "home.acao.cumprindo" : "home.acao.cumprir" })}
+              </button>
+            ) : pendencia.kind === "DOSE_DE_VACINA" ? (
+              /* A acao principal do cartao vencido: musgo cheio, e nao contorno. E a
+                 unica cor de acao do produto, e aqui ela esta sobre fundo de telha —
+                 a gravidade e do marcador e do fundo, nunca do botao (secao 02). */
+              <button
+                type="button"
+                onClick={() => setRegistrando(true)}
+                style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(1 0 0)", background: "oklch(0.46 0.085 150)", border: "none", borderRadius: "8px", padding: "12px 20px", minHeight: "44px", cursor: "pointer" }}
+              >
+                {intl.formatMessage({ id: "home.acao.registrarDose" })}
+              </button>
+            ) : null}
+          </>
+        )}
       </div>
 
       {registrando && pendencia.animalId !== undefined && pendencia.sourceId !== undefined ? (
-        <RegistrarDose
-          animalId={pendencia.animalId}
-          vaccineId={pendencia.sourceId}
-          aoFechar={() => setRegistrando(false)}
-        />
+        <div style={{ gridColumn: "1 / -1" }}>
+          <RegistrarDose
+            animalId={pendencia.animalId}
+            vaccineId={pendencia.sourceId}
+            aoFechar={() => setRegistrando(false)}
+          />
+        </div>
       ) : null}
-    </article>
+    </div>
   );
 }
 
-function Etiqueta({ pendencia, estado }: { pendencia: Pendencia; estado: Estado }) {
+/** "Quem alcanca o Code" — custodia e concessao, nunca uma lista de contatos (5.4). */
+function QuemAlcanca({ animalId }: { animalId: string }) {
   const intl = useIntl();
+  const rede = useRedeDeCuidado(animalId);
 
-  if (pendencia.silenced === true) {
-    return (
-      <p className="text-rotulo mb-1 normal-case text-tinta-secundaria">
-        {intl.formatMessage({ id: "home.silenciada" })}
-      </p>
-    );
-  }
-
-  if (estado === "semMarca") {
-    return null;
-  }
-
-  const dias = pendencia.dueOn !== undefined ? diasAte(pendencia.dueOn) : 0;
-
-  const texto =
-    estado === "vencida"
-      ? intl.formatMessage({ id: "home.estado.vencida" }, { dias: Math.abs(dias) })
-      : estado === "venceHoje"
-        ? intl.formatMessage({ id: "home.estado.venceHoje" })
-        : intl.formatMessage({ id: "home.estado.aVencer" }, { dias });
+  const membros = rede.data ?? [];
 
   return (
-    <p
-      className={`text-rotulo mb-1 normal-case ${
-        estado === "vencida" ? "text-telha-texto" : "text-musgo"
-      }`}
-    >
-      {texto}
-    </p>
+    <div>
+      <div style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)", marginBottom: "14px" }}>
+        {intl.formatMessage({ id: "home.quemAlcanca" })}
+      </div>
+
+      {membros.length === 0 ? (
+        <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
+          {intl.formatMessage({ id: "home.quemAlcanca.vazio" })}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px" }}>
+          {membros.map((membro) => (
+            <div key={membro.personId ?? membro.organizationId}>
+              <div style={{ fontWeight: 500, fontSize: "15px" }}>{membro.name}</div>
+              <div style={{ color: "oklch(0.5 0.015 150)" }}>{alcanceDe(membro, intl)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
-/**
- * O fato, por tipo.
- *
- * Dois dos cinco NAO usam o `description` do servidor, e por motivos diferentes: o do
- * consentimento e frase de sistema escrita em portugues sem acento no backend, e o do
- * convite e o e-mail de quem foi convidado — dado, e nao frase. Nos dois a tela escreve,
- * porque a mensagem do servidor nunca vira texto de tela.
- */
-function fatoDe(pendencia: Pendencia, intl: IntlShape): string {
-  if (pendencia.kind === "CONSENTIMENTO_PENDENTE") {
-    return intl.formatMessage({ id: "home.consentimento" });
-  }
+function alcanceDe(
+  membro: NonNullable<ReturnType<typeof useRedeDeCuidado>["data"]>[number],
+  intl: ReturnType<typeof useIntl>,
+): string {
+  const comoAlcanca = intl.formatMessage({
+    id: membro.reach === "CUSTODIA" ? "home.alcance.custodia" : "home.alcance.concessao",
+  });
 
-  if (pendencia.kind === "CONVITE_PENDENTE") {
-    return intl.formatMessage(
-      { id: "home.convite.naoAceito" },
-      { email: pendencia.description ?? "" },
-    );
-  }
+  const prazo =
+    membro.expiresAt === undefined
+      ? intl.formatMessage({ id: "home.alcance.semPrazo" })
+      : intl.formatMessage(
+          { id: "home.alcance.ate" },
+          { data: intl.formatDate(new Date(membro.expiresAt), { dateStyle: "short" }) },
+        );
 
-  return pendencia.description ?? "";
-}
-
-/**
- * O dia em que foi feito, sem hora.
- *
- * Le so a parte da data da string e nao constroi instante nenhum: o `lastFulfilledAt`
- * viaja como LocalDateTime, <b>sem fuso</b>, entao qualquer conversao seria um chute com
- * cara de precisao.
- */
-function quandoDe(instante: string, intl: IntlShape): string {
-  const dia = instante.slice(0, 10);
-  const dias = diasAte(dia);
-
-  if (dias === 0) {
-    return intl.formatMessage({ id: "home.quando.hoje" });
-  }
-  if (dias === -1) {
-    return intl.formatMessage({ id: "home.quando.ontem" });
-  }
-
-  return intl.formatMessage(
-    { id: "home.quando.em" },
-    { data: intl.formatDate(dataLocalDe(dia), { day: "numeric", month: "long" }) },
-  );
+  return `${comoAlcanca} · ${prazo}`;
 }

@@ -72,6 +72,18 @@ export function usePesagens(animalId: string | undefined) {
   });
 }
 
+/** Antiparasitario, que na Tela 01 e uma das quatro linhas do "de relance". */
+export function useAntiparasitarios(animalId: string | undefined) {
+  return useQuery({
+    queryKey: ["antiparasitarios", animalId],
+    enabled: animalId !== undefined,
+    queryFn: async () =>
+      corpoDe(
+        await cliente.GET("/antiparasitics", { params: { query: { animalId: animalId! } } }),
+      ),
+  });
+}
+
 /** Carteirinha de papel fotografada, exame, laudo. */
 export function useAnexos(animalId: string | undefined) {
   return useQuery({

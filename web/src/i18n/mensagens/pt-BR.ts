@@ -156,8 +156,42 @@ export const mensagens = {
 
   // ------------------------------------------------------------------- home do tutor
   "home.sair": "Sair",
+  "home.agindoComo": "Agindo como",
+  "home.contexto.pela": "· pela {org}",
+  "home.nav.meusAnimais": "Meus animais",
+  "home.nav.quemCuida": "Quem cuida",
+  "home.custodia": "Sob sua custódia",
+  "home.cadastrarAnimal": "Cadastrar animal",
+  "home.cadastrarAnimal.porque": "O cadastro ainda não tem tela. Por enquanto o animal entra pela API.",
+  "home.hoje": "Hoje",
+  // "Três coisas pedem você" — o desenho conta, e a contagem e o que da hierarquia:
+  // sem numero, quinze pendencias e uma lista; com numero, e um dia.
+  "home.quantas": "{total, plural, =0 {Nada pede você agora.} one {Uma coisa pede você.} other {# coisas pedem você.}} Silenciar não para o registro.",
+  "home.pendencia.titulo": "{o_que} do {animal}",
+  "home.silenciada.cumprido": "Cumprido",
+  "home.quemAlcanca": "Quem alcança",
+  "home.quemAlcanca.vazio": "Só você alcança este animal.",
+  "home.alcance.custodia": "Custódia",
+  "home.alcance.concessao": "Acesso concedido",
+  "home.alcance.semPrazo": "sem prazo",
+  "home.alcance.ate": "até {data}",
+
+  // "Code, de relance": quatro leituras sobre dado que ja existe, nao campos novos.
+  "relance.titulo": "{nome}, de relance",
+  "relance.vacinacao.irregular": "Vacinação irregular",
+  "relance.vacinacao.emDia": "Vacinação em dia",
+  "relance.vacinacao.semRegistro": "Vacinação sem registro",
+  "relance.antiparasitario.emDia": "Antiparasitário em dia",
+  "relance.antiparasitario.vencido": "Antiparasitário vencido",
+  "relance.antiparasitario.semRegistro": "Antiparasitário sem registro",
+  // Nao pesar nao e irregularidade: por isso anel tracejado, e nao losango.
+  "relance.peso.antigo": "Peso sem registro há {meses} meses",
+  "relance.peso.recente": "Peso registrado recentemente",
+  "relance.peso.semRegistro": "Peso sem registro",
+  "relance.alergia": "{o_que} registrada{extras, plural, =0 {} other { · mais #}}",
+  "relance.condicao": "{total, plural, one {# condição registrada} other {# condições registradas}}",
   "home.nav.inicio": "Início",
-  "home.contexto.voce": "Você",
+  "home.contexto.voce": "· você mesmo",
 
   // A idade em anos, pela regra do idioma. Fica ao lado da raça, separada por ponto
   // medio — sao itens de uma lista curta, e nao uma frase montada por concatenacao.
@@ -214,7 +248,8 @@ export const mensagens = {
 
   "home.acao.silenciar": "Silenciar",
   "home.acao.voltarACobrar": "Voltar a cobrar",
-  "home.acao.cumprir": "Confirmar que dei",
+  "home.acao.cumprir": "Já dei",
+  "home.acao.registrarDose": "Registrar dose",
   "home.acao.cumprindo": "Confirmando…",
   "home.silenciada": "Silenciada",
   "home.mostrarSilenciadas": "Mostrar as silenciadas",
