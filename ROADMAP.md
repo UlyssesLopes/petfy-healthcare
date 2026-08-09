@@ -1391,12 +1391,25 @@ trecho do payload recebido, e no `POST /persons` esse trecho inclui a senha. E o
 `400` com *"Invalid UTF-8 middle byte"* no log, em vez do `500` que fez parecer defeito de
 servidor durante a construção do cliente.
 
+**A dívida 4 foi corrigida em 2026-08-09, e a correção coube numa propriedade.**
+`springdoc.default-flat-param-object=true` faz o springdoc descrever o `Pageable` como os
+três parâmetros que o Spring realmente lê: os 7 `pageable` do contrato viraram 7 trios
+`page`/`size`/`sort`, e o schema `Pageable` deixou de existir. **O que mais doía era o
+`required: true`** — o cliente gerado era obrigado a emitir um parâmetro que o servidor
+ignora, e recebia sempre a primeira página. Acidentalmente certo na área do tutor, que lê
+um a três animais; calado e errado na de organização, que lê centenas.
+
+Conferido antes de aplicar: a propriedade mexe **só** nos 7 `pageable`, porque o
+`Pageable` é o único parâmetro-objeto desta API. O `web/src/dados/animais.ts` e o
+`animal.ts` perderam o remendo que emitia `pageable: {}`, e o `pageable.test.ts` trocou de
+premissa — ele afirmava a divergência, e agora fixa o formato: `page`, `size` e `sort`
+soltos na URL, e nenhum `pageable` nela.
+
 **O que continua em aberto, e por quê:**
 
 | # | Estado |
 |---|---|
 | 3 | `LocalDateTime` sem fuso — adiada por decisão: mexe em DTO, contrato e tela, e merece PR próprio |
-| 4 | `Pageable` — **medida e não corrigida.** O contrato o declara `required: true`, então o cliente gerado é obrigado a mandar um parâmetro que o servidor ignora. Corrigir exige regenerar o `openapi.json`, e o `OpenApiContractTest` sobe o contexto contra Postgres real: ficou bloqueado pelo Testcontainers desta máquina, não pelo código |
 
 ## Fase 6 — a remodelagem que o `PRODUTO.md` cobra
 

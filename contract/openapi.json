@@ -1867,27 +1867,6 @@
         },
         "type" : "object"
       },
-      "Pageable" : {
-        "properties" : {
-          "page" : {
-            "format" : "int32",
-            "minimum" : 0,
-            "type" : "integer"
-          },
-          "size" : {
-            "format" : "int32",
-            "minimum" : 1,
-            "type" : "integer"
-          },
-          "sort" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
       "PageableObject" : {
         "properties" : {
           "offset" : {
@@ -2745,11 +2724,36 @@
         "description" : "Por custodia ou por concessao vigente. Paginada, com teto de 100 por pagina. A leitura em largura da area de organizacao, que le centenas, e outra: /professional/animals, com busca e ordem.",
         "operationId" : "listAll_2",
         "parameters" : [ {
+          "description" : "Zero-based page index (0..N)",
           "in" : "query",
-          "name" : "pageable",
-          "required" : true,
+          "name" : "page",
+          "required" : false,
           "schema" : {
-            "$ref" : "#/components/schemas/Pageable"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The size of the page to be returned",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "default" : [ "name,ASC" ],
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         } ],
         "responses" : {
@@ -2895,11 +2899,35 @@
             "type" : "string"
           }
         }, {
+          "description" : "Zero-based page index (0..N)",
           "in" : "query",
-          "name" : "pageable",
-          "required" : true,
+          "name" : "page",
+          "required" : false,
           "schema" : {
-            "$ref" : "#/components/schemas/Pageable"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The size of the page to be returned",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         } ],
         "responses" : {
@@ -3000,22 +3028,6 @@
             "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "multipart/form-data" : {
-              "schema" : {
-                "properties" : {
-                  "file" : {
-                    "format" : "binary",
-                    "type" : "string"
-                  }
-                },
-                "required" : [ "file" ],
-                "type" : "object"
-              }
-            }
-          }
-        },
         "responses" : {
           "200" : {
             "content" : {
@@ -3646,11 +3658,35 @@
             "type" : "string"
           }
         }, {
+          "description" : "Zero-based page index (0..N)",
           "in" : "query",
-          "name" : "pageable",
-          "required" : true,
+          "name" : "page",
+          "required" : false,
           "schema" : {
-            "$ref" : "#/components/schemas/Pageable"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The size of the page to be returned",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         } ],
         "responses" : {
@@ -4474,11 +4510,36 @@
         "description" : "Paginada, com teto de 100 por pagina.",
         "operationId" : "listAll_1",
         "parameters" : [ {
+          "description" : "Zero-based page index (0..N)",
           "in" : "query",
-          "name" : "pageable",
-          "required" : true,
+          "name" : "page",
+          "required" : false,
           "schema" : {
-            "$ref" : "#/components/schemas/Pageable"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The size of the page to be returned",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "default" : [ "eventDate,ASC" ],
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         } ],
         "responses" : {
@@ -4704,11 +4765,36 @@
         "description" : "Paginada, com teto de 100 por pagina.",
         "operationId" : "listAll",
         "parameters" : [ {
+          "description" : "Zero-based page index (0..N)",
           "in" : "query",
-          "name" : "pageable",
-          "required" : true,
+          "name" : "page",
+          "required" : false,
           "schema" : {
-            "$ref" : "#/components/schemas/Pageable"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The size of the page to be returned",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "default" : [ "name,ASC" ],
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         } ],
         "responses" : {
@@ -5046,22 +5132,6 @@
       "post" : {
         "description" : "Le a carteirinha por OCR. Existe porque a historia de saude que importa esta em papel, e digitar tudo a mao e o que faz o tutor desistir antes de comecar. O resultado e um ponto de partida para revisao, e nao um registro conferido - OCR erra, e o que ele produz nao carrega assinatura de quem afirmou nada.",
         "operationId" : "importPetIdCard",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "properties" : {
-                  "file" : {
-                    "format" : "binary",
-                    "type" : "string"
-                  }
-                },
-                "required" : [ "file" ],
-                "type" : "object"
-              }
-            }
-          }
-        },
         "responses" : {
           "200" : {
             "content" : {
@@ -5117,11 +5187,36 @@
             "type" : "string"
           }
         }, {
+          "description" : "Zero-based page index (0..N)",
           "in" : "query",
-          "name" : "pageable",
-          "required" : true,
+          "name" : "page",
+          "required" : false,
           "schema" : {
-            "$ref" : "#/components/schemas/Pageable"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The size of the page to be returned",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "default" : [ "animal.name,ASC" ],
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         } ],
         "responses" : {
@@ -5536,11 +5631,36 @@
         "description" : "Paginada, com teto de 100 por pagina.",
         "operationId" : "listAllVaccines",
         "parameters" : [ {
+          "description" : "Zero-based page index (0..N)",
           "in" : "query",
-          "name" : "pageable",
-          "required" : true,
+          "name" : "page",
+          "required" : false,
           "schema" : {
-            "$ref" : "#/components/schemas/Pageable"
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The size of the page to be returned",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "default" : [ "applicationDate,ASC" ],
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         } ],
         "responses" : {

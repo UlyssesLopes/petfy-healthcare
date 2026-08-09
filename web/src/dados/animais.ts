@@ -19,20 +19,11 @@ export function useAnimais() {
     queryKey: ["animais"],
     queryFn: async () =>
       corpoDe(
-        await cliente.GET("/animals", {
-          /*
-           * O springdoc documenta o `Pageable` do Spring como UM parametro chamado
-           * `pageable`, mas o Spring le `page`, `size` e `sort` soltos na query. Seguir o
-           * contrato ao pe da letra mandaria `?pageable=...`, que o servidor ignora.
-           *
-           * Entao o objeto vai vazio — o que faz o cliente nao emitir query nenhuma — e
-           * valem os defaults do servidor. A divergencia entre o contrato e o que a API
-           * aceita esta registrada no ROADMAP.md; ela nao morde aqui porque o tutor
-           * responde por um a tres animais, e vai morder na area de organizacao, que le
-           * centenas e precisa mesmo paginar.
-           */
-          params: { query: { pageable: {} } },
-        }),
+        // Sem `page` nem `size`: valem os defaults do servidor, e agora o contrato os
+        // declara — 20 itens, ordenados por nome. Ate 2026-08-08 era preciso mandar um
+        // `pageable` vazio aqui para driblar o contrato, que descrevia a paginacao de um
+        // jeito que o Spring nao le.
+        await cliente.GET("/animals"),
       ).content ?? [],
   });
 }
