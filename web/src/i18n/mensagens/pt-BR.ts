@@ -113,11 +113,37 @@ export const mensagens = {
   // A validacao de campo e NOSSA e acontece antes de enviar - o servidor devolve
   // `campo: motivo` com o nome do campo em ingles, e isso nao e exibivel (DESIGN.md 6,
   // emenda de 2026-08-07). As frases seguem a secao 2: dizem o que falta, sem culpar.
-  "entrar.titulo": "Entrar",
+  "entrar.titulo": "Que bom te ver",
+  "entrar.subtitulo": "Entre para continuar de onde parou.",
   "entrar.email": "E-mail",
   "entrar.senha": "Senha",
   "entrar.acao": "Entrar",
   "entrar.enviando": "Entrando…",
+  "entrar.mostrar": "Mostrar",
+  "entrar.ocultar": "Ocultar",
+  "entrar.esqueci": "Esqueci a senha",
+  "entrar.ou": "ou",
+
+  // A frase da esquerda nao vende o produto — lembra por que a conta existe. E a mesma
+  // tese do simbolo: o animal permanece, as pessoas passam.
+  "entrar.tese.titulo": "A vida deles continua registrada, mesmo quando você não está olhando.",
+  "entrar.tese.apoio": "Cada dose, cada consulta e cada dia de creche entrou aqui com o nome de quem fez. Nada some, nada é reescrito às escondidas.",
+
+  "entrar.agora.rotulo": "Precisa de algo agora?",
+  "entrar.agora.texto": "Se o animal está passando mal e você não lembra a senha, o cartão de emergência dele abre sem login — alergias, remédios em curso e quem chamar.",
+  "entrar.cartao.acao": "Abrir cartão de emergência",
+
+  "entrar.continuarConectado": "Continuar conectado neste aparelho",
+  "entrar.link.acao": "Receber um link por e-mail",
+  "entrar.link.apoio": "Sem senha. Você clica no link e entra — serve quando a senha não vem à cabeça.",
+  "entrar.criarConta": "Ainda não tem conta? {acao}",
+  "entrar.criarConta.acao": "Criar uma agora",
+
+  // As quatro frases de "por que esta desabilitado". A secao 06 pede que o desabilitado
+  // nunca apareca mudo, e que o motivo venha ANTES do gesto — nao depois.
+  "entrar.cartao.porque": "Ainda não dá para abrir daqui: o cartão abre por um link que quem responde pelo animal gera e envia.",
+  "entrar.continuarConectado.porque": "Ainda não guardamos a sessão entre visitas — ao recarregar a página é preciso entrar de novo.",
+  "entrar.link.porque": "Entrar por link ainda não existe. Por enquanto, só com senha.",
   "entrar.email.faltando": "Informe o seu e-mail.",
   "entrar.email.incompleto": "Esse e-mail não parece completo — falta o @",
   "entrar.senha.faltando": "Informe a sua senha.",
