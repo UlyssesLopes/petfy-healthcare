@@ -30,7 +30,7 @@ function NaoEncontrada() {
       <p className="mt-4">
         <Link
           to="/"
-          className="text-interface inline-flex min-h-toque items-center text-acento underline"
+          className="text-corpo-denso inline-flex min-h-toque items-center text-musgo underline"
         >
           <FormattedMessage id="rota.naoEncontrada.acao" />
         </Link>

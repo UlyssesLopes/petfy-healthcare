@@ -81,25 +81,25 @@ function Inicio() {
     // O fundo da pagina e a superficie; o conteiner da aplicacao tem raio de 16 px e
     // contorno de 1 px — o raio escalonado e identidade (DESIGN.md 4), nao decoracao.
     <div className="min-h-dvh bg-superficie p-4 sm:p-6">
-      <div className="mx-auto max-w-5xl overflow-hidden rounded-app border border-contorno bg-superficie">
-        <header className="flex items-center gap-4 border-b border-contorno bg-superficie-elevada px-5 py-3.5 sm:gap-[18px]">
+      <div className="mx-auto max-w-5xl overflow-hidden rounded-bloco border border-linha bg-superficie">
+        <header className="flex items-center gap-4 border-b border-linha bg-superficie px-5 py-3.5 sm:gap-[18px]">
           {/* Nome de marca nao se traduz: e o unico texto literal da tela. */}
-          <span className="text-resumo text-acento">Petfy</span>
+          <span className="text-secao text-musgo">Petfy</span>
 
           <nav className="flex gap-[18px]">
-            <span className="text-interface text-tinta">
+            <span className="text-corpo-denso text-tinta">
               {intl.formatMessage({ id: "home.nav.inicio" })}
             </span>
           </nav>
 
-          <span className="text-apoio ml-auto hidden text-tinta-secundaria sm:inline">
+          <span className="text-rotulo ml-auto hidden text-tinta-secundaria sm:inline">
             {contexto.data?.personName ?? intl.formatMessage({ id: "home.contexto.voce" })}
           </span>
 
           <button
             type="button"
             onClick={sair}
-            className="text-interface text-tinta-secundaria hover:underline"
+            className="text-corpo-denso text-tinta-secundaria hover:underline"
           >
             {intl.formatMessage({ id: "home.sair" })}
           </button>
@@ -136,7 +136,7 @@ function Inicio() {
               <button
                 type="button"
                 onClick={() => setIncluirSilenciadas((atual) => !atual)}
-                className="text-apoio ml-auto text-tinta-secundaria hover:underline"
+                className="text-rotulo ml-auto text-tinta-secundaria hover:underline"
               >
                 {intl.formatMessage({
                   id: incluirSilenciadas ? "home.ocultarSilenciadas" : "home.mostrarSilenciadas",
@@ -181,13 +181,13 @@ function BotaoDeAnimal({
       type="button"
       onClick={aoEscolher}
       aria-pressed={ativo}
-      className={`flex items-center gap-2 rounded-pilula py-1.5 pl-1.5 pr-3.5 text-[0.875rem] font-bold ${
+      className={`flex items-center gap-2 rounded-controle py-1.5 pl-1.5 pr-3.5 text-[0.875rem] font-medium ${
         ativo
-          ? "bg-fundo-acento text-tinta"
-          : "border border-contorno text-tinta-secundaria hover:text-tinta"
+          ? "bg-fundo-musgo text-tinta"
+          : "border border-linha text-tinta-secundaria hover:text-tinta"
       }`}
     >
-      <span className="grid size-[26px] place-items-center rounded-circulo bg-fundo-acento text-acento">
+      <span className="grid size-[26px] place-items-center rounded-ser bg-fundo-musgo text-musgo">
         <Pata className="size-[15px]" />
       </span>
       {animal.name}
@@ -213,14 +213,14 @@ function Heroi({ animal }: { animal: Animal }) {
 
   return (
     <div className="flex items-center gap-4">
-      <span className="grid size-[60px] shrink-0 place-items-center rounded-circulo bg-fundo-acento text-acento">
+      <span className="grid size-[60px] shrink-0 place-items-center rounded-ser bg-fundo-musgo text-musgo">
         <Pata className="size-8" />
       </span>
 
       <div className="min-w-0">
         <h1 className="text-nome-animal text-tinta">{animal.name}</h1>
         {partes.length > 0 ? (
-          <p className="text-apoio mt-0.5 text-tinta-secundaria">{partes.join(" · ")}</p>
+          <p className="text-rotulo mt-0.5 text-tinta-secundaria">{partes.join(" · ")}</p>
         ) : null}
       </div>
     </div>
@@ -239,7 +239,7 @@ function Feed({
 
   if (pendencias.isPending) {
     return (
-      <p className="text-apoio mt-3 text-tinta-secundaria">
+      <p className="text-rotulo mt-3 text-tinta-secundaria">
         {intl.formatMessage({ id: "home.pendencias.carregando" })}
       </p>
     );
@@ -249,7 +249,7 @@ function Feed({
     return (
       <p
         role="alert"
-        className="text-registro mt-3 rounded-bloco bg-fundo-urgencia p-4 text-urgencia"
+        className="text-corpo mt-3 rounded-bloco bg-fundo-telha p-4 text-telha-texto"
       >
         {intl.formatMessage({ id: chaveDoErro(pendencias.error) })}
       </p>
@@ -268,11 +268,11 @@ function Feed({
 
   if (visiveis.length === 0) {
     return (
-      <div className="mt-3 rounded-bloco border border-contorno p-5">
-        <p className="text-registro text-tinta">
+      <div className="mt-3 rounded-bloco border border-linha p-5">
+        <p className="text-corpo text-tinta">
           {intl.formatMessage({ id: "home.pendencias.vazio" })}
         </p>
-        <p className="text-apoio mt-1 text-tinta-secundaria">
+        <p className="text-rotulo mt-1 text-tinta-secundaria">
           {intl.formatMessage({ id: "home.pendencias.vazio.apoio" })}
         </p>
       </div>
@@ -292,10 +292,10 @@ function Feed({
 
 /** O fundo diz o estado, e a palavra tambem: cor nunca e o unico portador (DESIGN.md 3). */
 const FUNDO: Record<Estado, string> = {
-  vencida: "bg-fundo-urgencia",
-  venceHoje: "bg-fundo-acento",
-  aVencer: "bg-fundo-acento",
-  semMarca: "border border-contorno",
+  vencida: "bg-fundo-telha",
+  venceHoje: "bg-fundo-musgo",
+  aVencer: "bg-fundo-musgo",
+  semMarca: "border border-linha",
 };
 
 function ItemDePendencia({ pendencia }: { pendencia: Pendencia }) {
@@ -319,11 +319,11 @@ function ItemDePendencia({ pendencia }: { pendencia: Pendencia }) {
     <article className={`rounded-bloco px-[17px] py-[15px] ${FUNDO[estado]}`}>
       <Etiqueta pendencia={pendencia} estado={estado} />
 
-      <p className="text-registro text-tinta">{fatoDe(pendencia, intl)}</p>
+      <p className="text-corpo text-tinta">{fatoDe(pendencia, intl)}</p>
 
       {/* A regra 5.3: nunca cobrar duas pessoas sem dizer que a outra ja fez. */}
       {pendencia.lastFulfilledByName !== undefined && pendencia.lastFulfilledAt !== undefined ? (
-        <p className="text-apoio mt-1 text-tinta-secundaria">
+        <p className="text-rotulo mt-1 text-tinta-secundaria">
           {intl.formatMessage(
             { id: "home.jaFeito" },
             {
@@ -339,7 +339,7 @@ function ItemDePendencia({ pendencia }: { pendencia: Pendencia }) {
           <button
             type="button"
             onClick={() => setRegistrando(true)}
-            className="text-interface inline-flex min-h-toque items-center rounded-pilula bg-acento px-[18px] font-bold text-sobre-acento"
+            className="text-corpo-denso inline-flex min-h-toque items-center rounded-controle bg-musgo px-[18px] font-medium text-sobre-musgo"
           >
             {intl.formatMessage({ id: "dose.acao" })}
           </button>
@@ -355,7 +355,7 @@ function ItemDePendencia({ pendencia }: { pendencia: Pendencia }) {
                 careInstructionId: pendencia.sourceId!,
               })
             }
-            className="text-interface inline-flex min-h-toque items-center rounded-pilula bg-acento px-[18px] font-bold text-sobre-acento disabled:opacity-70"
+            className="text-corpo-denso inline-flex min-h-toque items-center rounded-controle bg-musgo px-[18px] font-medium text-sobre-musgo disabled:opacity-70"
           >
             {intl.formatMessage({
               id: cumprir.isPending ? "home.acao.cumprindo" : "home.acao.cumprir",
@@ -371,7 +371,7 @@ function ItemDePendencia({ pendencia }: { pendencia: Pendencia }) {
                 ? deixarDeSilenciar.mutate(alvo)
                 : silenciar.mutate(alvo)
             }
-            className="text-interface inline-flex min-h-toque items-center text-tinta-secundaria hover:underline"
+            className="text-corpo-denso inline-flex min-h-toque items-center text-tinta-secundaria hover:underline"
           >
             {intl.formatMessage({
               id: pendencia.silenced === true ? "home.acao.voltarACobrar" : "home.acao.silenciar",
@@ -418,7 +418,7 @@ function Etiqueta({ pendencia, estado }: { pendencia: Pendencia; estado: Estado 
   return (
     <p
       className={`text-rotulo mb-1 normal-case ${
-        estado === "vencida" ? "text-urgencia" : "text-acento"
+        estado === "vencida" ? "text-telha-texto" : "text-musgo"
       }`}
     >
       {texto}

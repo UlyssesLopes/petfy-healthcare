@@ -35,7 +35,7 @@ export function RegistrarDose({
 
   if (anterior.isPending) {
     return (
-      <p className="text-apoio mt-3 text-tinta-secundaria">
+      <p className="text-rotulo mt-3 text-tinta-secundaria">
         {intl.formatMessage({ id: "dose.carregando" })}
       </p>
     );
@@ -43,7 +43,7 @@ export function RegistrarDose({
 
   if (anterior.isError) {
     return (
-      <p role="alert" className="text-apoio mt-3 text-urgencia">
+      <p role="alert" className="text-rotulo mt-3 text-telha-texto">
         {intl.formatMessage({ id: chaveDoErro(anterior.error) })}
       </p>
     );
@@ -82,7 +82,7 @@ export function RegistrarDose({
   }
 
   return (
-    <form onSubmit={enviar} noValidate className="mt-3 border-t border-contorno pt-3">
+    <form onSubmit={enviar} noValidate className="mt-3 border-t border-linha pt-3">
       <h3 className="text-rotulo normal-case text-tinta-secundaria">
         {intl.formatMessage({ id: "dose.titulo" }, { vacina: vacina.vaccineName ?? "" })}
       </h3>
@@ -106,13 +106,13 @@ export function RegistrarDose({
       </div>
 
       {erro !== undefined ? (
-        <p role="alert" className="text-apoio mt-2 text-urgencia">
+        <p role="alert" className="text-rotulo mt-2 text-telha-texto">
           {intl.formatMessage({ id: erro })}
         </p>
       ) : null}
 
       {registrar.isError ? (
-        <p role="alert" className="text-apoio mt-2 text-urgencia">
+        <p role="alert" className="text-rotulo mt-2 text-telha-texto">
           {intl.formatMessage({ id: chaveDoErro(registrar.error) })}
         </p>
       ) : null}
@@ -121,7 +121,7 @@ export function RegistrarDose({
         <button
           type="submit"
           disabled={registrar.isPending}
-          className="text-interface inline-flex min-h-toque items-center rounded-pilula bg-acento px-[18px] font-bold text-sobre-acento disabled:opacity-70"
+          className="text-corpo-denso inline-flex min-h-toque items-center rounded-controle bg-musgo px-[18px] font-medium text-sobre-musgo disabled:opacity-70"
         >
           {intl.formatMessage({ id: registrar.isPending ? "dose.confirmando" : "dose.confirmar" })}
         </button>
@@ -129,7 +129,7 @@ export function RegistrarDose({
         <button
           type="button"
           onClick={aoFechar}
-          className="text-interface inline-flex min-h-toque items-center text-tinta-secundaria hover:underline"
+          className="text-corpo-denso inline-flex min-h-toque items-center text-tinta-secundaria hover:underline"
         >
           {intl.formatMessage({ id: "dose.cancelar" })}
         </button>
@@ -156,7 +156,7 @@ function Data({
   return (
     <div className="flex flex-col gap-1">
       {/* Rotulo sempre visivel: placeholder some quando se digita, e e onde o erro nasce. */}
-      <label htmlFor={id} className="text-apoio font-semibold text-tinta">
+      <label htmlFor={id} className="text-rotulo font-medium text-tinta">
         {rotulo}
       </label>
 
@@ -166,7 +166,7 @@ function Data({
         value={valor}
         max={maximo}
         onChange={(evento) => aoMudar(evento.target.value)}
-        className="text-registro min-h-toque rounded-linha border border-contorno bg-superficie px-3 text-tinta"
+        className="text-corpo min-h-toque rounded-bloco border border-linha bg-superficie px-3 text-tinta"
       />
 
       {apoio !== undefined ? (

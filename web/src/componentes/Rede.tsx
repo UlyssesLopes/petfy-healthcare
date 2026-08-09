@@ -31,7 +31,7 @@ export function Rede({ animalId, animalNome }: { animalId: string; animalNome: s
         <h2 className="text-rotulo uppercase text-tinta-secundaria">
           {intl.formatMessage({ id: "rede.titulo" }, { animal: animalNome })}
         </h2>
-        <span className="text-apoio ml-auto text-tinta-secundaria">
+        <span className="text-rotulo ml-auto text-tinta-secundaria">
           {intl.formatMessage(
             { id: "rede.contagem" },
             { quantas: pessoas.length + ativas.length },
@@ -95,7 +95,7 @@ function Cartao({
 }) {
   return (
     <div
-      className={`flex flex-col gap-0.5 rounded-bloco border border-contorno px-3.5 py-3 ${
+      className={`flex flex-col gap-0.5 rounded-bloco border border-linha px-3.5 py-3 ${
         tracejado ? "border-dashed" : ""
       }`}
     >
@@ -105,18 +105,18 @@ function Cartao({
       */}
       <span
         aria-hidden="true"
-        className={`grid size-8 place-items-center rounded-circulo text-[0.78125rem] font-extrabold ${
+        className={`grid size-8 place-items-center rounded-ser text-[0.78125rem] font-medium ${
           tracejado
-            ? "bg-fundo-acento text-acento"
+            ? "bg-fundo-musgo text-musgo"
             : emAcento
-              ? "bg-acento text-sobre-acento"
-              : "bg-marca-neutra text-tinta-secundaria"
+              ? "bg-musgo text-sobre-musgo"
+              : "bg-fundo-musgo text-tinta-secundaria"
         }`}
       >
         {iniciais}
       </span>
 
-      <b className="text-interface mt-2 font-bold text-tinta">{nome}</b>
+      <b className="text-corpo-denso mt-2 font-medium text-tinta">{nome}</b>
       {papel !== "" ? <span className="text-rotulo normal-case text-tinta-secundaria">{papel}</span> : null}
     </div>
   );

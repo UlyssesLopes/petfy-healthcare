@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Bitter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: oklch(0.94 0.006 150); }
+  * { box-sizing: border-box; }
+  a { color: oklch(0.46 0.085 150); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: oklch(0.36 0.085 150); }
+  @keyframes petfy-pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
+</style>
+</helmet>
+
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: oklch(0.25 0.02 150); padding: 72px 56px 120px; display: flex; flex-direction: column; gap: 88px; align-items: flex-start;">
+
+  <div style="max-width: 900px;">
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 40px;">
+      <div style="width: 34px; height: 34px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;">
+        <div style="width: 10px; height: 10px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div>
+      </div>
+      <div style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 600;">Petfy</div>
+    </div>
+    <h1 style="font-family: Bitter, Georgia, serif; font-size: 48px; line-height: 1.1; font-weight: 500; letter-spacing: -0.025em; margin: 0 0 20px; max-width: 20ch;">O abrigo, a rede de lares e os estados.</h1>
+    <p style="font-size: 18px; line-height: 1.6; color: oklch(0.42 0.015 150); margin: 0; max-width: 62ch; text-wrap: pretty;">Onde o animal existe sem tutor humano, onde a custódia é transitória e volta, e onde o registro inteiro muda de mão. No fim, os estados que são a maior parte da vida do produto.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 12 · área de organização</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Abrigo — animais sob custódia e a rede de lares</span>
+    </div>
+
+    <div style="width: 1360px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid oklch(0.90 0.008 150); background: #fff;">
+        <div style="display: flex; align-items: center; gap: 24px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 26px; height: 26px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+            <span style="font-family: Bitter, Georgia, serif; font-size: 17px; font-weight: 600;">Petfy</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; border: 1px solid oklch(0.46 0.085 150); border-radius: 8px; padding: 8px 14px; min-height: 44px; background: oklch(0.96 0.02 150);">
+            <span style="font-size: 13px; color: oklch(0.42 0.05 150);">Agindo como</span>
+            <span style="font-size: 15px; font-weight: 500;">Cláudia Menezes</span>
+            <span style="font-size: 15px; color: oklch(0.42 0.05 150);">pelo Abrigo Lar dos Focinhos</span>
+            <span style="width: 7px; height: 7px; border-right: 1.5px solid oklch(0.42 0.05 150); border-bottom: 1.5px solid oklch(0.42 0.05 150); transform: rotate(45deg); margin-left: 4px; margin-top: -3px;"></span>
+          </div>
+        </div>
+        <div style="font-size: 14px; color: oklch(0.5 0.015 150);">84 animais sob custódia · 26 em lar transitório</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 380px; min-height: 620px;">
+        <div style="padding: 28px 32px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+            <h2 style="font-family: Bitter, Georgia, serif; font-size: 26px; font-weight: 500; margin: 0;">Animais sob custódia</h2>
+            <div style="display: flex; gap: 10px;">
+              <div style="border: 1px solid oklch(0.84 0.012 150); border-radius: 8px; padding: 10px 14px; min-height: 44px; display: flex; align-items: center; font-size: 15px; color: oklch(0.5 0.015 150); width: 260px;">Buscar por nome ou microchip</div>
+              <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 12px 18px; min-height: 44px; cursor: pointer;">Registrar resgate</button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-bottom: 18px;">
+            <div style="font-size: 14px; padding: 8px 14px; min-height: 40px; display: flex; align-items: center; border: 1px solid oklch(0.46 0.085 150); color: oklch(0.46 0.085 150); border-radius: 8px;">No abrigo · 58</div>
+            <div style="font-size: 14px; padding: 8px 14px; min-height: 40px; display: flex; align-items: center; border: 1px solid oklch(0.86 0.012 150); border-radius: 8px; color: oklch(0.42 0.015 150);">Em lar transitório · 26</div>
+            <div style="font-size: 14px; padding: 8px 14px; min-height: 40px; display: flex; align-items: center; border: 1px solid oklch(0.86 0.012 150); border-radius: 8px; color: oklch(0.42 0.015 150);">Prontos para adoção · 19</div>
+            <div style="font-size: 14px; padding: 8px 14px; min-height: 40px; display: flex; align-items: center; border: 1px solid oklch(0.86 0.012 150); border-radius: 8px; color: oklch(0.42 0.015 150);">Em tratamento · 11</div>
+          </div>
+
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; overflow: hidden;">
+            <div style="display: grid; grid-template-columns: 34px 1.3fr 1.4fr 1fr 1fr 110px; gap: 16px; padding: 11px 18px; border-bottom: 1px solid oklch(0.90 0.008 150); background: oklch(0.975 0.004 150); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: oklch(0.5 0.015 150);">
+              <div></div><div>Animal</div><div>Onde está</div><div>Saúde</div><div>Desde</div><div></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 34px 1.3fr 1.4fr 1fr 1fr 110px; gap: 16px; padding: 10px 18px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 56px;">
+              <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.92 0.02 150);"></div>
+              <div><span style="font-family: Bitter, Georgia, serif; font-weight: 500;">Teco</span> <span style="color: oklch(0.5 0.015 150); font-size: 14px;">· cão, 11a</span></div>
+              <div style="color: oklch(0.42 0.015 150);">Abrigo · canil 3</div>
+              <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 11px; height: 11px; border-radius: 999px; border: 2px dashed oklch(0.55 0.015 150); flex: none;"></span>Sem informação</div>
+              <div style="color: oklch(0.42 0.015 150);">02/08/2026</div>
+              <div><button style="font-family: inherit; font-size: 14px; font-weight: 500; color: oklch(0.46 0.085 150); background: transparent; border: 1px solid oklch(0.84 0.012 150); border-radius: 8px; padding: 8px 12px; min-height: 40px; cursor: pointer;">Abrir</button></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 34px 1.3fr 1.4fr 1fr 1fr 110px; gap: 16px; padding: 10px 18px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 56px;">
+              <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.92 0.012 150);"></div>
+              <div><span style="font-family: Bitter, Georgia, serif; font-weight: 500;">Ninhada da Vila</span> <span style="color: oklch(0.5 0.015 150); font-size: 14px;">· 4 filhotes</span></div>
+              <div style="color: oklch(0.42 0.015 150);">Lar da Sandra Prado</div>
+              <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 11px; height: 11px; border-radius: 999px; border: 3px solid oklch(0.62 0.11 70); flex: none;"></span>1ª dose pendente</div>
+              <div style="color: oklch(0.42 0.015 150);">18/07/2026</div>
+              <div><button style="font-family: inherit; font-size: 14px; font-weight: 500; color: oklch(0.46 0.085 150); background: transparent; border: 1px solid oklch(0.84 0.012 150); border-radius: 8px; padding: 8px 12px; min-height: 40px; cursor: pointer;">Abrir</button></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 34px 1.3fr 1.4fr 1fr 1fr 110px; gap: 16px; padding: 10px 18px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 56px;">
+              <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.92 0.02 150);"></div>
+              <div><span style="font-family: Bitter, Georgia, serif; font-weight: 500;">Amêndoa</span> <span style="color: oklch(0.5 0.015 150); font-size: 14px;">· gato, 1a</span></div>
+              <div style="color: oklch(0.42 0.015 150);">Lar do Henrique Sá <span style="font-size: 13px; color: oklch(0.55 0.015 150);">· volta em 20/08</span></div>
+              <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 11px; height: 11px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></span>Em dia</div>
+              <div style="color: oklch(0.42 0.015 150);">06/06/2026</div>
+              <div><button style="font-family: inherit; font-size: 14px; font-weight: 500; color: oklch(0.46 0.085 150); background: transparent; border: 1px solid oklch(0.84 0.012 150); border-radius: 8px; padding: 8px 12px; min-height: 40px; cursor: pointer;">Abrir</button></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 34px 1.3fr 1.4fr 1fr 1fr 110px; gap: 16px; padding: 10px 18px; align-items: center; font-size: 15px; min-height: 56px;">
+              <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.92 0.012 150);"></div>
+              <div><span style="font-family: Bitter, Georgia, serif; font-weight: 500;">Jurupari</span> <span style="color: oklch(0.5 0.015 150); font-size: 14px;">· cão, 3a</span></div>
+              <div style="color: oklch(0.42 0.015 150);">Abrigo · enfermaria</div>
+              <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 11px; height: 11px; border-radius: 999px; border: 3px solid oklch(0.62 0.11 70); flex: none;"></span>Tratamento, dia 4 de 21</div>
+              <div style="color: oklch(0.42 0.015 150);">11/05/2026</div>
+              <div><button style="font-family: inherit; font-size: 14px; font-weight: 500; color: oklch(0.46 0.085 150); background: transparent; border: 1px solid oklch(0.84 0.012 150); border-radius: 8px; padding: 8px 12px; min-height: 40px; cursor: pointer;">Abrir</button></div>
+            </div>
+          </div>
+          <div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 14px; line-height: 1.55;">Nenhuma linha pressupõe pessoa dona na outra ponta. “Onde está” é custódia; “tutor” só aparece quando existe.</div>
+        </div>
+
+        <div style="border-left: 1px solid oklch(0.90 0.008 150); padding: 28px 24px; display: flex; flex-direction: column; gap: 24px;">
+          <div>
+            <h3 style="font-family: Bitter, Georgia, serif; font-size: 19px; font-weight: 500; margin: 0 0 6px;">Rede de lares transitórios</h3>
+            <p style="font-size: 14px; color: oklch(0.5 0.015 150); margin: 0 0 16px; line-height: 1.5;">Disponibilidade é oferta, não compromisso. Liga e desliga a qualquer momento.</p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 16px 18px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                  <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.90 0.03 150); flex: none;"></div>
+                  <div style="flex: 1;"><div style="font-size: 15px; font-weight: 500;">Sandra Prado</div><div style="font-size: 13px; color: oklch(0.5 0.015 150);">7 acolhimentos · desde 2021</div></div>
+                  <div style="width: 11px; height: 11px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></div>
+                </div>
+                <div style="font-size: 14px; color: oklch(0.42 0.015 150); line-height: 1.55;">Disponível até 30/09 · até 4 filhotes · não pode com gato</div>
+              </div>
+              <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 16px 18px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                  <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.90 0.012 150); flex: none;"></div>
+                  <div style="flex: 1;"><div style="font-size: 15px; font-weight: 500;">Henrique Sá</div><div style="font-size: 13px; color: oklch(0.5 0.015 150);">1º acolhimento</div></div>
+                  <div style="width: 11px; height: 11px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></div>
+                </div>
+                <div style="font-size: 14px; color: oklch(0.42 0.015 150); line-height: 1.55;">Disponível até 20/08 · 1 gato · tem criança pequena</div>
+              </div>
+              <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: oklch(0.975 0.004 150); padding: 16px 18px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                  <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.92 0.008 150); flex: none;"></div>
+                  <div style="flex: 1;"><div style="font-size: 15px; font-weight: 500; color: oklch(0.45 0.015 150);">Bruno Tavares</div><div style="font-size: 13px; color: oklch(0.5 0.015 150);">3 acolhimentos</div></div>
+                  <div style="width: 11px; height: 11px; border-radius: 999px; border: 2px dashed oklch(0.6 0.015 150); flex: none;"></div>
+                </div>
+                <div style="font-size: 14px; color: oklch(0.5 0.015 150); line-height: 1.55;">Indisponível no momento</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid oklch(0.92 0.006 150); padding-top: 22px;">
+            <h3 style="font-family: Bitter, Georgia, serif; font-size: 19px; font-weight: 500; margin: 0 0 14px;">Entregar a um lar transitório</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 6px;">Animal</label>
+                <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 11px 13px; font-size: 15px; min-height: 44px;">Jurupari</div>
+              </div>
+              <div>
+                <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 6px;">Quem recebe</label>
+                <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 11px 13px; font-size: 15px; min-height: 44px;">Sandra Prado</div>
+              </div>
+              <div>
+                <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 6px;">Prazo previsto</label>
+                <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 11px 13px; font-size: 15px; min-height: 44px; font-family: 'DM Mono', monospace;">até 30/09/2026</div>
+              </div>
+              <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 8px; background: oklch(0.975 0.004 150); padding: 14px 16px; font-size: 14px; line-height: 1.6; color: oklch(0.42 0.015 150);">
+                O tratamento em curso vai junto: <strong style="font-weight: 500; color: oklch(0.3 0.018 150);">enrofloxacina, 1×/dia, dia 4 de 21</strong>. As 4 doses já dadas ficam registradas, e a cobrança passa para a Sandra.
+              </div>
+              <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 13px; min-height: 48px; cursor: pointer;">Entregar ao lar</button>
+              <div style="font-size: 13px; color: oklch(0.5 0.015 150); line-height: 1.5;">A custódia do abrigo não termina: ela passa. Início, prazo e fim são eventos na linha do tempo do Jurupari.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 13 · área de organização</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">A adoção — o registro inteiro muda de mão</span>
+    </div>
+
+    <div style="width: 1100px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 40px 48px 44px;">
+      <h2 style="font-family: Bitter, Georgia, serif; font-size: 30px; font-weight: 500; margin: 0 0 10px; letter-spacing: -0.02em;">Adoção do Teco</h2>
+      <p style="font-size: 16px; line-height: 1.6; color: oklch(0.45 0.015 150); margin: 0 0 32px; max-width: 64ch;">Onze anos de vida registrada passam para quem adota. O abrigo continua vendo o que produziu, e deixa de mandar no registro.</p>
+
+      <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 28px; align-items: start;">
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; overflow: hidden;">
+          <div style="padding: 22px 26px; border-bottom: 1px solid oklch(0.90 0.008 150); background: oklch(0.975 0.004 150); display: flex; align-items: center; gap: 16px;">
+            <div style="width: 56px; height: 56px; border-radius: 999px; background: repeating-linear-gradient(135deg, oklch(0.92 0.02 150) 0 8px, oklch(0.95 0.014 150) 8px 16px); flex: none;"></div>
+            <div>
+              <div style="font-family: Bitter, Georgia, serif; font-size: 24px; font-weight: 500;">Teco</div>
+              <div style="font-size: 14px; color: oklch(0.5 0.015 150);">Cão · SRD · 11 anos · sem tutor humano desde o resgate</div>
+            </div>
+          </div>
+          <div style="padding: 22px 26px;">
+            <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 16px;">O que o adotante recebe</div>
+            <div style="display: flex; flex-direction: column; gap: 14px; font-size: 16px;">
+              <div style="display: flex; gap: 12px;"><span style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 5px;"></span><div>Resgate em 09/09/2015, na Rodovia Raposo Tavares<div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 2px;">Registrado por Cláudia Menezes, pelo Abrigo Lar dos Focinhos</div></div></div>
+              <div style="display: flex; gap: 12px;"><span style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 5px;"></span><div>Castração, tratamento de leishmaniose, 3 cirurgias<div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 2px;">41 atos clínicos, por 6 veterinários, em 11 anos</div></div></div>
+              <div style="display: flex; gap: 12px;"><span style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 5px;"></span><div>2 anos e 4 meses em lares transitórios<div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 2px;">Com o que a Sandra e o Bruno observaram no dia a dia</div></div></div>
+              <div style="display: flex; gap: 12px;"><span style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 5px;"></span><div>Comportamento observado<div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 2px;">Não convive bem com machos adultos. Tem medo de trovão. Come devagar.</div></div></div>
+              <div style="display: flex; gap: 12px;"><span style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 5px;"></span><div>Uma devolução, em 2019<div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 2px;">Motivo registrado: mudança de país. Fica visível — é biografia, e o adotante tem direito de saber.</div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 24px 26px;">
+            <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 7px;">Adotante</label>
+            <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 13px 14px; font-size: 16px; min-height: 48px;">Paula Rezende · paula@exemplo.com.br</div>
+            <div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 8px; line-height: 1.5;">Ela ainda não tem conta no Petfy. Vai criar uma ao aceitar, e o Teco já estará dentro.</div>
+
+            <div style="border-top: 1px solid oklch(0.95 0.005 150); margin-top: 20px; padding-top: 18px; font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150);">
+              A partir do aceite, o Abrigo Lar dos Focinhos passa a <strong style="font-weight: 500; color: oklch(0.3 0.018 150);">ler</strong> o que registrou, e não decide mais nada sobre o Teco.
+            </div>
+          </div>
+
+          <button style="font-family: inherit; font-size: 16px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 15px; min-height: 52px; cursor: pointer;">Enviar adoção para Paula</button>
+
+          <div style="border: 1px solid oklch(0.88 0.02 150); background: oklch(0.98 0.008 150); border-radius: 12px; padding: 20px 22px; font-size: 15px; line-height: 1.6; color: oklch(0.35 0.018 150);">
+            É o momento em que o produto prova a tese. O adotante não ganha uma ficha em branco com a data de hoje: ganha onze anos de vida de um animal que ele acabou de conhecer.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 14 · em toda superfície</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Os estados — desenhados, não descritos</span>
+    </div>
+
+    <div style="width: 1360px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 18px;">Erro de carga</div>
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; padding: 26px 24px;">
+          <div style="font-family: Bitter, Georgia, serif; font-size: 20px; font-weight: 500; margin-bottom: 10px;">Não conseguimos carregar a linha do tempo do Code</div>
+          <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150); margin-bottom: 18px;">O problema é nosso. Nada do registro foi perdido.</div>
+          <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: oklch(0.25 0.02 150); background: #fff; border: 1px solid oklch(0.82 0.012 150); border-radius: 8px; padding: 12px 18px; min-height: 44px; cursor: pointer;">Tentar de novo</button>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 18px;">Erro ao gravar · texto preservado</div>
+        <div style="border: 1px solid oklch(0.86 0.03 30); background: oklch(0.985 0.008 30); border-radius: 12px; padding: 20px 22px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+            <div style="width: 12px; height: 12px; background: oklch(0.55 0.14 30); transform: rotate(45deg); flex: none; margin-top: 4px;"></div>
+            <div style="font-size: 15px; line-height: 1.55;">Não conseguimos gravar este atendimento. O que você escreveu está aqui, intacto.</div>
+          </div>
+          <div style="border: 1px solid oklch(0.86 0.012 150); border-radius: 4px; padding: 12px 14px; font-size: 15px; line-height: 1.55; background: #fff; color: oklch(0.35 0.018 150); margin-bottom: 14px;">Animal ativo, mucosas normocoradas. Orientada dieta de manutenção e retorno em 6 meses.</div>
+          <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 12px 18px; min-height: 44px; cursor: pointer;">Gravar de novo</button>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 18px;">Conflito</div>
+        <div style="border: 1px solid oklch(0.90 0.008 150); background: oklch(0.975 0.004 150); border-radius: 12px; padding: 22px 24px;">
+          <div style="display: flex; align-items: center; gap: 11px; margin-bottom: 12px;">
+            <div style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div>
+            <span style="font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: oklch(0.5 0.015 150);">Já foi feito</span>
+          </div>
+          <div style="font-size: 16px; line-height: 1.6; margin-bottom: 8px;">Juliana Dias registrou esta dose às 20h04, três minutos antes de você.</div>
+          <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150);">Não registramos de novo — dois registros da mesma dose viram dose dobrada no histórico.</div>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 18px;">Sem permissão · dito antes do gesto</div>
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; padding: 22px 24px;">
+          <button disabled="" style="font-family: inherit; font-size: 15px; font-weight: 500; color: oklch(0.68 0.008 150); background: oklch(0.96 0.004 150); border: 1px solid oklch(0.90 0.008 150); border-radius: 8px; padding: 12px 18px; min-height: 44px; cursor: not-allowed; margin-bottom: 12px;">Registrar diagnóstico</button>
+          <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150);">Só quem tem registro profissional declarado pode registrar diagnóstico. Você pode registrar uma observação do que viu.</div>
+          <a href="#obs" style="display: inline-block; font-size: 15px; margin-top: 12px;">Registrar observação</a>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 18px;">Cartão expirado · sem conta, sem senha</div>
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; padding: 26px 24px; text-align: center;">
+          <div style="width: 40px; height: 40px; border-radius: 999px; border: 3px dashed oklch(0.72 0.012 150); margin: 0 auto 16px;"></div>
+          <div style="font-family: Bitter, Georgia, serif; font-size: 20px; font-weight: 500; margin-bottom: 10px;">Este cartão venceu em 31/12/2025</div>
+          <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150);">Quem responde por este animal pode gerar um novo link. Se for uma emergência, procure um veterinário — ele saberá o que fazer sem esta ficha.</div>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 18px;">Lista longa carregando</div>
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.93 0.006 150); flex: none; animation: petfy-pulse 1.4s ease-in-out infinite;"></div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 7px;"><div style="height: 12px; width: 55%; border-radius: 4px; background: oklch(0.93 0.006 150); animation: petfy-pulse 1.4s ease-in-out infinite;"></div><div style="height: 10px; width: 32%; border-radius: 4px; background: oklch(0.95 0.005 150); animation: petfy-pulse 1.4s ease-in-out infinite 0.1s;"></div></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.93 0.006 150); flex: none; animation: petfy-pulse 1.4s ease-in-out infinite 0.15s;"></div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 7px;"><div style="height: 12px; width: 70%; border-radius: 4px; background: oklch(0.93 0.006 150); animation: petfy-pulse 1.4s ease-in-out infinite 0.15s;"></div><div style="height: 10px; width: 40%; border-radius: 4px; background: oklch(0.95 0.005 150); animation: petfy-pulse 1.4s ease-in-out infinite 0.25s;"></div></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.93 0.006 150); flex: none; animation: petfy-pulse 1.4s ease-in-out infinite 0.3s;"></div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 7px;"><div style="height: 12px; width: 48%; border-radius: 4px; background: oklch(0.93 0.006 150); animation: petfy-pulse 1.4s ease-in-out infinite 0.3s;"></div><div style="height: 10px; width: 36%; border-radius: 4px; background: oklch(0.95 0.005 150); animation: petfy-pulse 1.4s ease-in-out infinite 0.4s;"></div></div>
+          </div>
+          <div style="font-size: 14px; color: oklch(0.5 0.015 150);">Carregando 318 pacientes</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -74,7 +74,7 @@ function Entrar() {
       </h1>
 
       {encerramentoAnterior === "expirada" || encerramentoAnterior === "invalidada" ? (
-        <p className="text-apoio mt-3 rounded-bloco bg-fundo-acento p-3 text-tinta">
+        <p className="text-rotulo mt-3 rounded-bloco bg-fundo-musgo p-3 text-tinta">
           {intl.formatMessage({
             id:
               encerramentoAnterior === "expirada"
@@ -112,7 +112,7 @@ function Entrar() {
         {entrar.isError ? (
           <p
             role="alert"
-            className="text-apoio rounded-bloco bg-fundo-urgencia p-3 text-urgencia"
+            className="text-rotulo rounded-bloco bg-fundo-telha p-3 text-telha-texto"
           >
             {intl.formatMessage({ id: chaveDoErro(entrar.error) })}
           </p>
@@ -121,7 +121,7 @@ function Entrar() {
         <button
           type="submit"
           disabled={entrar.isPending}
-          className="text-interface min-h-toque rounded-pilula bg-acento px-6 font-bold text-sobre-acento disabled:opacity-70"
+          className="text-corpo-denso min-h-toque rounded-controle bg-musgo px-6 font-medium text-sobre-musgo disabled:opacity-70"
         >
           {intl.formatMessage({ id: entrar.isPending ? "entrar.enviando" : "entrar.acao" })}
         </button>
@@ -153,7 +153,7 @@ function Campo({
   return (
     <div className="flex flex-col gap-1.5">
       {/* Rotulo sempre visivel: placeholder some quando se digita, e e onde o erro nasce. */}
-      <label htmlFor={id} className="text-apoio font-semibold text-tinta">
+      <label htmlFor={id} className="text-rotulo font-medium text-tinta">
         {rotulo}
       </label>
 
@@ -166,11 +166,11 @@ function Campo({
         autoComplete={autoComplete}
         aria-invalid={erro !== undefined}
         aria-describedby={erro !== undefined ? idDoErro : undefined}
-        className="text-registro min-h-toque rounded-linha border border-contorno bg-superficie px-3 text-tinta"
+        className="text-corpo min-h-toque rounded-bloco border border-linha bg-superficie px-3 text-tinta"
       />
 
       {erro !== undefined ? (
-        <p id={idDoErro} className="text-apoio text-urgencia">
+        <p id={idDoErro} className="text-rotulo text-telha-texto">
           {intl.formatMessage({ id: erro })}
         </p>
       ) : null}
