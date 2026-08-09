@@ -160,13 +160,15 @@ function Inicio() {
               </Link>
             ) : null}
 
-            <button
-              type="button"
-              disabled
-              style={{ fontFamily: "inherit", background: "none", border: "none", cursor: "not-allowed", fontSize: "15px", color: "oklch(0.46 0.085 150)", opacity: 0.55 }}
-            >
-              {intl.formatMessage({ id: "home.nav.quemCuida" })}
-            </button>
+            {ativo?.animalId !== undefined ? (
+              <Link
+                to="/animais/$animalId/quem-cuida"
+                params={{ animalId: ativo.animalId }}
+                style={{ color: "oklch(0.46 0.085 150)" }}
+              >
+                {intl.formatMessage({ id: "home.nav.quemCuida" })}
+              </Link>
+            ) : null}
 
             <button type="button" onClick={sair} style={{ fontFamily: "inherit", background: "none", border: "none", cursor: "pointer", fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
               {intl.formatMessage({ id: "home.sair" })}

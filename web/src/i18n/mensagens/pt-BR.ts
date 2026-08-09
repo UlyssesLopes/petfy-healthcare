@@ -301,6 +301,52 @@ export const mensagens = {
   //
   // Nao e erro da API, e por isso nao tem codigo: e um endereco que nao existe. O texto
   // segue a mesma regra — o fato, sem culpar quem digitou.
+  // -------------------------------------------------- quem cuida, e o que leu (Tela 22)
+  //
+  // A tese da tela, na frase dela mesma: "conceder deixa de ser um ato de fé quando você
+  // vê o que acontece depois". Por isso o escopo aparece em FRASE, e nunca a palavra
+  // "escopo" — a seção 09 da voz proíbe usá-la com o tutor.
+  "acesso.voltar": "Início",
+  "acesso.titulo": "Quem cuida do {nome}",
+  "acesso.apoio": "Cada acesso que você concedeu, com o que foi lido e quando. Conceder deixa de ser um ato de fé quando você vê o que acontece depois.",
+  "acesso.carregando": "Carregando os acessos…",
+  "acesso.vazio": "Nenhuma organização alcança o {nome} hoje.",
+  "acesso.pessoas": "Pessoas",
+  "acesso.pessoas.vazio": "Só você responde por este animal.",
+  "acesso.pessoa.titular": "Responde pelo {nome}",
+  "acesso.pessoa.coTutor": "Co-tutor · responde pelo {nome} com você",
+  "acesso.ultimosAcessos": "Últimos acessos",
+  "acesso.ultimosAcessos.vazio": "Ninguém desta organização leu nada ainda.",
+  "acesso.leitura.linha": "{quem} {o_que}",
+  "acesso.leitura.total": "{total, plural, one {# acesso ao todo} other {# acessos ao todo}}",
+  "acesso.leitura.VACCINES": "abriu a vacinação",
+  "acesso.leitura.HEALTH_RECORDS": "abriu o histórico clínico",
+  "acesso.leitura.VACCINE_CORRECTIONS": "abriu as correções de vacina",
+  "acesso.leitura.HEALTH_RECORD_CORRECTIONS": "abriu as correções de atendimento",
+  "acesso.leitura.ATTACHMENTS": "abriu os anexos",
+  "acesso.leitura.SHARED_CARD": "abriu o cartão compartilhado",
+  "acesso.leitura.desconhecida": "abriu um registro",
+  "acesso.acao.ajustar": "Ajustar",
+  "acesso.acao.revogar": "Revogar",
+  "acesso.acao.revogando": "Revogando…",
+  "acesso.acao.concederDeNovo": "Conceder de novo",
+  "acesso.encerrado.venceu": "Acesso venceu em {data} · não vê mais nada",
+  "acesso.encerrado.revogado": "Acesso revogado em {data} · não vê mais nada",
+  "acesso.semPrazo": "sem prazo",
+  "acesso.ate": "até {data}",
+  "acesso.escopo.nenhum": "não vê nada",
+  "acesso.escopo.CARTEIRA": "vacinas",
+  "acesso.escopo.CONDICOES": "alergias e condições",
+  "acesso.escopo.PRONTUARIO": "histórico clínico",
+  "acesso.escopo.OBSERVACOES": "observações",
+  "acesso.escopo.PESO": "peso",
+  "acesso.escopo.ANEXOS": "documentos",
+  "acesso.escopo.CONTATO": "seu contato",
+  // Revogar não apaga trabalho feito, e dizer isso ANTES do gesto é o que separa a
+  // decisão informada do arrependimento.
+  "acesso.revogar.titulo": "O que revogar faz",
+  "acesso.revogar.texto": "Fecha a porta a partir de agora. O que a organização registrou continua na linha do tempo, assinado por quem registrou — revogar acesso não apaga trabalho feito.",
+
   "rota.naoEncontrada.titulo": "Esta página não existe.",
   "rota.naoEncontrada.acao": "Ir para o início",
 
