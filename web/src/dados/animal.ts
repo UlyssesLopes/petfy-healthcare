@@ -23,8 +23,9 @@ export function useLinhaDoTempo(animalId: string | undefined) {
     queryFn: async () =>
       corpoDe(
         await cliente.GET("/animals/{animalId}/timeline", {
-          // Vazio de proposito: ver a nota sobre o `pageable` do Spring em `animais.ts`.
-          params: { path: { animalId: animalId! }, query: { pageable: {} } },
+          // Sem `page` nem `size`: valem os defaults do servidor, que o contrato agora
+          // declara. Ver a nota em `animais.ts`.
+          params: { path: { animalId: animalId! } },
         }),
       ).content ?? [],
   });

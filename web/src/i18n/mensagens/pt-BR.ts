@@ -82,6 +82,15 @@ export const mensagens = {
   "erro.141": "Esta pendência não está mais na sua lista.",
   "erro.142": "O aceite dos termos não pode ser silenciado.",
 
+  // ------------------------------------------------------------------ corpo nao lido
+  //
+  // Nao ha campo para marcar, porque o servidor nao chegou a montar o objeto — entao a
+  // frase do 400 mentiria aqui. E o unico erro desta tabela que o usuario nao causou e
+  // nao conserta: se aparecer, o defeito e nosso, e insistir daria no mesmo. Por isso
+  // manda recarregar, que e a unica saida que as vezes funciona (versao velha da tela).
+  "erro.143":
+    "Algo saiu errado no envio, e não foi você. Recarregue a página e tente de novo.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com

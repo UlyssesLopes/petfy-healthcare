@@ -4,6 +4,7 @@ import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,6 +39,33 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(
                 detalhes,
                 ErrorMessageEnum.INVALID_REQUEST.getCode(),
+                HttpStatus.BAD_REQUEST.value(),
+                LocalDateTime.now());
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    /**
+     * Corpo que o Jackson nao conseguiu ler - JSON truncado, aspas soltas, acento em
+     * Latin-1 onde a API espera UTF-8.
+     *
+     * Sem este handler a excecao cai no generico abaixo e volta <b>500</b>, dizendo que o
+     * servidor falhou quando quem errou foi o cliente. O dano nao e so de etiqueta: 500
+     * entra no alerta de erro do servidor, e o front traduz o codigo 500 como "nao
+     * conseguimos agora, tente de novo" - conselho inutil, porque tentar de novo com o
+     * mesmo corpo quebrado da o mesmo resultado.
+     *
+     * <b>A mensagem do Jackson nao vai no corpo</b>, de proposito: ela carrega trecho do
+     * payload recebido, e payload desta API tem dado pessoal de tutor e de saude de animal.
+     * O detalhe fica no log, onde ja existe controle de acesso.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleCorpoIlegivel(HttpMessageNotReadableException ex) {
+        log.warn("Corpo ilegivel na requisicao: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                ErrorMessageEnum.MALFORMED_REQUEST_BODY.getMessage(),
+                ErrorMessageEnum.MALFORMED_REQUEST_BODY.getCode(),
                 HttpStatus.BAD_REQUEST.value(),
                 LocalDateTime.now());
 

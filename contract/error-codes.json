@@ -167,6 +167,10 @@
   "codigo" : 142,
   "mensagemDaApi" : "Pending consent cannot be silenced"
 }, {
+  "nome" : "MALFORMED_REQUEST_BODY",
+  "codigo" : 143,
+  "mensagemDaApi" : "Request body is not readable JSON"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

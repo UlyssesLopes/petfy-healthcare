@@ -2070,13 +2070,6 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
         };
-        Pageable: {
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            sort?: string[];
-        };
         PageableObject: {
             /** Format: int64 */
             offset?: number;
@@ -2420,8 +2413,13 @@ export type $defs = Record<string, never>;
 export interface operations {
     listAll_2: {
         parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -2534,8 +2532,13 @@ export interface operations {
     };
     listByAnimal_6: {
         parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path: {
@@ -2594,14 +2597,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    /** Format: binary */
-                    file: string;
-                };
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -3020,8 +3016,13 @@ export interface operations {
     };
     timeline: {
         parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path: {
@@ -3649,8 +3650,13 @@ export interface operations {
     };
     listAll_1: {
         parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -3829,8 +3835,13 @@ export interface operations {
     };
     listAll: {
         parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -4140,14 +4151,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    /** Format: binary */
-                    file: string;
-                };
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -4184,9 +4188,14 @@ export interface operations {
     };
     listAccessibleAnimals: {
         parameters: {
-            query: {
+            query?: {
                 q?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -4467,8 +4476,13 @@ export interface operations {
     };
     listAllVaccines: {
         parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
