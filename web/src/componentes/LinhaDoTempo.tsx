@@ -30,22 +30,22 @@ export function LinhaDoTempo({ animalId, animalNome }: { animalId: string; anima
 
         {/* Os numeros do resumo moram no cabecalho da secao: nao e painel, e legenda (5.1). */}
         {entradas.length > 0 ? (
-          <span className="text-apoio ml-auto tabular-nums text-tinta-secundaria">
+          <span className="text-rotulo ml-auto tabular-nums text-tinta-secundaria">
             {intl.formatMessage({ id: "linha.resumo" }, { registros: entradas.length })}
           </span>
         ) : null}
       </div>
 
       {linha.isPending ? (
-        <p className="text-apoio mt-2.5 text-tinta-secundaria">
+        <p className="text-rotulo mt-2.5 text-tinta-secundaria">
           {intl.formatMessage({ id: "linha.carregando" })}
         </p>
       ) : entradas.length === 0 ? (
-        <div className="mt-2.5 rounded-bloco border border-contorno p-5">
-          <p className="text-registro text-tinta">
+        <div className="mt-2.5 rounded-bloco border border-linha p-5">
+          <p className="text-corpo text-tinta">
             {intl.formatMessage({ id: "linha.vazia" }, { animal: animalNome })}
           </p>
-          <p className="text-apoio mt-1 text-tinta-secundaria">
+          <p className="text-rotulo mt-1 text-tinta-secundaria">
             {intl.formatMessage({ id: "linha.vazia.apoio" })}
           </p>
         </div>
@@ -55,7 +55,7 @@ export function LinhaDoTempo({ animalId, animalNome }: { animalId: string; anima
           apos 12 px de recuo. Ela e continua de proposito, e cada circulo a "fura" com um
           anel da cor do fundo do proprio item.
         */
-        <ul className="relative mt-2.5 flex flex-col gap-0.5 before:absolute before:bottom-4 before:left-7 before:top-4 before:w-0.5 before:rounded-sm before:bg-contorno before:content-['']">
+        <ul className="relative mt-2.5 flex flex-col gap-0.5 before:absolute before:bottom-4 before:left-7 before:top-4 before:w-0.5 before:rounded-campo before:bg-linha before:content-['']">
           {entradas.map((entrada) => (
             <Entrada key={entrada.eventId} entrada={entrada} />
           ))}
@@ -73,8 +73,8 @@ function Entrada({ entrada }: { entrada: EntradaDaLinha }) {
 
   return (
     <li
-      className={`relative grid grid-cols-[32px_1fr] gap-3 rounded-linha px-3 py-2.5 ${
-        clinico ? "bg-fundo-acento" : ""
+      className={`relative grid grid-cols-[32px_1fr] gap-3 rounded-bloco px-3 py-2.5 ${
+        clinico ? "bg-fundo-musgo" : ""
       }`}
     >
       {/*
@@ -84,10 +84,10 @@ function Entrada({ entrada }: { entrada: EntradaDaLinha }) {
       */}
       <span
         aria-hidden="true"
-        className={`z-[1] grid size-8 place-items-center rounded-circulo text-[0.71875rem] font-extrabold ${
+        className={`z-[1] grid size-8 place-items-center rounded-ser text-[0.71875rem] font-medium ${
           clinico
-            ? "bg-acento text-sobre-acento shadow-[0_0_0_3px_var(--color-fundo-acento)]"
-            : "bg-marca-neutra text-tinta-secundaria shadow-[0_0_0_3px_var(--color-superficie)]"
+            ? "bg-musgo text-sobre-musgo shadow-[0_0_0_3px_var(--color-fundo-acento)]"
+            : "bg-fundo-musgo text-tinta-secundaria shadow-[0_0_0_3px_var(--color-superficie)]"
         }`}
       >
         {iniciaisDe(autor)}
@@ -96,7 +96,7 @@ function Entrada({ entrada }: { entrada: EntradaDaLinha }) {
       <div className="min-w-0">
         <Fato entrada={entrada} />
 
-        <p className="text-apoio mt-0.5 text-tinta-secundaria">{apoioDe(entrada, intl)}</p>
+        <p className="text-rotulo mt-0.5 text-tinta-secundaria">{apoioDe(entrada, intl)}</p>
 
         {/*
           A credencial diz o que e: CRMV apenas informado aparece COMO INFORMADO, em tinta
@@ -129,7 +129,7 @@ function Fato({ entrada }: { entrada: EntradaDaLinha }) {
 
   if (entrada.eventType === "ORIENTACAO" || entrada.eventType === "CUMPRIMENTO") {
     return (
-      <p className="text-registro text-tinta">
+      <p className="text-corpo text-tinta">
         {intl.formatMessage(
           {
             id:
@@ -144,7 +144,7 @@ function Fato({ entrada }: { entrada: EntradaDaLinha }) {
   }
 
   if (entrada.eventType !== "PESAGEM") {
-    return <p className="text-registro text-tinta">{entrada.summary ?? ""}</p>;
+    return <p className="text-corpo text-tinta">{entrada.summary ?? ""}</p>;
   }
 
   const peso = Number(entrada.summary);
@@ -157,7 +157,7 @@ function Fato({ entrada }: { entrada: EntradaDaLinha }) {
   const diferenca = Number.isFinite(peso) && anterior !== undefined ? peso - anterior : undefined;
 
   return (
-    <p className="text-registro flex flex-wrap items-baseline gap-x-2.5 text-tinta">
+    <p className="text-corpo flex flex-wrap items-baseline gap-x-2.5 text-tinta">
       <span className="tabular-nums">{pesoEmTexto}</span>
 
       {diferenca !== undefined && diferenca !== 0 ? (

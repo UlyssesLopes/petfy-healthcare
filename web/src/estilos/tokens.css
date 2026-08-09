@@ -1,99 +1,83 @@
 /* ------------------------------------------------------------------ os tokens
  *
- * Os valores saem das secoes 3 e 4 do DESIGN.md, e nenhum foi inventado aqui. Os
- * numeros de contraste ao lado de cada par foram CONFERIDOS contra o calculo WCAG
- * 2.x antes de este arquivo existir, e nao copiados da tabela: os seis pares
- * bateram na segunda casa decimal.
+ * Os valores saem da entrega do Claude Design em `design/IdentidadeVisual/`
+ * ("Identidade Petfy", secoes 02 a 07), e nenhum foi inventado aqui. O documento
+ * escreve a cor em oklch, e este arquivo tambem — converter para hex perderia a
+ * unica coisa que faz a paleta ser derivavel: musgo, ocre e telha sao tres matizes
+ * (150, 70, 30) que se movem so em luminosidade e croma.
  *
- * A REGRA QUE ESTE ARQUIVO CARREGA: nenhuma cor entra sem o numero, nos dois
- * temas. Cor nova sem contraste medido nao entra aqui, e a secao 6 do DESIGN.md e
- * quem cobra isso.
+ * A REGRA QUE ESTE ARQUIVO CARREGA: nenhuma cor entra sem o numero de contraste ao
+ * lado. Os numeros abaixo foram CALCULADOS pela formula WCAG 2.x a partir do oklch,
+ * nao copiados do documento — o documento nomeia as cores e nao as mede.
  *
- * O ESCURO NAO E INVERSAO (DESIGN.md 3). E um segundo papel: superficie
- * quase-preta quente, tinta que nao e branco puro, acento clareado para manter
- * contraste. Por isso os dois temas sao escritos por extenso, um ao lado do
- * outro, em vez de derivados por filtro.
+ * SO EXISTE TEMA CLARO, e a ausencia do escuro e deliberada. A secao 08 do
+ * documento declara a intencao de um tema escuro e da QUATRO valores (papel,
+ * superficie, musgo claro, ocre claro) — nao da tinta, linha, tinta secundaria nem
+ * telha. Um escuro completo aqui seria seis cores inventadas passando por design
+ * aprovado. Quando a entrega trouxer o escuro por extenso, ele entra do mesmo jeito
+ * que o claro: com os numeros medidos.
  *
- * COMO O TEMA TROCA, e sao tres estados:
- *   - sem nada declarado, vale a preferencia do sistema;
- *   - [data-theme="dark"] e [data-theme="light"] sobrepoem a preferencia.
- * O :not([data-theme="light"]) dentro da media query e o que faz a escolha
- * explicita por claro ganhar de um sistema em escuro.
+ * Por isso o `color-scheme: light` e fixo e nao condicional. Deixa-lo livre daria,
+ * a quem esta com o sistema em escuro, controles de formulario e barra de rolagem
+ * escuros sobre uma pagina clara — pior que nao ter escuro nenhum.
  */
 
 :root {
   color-scheme: light;
 
-  /* ---- neutros de pelo. Nunca cinza de framework (DESIGN.md 3) ---- */
-  --petfy-superficie: #fdfbf9;
-  --petfy-superficie-elevada: #f7f1eb;
-  --petfy-contorno: #eadfd4;
-  --petfy-marca-neutra: #efe8e1;
-  --petfy-tinta: #22201e;
-  --petfy-tinta-secundaria: #7a706a;
+  /* ---- neutros de papel, matiz 150. Nunca cinza de framework (secao 02) ----
+   * O `papel` e o fundo da aplicacao; a `superficie` e o branco puro do que se
+   * levanta sobre ele — cartao, pendencia, modal.
+   */
+  --petfy-papel: oklch(0.985 0.004 120);
+  --petfy-superficie: oklch(1 0 0);
+  --petfy-linha: oklch(0.9 0.008 150);
+  --petfy-tinta: oklch(0.25 0.02 150);
+  --petfy-tinta-secundaria: oklch(0.52 0.015 150);
 
-  /* ---- acento: petroleo esverdeado, e nao o azul da categoria ---- */
-  --petfy-acento: #125e63;
-  --petfy-sobre-acento: #ffffff;
-  --petfy-fundo-acento: #e4f0ef;
+  /* ---- musgo: a UNICA cor de acao (secao 02) ----
+   * "Se algo e musgo, e clicavel ou e o Petfy falando de si." Nao ha segunda cor
+   * de acao, e vermelho e ambar ficam reservados a gravidade justamente por isso.
+   */
+  --petfy-musgo: oklch(0.46 0.085 150);
+  --petfy-musgo-pressionado: oklch(0.39 0.085 150);
+  --petfy-sobre-musgo: oklch(0.985 0.004 120);
+  --petfy-fundo-musgo: oklch(0.96 0.006 150);
 
-  /* ---- urgencia: vencido, e so. Nunca em botao (DESIGN.md 3, regra 1) ---- */
-  --petfy-urgencia: #a93f2f;
-  --petfy-fundo-urgencia: #f9e7e2;
+  /* ---- ocre: vencendo, pendente. Dois papeis, e a divisao e por contraste ----
+   * O `ocre` do documento (0.62 0.11 70) rende 3.57 sobre papel: passa o 3:1 que a
+   * WCAG exige de forma e componente, e NAO passa o 4.5 de texto. Entao ele fica
+   * sendo o que sempre foi — o MARCADOR, que na secao 05 e um anel —, e a palavra
+   * ao lado usa o `ocre-texto`. O 0.55 0.09 70 nao foi escolhido por mim: ele ja
+   * aparece no documento.
+   */
+  --petfy-ocre: oklch(0.62 0.11 70);
+  --petfy-ocre-texto: oklch(0.55 0.09 70);
+  --petfy-fundo-ocre: oklch(0.975 0.012 70);
+
+  /* ---- telha: vencido, irregular ---- */
+  --petfy-telha: oklch(0.55 0.14 30);
+  --petfy-telha-texto: oklch(0.52 0.13 30);
+  --petfy-fundo-telha: oklch(0.97 0.012 30);
 }
 
-/* Contraste no tema claro, conferido:
- *   tinta sobre superficie ................ 15.73
- *   tinta secundaria sobre superficie .......4.67
- *   acento sobre superficie ................ 7.25
- *   sobre-acento dentro do botao ........... 7.48
- *   urgencia sobre o fundo dela ............ 5.11   <- o par mais fragil da paleta
- *   tinta sobre fundo de acento ........... 13.92
- */
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-
-    --petfy-superficie: #141311;
-    --petfy-superficie-elevada: #1b1916;
-    --petfy-contorno: #2c2823;
-    --petfy-marca-neutra: #211e1a;
-    --petfy-tinta: #f3efea;
-    --petfy-tinta-secundaria: #a79c93;
-
-    --petfy-acento: #4fb6ae;
-    --petfy-sobre-acento: #052422;
-    --petfy-fundo-acento: #152827;
-
-    --petfy-urgencia: #ff8b72;
-    --petfy-fundo-urgencia: #2b1d1a;
-  }
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-
-  --petfy-superficie: #141311;
-  --petfy-superficie-elevada: #1b1916;
-  --petfy-contorno: #2c2823;
-  --petfy-marca-neutra: #211e1a;
-  --petfy-tinta: #f3efea;
-  --petfy-tinta-secundaria: #a79c93;
-
-  --petfy-acento: #4fb6ae;
-  --petfy-sobre-acento: #052422;
-  --petfy-fundo-acento: #152827;
-
-  --petfy-urgencia: #ff8b72;
-  --petfy-fundo-urgencia: #2b1d1a;
-}
-
-/* Contraste no tema escuro, conferido:
- *   tinta sobre superficie ................ 16.22
- *   tinta secundaria sobre superficie ...... 6.91
- *   acento sobre superficie ................ 7.63
- *   sobre-acento dentro do botao ........... 6.74
- *   urgencia sobre o fundo dela ............ 7.10
- *   tinta sobre fundo de acento ........... 13.44
+/* Contraste no tema claro, calculado:
+ *   tinta sobre papel ..................... 15.24
+ *   tinta sobre superficie ................ 15.90
+ *   tinta secundaria sobre papel ........... 5.24
+ *   tinta secundaria sobre superficie ...... 5.47
+ *   musgo sobre papel ...................... 6.56
+ *   musgo sobre superficie ................. 6.84
+ *   musgo sobre fundo de musgo ............. 6.11
+ *   sobre-musgo dentro do botao ............ 6.56
+ *   sobre-musgo no botao pressionado ....... 8.86
+ *   tinta sobre fundo de musgo ............ 14.18
+ *   ocre-texto sobre papel ................. 4.74   <- o par mais fragil da paleta
+ *   ocre-texto sobre fundo de ocre ......... 4.59
+ *   telha sobre papel ...................... 4.98
+ *   telha-texto sobre fundo de telha ....... 5.36
+ *
+ * O `ocre` marcador rende 3.57 sobre papel e o `linha` rende 1.29 — os dois de
+ * proposito. Nenhum dos dois carrega texto: um e forma geometrica, o outro e
+ * contorno em repouso, e a secao 04 diz que cartao parado usa linha, nao sombra.
  */

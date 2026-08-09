@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Bitter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: oklch(0.94 0.006 150); }
+  * { box-sizing: border-box; }
+  a { color: oklch(0.46 0.085 150); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: oklch(0.36 0.085 150); }
+</style>
+</helmet>
+
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: oklch(0.25 0.02 150); padding: 72px 56px 120px; display: flex; flex-direction: column; gap: 88px; align-items: flex-start;">
+
+  <div style="max-width: 900px;">
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 40px;">
+      <div style="width: 34px; height: 34px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;">
+        <div style="width: 10px; height: 10px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div>
+      </div>
+      <div style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 600;">Petfy</div>
+    </div>
+    <h1 style="font-family: Bitter, Georgia, serif; font-size: 48px; line-height: 1.1; font-weight: 500; letter-spacing: -0.025em; margin: 0 0 20px; max-width: 20ch;">A entrada, e os quatro fluxos que decidem a tese.</h1>
+    <p style="font-size: 18px; line-height: 1.6; color: oklch(0.42 0.015 150); margin: 0; max-width: 62ch; text-wrap: pretty;">Uma porta só, sem pergunta de tipo. Depois: o onboarding que vem atrás do valor, a concessão de acesso com escopo, a matrícula que exige comprovação, e a transferência que só termina com sucessor.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 07 · a porta</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Cadastro e login — uma só, para todo mundo</span>
+    </div>
+
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+      <div style="width: 660px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+        <div style="padding: 44px 56px 48px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 40px;">
+            <div style="width: 30px; height: 30px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 9px; height: 9px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+            <span style="font-family: Bitter, Georgia, serif; font-size: 20px; font-weight: 600;">Petfy</span>
+          </div>
+          <h2 style="font-family: Bitter, Georgia, serif; font-size: 34px; font-weight: 500; margin: 0 0 10px; letter-spacing: -0.02em;">Criar conta</h2>
+          <p style="font-size: 16px; line-height: 1.6; color: oklch(0.45 0.015 150); margin: 0 0 30px; max-width: 46ch;">Uma conta serve para tudo: cuidar dos seus animais e atender os animais de outras pessoas. Você decide isso depois, e pode mudar quando quiser.</p>
+
+          <div style="display: flex; flex-direction: column; gap: 18px; max-width: 420px;">
+            <div>
+              <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 7px;">Nome completo</label>
+              <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 13px 14px; font-size: 16px; min-height: 48px; background: #fff;">Marcelo Dias</div>
+            </div>
+            <div>
+              <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 7px;">E-mail</label>
+              <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 13px 14px; font-size: 16px; min-height: 48px; background: #fff;">marcelo@exemplo.com.br</div>
+            </div>
+            <div>
+              <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 7px;">Senha</label>
+              <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 13px 14px; font-size: 16px; min-height: 48px; background: #fff; letter-spacing: 0.2em;">••••••••••</div>
+              <div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-top: 7px;">Ao menos 10 caracteres.</div>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: flex-start; padding-top: 4px;">
+              <div style="width: 20px; height: 20px; border-radius: 4px; background: oklch(0.46 0.085 150); flex: none; margin-top: 2px; display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 2px; background: #fff;"></div></div>
+              <div style="font-size: 15px; line-height: 1.55; color: oklch(0.35 0.018 150);">Li e aceito os <a href="#termos">termos de uso</a> e a <a href="#privacidade">política de privacidade</a>, inclusive o tratamento de dados de saúde dos animais que eu registrar.</div>
+            </div>
+            <button style="font-family: inherit; font-size: 16px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 15px; min-height: 52px; cursor: pointer;">Criar conta</button>
+            <div style="font-size: 15px; color: oklch(0.45 0.015 150); text-align: center;">Já tem conta? <a href="#entrar">Entrar</a></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width: 420px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 22px 24px;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 12px;">E-mail não confirmado</div>
+          <div style="border: 1px solid oklch(0.86 0.03 70); background: oklch(0.985 0.012 70); border-radius: 8px; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start;">
+            <div style="width: 13px; height: 13px; border-radius: 999px; border: 3px solid oklch(0.62 0.11 70); flex: none; margin-top: 3px;"></div>
+            <div>
+              <div style="font-size: 15px; line-height: 1.55; margin-bottom: 10px;">Sua conta já funciona. Enquanto o e-mail não for confirmado, você não vai receber avisos de vacina nem de remédio.</div>
+              <a href="#reenviar" style="font-size: 15px;">Reenviar confirmação</a>
+            </div>
+          </div>
+          <div style="font-size: 14px; color: oklch(0.5 0.015 150); line-height: 1.55; margin-top: 12px;">Faixa no topo, não bloqueio. Nada do produto fica atrás dela.</div>
+        </div>
+
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 22px 24px;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 12px;">Consentimento atualizado</div>
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 8px; padding: 16px 18px;">
+            <div style="font-family: Bitter, Georgia, serif; font-size: 18px; font-weight: 500; margin-bottom: 8px;">Atualizamos os termos</div>
+            <div style="font-size: 15px; line-height: 1.55; color: oklch(0.35 0.018 150); margin-bottom: 14px;">Mudou o trecho sobre por quanto tempo guardamos o registro depois que você sai. <a href="#diff">Ver o que mudou</a></div>
+            <div style="display: flex; gap: 10px;">
+              <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 12px 18px; min-height: 44px; cursor: pointer;">Aceitar</button>
+              <button style="font-family: inherit; font-size: 15px; color: oklch(0.42 0.015 150); background: transparent; border: 1px solid oklch(0.84 0.012 150); border-radius: 8px; padding: 12px 18px; min-height: 44px; cursor: pointer;">Agora não</button>
+            </div>
+          </div>
+          <div style="font-size: 14px; color: oklch(0.5 0.015 150); line-height: 1.55; margin-top: 12px;">Sem alarme e sem tom de erro: o texto mudou, não a conta.</div>
+        </div>
+
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 22px 24px;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 12px;">Declarar credencial · em qualquer momento</div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+              <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 6px;">Registro profissional</label>
+              <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 12px 14px; font-size: 15px; min-height: 44px; font-family: 'DM Mono', monospace;">CRMV-SP 41.882</div>
+            </div>
+            <div style="font-size: 14px; line-height: 1.55; color: oklch(0.42 0.015 150);">O Petfy ainda não consulta o conselho. Seu registro aparece como <strong style="font-weight: 500;">informado</strong> em tudo que você assinar, e quem lê sabe disso.</div>
+            <div style="font-size: 14px; line-height: 1.55; color: oklch(0.5 0.015 150);">Não é preciso ter clínica. Atendimento domiciliar funciona inteiro sem organização nenhuma.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 08 · depois do login</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Onboarding — três cômodos, nenhum corredor</span>
+    </div>
+
+    <div style="width: 1100px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid oklch(0.90 0.008 150); background: #fff;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 26px; height: 26px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+          <span style="font-family: Bitter, Georgia, serif; font-size: 17px; font-weight: 600;">Petfy</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; border: 1px solid oklch(0.86 0.008 150); border-radius: 8px; padding: 8px 14px; min-height: 44px; background: oklch(0.975 0.004 150);">
+          <span style="font-size: 13px; color: oklch(0.5 0.015 150);">Agindo como</span>
+          <span style="font-size: 15px; font-weight: 500;">Marcelo Dias</span>
+        </div>
+      </div>
+
+      <div style="padding: 48px 56px 56px;">
+        <h2 style="font-family: Bitter, Georgia, serif; font-size: 34px; font-weight: 500; margin: 0 0 10px; letter-spacing: -0.02em;">Bem-vindo, Marcelo</h2>
+        <p style="font-size: 17px; line-height: 1.6; color: oklch(0.45 0.015 150); margin: 0 0 36px; max-width: 60ch;">O Petfy fica útil quando existe um animal com histórico aqui. Comece por onde fizer sentido para você — nada aqui é obrigatório, e nada disso bloqueia o resto.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+          <div style="border: 1px solid oklch(0.46 0.085 150); background: #fff; border-radius: 12px; padding: 28px 26px; display: flex; flex-direction: column;">
+            <div style="width: 44px; height: 44px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center; margin-bottom: 20px;"><div style="width: 13px; height: 13px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+            <div style="font-family: Bitter, Georgia, serif; font-size: 21px; font-weight: 500; margin-bottom: 10px;">Cadastrar um animal</div>
+            <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150); flex: 1; margin-bottom: 22px;">Nome e espécie bastam para começar. A carteirinha de papel você lança depois, com calma.</div>
+            <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 13px; min-height: 48px; cursor: pointer;">Começar</button>
+          </div>
+
+          <div style="border: 1px solid oklch(0.90 0.008 150); background: #fff; border-radius: 12px; padding: 28px 26px; display: flex; flex-direction: column;">
+            <div style="display: flex; margin-bottom: 20px;">
+              <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.90 0.03 150);"></div>
+              <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.85 0.03 150); margin-left: -10px; border: 2px solid #fff;"></div>
+              <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.80 0.03 150); margin-left: -10px; border: 2px solid #fff;"></div>
+            </div>
+            <div style="font-family: Bitter, Georgia, serif; font-size: 21px; font-weight: 500; margin-bottom: 10px;">Convidar quem mais cuida</div>
+            <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150); flex: 1; margin-bottom: 22px;">Quem divide a casa, a clínica que atende, a creche. Você escolhe o que cada um vê.</div>
+            <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: oklch(0.25 0.02 150); background: #fff; border: 1px solid oklch(0.82 0.012 150); border-radius: 8px; padding: 13px; min-height: 48px; cursor: pointer;" style-hover="border-color: oklch(0.46 0.085 150); color: oklch(0.46 0.085 150);">Convidar</button>
+          </div>
+
+          <div style="border: 1px solid oklch(0.90 0.008 150); background: #fff; border-radius: 12px; padding: 28px 26px; display: flex; flex-direction: column;">
+            <div style="width: 44px; height: 44px; border-radius: 4px; border: 2px solid oklch(0.72 0.012 150); margin-bottom: 20px;"></div>
+            <div style="font-family: Bitter, Georgia, serif; font-size: 21px; font-weight: 500; margin-bottom: 10px;">Atender animais de outras pessoas</div>
+            <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150); flex: 1; margin-bottom: 22px;">Se você é veterinário, monitor ou voluntário, declare seu registro profissional ou aceite o convite de uma organização.</div>
+            <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: oklch(0.25 0.02 150); background: #fff; border: 1px solid oklch(0.82 0.012 150); border-radius: 8px; padding: 13px; min-height: 48px; cursor: pointer;" style-hover="border-color: oklch(0.46 0.085 150); color: oklch(0.46 0.085 150);">Declarar registro</button>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; font-size: 15px; color: oklch(0.5 0.015 150); line-height: 1.6;">Nenhum passo pergunta se você é tutor ou profissional. Os três cômodos ficam abertos, e a área que você alcança vem do que você tem — um animal sob sua custódia, ou um vínculo com uma organização.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 09 · área do tutor</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Conceder acesso — a escolha de escopo sem a palavra “escopo”</span>
+    </div>
+
+    <div style="width: 1100px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 40px 48px 44px;">
+      <h2 style="font-family: Bitter, Georgia, serif; font-size: 30px; font-weight: 500; margin: 0 0 10px; letter-spacing: -0.02em;">O que a Clínica Vet Norte vai poder ver do Code</h2>
+      <p style="font-size: 16px; line-height: 1.6; color: oklch(0.45 0.015 150); margin: 0 0 32px; max-width: 62ch;">Você escolhe item por item, e pode mudar ou revogar quando quiser. Quem tem acesso não responde pelo Code — isso continua sendo seu.</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 340px; gap: 32px; align-items: start;">
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid oklch(0.90 0.008 150); background: oklch(0.975 0.004 150);">
+            <div style="width: 40px; height: 40px; border-radius: 999px; background: oklch(0.90 0.03 150); flex: none;"></div>
+            <div>
+              <div style="font-size: 16px; font-weight: 500;">Clínica Vet Norte</div>
+              <div style="font-size: 14px; color: oklch(0.5 0.015 150);">Clínica veterinária · São Paulo, SP</div>
+            </div>
+          </div>
+
+          <div style="padding: 8px 22px 20px;">
+            <div style="display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid oklch(0.95 0.005 150);">
+              <div style="width: 22px; height: 22px; border-radius: 4px; background: oklch(0.46 0.085 150); flex: none; margin-top: 1px; display: flex; align-items: center; justify-content: center;"><div style="width: 9px; height: 9px; border-radius: 2px; background: #fff;"></div></div>
+              <div><div style="font-size: 16px;">Alergias e condições em curso</div><div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 3px;">Para não receitar nada que faça mal ao Code.</div></div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid oklch(0.95 0.005 150);">
+              <div style="width: 22px; height: 22px; border-radius: 4px; background: oklch(0.46 0.085 150); flex: none; margin-top: 1px; display: flex; align-items: center; justify-content: center;"><div style="width: 9px; height: 9px; border-radius: 2px; background: #fff;"></div></div>
+              <div><div style="font-size: 16px;">Vacinação e antiparasitário</div><div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 3px;">Para saber o que já foi aplicado e o que falta.</div></div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid oklch(0.95 0.005 150);">
+              <div style="width: 22px; height: 22px; border-radius: 4px; background: oklch(0.46 0.085 150); flex: none; margin-top: 1px; display: flex; align-items: center; justify-content: center;"><div style="width: 9px; height: 9px; border-radius: 2px; background: #fff;"></div></div>
+              <div><div style="font-size: 16px;">Diagnósticos, prescrições e exames</div><div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 3px;">O histórico clínico completo. Quem trata o Code precisa disto.</div></div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid oklch(0.95 0.005 150);">
+              <div style="width: 22px; height: 22px; border-radius: 4px; border: 1px solid oklch(0.78 0.012 150); flex: none; margin-top: 1px;"></div>
+              <div><div style="font-size: 16px;">Registrar novos atendimentos</div><div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 3px;">Sem isto, a clínica só lê. Marque quando o Code for se tratar lá.</div></div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 14px; padding: 16px 0;">
+              <div style="width: 22px; height: 22px; border-radius: 4px; border: 1px solid oklch(0.78 0.012 150); flex: none; margin-top: 1px;"></div>
+              <div><div style="font-size: 16px;">Fotos e recados que outras organizações enviaram</div><div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 3px;">É biografia, não saúde. A clínica não precisa.</div></div>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid oklch(0.90 0.008 150); padding: 20px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: end;">
+            <div>
+              <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 7px;">Até quando</label>
+              <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 12px 14px; font-size: 15px; min-height: 44px; font-family: 'DM Mono', monospace;">31/12/2027</div>
+            </div>
+            <div style="font-size: 14px; color: oklch(0.5 0.015 150); line-height: 1.5; padding-bottom: 4px;">Todo acesso tem prazo. Você pode revogar antes disso, a qualquer momento.</div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 22px 24px;">
+            <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 12px;">Resumo em uma frase</div>
+            <div style="font-size: 16px; line-height: 1.6;">A Clínica Vet Norte vai <strong style="font-weight: 500;">ler</strong> a saúde do Code — alergias, vacinas e histórico clínico — até 31/12/2027, e <strong style="font-weight: 500;">não vai</strong> registrar nada nem ver fotos da creche.</div>
+          </div>
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: oklch(0.975 0.004 150); padding: 22px 24px; font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150);">
+            Você vai ver quem leu o quê, e quando, na rede de quem cuida do Code.
+          </div>
+          <button style="font-family: inherit; font-size: 16px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 15px; min-height: 52px; cursor: pointer;">Conceder acesso</button>
+          <button style="font-family: inherit; font-size: 16px; color: oklch(0.42 0.015 150); background: transparent; border: 1px solid oklch(0.84 0.012 150); border-radius: 8px; padding: 15px; min-height: 52px; cursor: pointer;">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 10 · área de organização</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Matrícula na creche — o produto responde pela saúde</span>
+    </div>
+
+    <div style="width: 1100px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid oklch(0.90 0.008 150); background: #fff;">
+        <div style="display: flex; align-items: center; gap: 24px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 26px; height: 26px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+            <span style="font-family: Bitter, Georgia, serif; font-size: 17px; font-weight: 600;">Petfy</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; border: 1px solid oklch(0.46 0.085 150); border-radius: 8px; padding: 8px 14px; min-height: 44px; background: oklch(0.96 0.02 150);">
+            <span style="font-size: 13px; color: oklch(0.42 0.05 150);">Agindo como</span>
+            <span style="font-size: 15px; font-weight: 500;">Rafaela Lopes</span>
+            <span style="font-size: 15px; color: oklch(0.42 0.05 150);">pela Creche Quintal</span>
+          </div>
+        </div>
+        <div style="font-size: 14px; color: oklch(0.5 0.015 150);">Turma Tarde · 12 de 15 vagas</div>
+      </div>
+
+      <div style="padding: 36px 40px 44px; display: grid; grid-template-columns: 1fr 360px; gap: 36px; align-items: start;">
+        <div>
+          <h2 style="font-family: Bitter, Georgia, serif; font-size: 28px; font-weight: 500; margin: 0 0 8px; letter-spacing: -0.02em;">Matrícula do Code</h2>
+          <p style="font-size: 16px; color: oklch(0.45 0.015 150); margin: 0 0 26px;">Marcelo Dias concedeu acesso à saúde do Code em 04/08/2026.</p>
+
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; overflow: hidden;">
+            <div style="padding: 14px 22px; border-bottom: 1px solid oklch(0.90 0.008 150); background: oklch(0.975 0.004 150); font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150);">Comprovação de saúde</div>
+            <div style="padding: 6px 22px 16px;">
+              <div style="display: flex; align-items: center; gap: 14px; padding: 15px 0; border-bottom: 1px solid oklch(0.95 0.005 150);">
+                <div style="width: 13px; height: 13px; background: oklch(0.55 0.14 30); transform: rotate(45deg); flex: none;"></div>
+                <div style="flex: 1;"><div style="font-size: 16px;">Antirrábica</div><div style="font-size: 14px; color: oklch(0.45 0.13 30); margin-top: 2px;">Venceu há 23 dias — impede a matrícula</div></div>
+                <div style="font-size: 14px; color: oklch(0.5 0.015 150);">12/03/2024</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; padding: 15px 0; border-bottom: 1px solid oklch(0.95 0.005 150);">
+                <div style="width: 13px; height: 13px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></div>
+                <div style="flex: 1;"><div style="font-size: 16px;">V10</div><div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 2px;">Em dia até 09/03/2027</div></div>
+                <div style="font-size: 14px; color: oklch(0.5 0.015 150);">09/03/2026</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; padding: 15px 0; border-bottom: 1px solid oklch(0.95 0.005 150);">
+                <div style="width: 13px; height: 13px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></div>
+                <div style="flex: 1;"><div style="font-size: 16px;">Antiparasitário</div><div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 2px;">Em dia, próxima dose em 20/09/2026</div></div>
+                <div style="font-size: 14px; color: oklch(0.5 0.015 150);">20/06/2026</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; padding: 15px 0;">
+                <div style="width: 13px; height: 13px; border-radius: 999px; border: 2px dashed oklch(0.55 0.015 150); flex: none;"></div>
+                <div style="flex: 1;"><div style="font-size: 16px;">Gripe canina</div><div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 2px;">Sem registro. Não é exigida pela Creche Quintal.</div></div>
+                <div style="font-size: 14px; color: oklch(0.5 0.015 150);">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; margin-top: 20px; padding: 20px 22px;">
+            <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 12px;">O que a creche precisa saber</div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 16px;">
+              <div>Alergia a proteína de frango</div>
+              <div>Displasia coxofemoral leve — evitar salto e escada</div>
+              <div>Amoxicilina 250 mg, 12/12h, até 12/08 <span style="font-size: 14px; color: oklch(0.5 0.015 150);">· dose das 12h fica com a creche</span></div>
+              <div>Emergência: Marcelo Dias, (11) 9 xxxx-xxxx</div>
+            </div>
+            <div style="font-size: 14px; color: oklch(0.5 0.015 150); line-height: 1.55; margin-top: 14px; border-top: 1px solid oklch(0.95 0.005 150); padding-top: 14px;">O histórico completo de atendimentos do Code existe e não foi compartilhado com a Creche Quintal. Isso é diferente de não existir.</div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="border: 1px solid oklch(0.86 0.03 70); background: oklch(0.985 0.012 70); border-radius: 12px; padding: 22px 24px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <div style="width: 13px; height: 13px; border-radius: 999px; border: 3px solid oklch(0.62 0.11 70);"></div>
+              <span style="font-size: 13px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: oklch(0.5 0.09 70);">Matrícula pendente</span>
+            </div>
+            <div style="font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Falta a antirrábica em dia. A matrícula fica guardada e se completa sozinha assim que a dose for registrada.</div>
+            <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 13px; min-height: 48px; cursor: pointer; width: 100%;">Avisar Marcelo Dias</button>
+            <div style="font-size: 14px; color: oklch(0.45 0.015 150); line-height: 1.5; margin-top: 10px;">O aviso diz qual dose falta e até quando. Nada além disso.</div>
+          </div>
+
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 22px 24px;">
+            <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 14px;">Se completar, entra em</div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 6px;">Turma</label>
+                <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 12px 14px; font-size: 15px; min-height: 44px;">Tarde · 12 de 15 vagas</div>
+              </div>
+              <div>
+                <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 6px;">Dias</label>
+                <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 12px 14px; font-size: 15px; min-height: 44px;">Segunda, quarta e sexta</div>
+              </div>
+              <div style="font-size: 14px; color: oklch(0.5 0.015 150); line-height: 1.55;">Janela de entrada: 7h30 às 9h. Depois disso, a entrada precisa ser combinada.</div>
+            </div>
+          </div>
+
+          <button disabled="" style="font-family: inherit; font-size: 16px; font-weight: 500; color: oklch(0.68 0.008 150); background: oklch(0.96 0.004 150); border: 1px solid oklch(0.90 0.008 150); border-radius: 8px; padding: 15px; min-height: 52px; cursor: not-allowed;">Aceitar matrícula</button>
+          <div style="font-size: 14px; color: oklch(0.5 0.015 150); line-height: 1.55; margin-top: -6px;">Só é possível aceitar com a vacinação exigida em dia — é o que protege a turma inteira.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 11 · área do tutor</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Transferir a titularidade — nenhuma custódia termina sem sucessor</span>
+    </div>
+
+    <div style="width: 1100px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 40px 48px 44px;">
+      <h2 style="font-family: Bitter, Georgia, serif; font-size: 30px; font-weight: 500; margin: 0 0 10px; letter-spacing: -0.02em;">Transferir o Code para outra pessoa</h2>
+      <p style="font-size: 16px; line-height: 1.6; color: oklch(0.45 0.015 150); margin: 0 0 32px; max-width: 64ch;">A vida inteira do Code vai junto. Quem recebe passa a responder por ele a partir do aceite — não existe deixar o Code sem ninguém.</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 24px 26px;">
+            <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 7px;">Para quem</label>
+            <div style="border: 1px solid oklch(0.46 0.085 150); outline: 2px solid oklch(0.46 0.085 150); outline-offset: 1px; border-radius: 4px; padding: 13px 14px; font-size: 16px; min-height: 48px;">paula.rezende@exemplo.com.br</div>
+            <div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 8px; line-height: 1.5;">A pessoa precisa aceitar. Enquanto não aceitar, o Code continua sob sua responsabilidade.</div>
+
+            <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin: 22px 0 7px;">Motivo</label>
+            <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 13px 14px; font-size: 16px; min-height: 48px;">Doação para nova família</div>
+          </div>
+
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 24px 26px;">
+            <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 14px;">O que vai junto com o Code</div>
+            <div style="display: flex; flex-direction: column; gap: 11px; font-size: 16px;">
+              <div style="display: flex; align-items: center; gap: 11px;"><span style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></span>A linha do tempo inteira, desde o resgate em 2019</div>
+              <div style="display: flex; align-items: center; gap: 11px;"><span style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></span>Amoxicilina em curso, com as 6 doses já dadas</div>
+              <div style="display: flex; align-items: center; gap: 11px;"><span style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></span>Alergias, condições e anexos</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="border: 1px solid oklch(0.86 0.03 30); background: oklch(0.985 0.008 30); border-radius: 12px; padding: 24px 26px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+              <div style="width: 13px; height: 13px; background: oklch(0.55 0.14 30); transform: rotate(45deg);"></div>
+              <span style="font-size: 13px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: oklch(0.45 0.13 30);">Quem deixa de ver o Code</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 14px; font-size: 16px;">
+              <div><div style="font-weight: 500;">Você, Marcelo Dias</div><div style="font-size: 14px; color: oklch(0.42 0.015 150); margin-top: 2px; line-height: 1.5;">Mantém leitura do período em que respondeu pelo Code — de 2019 até hoje. Pode abrir mão disso depois.</div></div>
+              <div><div style="font-weight: 500;">Juliana Dias, co-tutora</div><div style="font-size: 14px; color: oklch(0.42 0.015 150); margin-top: 2px; line-height: 1.5;">Perde o acesso no momento do aceite.</div></div>
+              <div><div style="font-weight: 500;">Clínica Vet Norte</div><div style="font-size: 14px; color: oklch(0.42 0.015 150); margin-top: 2px; line-height: 1.5;">Perde o acesso no momento do aceite. Paula precisará conceder de novo se quiser continuar lá.</div></div>
+              <div><div style="font-weight: 500;">Creche Quintal</div><div style="font-size: 14px; color: oklch(0.42 0.015 150); margin-top: 2px; line-height: 1.5;">Perde o acesso no momento do aceite. A matrícula fica encerrada, e os dois anos de creche continuam na linha do tempo.</div></div>
+            </div>
+          </div>
+
+          <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150);">Acessos não são herdados. Paula recebe o Code sem a plateia que ela não escolheu.</div>
+
+          <button style="font-family: inherit; font-size: 16px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 15px; min-height: 52px; cursor: pointer;">Enviar transferência para Paula</button>
+          <button style="font-family: inherit; font-size: 16px; color: oklch(0.42 0.015 150); background: transparent; border: 1px solid oklch(0.84 0.012 150); border-radius: 8px; padding: 15px; min-height: 52px; cursor: pointer;">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
