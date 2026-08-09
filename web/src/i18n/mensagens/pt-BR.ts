@@ -242,6 +242,62 @@ export const mensagens = {
   // segue a mesma regra — o fato, sem culpar quem digitou.
   "rota.naoEncontrada.titulo": "Esta página não existe.",
   "rota.naoEncontrada.acao": "Ir para o início",
+
+  // ----------------------------------------------------- a vida do animal (Tela 02)
+  //
+  // A voz e a da secao 09: o produto relata e orienta, nao opina sobre saude e nao usa
+  // a palavra "escopo" com o tutor. Nada de "Ops!", nada de exclamacao, nada de emoji.
+  "animal.carregando": "Carregando a vida deste animal…",
+  "animal.voltar": "Ir para o início",
+  "animal.especie.CANINA": "Cão",
+  "animal.especie.FELINA": "Gato",
+  "animal.genero.MACHO": "macho",
+  "animal.genero.FEMEA": "fêmea",
+  "animal.nascido": "Nascido em {data}",
+  "animal.microchip": "Microchip {numero}",
+  "animal.rga": "RGA {numero}",
+  "animal.custodia": "Sob custódia de {nome} desde {desde}",
+  "animal.acao.registrar": "Registrar evento",
+  "animal.acao.compartilhar": "Compartilhar cartão",
+
+  // A carteira: como o animal esta agora.
+  "animal.carteira.vacinacao": "Vacinação",
+  "animal.carteira.vacinacao.vazio": "Nenhuma vacina registrada, e o catálogo não sabe o que esperar desta espécie.",
+  "animal.carteira.venceuHa": "{dias, plural, one {venceu há # dia} other {venceu há # dias}}",
+  "animal.carteira.ate": "até {data}",
+  // "Não sabemos" ≠ "não existe" ≠ "irregular" (secao 05). O texto nao pode dizer
+  // "nunca tomou": o registro so sabe que ninguem lancou nada aqui.
+  "animal.carteira.semRegistro": "sem registro",
+  "animal.carteira.semProximaDose": "sem próxima dose prevista",
+  "animal.carteira.condicoes": "Condições e alergias",
+  "animal.carteira.condicoes.vazio": "Nada registrado.",
+  "animal.carteira.desde": "· desde {ano}",
+  "animal.carteira.peso": "Peso",
+  "animal.carteira.peso.vazio": "Nenhuma pesagem registrada.",
+  "animal.carteira.peso.resumo": "{peso} kg em {data} · {total, plural, one {# pesagem} other {# pesagens}}",
+  "animal.carteira.anexos": "Anexos",
+  "animal.carteira.anexos.vazio": "Nenhum documento anexado.",
+
+  // A linha do tempo: como ele chegou aqui.
+  "animal.linha.titulo": "Linha do tempo",
+  "animal.linha.carregando": "Carregando a linha do tempo…",
+  "animal.linha.recorte.tudo": "Tudo",
+  "animal.linha.recorte.vacinas": "Vacinas",
+  "animal.linha.recorte.atendimentos": "Atendimentos",
+  "animal.linha.recorte.observacoes": "Observações",
+  "animal.linha.faixa": "{de} — {ate}",
+  "animal.linha.vazio.tudo": "A linha do tempo deste animal ainda está vazia.",
+  "animal.linha.vazio.vacinas": "Nenhuma vacina ou antiparasitário registrado.",
+  "animal.linha.vazio.atendimentos": "Nenhum atendimento registrado.",
+  "animal.linha.vazio.observacoes": "Nenhuma observação registrada.",
+  "animal.linha.pesoAnterior": "Pesagem anterior: {peso} kg",
+  "animal.linha.autoria": "Registrado por {quem} · lançado em {quando}",
+  "animal.linha.autoriaComOrg": "Registrado por {quem}, pela {organizacao} · lançado em {quando}",
+  "animal.linha.lancado": "Lançado em {quando}",
+  "animal.linha.corrigido": "{vezes, plural, one {# correção} other {# correções}}",
+  "animal.credencial.INFORMADO": "informado",
+  "animal.credencial.VERIFICADO": "verificado",
+  "animal.credencial.SUSPENSO": "suspenso",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

@@ -24,6 +24,7 @@ import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -121,7 +122,21 @@ public class VaccineServiceImpl implements VaccineService {
                 .map(this::toResponse);
     }
 
+    /**
+     * <b>A transacao aqui nao e detalhe de framework: sem ela a rota inteira era 500.</b>
+     *
+     * O {@code toAgendaItem} le {@code vaccine.getAnimal().getName()}, e o
+     * {@code spring.jpa.open-in-view=false} deste projeto — que e decisao, nao descuido —
+     * fecha a sessao ao sair do repositorio. O {@code getAnimalId()} ali do lado
+     * funcionava e escondia o problema: o id o proxy serve sem inicializar; o nome, nao.
+     * O resultado era {@code LazyInitializationException} em toda agenda de quem tem ao
+     * menos uma vacina registrada.
+     *
+     * E o mesmo remedio do {@code DueItemServiceImpl}, que resolve o caso identico do
+     * feed com {@code @Transactional(readOnly = true)}.
+     */
     @Override
+    @Transactional(readOnly = true)
     public VaccineAgendaResponseDTO getAgenda(int windowDays) {
         LocalDate hoje = LocalDate.now();
 
