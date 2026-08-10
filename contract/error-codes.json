@@ -171,6 +171,22 @@
   "codigo" : 143,
   "mensagemDaApi" : "Request body is not readable JSON"
 }, {
+  "nome" : "CLASS_GROUP_NOT_FOUND",
+  "codigo" : 144,
+  "mensagemDaApi" : "Class group not found"
+}, {
+  "nome" : "CLASS_GROUP_FULL",
+  "codigo" : 145,
+  "mensagemDaApi" : "Class group has no free spot"
+}, {
+  "nome" : "ENROLLMENT_HEALTH_PROOF_MISSING",
+  "codigo" : 146,
+  "mensagemDaApi" : "Enrollment health proof is incomplete"
+}, {
+  "nome" : "ATTENDANCE_NOT_CHECKED_IN",
+  "codigo" : 147,
+  "mensagemDaApi" : "Attendance has no check-in for today"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

@@ -9,6 +9,7 @@ import br.com.petfy.healthcare.service.OrganizationService;
 import br.com.petfy.healthcare.service.PersonExportService;
 import br.com.petfy.healthcare.service.PersonService;
 import br.com.petfy.healthcare.service.AnimalService;
+import br.com.petfy.healthcare.service.CrecheService;
 import br.com.petfy.healthcare.service.PetTutorService;
 import br.com.petfy.healthcare.service.VaccineService;
 import org.junit.jupiter.api.DisplayName;
@@ -49,11 +50,16 @@ class ControllerPathVariableTest {
         @Mock
         private AnimalService animalService;
 
+        // A rota de matriculas do animal (Tela 10 pelo lado do tutor) entrou neste controller;
+        // este teste afirma sobre nome de path variable, e nao sobre creche.
+        @Mock
+        private CrecheService crecheService;
+
         private MockMvc mockMvc;
 
         private MockMvc mockMvc() {
             if (mockMvc == null) {
-                mockMvc = MockMvcBuilders.standaloneSetup(new AnimalController(animalService)).build();
+                mockMvc = MockMvcBuilders.standaloneSetup(new AnimalController(animalService, crecheService)).build();
             }
             return mockMvc;
         }

@@ -81,6 +81,17 @@ public enum ErrorMessageEnum {
     // quando nao ha campo marcado nenhum. Quem manda corpo ilegivel raramente e o usuario:
     // e o cliente que montou a requisicao errado
     MALFORMED_REQUEST_BODY(143, "Request body is not readable JSON"),
+
+    // ------------------------------------------------------ a operacao da creche (V33)
+    //
+    // Os tres sao 404/409 de negocio, e nenhum e falta de permissao: a turma que nao e desta
+    // organizacao responde 404 pela mesma razao do animal — 403 confirmaria que aquele id
+    // existe. Vaga cheia e comprovacao faltando sao conflito de estado, e as duas telas da
+    // creche precisam distinguir uma da outra para dizer o que fazer em seguida.
+    CLASS_GROUP_NOT_FOUND(144, "Class group not found"),
+    CLASS_GROUP_FULL(145, "Class group has no free spot"),
+    ENROLLMENT_HEALTH_PROOF_MISSING(146, "Enrollment health proof is incomplete"),
+    ATTENDANCE_NOT_CHECKED_IN(147, "Attendance has no check-in for today"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

@@ -96,6 +96,17 @@ export const mensagens = {
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
   // nome de campo em ingles e sem acento, e nada disso e exibivel. Entao a validacao de
   // campo e do front, ANTES de enviar, e o 400 que voltar e a rede de seguranca.
+  // ------------------------------------------------------------ a operação da creche
+  //
+  // O 146 é o mais importante da tabela inteira do ponto de vista de quem lê: ele aparece na
+  // porta da creche, às 7h30, para uma monitora com quinze cachorros esperando. Diz o fato e
+  // a saída, sem culpar o tutor e sem pedir para "tentar de novo" — tentar de novo não
+  // resolve; registrar a dose resolve.
+  "erro.144": "Não encontramos esta turma.",
+  "erro.145": "Esta turma não tem vaga livre. Matrículas guardadas também ocupam vaga.",
+  "erro.146": "A comprovação de saúde deste animal está aberta — ele não pode entrar hoje. A matrícula se completa sozinha quando a dose for registrada.",
+  "erro.147": "Este animal não tem entrada marcada hoje.",
+
   "erro.400": "Confira os campos marcados — algo ali não está completo.",
   "erro.401": "E-mail ou senha não conferem.",
   "erro.500":

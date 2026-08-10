@@ -1,8 +1,10 @@
 package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.AnimalRequestDTO;
+import br.com.petfy.healthcare.domain.dto.EnrollmentResponseDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
 import br.com.petfy.healthcare.service.AnimalService;
+import br.com.petfy.healthcare.service.CrecheService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,6 +24,20 @@ import java.util.UUID;
 public class AnimalController {
 
     private final AnimalService animalService;
+    private final CrecheService crecheService;
+
+    /**
+     * As matriculas vivas do animal, com a comprovacao de saude de cada creche.
+     *
+     * <b>Mora aqui, e nao em {@code /professional}</b>, porque quem le e quem alcanca o ANIMAL: o
+     * tutor precisa ver o que a creche esta esperando dele — "falta a antirrabica em dia" — sem ter de
+     * ser membro de creche nenhuma. E a Tela 10 vista pelo outro lado.
+     */
+    @Operation(summary = "As matriculas do animal, com a comprovacao de saude de cada uma")
+    @GetMapping("/{animalId}/enrollments")
+    public ResponseEntity<List<EnrollmentResponseDTO>> listEnrollments(@PathVariable UUID animalId) {
+        return ResponseEntity.ok(crecheService.listEnrollmentsOfAnimal(animalId));
+    }
 
     @Operation(summary = "Cadastra um animal", description = "Quem cadastra passa a deter a custodia dele. Especie e obrigatoria porque o catalogo de vacina depende dela; identificacao - microchip, tatuagem, RGA - e toda opcional, porque metade dos animais do Brasil nao tem nenhuma.")
     @PostMapping
