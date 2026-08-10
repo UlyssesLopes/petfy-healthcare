@@ -18,6 +18,7 @@ import { Route as AnimaisNovoRouteImport } from './rotas/animais.novo'
 import { Route as AnimaisAnimalIdConcederAcessoRouteImport } from './rotas/animais.$animalId_.conceder-acesso'
 import { Route as AnimaisAnimalIdQuemCuidaRouteImport } from './rotas/animais.$animalId_.quem-cuida'
 import { Route as AnimaisAnimalIdTransferirRouteImport } from './rotas/animais.$animalId_.transferir'
+import { Route as AnimaisAnimalIdDiscordarRegistroIdRouteImport } from './rotas/animais.$animalId_.discordar.$registroId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -67,6 +68,12 @@ const AnimaisAnimalIdTransferirRoute =
     path: '/animais/$animalId/transferir',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AnimaisAnimalIdDiscordarRegistroIdRoute =
+  AnimaisAnimalIdDiscordarRegistroIdRouteImport.update({
+    id: '/animais/$animalId_/discordar/$registroId',
+    path: '/animais/$animalId/discordar/$registroId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
   '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
+  '/animais/$animalId/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -89,6 +97,7 @@ export interface FileRoutesByTo {
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
   '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
+  '/animais/$animalId/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -101,6 +110,7 @@ export interface FileRoutesById {
   '/animais/$animalId_/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId_/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
   '/animais/$animalId_/transferir': typeof AnimaisAnimalIdTransferirRoute
+  '/animais/$animalId_/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId/conceder-acesso'
     | '/animais/$animalId/quem-cuida'
     | '/animais/$animalId/transferir'
+    | '/animais/$animalId/discordar/$registroId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId/conceder-acesso'
     | '/animais/$animalId/quem-cuida'
     | '/animais/$animalId/transferir'
+    | '/animais/$animalId/discordar/$registroId'
   id:
     | '__root__'
     | '/'
@@ -136,6 +148,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId_/conceder-acesso'
     | '/animais/$animalId_/quem-cuida'
     | '/animais/$animalId_/transferir'
+    | '/animais/$animalId_/discordar/$registroId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -148,6 +161,7 @@ export interface RootRouteChildren {
   AnimaisAnimalIdConcederAcessoRoute: typeof AnimaisAnimalIdConcederAcessoRoute
   AnimaisAnimalIdQuemCuidaRoute: typeof AnimaisAnimalIdQuemCuidaRoute
   AnimaisAnimalIdTransferirRoute: typeof AnimaisAnimalIdTransferirRoute
+  AnimaisAnimalIdDiscordarRegistroIdRoute: typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -215,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnimaisAnimalIdTransferirRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/animais/$animalId_/discordar/$registroId': {
+      id: '/animais/$animalId_/discordar/$registroId'
+      path: '/animais/$animalId/discordar/$registroId'
+      fullPath: '/animais/$animalId/discordar/$registroId'
+      preLoaderRoute: typeof AnimaisAnimalIdDiscordarRegistroIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -228,6 +249,8 @@ const rootRouteChildren: RootRouteChildren = {
   AnimaisAnimalIdConcederAcessoRoute: AnimaisAnimalIdConcederAcessoRoute,
   AnimaisAnimalIdQuemCuidaRoute: AnimaisAnimalIdQuemCuidaRoute,
   AnimaisAnimalIdTransferirRoute: AnimaisAnimalIdTransferirRoute,
+  AnimaisAnimalIdDiscordarRegistroIdRoute:
+    AnimaisAnimalIdDiscordarRegistroIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

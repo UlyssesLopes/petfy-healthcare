@@ -428,6 +428,40 @@ export const mensagens = {
   "criarConta.credencial.informado": "O Petfy ainda não consulta o conselho. Seu registro aparece como informado em tudo que você assinar, e quem lê sabe disso.",
   "criarConta.credencial.semClinica": "Não é preciso ter clínica. Atendimento domiciliar funciona inteiro sem organização nenhuma.",
 
+  // ------------------------------------------------ contestar um registro (Tela 23)
+  //
+  // Não há botão de apagar, e isso é a tese: "quem escreveu é quem corrige — é o que faz o
+  // registro valer alguma coisa". O tutor escreve ao lado, e o que ele escreve também fica.
+  "discordar.titulo": "Você discorda deste registro",
+  "discordar.apoio": "Quem escreveu é quem corrige — é o que faz o registro valer alguma coisa. O que você pode fazer é registrar sua discordância ao lado, e ela também fica para sempre.",
+  "discordar.registro": "O registro",
+  // A categoria é valor de domínio, e mostrar a constante seria mostrar código na cara de
+  // quem lê. O `eventType` que o profissional escreveu ganha da categoria quando existe.
+  "animal.categoria.CONSULTA": "Consulta",
+  "animal.categoria.RETORNO": "Retorno",
+  "animal.categoria.EXAME": "Exame",
+  "animal.categoria.CIRURGIA": "Cirurgia",
+  "animal.categoria.INTERNACAO": "Internação",
+  "animal.categoria.EMERGENCIA": "Emergência",
+  "animal.categoria.PROCEDIMENTO": "Procedimento",
+  "animal.categoria.OUTRO": "Atendimento",
+  "discordar.registro.carregando": "Carregando o registro…",
+  "discordar.registro.quando": "Registrado em {data}",
+  "discordar.sua": "Sua observação",
+  "discordar.campo": "O que você viu de diferente",
+  "discordar.campo.apoio": "Escreva o que aconteceu, não o que acha que quem atendeu errou. Sua observação entra na linha do tempo em {data}, ao lado do registro, assinada por você.",
+  "discordar.avisar": "Avisar quem registrou. Essa pessoa pode corrigir o registro dela, se concordar com você.",
+  "discordar.avisar.porque": "Ainda não dá para avisar: o Petfy não envia mensagem sobre observação, e uma caixa que promete aviso sem mandar nada seria pior que a ausência dela. Sua observação fica no lugar certo do mesmo jeito.",
+  "discordar.acao": "Registrar minha observação",
+  "discordar.acao.registrando": "Registrando…",
+  "discordar.cancelar": "Cancelar",
+  "discordar.falar": "Falar direto com quem registrou",
+  "discordar.falar.porque": "Ainda não há como: o registro traz o nome de quem atendeu, e não o contato dela. Falar pelo Petfy depende de um canal que ainda não existe.",
+  "discordar.seCorrigir": "Se ela corrigir",
+  "discordar.seCorrigir.texto": "A correção aparece ao lado do original, com o motivo e a hora. O registro não desaparece — ele passa a ter duas versões, e as duas ficam visíveis.",
+  "discordar.seNaoResponder": "Se ela não responder",
+  "discordar.seNaoResponder.texto": "Sua observação continua lá, do lado. Todo veterinário que abrir a linha do tempo do {nome} vai ler as duas coisas.",
+
   // ----------------------------------------------- os três cômodos (Tela 08)
   //
   // "Nenhum passo pergunta se você é tutor ou profissional." Os três ficam abertos, e a
@@ -600,6 +634,7 @@ export const mensagens = {
   "animal.linha.autoriaComOrg": "Registrado por {quem}, pela {organizacao} · lançado em {quando}",
   "animal.linha.lancado": "Lançado em {quando}",
   "animal.linha.corrigido": "{vezes, plural, one {# correção} other {# correções}}",
+  "animal.linha.discordar": "Discordo deste registro",
   "animal.credencial.INFORMADO": "informado",
   "animal.credencial.VERIFICADO": "verificado",
   "animal.credencial.SUSPENSO": "suspenso",
