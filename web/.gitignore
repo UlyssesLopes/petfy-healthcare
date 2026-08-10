@@ -2,3 +2,6 @@ node_modules
 dist
 *.local
 .vite
+# Cache do gerador de rotas do TanStack: um arquivo temporario dele ja entrou
+# num commit por descuido. Nao e fonte — a fonte e arvore-de-rotas.gen.ts.
+.tanstack
