@@ -478,7 +478,8 @@ export const mensagens = {
   "comecar.rede.semAnimal": "Convite é sempre para um animal, e você ainda não tem nenhum cadastrado. Comece pelo primeiro cômodo.",
   "comecar.profissional.titulo": "Atender animais de outras pessoas",
   "comecar.profissional.texto": "Se você é veterinário, monitor ou voluntário, declare seu registro profissional ou aceite o convite de uma organização.",
-  "comecar.profissional.indisponivel": "O registro profissional é declarado na criação da conta. Declarar depois, e aceitar convite de organização, dependem de telas que ainda não existem.",
+  "comecar.profissional.acao": "Criar uma organização",
+  "comecar.profissional.indisponivel": "O registro profissional é declarado na criação da conta. Declarar depois, e aceitar convite de organização com uma conta que já existe, ainda não têm caminho.",
   "comecar.tese": "Nenhum passo pergunta se você é tutor ou profissional. Os três cômodos ficam abertos, e a área que você alcança vem do que você tem — um animal sob sua custódia, ou um vínculo com uma organização.",
 
   // ------------------------------------------- o primeiro animal, em quatro passos
@@ -577,6 +578,54 @@ export const mensagens = {
   "transferir.enviado.apoio": "Enquanto a pessoa não aceitar, o {nome} continua sob sua responsabilidade e nada mudou.",
   "transferir.enviado.prazo": "O convite vale até {data}.",
   "transferir.enviado.voltar": "Voltar para a vida do {nome}",
+
+  // ------------------------------------------------- criar a organização (Tela 15)
+  //
+  // "A creche não assina por ninguém": a organização existe para o trabalho da equipe ficar
+  // assinado em nome dela, e quem registra continua tendo nome próprio (seção 10).
+  "organizacao.nova.titulo": "Criar uma organização",
+  "organizacao.nova.apoio": "Uma organização existe para que o trabalho da equipe fique assinado em nome dela. Você continua sendo {quem} em tudo que registrar — a organização não assina por ninguém.",
+  "organizacao.nova.nome": "Nome que os tutores vão ver",
+  "organizacao.nova.oQueFazem": "O que vocês fazem",
+  "organizacao.nova.oQueFazem.creche": "Creche e hospedagem",
+  "organizacao.nova.oQueFazem.clinica": "Clínica veterinária",
+  "organizacao.nova.oQueFazem.banhoETosa": "Banho e tosa",
+  "organizacao.nova.oQueFazem.abrigo": "Abrigo ou resgate",
+  "organizacao.nova.oQueFazem.adestramento": "Adestramento",
+  "organizacao.nova.oQueFazem.indisponivel": "Ainda não dá para declarar isso: o cadastro de organização não guarda o que ela faz, e é esse dado que definiria o que a equipe consegue registrar. Marcar aqui não viajaria para lugar nenhum.",
+  "organizacao.nova.cnpj": "CNPJ",
+  "organizacao.nova.telefone": "Telefone para emergência",
+  "organizacao.nova.telefone.apoio": "Aparece para o tutor quando o animal está com vocês.",
+  "organizacao.nova.endereco": "Endereço",
+  "organizacao.nova.cidade": "Cidade",
+  "organizacao.nova.estado": "UF",
+  "organizacao.nova.comecaVazia": "Criar uma organização não dá acesso a animal nenhum. Cada tutor concede o que quiser, animal por animal, e pode revogar quando quiser. {nome, select, other {Ela}} começa vazia.",
+  "organizacao.nova.acao": "Criar a organização",
+  "organizacao.nova.criando": "Criando…",
+  "organizacao.nova.responsavel": "Você fica como responsável.",
+  "organizacao.nova.voltar": "Voltar para o início",
+  "organizacao.nova.oQue": "a organização",
+
+  // ------------------------------------------------- equipe e convites (Tela 16)
+  "equipe.titulo": "Equipe e convites",
+  "equipe.apoio": "Quem entra passa a registrar em nome da organização, e cada registro continua assinado com o nome de quem fez.",
+  "equipe.pela": "· pela {organizacao}",
+  "equipe.convidar": "Convidar pessoa",
+  "equipe.convidar.campo": "e-mail",
+  "equipe.convidar.acao": "Convidar",
+  "equipe.convidando": "Convidando…",
+  "equipe.convidar.semFuncao": "Ainda não dá para escolher a função de quem entra: o convite guarda o e-mail e o prazo, e mais nada. Veterinária, monitora e recepção existem no modelo, mas não há por onde atribuí-las.",
+  "equipe.aguardando": "{quantos, plural, =0 {Nenhum convite aguardando} one {# convite aguardando} other {# convites aguardando}}",
+  "equipe.aguardando.vazio": "Ninguém foi convidado ainda.",
+  "equipe.carregando": "Carregando os convites…",
+  "equipe.convite.vale": "Vale até {data}",
+  "equipe.convite.revogar": "Revogar",
+  "equipe.encerrados": "{quantos, plural, one {# convite já encerrado} other {# convites já encerrados}} — aceitos, vencidos ou revogados.",
+  "equipe.oQue": "os convites da equipe",
+  "equipe.oQue.convite": "o convite",
+  "equipe.falta.titulo": "A tabela da equipe não existe ainda",
+  "equipe.falta.texto": "Nenhuma rota devolve quem já entrou na organização, então não há como listar a equipe, mostrar a função de cada um nem desligar alguém. Mostrar uma tabela vazia seria pior: os membros existem, e é o produto que ainda não sabe mostrá-los.",
+  "equipe.comoAceita": "Quem recebe o convite entra criando a conta com ele. Quem já tem conta no Petfy ainda não tem por onde aceitar.",
 
   // ------------------------------------------------- os estados (Tela 14)
   //

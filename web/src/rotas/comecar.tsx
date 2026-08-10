@@ -118,7 +118,15 @@ function Comecar() {
               marca={<div aria-hidden style={{ width: "44px", height: "44px", borderRadius: "4px", border: "2px solid oklch(0.72 0.012 150)" }}></div>}
               titulo={intl.formatMessage({ id: "comecar.profissional.titulo" })}
               texto={intl.formatMessage({ id: "comecar.profissional.texto" })}
-              acao={<Motivo>{intl.formatMessage({ id: "comecar.profissional.indisponivel" })}</Motivo>}
+              acao={
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {/* A Tela 15 passou a existir: criar organizacao e a saida deste comodo. */}
+                  <Botao para="/organizacoes/nova">
+                    {intl.formatMessage({ id: "comecar.profissional.acao" })}
+                  </Botao>
+                  <Motivo>{intl.formatMessage({ id: "comecar.profissional.indisponivel" })}</Motivo>
+                </div>
+              }
             />
           </div>
 
@@ -166,7 +174,7 @@ function Botao({
   principal = false,
   children,
 }: {
-  para: "/animais/novo" | "/animais/$animalId/quem-cuida";
+  para: "/animais/novo" | "/animais/$animalId/quem-cuida" | "/organizacoes/nova";
   parametros?: { animalId: string };
   principal?: boolean;
   children: ReactNode;
@@ -189,7 +197,7 @@ function Botao({
 
   if (parametros === undefined) {
     return (
-      <Link to={para as "/animais/novo"} style={estilo}>
+      <Link to={para as "/animais/novo" | "/organizacoes/nova"} style={estilo}>
         {children}
       </Link>
     );
