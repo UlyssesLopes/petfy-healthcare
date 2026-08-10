@@ -1,10 +1,10 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
 import { Carregando, ErroDeCarga } from "../componentes/Estados.tsx";
 import { useMeuContexto } from "../dados/contexto.ts";
-import { usePacientes, type Paciente } from "../dados/pacientes.ts";
+import { usePacientes, useSobCustodia, type Paciente } from "../dados/pacientes.ts";
 import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
@@ -47,7 +47,17 @@ function Pacientes() {
   const intl = useIntl();
   const contexto = useMeuContexto();
   const [busca, setBusca] = useState("");
-  const pacientes = usePacientes(busca);
+
+  /*
+   * DUAS LISTAS, e nao um filtro: "quem eu alcanco porque alguem me concedeu" e "por quem eu
+   * respondo" sao perguntas diferentes. O abrigo precisa da segunda para decidir uma adocao —
+   * e a Tela 12 inteira mora nela, quando tiver onde-esta e saude.
+   */
+  const [aba, setAba] = useState<"acesso" | "custodia">("acesso");
+
+  const porAcesso = usePacientes(busca);
+  const porCustodia = useSobCustodia(busca);
+  const pacientes = aba === "acesso" ? porAcesso : porCustodia;
 
   const quem = contexto.data?.personName ?? "";
   const ativo = contexto.data?.active;
@@ -109,11 +119,23 @@ function Pacientes() {
            * atendidos este mes — dependem de agregacao que nenhuma rota faz.
            */}
           <div style={{ display: "flex", gap: "8px", marginBottom: "18px", flexWrap: "wrap" }}>
-            <div style={{ fontSize: "14px", padding: "8px 14px", minHeight: "40px", display: "flex", alignItems: "center", border: "1px solid oklch(0.46 0.085 150)", color: "oklch(0.46 0.085 150)", borderRadius: "8px" }}>
-              {total === undefined
-                ? intl.formatMessage({ id: "pacientes.todos" })
-                : intl.formatMessage({ id: "pacientes.todos.contados" }, { quantos: total })}
-            </div>
+            <Aba escolhida={aba === "acesso"} aoEscolher={() => setAba("acesso")}>
+              {porAcesso.data?.totalElements === undefined
+                ? intl.formatMessage({ id: "pacientes.aba.acesso" })
+                : intl.formatMessage(
+                    { id: "pacientes.aba.acesso.contados" },
+                    { quantos: porAcesso.data.totalElements },
+                  )}
+            </Aba>
+
+            <Aba escolhida={aba === "custodia"} aoEscolher={() => setAba("custodia")}>
+              {porCustodia.data?.totalElements === undefined
+                ? intl.formatMessage({ id: "pacientes.aba.custodia" })
+                : intl.formatMessage(
+                    { id: "pacientes.aba.custodia.contados" },
+                    { quantos: porCustodia.data.totalElements },
+                  )}
+            </Aba>
             <div style={{ fontSize: "14px", padding: "8px 14px", minHeight: "40px", display: "flex", alignItems: "center", border: "1px dashed oklch(0.88 0.008 150)", color: "oklch(0.5 0.015 150)", borderRadius: "8px" }}>
               {intl.formatMessage({ id: "pacientes.recortes.indisponiveis" })}
             </div>
@@ -144,7 +166,7 @@ function Pacientes() {
               </div>
 
               {lista.map((paciente) => (
-                <Linha key={paciente.animalId} paciente={paciente} />
+                <Linha key={paciente.animalId} paciente={paciente} sobCustodia={aba === "custodia"} />
               ))}
 
               <div style={{ padding: "12px 22px", fontSize: "13px", color: "oklch(0.5 0.015 150)", borderTop: "1px solid oklch(0.95 0.005 150)" }}>
@@ -179,7 +201,7 @@ function Pacientes() {
 /* ------------------------------------------------------------------------------ pedacos */
 
 /** Linha de 56 px, densidade compacta, e o alvo de toque preservado no controle. */
-function Linha({ paciente }: { paciente: Paciente }) {
+function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boolean }) {
   const intl = useIntl();
 
   const identidade = [
@@ -198,7 +220,14 @@ function Linha({ paciente }: { paciente: Paciente }) {
         )}
       </div>
 
-      <div style={{ fontSize: "15px", color: "oklch(0.35 0.018 150)" }}>{paciente.personName}</div>
+      {/*
+       * SEM TUTOR HUMANO e uma informacao, e nao um campo vazio. O animal sob custodia do
+       * abrigo nao tem tutor — escrever o nome do abrigo aqui faria a coluna mentir, e deixar
+       * em branco faria parecer defeito.
+       */}
+      <div style={{ fontSize: "15px", color: paciente.personName === undefined ? "oklch(0.5 0.015 150)" : "oklch(0.35 0.018 150)" }}>
+        {paciente.personName ?? intl.formatMessage({ id: "pacientes.semTutor" })}
+      </div>
 
       <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", fontFamily: "'DM Mono', monospace" }}>
         {paciente.accessGrantedAt === undefined
@@ -214,15 +243,50 @@ function Linha({ paciente }: { paciente: Paciente }) {
       {paciente.animalId === undefined ? (
         <span></span>
       ) : (
-        <Link
-          to="/animais/$animalId"
-          params={{ animalId: paciente.animalId }}
-          style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "11px 16px", minHeight: "44px", display: "flex", alignItems: "center", textDecoration: "none" }}
-        >
-          {intl.formatMessage({ id: "pacientes.atender" })}
-        </Link>
+        <div style={{ display: "flex", gap: "10px" }}>
+          {/* Adotar so aparece para quem o abrigo RESPONDE — e a Tela 13. */}
+          {sobCustodia && (
+            <Link
+              to="/animais/$animalId/adocao"
+              params={{ animalId: paciente.animalId }}
+              style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "11px 16px", minHeight: "44px", display: "flex", alignItems: "center", textDecoration: "none" }}
+            >
+              {intl.formatMessage({ id: "pacientes.adotar" })}
+            </Link>
+          )}
+
+          <Link
+            to="/animais/$animalId"
+            params={{ animalId: paciente.animalId }}
+            style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "11px 16px", minHeight: "44px", display: "flex", alignItems: "center", textDecoration: "none" }}
+          >
+            {intl.formatMessage({ id: sobCustodia ? "pacientes.abrir" : "pacientes.atender" })}
+          </Link>
+        </div>
       )}
     </div>
+  );
+}
+
+/** Os recortes do topo: só existem os dois que uma consulta responde. */
+function Aba({
+  escolhida,
+  aoEscolher,
+  children,
+}: {
+  escolhida: boolean;
+  aoEscolher: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={aoEscolher}
+      aria-pressed={escolhida}
+      style={{ fontFamily: "inherit", fontSize: "14px", padding: "8px 14px", minHeight: "40px", display: "flex", alignItems: "center", border: `1px solid ${escolhida ? "oklch(0.46 0.085 150)" : "oklch(0.84 0.012 150)"}`, color: escolhida ? "oklch(0.46 0.085 150)" : "oklch(0.42 0.015 150)", background: "oklch(1 0 0)", borderRadius: "8px", cursor: "pointer" }}
+    >
+      {children}
+    </button>
   );
 }
 

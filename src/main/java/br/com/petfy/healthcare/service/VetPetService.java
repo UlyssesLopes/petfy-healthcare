@@ -29,6 +29,17 @@ public interface VetPetService {
      */
     Page<VetPetDTO> listAccessibleAnimals(String busca, Pageable pageable);
 
+    /**
+     * Os animais sob custodia da organizacao ativa — o abrigo, e nao a clinica.
+     *
+     * <b>E uma lista de natureza diferente da de cima, e por isso e outra rota.</b> Lá estao os
+     * animais que a organizacao ALCANCA porque um tutor concedeu; aqui estao os que ela
+     * RESPONDE, sem tutor humano nenhum atras. Juntar as duas numa consulta so faria o abrigo
+     * nao saber por quais deles ele responde — que e a unica informacao que importa para
+     * decidir uma adocao.
+     */
+    Page<VetPetDTO> listAnimalsInCustody(String busca, Pageable pageable);
+
     List<VaccineResponseDTO> listVaccines(UUID animalId);
 
     VaccineResponseDTO registerVaccine(UUID animalId, VaccineRequestDTO request);

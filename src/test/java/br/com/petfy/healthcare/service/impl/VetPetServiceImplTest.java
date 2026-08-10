@@ -12,6 +12,7 @@ import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
+import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
@@ -60,6 +61,14 @@ class VetPetServiceImplTest {
     @Mock
     private GrantRepository grantRepository;
 
+    /**
+     * A lista do abrigo nao passa por este teste — quem a cobre e o {@code AdocaoContainerTest},
+     * contra Postgres real, porque ela depende do indice de custodia unica e da coluna exclusiva
+     * com a de pessoa. O mock existe para o construtor.
+     */
+    @Mock
+    private CustodyRepository custodyRepository;
+
     @Mock
     private VaccineRepository vaccineRepository;
 
@@ -96,7 +105,7 @@ class VetPetServiceImplTest {
     void setUp() {
         // factory real: o que interessa aqui e que a vacina saia carimbada com a
         // clinica certa, e nao repetir a regra de montagem num mock
-        service = new VetPetServiceImpl(grantRepository, vaccineRepository,
+        service = new VetPetServiceImpl(grantRepository, custodyRepository, vaccineRepository,
                 currentProfessionalProvider, new VaccineFactory(vaccineCatalogRepository),
                 organizationActivityNotifier, vaccineCorrectionLog,
                 healthRecordRepository, healthRecordCorrectionLog, sensitiveAccessLogger);

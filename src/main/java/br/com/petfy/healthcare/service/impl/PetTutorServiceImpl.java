@@ -11,6 +11,7 @@ import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.PetTutorInvite;
 import br.com.petfy.healthcare.domain.entity.PetTutorRole;
@@ -146,13 +147,38 @@ public class PetTutorServiceImpl implements PetTutorService {
         if (invite.transfereTitularidade()) {
             Custody atual = custodiaEmCurso(animalId);
             titularAnterior = atual.getHolderPerson();
+            Organization abrigoAnterior = atual.getHolderOrganization();
 
-            Custody nova = transferir(atual, aceitante, CustodyEndReason.TRANSFERENCIA);
+            /*
+             * ADOCAO E TRANSFERENCIA SAO A MESMA MECANICA COM DOIS NOMES, e o nome importa.
+             *
+             * Quem respondia era uma organizacao, o `CustodyEndReason.ADOCAO` existe desde o
+             * P2 e nunca foi usado — o enum ate documenta este caso: "o abrigo cadastra o
+             * adotante, e e isso que encerra a custodia dele". Gravar TRANSFERENCIA aqui
+             * apagaria da historia do animal a unica palavra que conta o que aconteceu com
+             * ele.
+             */
+            boolean ehAdocao = abrigoAnterior != null;
+
+            Custody nova = transferir(atual, aceitante,
+                    ehAdocao ? CustodyEndReason.ADOCAO : CustodyEndReason.TRANSFERENCIA);
 
             // quem respondia ate ontem continua enxergando a carteira, agora por
             // concessao - e quem passou a responder decide se revoga
             if (titularAnterior != null) {
                 conceder(animal, titularAnterior, GrantLevel.EDITOR, aceitante);
+            }
+
+            /*
+             * O ABRIGO FICA COM LEITURA, e nao com EDITOR como uma pessoa ficaria.
+             *
+             * A Tela 13 escreve a regra: "a partir do aceite, o Abrigo Lar dos Focinhos passa
+             * a LER o que registrou, e nao decide mais nada sobre o Teco". Nao e delicadeza —
+             * onze anos de resgate, castracao e cirurgias continuam sendo trabalho do abrigo, e
+             * ele tem direito de ver o que produziu. Mandar no animal, nao.
+             */
+            if (abrigoAnterior != null) {
+                concederA(animal, abrigoAnterior, aceitante);
             }
 
             resposta = toResponse(nova);
@@ -383,6 +409,26 @@ public class PetTutorServiceImpl implements PetTutorService {
         custodyRepository.save(atual);
 
         return nova;
+    }
+
+    /**
+     * A concessao que sobra para o abrigo depois da adocao: <b>ler, e nada alem</b>.
+     *
+     * `VIEWER` e o nivel, e o escopo e o clinico sem `CONTATO`: o abrigo continua vendo a vida
+     * que ajudou a registrar, e o telefone de quem adotou nao e parte disso. Quem adotou pode
+     * revogar quando quiser, como qualquer concessao.
+     */
+    private Grant concederA(Animal animal, Organization abrigo, Person concedente) {
+        return grantRepository.save(Grant.builder()
+                .animal(animal)
+                .granteeOrganization(abrigo)
+                .level(GrantLevel.VIEWER)
+                .scopes(new LinkedHashSet<>(Set.of(
+                        GrantScope.CARTEIRA, GrantScope.CONDICOES, GrantScope.PRONTUARIO,
+                        GrantScope.PESO, GrantScope.ANEXOS)))
+                .grantedBy(concedente)
+                .grantedAt(LocalDateTime.now())
+                .build());
     }
 
     private Grant conceder(Animal animal, Person beneficiario, GrantLevel nivel, Person concedente) {

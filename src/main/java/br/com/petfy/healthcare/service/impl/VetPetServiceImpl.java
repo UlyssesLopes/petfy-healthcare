@@ -14,6 +14,8 @@ import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.OrganizationCapability;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
+import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
@@ -33,6 +35,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,6 +47,7 @@ import java.util.stream.Collectors;
 public class VetPetServiceImpl implements VetPetService {
 
     private final GrantRepository grantRepository;
+    private final CustodyRepository custodyRepository;
     private final VaccineRepository vaccineRepository;
     private final CurrentProfessionalProvider currentProfessionalProvider;
     private final VaccineFactory vaccineFactory;
@@ -76,6 +80,37 @@ public class VetPetServiceImpl implements VetPetService {
                 : grantRepository.buscarVigentesDaPessoa(contexto.person().getPersonId(), agora, termo, pageable);
 
         return pagina.map(this::toVetPet);
+    }
+
+    /**
+     * A lista do abrigo: quem a organizacao RESPONDE, e nao quem ela alcanca.
+     *
+     * <b>Exige organizacao declarada, e o erro dele nao e de permissao.</b> Um voluntario que
+     * atua por dois abrigos precisa dizer por qual esta agindo — responder pela lista errada
+     * seria pior que recusar. O `ORGANIZATION_CONTEXT_REQUIRED` (138) ja diz exatamente isso, e a tela oferece a
+     * escolha em vez de parecer porta fechada (PRODUTO 9.5).
+     *
+     * O `accessGrantedAt` do DTO carrega aqui o INICIO DA CUSTODIA — e o "desde" que a Tela 12
+     * mostra. Reusar o campo e deliberado: os dois respondem "desde quando este animal esta com
+     * a gente", e criar um segundo campo para a mesma pergunta deixaria a tela escolhendo qual
+     * ler.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<VetPetDTO> listAnimalsInCustody(String busca, Pageable pageable) {
+        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+
+        if (!contexto.atuaPorOrganizacao()) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getMessage(),
+                    ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getCode(),
+                    HttpStatus.CONFLICT);
+        }
+
+        return custodyRepository
+                .buscarEmCursoDaOrganizacao(contexto.organization().getOrganizationId(),
+                        termoDeBusca(busca), pageable)
+                .map(this::toVetPet);
     }
 
     /**
@@ -378,6 +413,28 @@ public class VetPetServiceImpl implements VetPetService {
                         ErrorMessageEnum.ANIMAL_NOT_FOUND.getMessage(),
                         ErrorMessageEnum.ANIMAL_NOT_FOUND.getCode(),
                         HttpStatus.NOT_FOUND));
+    }
+
+    /**
+     * O animal sob custodia da organizacao, sem tutor humano atras.
+     *
+     * O `personName` fica nulo <b>e isso e a informacao</b>: "sem tutor humano desde o resgate",
+     * como a Tela 13 escreve. Preencher com o nome do abrigo faria a coluna "tutor" mentir —
+     * quem responde e uma organizacao, e a tela precisa poder dizer isso.
+     */
+    private VetPetDTO toVetPet(Custody custodia) {
+        Animal animal = custodia.getAnimal();
+
+        return VetPetDTO.builder()
+                .animalId(animal.getAnimalId())
+                .name(animal.getName())
+                .type(animal.getType())
+                .breed(animal.getBreed())
+                .bornDate(animal.getBornDate())
+                .gender(animal.getGender())
+                .weight(animal.getWeight())
+                .accessGrantedAt(custodia.getStartedAt())
+                .build();
     }
 
     private VetPetDTO toVetPet(Grant access) {

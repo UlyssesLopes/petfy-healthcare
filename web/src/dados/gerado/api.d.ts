@@ -1078,6 +1078,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/professional/animals/in-custody": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os animais sob custodia da organizacao ativa */
+        get: operations["listAnimalsInCustody"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/professional/animals/{animalId}/health-records": {
         parameters: {
             query?: never;
@@ -4187,6 +4204,34 @@ export interface operations {
         };
     };
     listAccessibleAnimals: {
+        parameters: {
+            query?: {
+                q?: string;
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageVetPetDTO"];
+                };
+            };
+        };
+    };
+    listAnimalsInCustody: {
         parameters: {
             query?: {
                 q?: string;
