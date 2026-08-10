@@ -3644,7 +3644,7 @@
           }
         },
         "summary" : "As matriculas do animal, com a comprovacao de saude de cada uma",
-        "tags" : [ "animal-controller" ]
+        "tags" : [ "animal-enrollment-controller" ]
       }
     },
     "/animals/{animalId}/observations" : {

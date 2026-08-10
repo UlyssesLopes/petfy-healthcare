@@ -1,10 +1,8 @@
 package br.com.petfy.healthcare.controller;
 
 import br.com.petfy.healthcare.domain.dto.AnimalRequestDTO;
-import br.com.petfy.healthcare.domain.dto.EnrollmentResponseDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
 import br.com.petfy.healthcare.service.AnimalService;
-import br.com.petfy.healthcare.service.CrecheService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,20 +22,13 @@ import java.util.UUID;
 public class AnimalController {
 
     private final AnimalService animalService;
-    private final CrecheService crecheService;
 
-    /**
-     * As matriculas vivas do animal, com a comprovacao de saude de cada creche.
-     *
-     * <b>Mora aqui, e nao em {@code /professional}</b>, porque quem le e quem alcanca o ANIMAL: o
-     * tutor precisa ver o que a creche esta esperando dele — "falta a antirrabica em dia" — sem ter de
-     * ser membro de creche nenhuma. E a Tela 10 vista pelo outro lado.
+    /*
+     * A rota de matriculas do animal saiu daqui e virou o `AnimalEnrollmentController`. Nao foi
+     * organizacao: o `CorsConfigTest` — um slice que monta so alguns beans — quebrou os sete casos
+     * dele quando este controller passou a depender do CrecheService. Pendurar a creche no
+     * controller de animal faz todo mundo que monta o AnimalController carregar a creche junto.
      */
-    @Operation(summary = "As matriculas do animal, com a comprovacao de saude de cada uma")
-    @GetMapping("/{animalId}/enrollments")
-    public ResponseEntity<List<EnrollmentResponseDTO>> listEnrollments(@PathVariable UUID animalId) {
-        return ResponseEntity.ok(crecheService.listEnrollmentsOfAnimal(animalId));
-    }
 
     @Operation(summary = "Cadastra um animal", description = "Quem cadastra passa a deter a custodia dele. Especie e obrigatoria porque o catalogo de vacina depende dela; identificacao - microchip, tatuagem, RGA - e toda opcional, porque metade dos animais do Brasil nao tem nenhuma.")
     @PostMapping

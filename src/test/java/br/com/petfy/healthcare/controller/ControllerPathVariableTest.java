@@ -50,16 +50,11 @@ class ControllerPathVariableTest {
         @Mock
         private AnimalService animalService;
 
-        // A rota de matriculas do animal (Tela 10 pelo lado do tutor) entrou neste controller;
-        // este teste afirma sobre nome de path variable, e nao sobre creche.
-        @Mock
-        private CrecheService crecheService;
-
         private MockMvc mockMvc;
 
         private MockMvc mockMvc() {
             if (mockMvc == null) {
-                mockMvc = MockMvcBuilders.standaloneSetup(new AnimalController(animalService, crecheService)).build();
+                mockMvc = MockMvcBuilders.standaloneSetup(new AnimalController(animalService)).build();
             }
             return mockMvc;
         }
