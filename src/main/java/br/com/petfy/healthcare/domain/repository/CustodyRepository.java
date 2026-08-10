@@ -54,10 +54,17 @@ public interface CustodyRepository extends JpaRepository<Custody, UUID> {
      * Paginada e com busca por nome ou microchip, como a lista da clinica: um abrigo com 84
      * animais nao cabe numa tela, e o desenho ja pede o campo de busca.
      */
-    @Query("select c from Custody c where c.holderOrganization.organizationId = :organizationId "
+    /*
+     * O `join fetch` do animal nao e otimizacao prematura: sem ele, uma pagina de 20 custodias
+     * faz 21 consultas para montar o DTO — e foi o proprio teste desta consulta que denunciou o
+     * problema, quebrando com LazyInitializationException ao ler o nome do animal. O animal e
+     * ManyToOne, entao paginar com fetch dele nao traz o aviso de colecao em memoria.
+     */
+    @Query("select c from Custody c join fetch c.animal a "
+            + "where c.holderOrganization.organizationId = :organizationId "
             + "and c.endedAt is null "
-            + "and (lower(c.animal.name) like :busca "
-            + "  or lower(coalesce(c.animal.microchipNumber, '')) like :busca)")
+            + "and (lower(a.name) like :busca "
+            + "  or lower(coalesce(a.microchipNumber, '')) like :busca)")
     Page<Custody> buscarEmCursoDaOrganizacao(@Param("organizationId") UUID organizationId,
                                              @Param("busca") String busca,
                                              Pageable pageable);

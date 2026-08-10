@@ -69,6 +69,19 @@ class AnimalAccessGuardTest {
     @Mock
     private CurrentPersonProvider currentPersonProvider;
 
+    /**
+     * A guarda passou a consultar a organizacao DECLARADA no cabecalho, porque a custodia de
+     * organizacao conta desde a adocao (Tela 13). Sem este mock, os tres casos de
+     * {@code requireCustodia} morriam de NullPointerException antes de chegar na assercao — e o
+     * NPE mentia sobre o motivo, dizendo "esperava PetfyHealthcareException".
+     *
+     * <b>Os casos abaixo declaram organizacao vazia de proposito:</b> eles afirmam sobre quem NAO
+     * alcanca o animal, e ter organizacao declarada seria uma segunda porta que eles nao querem
+     * abrir. A porta da organizacao e coberta pelo {@code AdocaoContainerTest}, contra banco.
+     */
+    @Mock
+    private CurrentProfessionalProvider currentProfessionalProvider;
+
     @InjectMocks
     private AnimalAccessGuard animalAccessGuard;
 
@@ -255,6 +268,7 @@ class AnimalAccessGuardTest {
         @DisplayName("concessao nenhuma substitui custodia, em nivel nenhum")
         void concessaoNaoSubstituiCustodia(GrantLevel nivel) {
             comConcessao(nivel);
+            semOrganizacaoDeclarada();
 
             assertNivelInsuficiente(animalAccessGuard::requireCustodia);
         }
@@ -263,8 +277,19 @@ class AnimalAccessGuardTest {
         @DisplayName("quem nao alcanca recebe 404, e nao 403")
         void semAlcanceRecebe404() {
             semAlcance();
+            semOrganizacaoDeclarada();
 
             assertNaoEncontrado(animalAccessGuard::requireCustodia);
+        }
+
+        /**
+         * Ninguem agindo por organizacao: e o caso do tutor comum, e o unico em que estes dois
+         * casos afirmam algo. Com organizacao declarada haveria uma segunda porta, e a custodia
+         * da organizacao e coberta contra banco no {@code AdocaoContainerTest} — mock nao tem o
+         * indice de custodia unica que aquele comportamento depende.
+         */
+        private void semOrganizacaoDeclarada() {
+            when(currentProfessionalProvider.organizacaoDeclarada(any())).thenReturn(Optional.empty());
         }
     }
 
