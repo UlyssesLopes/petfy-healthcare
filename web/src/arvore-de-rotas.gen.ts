@@ -14,6 +14,7 @@ import { Route as EntrarRouteImport } from './rotas/entrar'
 import { Route as AnimaisAnimalIdRouteImport } from './rotas/animais.$animalId'
 import { Route as AnimaisAnimalIdConcederAcessoRouteImport } from './rotas/animais.$animalId_.conceder-acesso'
 import { Route as AnimaisAnimalIdQuemCuidaRouteImport } from './rotas/animais.$animalId_.quem-cuida'
+import { Route as AnimaisAnimalIdTransferirRouteImport } from './rotas/animais.$animalId_.transferir'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -42,6 +43,12 @@ const AnimaisAnimalIdQuemCuidaRoute =
     path: '/animais/$animalId/quem-cuida',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AnimaisAnimalIdTransferirRoute =
+  AnimaisAnimalIdTransferirRouteImport.update({
+    id: '/animais/$animalId_/transferir',
+    path: '/animais/$animalId/transferir',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -49,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
+  '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -56,6 +64,7 @@ export interface FileRoutesByTo {
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
+  '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -64,6 +73,7 @@ export interface FileRoutesById {
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/$animalId_/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId_/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
+  '/animais/$animalId_/transferir': typeof AnimaisAnimalIdTransferirRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -73,6 +83,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId'
     | '/animais/$animalId/conceder-acesso'
     | '/animais/$animalId/quem-cuida'
+    | '/animais/$animalId/transferir'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -80,6 +91,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId'
     | '/animais/$animalId/conceder-acesso'
     | '/animais/$animalId/quem-cuida'
+    | '/animais/$animalId/transferir'
   id:
     | '__root__'
     | '/'
@@ -87,6 +99,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId'
     | '/animais/$animalId_/conceder-acesso'
     | '/animais/$animalId_/quem-cuida'
+    | '/animais/$animalId_/transferir'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,6 +108,7 @@ export interface RootRouteChildren {
   AnimaisAnimalIdRoute: typeof AnimaisAnimalIdRoute
   AnimaisAnimalIdConcederAcessoRoute: typeof AnimaisAnimalIdConcederAcessoRoute
   AnimaisAnimalIdQuemCuidaRoute: typeof AnimaisAnimalIdQuemCuidaRoute
+  AnimaisAnimalIdTransferirRoute: typeof AnimaisAnimalIdTransferirRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -134,6 +148,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnimaisAnimalIdQuemCuidaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/animais/$animalId_/transferir': {
+      id: '/animais/$animalId_/transferir'
+      path: '/animais/$animalId/transferir'
+      fullPath: '/animais/$animalId/transferir'
+      preLoaderRoute: typeof AnimaisAnimalIdTransferirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -143,6 +164,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnimaisAnimalIdRoute: AnimaisAnimalIdRoute,
   AnimaisAnimalIdConcederAcessoRoute: AnimaisAnimalIdConcederAcessoRoute,
   AnimaisAnimalIdQuemCuidaRoute: AnimaisAnimalIdQuemCuidaRoute,
+  AnimaisAnimalIdTransferirRoute: AnimaisAnimalIdTransferirRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

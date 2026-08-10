@@ -314,6 +314,7 @@ export const mensagens = {
   "acesso.vazio.acao": "Conceder acesso a uma organização",
   "acesso.pessoas": "Pessoas",
   "acesso.pessoas.vazio": "Só você responde por este animal.",
+  "acesso.pessoas.transferir": "Transferir a titularidade",
   "acesso.pessoa.titular": "Responde pelo {nome}",
   "acesso.pessoa.coTutor": "Co-tutor · responde pelo {nome} com você",
   "acesso.ultimosAcessos": "Últimos acessos",
@@ -394,6 +395,41 @@ export const mensagens = {
   "conceder.acao": "Conceder acesso",
   "conceder.acao.concedendo": "Concedendo…",
   "conceder.acao.cancelar": "Cancelar",
+
+  // -------------------------------------------------- transferir a titularidade (Tela 11)
+  //
+  // A regra do desenho: "nenhuma custódia termina sem sucessor". Por isso não existe
+  // "abandonar" nem "sair" — existe passar para alguém, e a pessoa precisa aceitar.
+  "transferir.titulo": "Transferir o {nome} para outra pessoa",
+  "transferir.apoio": "A vida inteira do {nome} vai junto. Quem recebe passa a responder por ele a partir do aceite — não existe deixar o {nome} sem ninguém.",
+  "transferir.paraQuem": "Para quem",
+  "transferir.paraQuem.apoio": "A pessoa precisa aceitar. Enquanto não aceitar, o {nome} continua sob sua responsabilidade.",
+  "transferir.motivo": "Motivo",
+  "transferir.motivo.indisponivel": "Ainda não é possível registrar o motivo: o convite guarda o e-mail, o papel e o prazo, e não há campo para ele. Um campo que aceitasse o texto e o jogasse fora seria pior.",
+  "transferir.junto.rotulo": "O que vai junto com o {nome}",
+  "transferir.junto.linha": "A linha do tempo inteira, desde {ano}",
+  "transferir.junto.linhaVazia": "A linha do tempo inteira, do jeito que ela está hoje",
+  "transferir.junto.orientacao": "{o_que} em curso",
+  // O desenho escreve "com as 6 doses já dadas". A contagem não existe no
+  // CareInstructionResponseDTO — ele traz a última, e é isso que a linha diz.
+  "transferir.junto.orientacaoComDose": "{o_que} em curso, com a última dose em {data}",
+  "transferir.junto.condicoes": "{condicoes, plural, =0 {Nenhuma condição registrada} one {# condição registrada} other {# condições registradas}} e {anexos, plural, =0 {nenhum anexo} one {# anexo} other {# anexos}}",
+  // O desenho escreveu "quem deixa de ver o Code". O backend não revoga nada de ninguém
+  // na transferência, então a tela diz o que acontece de fato — com o mesmo peso de alerta.
+  "transferir.continua.rotulo": "Quem continua alcançando o {nome}",
+  "transferir.continua.voce": "Você",
+  "transferir.continua.voce.texto": "Deixa de responder pelo {nome} e continua alcançando ele como co-tutor, com permissão de registrar. Quem recebe pode revogar isso.",
+  "transferir.continua.coTutor": "{quem}, co-tutor",
+  "transferir.continua.coTutor.texto": "Continua com o mesmo acesso. Quem recebe pode revogar.",
+  "transferir.continua.organizacao.texto": "Continua com o acesso que você concedeu. Quem recebe pode revogar.",
+  "transferir.continua.tese": "Hoje os acessos são herdados: quem recebe o animal recebe também quem já alcançava ele, e decide o que fica.",
+  "transferir.acao": "Enviar transferência",
+  "transferir.acao.enviando": "Enviando…",
+  "transferir.acao.cancelar": "Cancelar",
+  "transferir.enviado.titulo": "Transferência enviada para {email}",
+  "transferir.enviado.apoio": "Enquanto a pessoa não aceitar, o {nome} continua sob sua responsabilidade e nada mudou.",
+  "transferir.enviado.prazo": "O convite vale até {data}.",
+  "transferir.enviado.voltar": "Voltar para a vida do {nome}",
 
   "rota.naoEncontrada.titulo": "Esta página não existe.",
   "rota.naoEncontrada.acao": "Ir para o início",

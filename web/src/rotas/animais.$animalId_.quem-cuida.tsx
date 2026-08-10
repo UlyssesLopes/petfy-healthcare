@@ -172,6 +172,15 @@ function QuemCuida() {
                     ))}
                   </div>
                 )}
+
+                {/* A Tela 11 mora aqui: e das pessoas que ela trata, e nao dos acessos. */}
+                <Link
+                  to="/animais/$animalId/transferir"
+                  params={{ animalId }}
+                  style={{ display: "inline-block", marginTop: "16px", fontSize: "15px", color: "oklch(0.46 0.085 150)" }}
+                >
+                  {intl.formatMessage({ id: "acesso.pessoas.transferir" })}
+                </Link>
               </div>
 
               <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", background: "oklch(1 0 0)", padding: "22px 24px" }}>
