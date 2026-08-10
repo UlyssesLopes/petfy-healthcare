@@ -22,4 +22,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
             + "and p.day = :dia")
     List<Attendance> findDoDiaNaTurma(@Param("classGroupId") UUID classGroupId,
                                       @Param("dia") LocalDate dia);
+
+    /** Neta do animal: a presenca aponta para a matricula, que aponta para o animal. */
+    void deleteByEnrollmentAnimalAnimalIdIn(java.util.List<UUID> animalIds);
 }

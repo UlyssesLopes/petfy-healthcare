@@ -37,4 +37,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
     @Query("select e from Enrollment e join fetch e.classGroup "
             + "where e.animal.animalId = :animalId and e.endedAt is null")
     List<Enrollment> findVivasDoAnimal(@Param("animalId") UUID animalId);
+
+    /** Usada pelo AnimalPurger: apagar o animal apaga a matricula dele. */
+    void deleteByAnimalAnimalIdIn(java.util.List<UUID> animalIds);
 }

@@ -2,6 +2,8 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
+import br.com.petfy.healthcare.domain.repository.AttendanceRepository;
+import br.com.petfy.healthcare.domain.repository.EnrollmentRepository;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionFulfillmentRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
@@ -61,6 +63,8 @@ public class AnimalPurger {
     private final HealthRecordCorrectionRepository healthRecordCorrectionRepository;
     private final AnimalWeightHistoryRepository animalWeightHistoryRepository;
     private final AntiparasiticRepository antiparasiticRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final GrantRepository grantRepository;
     private final SensitiveAccessLogRepository sensitiveAccessLogRepository;
     private final AnimalHealthConditionRepository animalHealthConditionRepository;
@@ -116,6 +120,13 @@ public class AnimalPurger {
         attachmentRepository.deleteByAnimalAnimalIdIn(animalIds);
 
         // netas: apontam para vacina, para historico e para orientacao
+        //
+        // A PRESENCA E NETA DO ANIMAL: ela aponta para a matricula, que aponta para o animal. Sai
+        // aqui, antes da matricula — e as duas entraram porque o
+        // `AnimalPurgerCoverageContainerTest` acusou a tabela `enrollments` recem-criada como "nova
+        // apontando para animals sem entrar no AnimalPurger". Sem isso, apagar o animal e apagar a
+        // conta responderiam 500 no primeiro animal com matricula.
+        attendanceRepository.deleteByEnrollmentAnimalAnimalIdIn(animalIds);
         vaccineCorrectionRepository.deleteByVaccineAnimalAnimalIdIn(animalIds);
         healthRecordCorrectionRepository.deleteByHealthRecordAnimalAnimalIdIn(animalIds);
         careInstructionFulfillmentRepository.deleteByAnimalIdIn(animalIds);
@@ -132,6 +143,7 @@ public class AnimalPurger {
         animalHealthConditionRepository.deleteByAnimalAnimalIdIn(animalIds);
         careInstructionRepository.deleteByAnimalAnimalIdIn(animalIds);
         observationRepository.deleteByAnimalAnimalIdIn(animalIds);
+        enrollmentRepository.deleteByAnimalAnimalIdIn(animalIds);
 
         // o convite sai antes da custodia por clareza, nao por dependencia: um
         // aponta para o animal, o outro tambem, e nenhum dos dois aponta para o outro
