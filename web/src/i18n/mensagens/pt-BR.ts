@@ -579,6 +579,35 @@ export const mensagens = {
   "transferir.enviado.prazo": "O convite vale até {data}.",
   "transferir.enviado.voltar": "Voltar para a vida do {nome}",
 
+  // ----------------------------------------------------- a adoção (Tela 13)
+  //
+  // "O adotante não ganha uma ficha em branco com a data de hoje: ganha onze anos de vida de
+  // um animal que ele acabou de conhecer." É a tese do produto inteiro, num gesto só.
+  "adocao.titulo": "Adoção do {nome}",
+  "adocao.apoio": "A vida registrada passa inteira para quem adota. O {abrigo} continua vendo o que produziu, e deixa de mandar no registro.",
+  "adocao.oQue": "este animal",
+  "adocao.oQue.enviar": "a adoção",
+  "adocao.recebe": "O que o adotante recebe",
+  "adocao.recebe.linha": "A linha do tempo inteira, desde {desde}",
+  "adocao.recebe.atendimentos": "{quantos, plural, one {# atendimento} other {# atendimentos}}, por {pessoas, plural, one {# pessoa} other {# pessoas}}",
+  "adocao.recebe.condicoes": "{quantas, plural, one {# condição registrada} other {# condições registradas}} — alergias e o que evitar",
+  "adocao.recebe.emCurso": "{quantas, plural, one {# tratamento em curso} other {# tratamentos em curso}}, com as doses já dadas",
+  "adocao.recebe.vazio": "O {nome} ainda não tem nada registrado além do cadastro.",
+  // A devolução de 2019 que o desenho mostra é justamente o que não temos.
+  "adocao.recebe.faltaResgate": "O resgate, o tempo em lar transitório e uma devolução anterior não aparecem aqui: não existem como evento no Petfy, e a história de custódias não tem consulta. O desenho faz questão de mostrar a devolução — é biografia, e quem adota tem direito de saber. Ainda não dá.",
+  "adocao.adotante": "Adotante",
+  "adocao.adotante.campo": "e-mail de quem vai adotar",
+  "adocao.adotante.semConta": "Se ela ainda não tiver conta no Petfy, vai criar uma ao aceitar — e o {nome} já estará dentro.",
+  "adocao.mudaParaOAbrigo": "O que muda para vocês",
+  "adocao.passaALer": "A partir do aceite, o {abrigo} passa a ler o que registrou, e não decide mais nada sobre o {nome}. Quem adotou pode revogar esse acesso quando quiser.",
+  "adocao.tese": "Onze anos de vida registrada não recomeçam: quem adota recebe o histórico inteiro, assinado por quem fez cada parte dele.",
+  "adocao.acao": "Enviar adoção",
+  "adocao.acao.enviando": "Enviando…",
+  "adocao.cancelar": "Cancelar",
+  "adocao.enviado.titulo": "Adoção enviada para {email}",
+  "adocao.enviado.apoio": "Enquanto a pessoa não aceitar, o {nome} continua sob a responsabilidade do {abrigo} e nada mudou.",
+  "adocao.enviado.voltar": "Voltar para os animais",
+
   // --------------------------------------- a área de organização (Tela 03)
   //
   // A tabela do desenho tem quatro colunas; três dependem de agregação que nenhuma rota faz.
@@ -586,8 +615,15 @@ export const mensagens = {
   "pacientes.titulo": "Pacientes",
   "pacientes.meusAnimais": "Meus animais",
   "pacientes.busca": "Buscar por nome, microchip ou RGA",
-  "pacientes.todos": "Todos",
-  "pacientes.todos.contados": "Todos · {quantos}",
+  // Os dois recortes que uma consulta responde. "Vencendo", "em tratamento" e "atendidos este
+  // mês" continuam sem agregação — a nota ao lado diz isso.
+  "pacientes.aba.acesso": "Com acesso concedido",
+  "pacientes.aba.acesso.contados": "Com acesso concedido · {quantos}",
+  "pacientes.aba.custodia": "Sob custódia",
+  "pacientes.aba.custodia.contados": "Sob custódia · {quantos}",
+  "pacientes.semTutor": "sem tutor humano",
+  "pacientes.adotar": "Adoção",
+  "pacientes.abrir": "Abrir",
   "pacientes.recortes.indisponiveis": "Vencendo, em tratamento e atendidos este mês dependem de uma consulta por organização que ainda não existe",
   "pacientes.coluna.animal": "Animal",
   "pacientes.coluna.tutor": "Tutor",

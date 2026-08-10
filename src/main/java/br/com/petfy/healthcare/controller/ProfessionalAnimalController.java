@@ -52,6 +52,23 @@ public class ProfessionalAnimalController {
         return ResponseEntity.ok(vetPetService.listAccessibleAnimals(q, pageable));
     }
 
+    /**
+     * Os animais sob custodia da organizacao — o abrigo, e nao a clinica.
+     *
+     * <b>Rota separada de proposito, e o segmento literal vem antes do {@code {animalId}}</b>
+     * na resolucao do Spring, entao "in-custody" nunca e lido como id. As duas listas respondem
+     * perguntas diferentes: a de cima e "quem eu alcanco porque alguem me deu acesso"; esta e
+     * "por quem eu respondo". Juntar as duas faria o abrigo perder de vista exatamente o que ele
+     * precisa para decidir uma adocao.
+     */
+    @GetMapping("/in-custody")
+    @Operation(summary = "Os animais sob custodia da organizacao ativa")
+    public ResponseEntity<Page<VetPetDTO>> listAnimalsInCustody(
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 20, sort = "animal.name") Pageable pageable) {
+        return ResponseEntity.ok(vetPetService.listAnimalsInCustody(q, pageable));
+    }
+
     @Operation(summary = "As vacinas do animal, pelo lado profissional")
     @GetMapping("/{animalId}/vaccines")
     public ResponseEntity<List<VaccineResponseDTO>> listVaccines(@PathVariable UUID animalId) {

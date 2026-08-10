@@ -1,6 +1,8 @@
 package br.com.petfy.healthcare.domain.repository;
 
 import br.com.petfy.healthcare.domain.entity.Custody;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -31,6 +33,34 @@ public interface CustodyRepository extends JpaRepository<Custody, UUID> {
     /** Os animais por que a pessoa responde agora. */
     @Query("select c from Custody c where c.holderPerson.personId = :personId and c.endedAt is null")
     List<Custody> findEmCursoDaPessoa(@Param("personId") UUID personId);
+
+    /**
+     * A custodia em curso do animal quando quem responde e uma ORGANIZACAO.
+     *
+     * <b>Ela existe desde o P2 e nunca teve caminho HTTP.</b> O {@code holderOrganization} e
+     * exclusivo com o {@code holderPerson}: um abrigo que responde por um animal resgatado nao
+     * tem tutor humano, e e por isso que o modelo previu os dois. Sem esta consulta, a guarda
+     * so sabia perguntar por pessoa — e nenhum membro do abrigo conseguia agir sobre o animal
+     * do proprio abrigo.
+     */
+    @Query("select c from Custody c where c.animal.animalId = :animalId "
+            + "and c.holderOrganization.organizationId = :organizationId and c.endedAt is null")
+    Optional<Custody> findEmCursoDaOrganizacao(@Param("animalId") UUID animalId,
+                                               @Param("organizationId") UUID organizationId);
+
+    /**
+     * Os animais sob custodia da organizacao agora — a lista do abrigo (Tela 12).
+     *
+     * Paginada e com busca por nome ou microchip, como a lista da clinica: um abrigo com 84
+     * animais nao cabe numa tela, e o desenho ja pede o campo de busca.
+     */
+    @Query("select c from Custody c where c.holderOrganization.organizationId = :organizationId "
+            + "and c.endedAt is null "
+            + "and (lower(c.animal.name) like :busca "
+            + "  or lower(coalesce(c.animal.microchipNumber, '')) like :busca)")
+    Page<Custody> buscarEmCursoDaOrganizacao(@Param("organizationId") UUID organizationId,
+                                             @Param("busca") String busca,
+                                             Pageable pageable);
 
     /** A historia inteira do animal, da custodia mais antiga para a mais recente. */
     List<Custody> findByAnimalAnimalIdOrderByStartedAtAsc(UUID animalId);

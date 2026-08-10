@@ -53,6 +53,7 @@ public class AnimalAccessGuard {
     private final CustodyRepository custodyRepository;
     private final GrantRepository grantRepository;
     private final CurrentPersonProvider currentPersonProvider;
+    private final CurrentProfessionalProvider currentProfessionalProvider;
 
     /** Le a carteira: custodia ou qualquer concessao vigente serve. */
     public Animal requireLeitura(UUID animalId) {
@@ -76,17 +77,53 @@ public class AnimalAccessGuard {
     public Animal requireCustodia(UUID animalId) {
         UUID personId = currentPersonProvider.require().getPersonId();
 
-        custodyRepository.findEmCursoDaPessoa(animalId, personId)
-                .orElseThrow(() -> {
-                    // se a pessoa alcanca o animal por concessao, ela sabe que ele
-                    // existe: negar com 404 seria mentir para quem ja tem a informacao
-                    if (concessaoVigente(animalId, personId).isPresent()) {
-                        return nivelInsuficiente();
-                    }
-                    return animalNaoEncontrado();
-                });
+        if (custodyRepository.findEmCursoDaPessoa(animalId, personId).isPresent()) {
+            return carregar(animalId);
+        }
 
-        return carregar(animalId);
+        /*
+         * A CUSTODIA DA ORGANIZACAO conta aqui, e nao contava antes.
+         *
+         * O `Custody` aceita `holderOrganization` desde o P2 — o abrigo que resgatou um animal
+         * responde por ele, e nao ha tutor humano nenhum. Mas esta guarda so sabia perguntar
+         * por pessoa, e o efeito era que NENHUM membro do abrigo conseguia agir sobre o animal
+         * do proprio abrigo: nao dava para conceder acesso a uma clinica, nao dava para
+         * convidar o adotante, nao dava para nada. A adocao inteira estava trancada por esta
+         * linha que faltava.
+         *
+         * <b>Quem responde e a organizacao DECLARADA no cabecalho</b>, e nao qualquer uma de
+         * que a pessoa participe. E a mesma regra do `organizacaoAssinante` das observacoes:
+         * agir em nome de uma organizacao e uma escolha explicita de quem age, nunca uma
+         * inferencia do servidor — senao um voluntario de dois abrigos agiria pelo abrigo
+         * errado sem saber.
+         */
+        Optional<UUID> organizacaoDeclarada = organizacaoAtiva();
+
+        if (organizacaoDeclarada.isPresent()
+                && custodyRepository.findEmCursoDaOrganizacao(animalId, organizacaoDeclarada.get()).isPresent()) {
+            return carregar(animalId);
+        }
+
+        // se a pessoa alcanca o animal por concessao, ela sabe que ele existe: negar com 404
+        // seria mentir para quem ja tem a informacao
+        if (concessaoVigente(animalId, personId).isPresent()) {
+            throw nivelInsuficiente();
+        }
+
+        throw animalNaoEncontrado();
+    }
+
+    /**
+     * A organizacao em nome de que a pessoa declarou estar agindo, se declarou.
+     *
+     * Devolve vazio sem reclamar: quem nao declarou nada esta agindo como pessoa, e isso e o
+     * caso comum. O erro de contexto ambiguo pertence a quem PRECISA da organizacao para agir,
+     * e nao a esta guarda.
+     */
+    private Optional<UUID> organizacaoAtiva() {
+        return currentProfessionalProvider
+                .organizacaoDeclarada(currentPersonProvider.require())
+                .map(organizacao -> organizacao.getOrganizationId());
     }
 
     /**

@@ -29,3 +29,27 @@ export function usePacientes(busca: string) {
       ),
   });
 }
+
+/**
+ * Os animais sob custodia da organizacao — o abrigo, e nao a clinica.
+ *
+ * <b>E outra lista, e nao um filtro da de cima.</b> A de cima e "quem eu alcanco porque alguem
+ * me concedeu"; esta e "por quem eu respondo". Sao perguntas diferentes, e o abrigo precisa da
+ * segunda para decidir uma adocao — o animal resgatado nao tem tutor humano nenhum atras.
+ *
+ * <b>O `personName` vem vazio de proposito</b>: "sem tutor humano desde o resgate". A tela diz
+ * isso em vez de preencher com o nome do abrigo, que faria a coluna de tutor mentir.
+ */
+export function useSobCustodia(busca: string) {
+  const alvo = busca.trim();
+
+  return useQuery({
+    queryKey: ["sob-custodia", alvo],
+    queryFn: async () =>
+      corpoDe(
+        await cliente.GET("/professional/animals/in-custody", {
+          params: { query: { size: 50, ...(alvo === "" ? {} : { q: alvo }) } },
+        }),
+      ),
+  });
+}
