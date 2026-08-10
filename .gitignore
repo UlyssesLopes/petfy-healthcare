@@ -46,3 +46,7 @@ build/
 .DS_Store
 ### Residuo de crash do shell no Windows
 *.stackdump
+
+# Capturas de conferencia das telas: registro de que a tela foi vista rodando,
+# nao fonte. A fonte e o HTML da entrega em design/IdentidadeVisual/.
+design/capturas/

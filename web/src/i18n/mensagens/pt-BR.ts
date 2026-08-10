@@ -113,11 +113,37 @@ export const mensagens = {
   // A validacao de campo e NOSSA e acontece antes de enviar - o servidor devolve
   // `campo: motivo` com o nome do campo em ingles, e isso nao e exibivel (DESIGN.md 6,
   // emenda de 2026-08-07). As frases seguem a secao 2: dizem o que falta, sem culpar.
-  "entrar.titulo": "Entrar",
+  "entrar.titulo": "Que bom te ver",
+  "entrar.subtitulo": "Entre para continuar de onde parou.",
   "entrar.email": "E-mail",
   "entrar.senha": "Senha",
   "entrar.acao": "Entrar",
   "entrar.enviando": "Entrando…",
+  "entrar.mostrar": "Mostrar",
+  "entrar.ocultar": "Ocultar",
+  "entrar.esqueci": "Esqueci a senha",
+  "entrar.ou": "ou",
+
+  // A frase da esquerda nao vende o produto — lembra por que a conta existe. E a mesma
+  // tese do simbolo: o animal permanece, as pessoas passam.
+  "entrar.tese.titulo": "A vida deles continua registrada, mesmo quando você não está olhando.",
+  "entrar.tese.apoio": "Cada dose, cada consulta e cada dia de creche entrou aqui com o nome de quem fez. Nada some, nada é reescrito às escondidas.",
+
+  "entrar.agora.rotulo": "Precisa de algo agora?",
+  "entrar.agora.texto": "Se o animal está passando mal e você não lembra a senha, o cartão de emergência dele abre sem login — alergias, remédios em curso e quem chamar.",
+  "entrar.cartao.acao": "Abrir cartão de emergência",
+
+  "entrar.continuarConectado": "Continuar conectado neste aparelho",
+  "entrar.link.acao": "Receber um link por e-mail",
+  "entrar.link.apoio": "Sem senha. Você clica no link e entra — serve quando a senha não vem à cabeça.",
+  "entrar.criarConta": "Ainda não tem conta? {acao}",
+  "entrar.criarConta.acao": "Criar uma agora",
+
+  // As quatro frases de "por que esta desabilitado". A secao 06 pede que o desabilitado
+  // nunca apareca mudo, e que o motivo venha ANTES do gesto — nao depois.
+  "entrar.cartao.porque": "Ainda não dá para abrir daqui: o cartão abre por um link que quem responde pelo animal gera e envia.",
+  "entrar.continuarConectado.porque": "Ainda não guardamos a sessão entre visitas — ao recarregar a página é preciso entrar de novo.",
+  "entrar.link.porque": "Entrar por link ainda não existe. Por enquanto, só com senha.",
   "entrar.email.faltando": "Informe o seu e-mail.",
   "entrar.email.incompleto": "Esse e-mail não parece completo — falta o @",
   "entrar.senha.faltando": "Informe a sua senha.",
@@ -130,8 +156,42 @@ export const mensagens = {
 
   // ------------------------------------------------------------------- home do tutor
   "home.sair": "Sair",
+  "home.agindoComo": "Agindo como",
+  "home.contexto.pela": "· pela {org}",
+  "home.nav.meusAnimais": "Meus animais",
+  "home.nav.quemCuida": "Quem cuida",
+  "home.custodia": "Sob sua custódia",
+  "home.cadastrarAnimal": "Cadastrar animal",
+  "home.cadastrarAnimal.porque": "O cadastro ainda não tem tela. Por enquanto o animal entra pela API.",
+  "home.hoje": "Hoje",
+  // "Três coisas pedem você" — o desenho conta, e a contagem e o que da hierarquia:
+  // sem numero, quinze pendencias e uma lista; com numero, e um dia.
+  "home.quantas": "{total, plural, =0 {Nada pede você agora.} one {Uma coisa pede você.} other {# coisas pedem você.}} Silenciar não para o registro.",
+  "home.pendencia.titulo": "{o_que} do {animal}",
+  "home.silenciada.cumprido": "Cumprido",
+  "home.quemAlcanca": "Quem alcança",
+  "home.quemAlcanca.vazio": "Só você alcança este animal.",
+  "home.alcance.custodia": "Custódia",
+  "home.alcance.concessao": "Acesso concedido",
+  "home.alcance.semPrazo": "sem prazo",
+  "home.alcance.ate": "até {data}",
+
+  // "Code, de relance": quatro leituras sobre dado que ja existe, nao campos novos.
+  "relance.titulo": "{nome}, de relance",
+  "relance.vacinacao.irregular": "Vacinação irregular",
+  "relance.vacinacao.emDia": "Vacinação em dia",
+  "relance.vacinacao.semRegistro": "Vacinação sem registro",
+  "relance.antiparasitario.emDia": "Antiparasitário em dia",
+  "relance.antiparasitario.vencido": "Antiparasitário vencido",
+  "relance.antiparasitario.semRegistro": "Antiparasitário sem registro",
+  // Nao pesar nao e irregularidade: por isso anel tracejado, e nao losango.
+  "relance.peso.antigo": "Peso sem registro há {meses} meses",
+  "relance.peso.recente": "Peso registrado recentemente",
+  "relance.peso.semRegistro": "Peso sem registro",
+  "relance.alergia": "{o_que} registrada{extras, plural, =0 {} other { · mais #}}",
+  "relance.condicao": "{total, plural, one {# condição registrada} other {# condições registradas}}",
   "home.nav.inicio": "Início",
-  "home.contexto.voce": "Você",
+  "home.contexto.voce": "· você mesmo",
 
   // A idade em anos, pela regra do idioma. Fica ao lado da raça, separada por ponto
   // medio — sao itens de uma lista curta, e nao uma frase montada por concatenacao.
@@ -188,7 +248,8 @@ export const mensagens = {
 
   "home.acao.silenciar": "Silenciar",
   "home.acao.voltarACobrar": "Voltar a cobrar",
-  "home.acao.cumprir": "Confirmar que dei",
+  "home.acao.cumprir": "Já dei",
+  "home.acao.registrarDose": "Registrar dose",
   "home.acao.cumprindo": "Confirmando…",
   "home.silenciada": "Silenciada",
   "home.mostrarSilenciadas": "Mostrar as silenciadas",
@@ -240,6 +301,52 @@ export const mensagens = {
   //
   // Nao e erro da API, e por isso nao tem codigo: e um endereco que nao existe. O texto
   // segue a mesma regra — o fato, sem culpar quem digitou.
+  // -------------------------------------------------- quem cuida, e o que leu (Tela 22)
+  //
+  // A tese da tela, na frase dela mesma: "conceder deixa de ser um ato de fé quando você
+  // vê o que acontece depois". Por isso o escopo aparece em FRASE, e nunca a palavra
+  // "escopo" — a seção 09 da voz proíbe usá-la com o tutor.
+  "acesso.voltar": "Início",
+  "acesso.titulo": "Quem cuida do {nome}",
+  "acesso.apoio": "Cada acesso que você concedeu, com o que foi lido e quando. Conceder deixa de ser um ato de fé quando você vê o que acontece depois.",
+  "acesso.carregando": "Carregando os acessos…",
+  "acesso.vazio": "Nenhuma organização alcança o {nome} hoje.",
+  "acesso.pessoas": "Pessoas",
+  "acesso.pessoas.vazio": "Só você responde por este animal.",
+  "acesso.pessoa.titular": "Responde pelo {nome}",
+  "acesso.pessoa.coTutor": "Co-tutor · responde pelo {nome} com você",
+  "acesso.ultimosAcessos": "Últimos acessos",
+  "acesso.ultimosAcessos.vazio": "Ninguém desta organização leu nada ainda.",
+  "acesso.leitura.linha": "{quem} {o_que}",
+  "acesso.leitura.total": "{total, plural, one {# acesso ao todo} other {# acessos ao todo}}",
+  "acesso.leitura.VACCINES": "abriu a vacinação",
+  "acesso.leitura.HEALTH_RECORDS": "abriu o histórico clínico",
+  "acesso.leitura.VACCINE_CORRECTIONS": "abriu as correções de vacina",
+  "acesso.leitura.HEALTH_RECORD_CORRECTIONS": "abriu as correções de atendimento",
+  "acesso.leitura.ATTACHMENTS": "abriu os anexos",
+  "acesso.leitura.SHARED_CARD": "abriu o cartão compartilhado",
+  "acesso.leitura.desconhecida": "abriu um registro",
+  "acesso.acao.ajustar": "Ajustar",
+  "acesso.acao.revogar": "Revogar",
+  "acesso.acao.revogando": "Revogando…",
+  "acesso.acao.concederDeNovo": "Conceder de novo",
+  "acesso.encerrado.venceu": "Acesso venceu em {data} · não vê mais nada",
+  "acesso.encerrado.revogado": "Acesso revogado em {data} · não vê mais nada",
+  "acesso.semPrazo": "sem prazo",
+  "acesso.ate": "até {data}",
+  "acesso.escopo.nenhum": "não vê nada",
+  "acesso.escopo.CARTEIRA": "vacinas",
+  "acesso.escopo.CONDICOES": "alergias e condições",
+  "acesso.escopo.PRONTUARIO": "histórico clínico",
+  "acesso.escopo.OBSERVACOES": "observações",
+  "acesso.escopo.PESO": "peso",
+  "acesso.escopo.ANEXOS": "documentos",
+  "acesso.escopo.CONTATO": "seu contato",
+  // Revogar não apaga trabalho feito, e dizer isso ANTES do gesto é o que separa a
+  // decisão informada do arrependimento.
+  "acesso.revogar.titulo": "O que revogar faz",
+  "acesso.revogar.texto": "Fecha a porta a partir de agora. O que a organização registrou continua na linha do tempo, assinado por quem registrou — revogar acesso não apaga trabalho feito.",
+
   "rota.naoEncontrada.titulo": "Esta página não existe.",
   "rota.naoEncontrada.acao": "Ir para o início",
 
@@ -284,12 +391,13 @@ export const mensagens = {
   "animal.linha.recorte.tudo": "Tudo",
   "animal.linha.recorte.vacinas": "Vacinas",
   "animal.linha.recorte.atendimentos": "Atendimentos",
-  "animal.linha.recorte.observacoes": "Observações",
+  "animal.linha.recorte.creche": "Creche",
   "animal.linha.faixa": "{de} — {ate}",
   "animal.linha.vazio.tudo": "A linha do tempo deste animal ainda está vazia.",
   "animal.linha.vazio.vacinas": "Nenhuma vacina ou antiparasitário registrado.",
   "animal.linha.vazio.atendimentos": "Nenhum atendimento registrado.",
-  "animal.linha.vazio.observacoes": "Nenhuma observação registrada.",
+  "animal.linha.vazio.creche": "Nenhuma observação de organização registrada.",
+  "animal.linha.pesagem": "Pesagem: {peso} kg",
   "animal.linha.pesoAnterior": "Pesagem anterior: {peso} kg",
   "animal.linha.autoria": "Registrado por {quem} · lançado em {quando}",
   "animal.linha.autoriaComOrg": "Registrado por {quem}, pela {organizacao} · lançado em {quando}",

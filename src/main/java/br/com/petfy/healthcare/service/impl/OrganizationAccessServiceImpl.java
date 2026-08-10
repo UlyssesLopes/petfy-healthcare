@@ -17,6 +17,7 @@ import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
@@ -79,7 +80,20 @@ public class OrganizationAccessServiceImpl implements OrganizationAccessService 
         return toResponse(grantRepository.save(grant));
     }
 
+    /**
+     * <b>Sem a transacao esta rota respondia 500 para todo animal com acesso concedido.</b>
+     *
+     * O {@code toResponse} le {@code grant.getGranteeOrganization().getName()}, e o
+     * {@code spring.jpa.open-in-view=false} deste projeto fecha a sessao ao sair do
+     * repositorio: o proxy da organizacao estoura {@code LazyInitializationException}.
+     *
+     * <b>E o terceiro caso identico do projeto</b> — o primeiro foi o feed
+     * ({@code DueItemServiceImpl}), o segundo a agenda de vacinas. O padrao e sempre o
+     * mesmo: metodo de leitura que monta DTO atravessando associacao preguicosa, sem
+     * transacao. O {@code SensitiveAccessLogServiceImpl} ao lado ja acertava.
+     */
     @Override
+    @Transactional(readOnly = true)
     public List<OrganizationAccessResponseDTO> list(UUID animalId) {
         animalAccessGuard.requireEscrita(animalId);
 
@@ -137,7 +151,14 @@ public class OrganizationAccessServiceImpl implements OrganizationAccessService 
                 .animalId(grant.getAnimal().getAnimalId())
                 .organizationId(grant.getGranteeOrganization().getOrganizationId())
                 .organizationName(grant.getGranteeOrganization().getName())
-                .scopes(grant.getScopes())
+                /*
+                 * COPIA, e nao a colecao do Hibernate. O `scopes` e uma @ElementCollection
+                 * preguicosa: entregar a referencia faz o DTO carregar um proxy que so e
+                 * tocado quando o Jackson serializa — ja fora da transacao. O sintoma e
+                 * enganoso, porque a leitura em si funciona e a falha aparece como
+                 * HttpMessageNotWritableException na escrita da resposta.
+                 */
+                .scopes(new LinkedHashSet<>(grant.getScopes()))
                 .grantedAt(grant.getGrantedAt())
                 .expiresAt(grant.getExpiresAt())
                 .revokedAt(grant.getRevokedAt())

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Bitter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: oklch(0.94 0.006 150); }
+  * { box-sizing: border-box; }
+  a { color: oklch(0.46 0.085 150); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: oklch(0.36 0.085 150); }
+</style>
+</helmet>
+
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: oklch(0.25 0.02 150); padding: 72px 56px 120px; display: flex; flex-direction: column; gap: 80px; align-items: flex-start;">
+
+  <div style="max-width: 900px;">
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 40px;">
+      <div style="width: 34px; height: 34px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;">
+        <div style="width: 10px; height: 10px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div>
+      </div>
+      <div style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 600;">Petfy</div>
+    </div>
+    <h1 style="font-family: Bitter, Georgia, serif; font-size: 48px; line-height: 1.1; font-weight: 500; letter-spacing: -0.025em; margin: 0 0 20px; max-width: 20ch;">Entrar.</h1>
+    <p style="font-size: 18px; line-height: 1.6; color: oklch(0.42 0.015 150); margin: 0 0 24px; max-width: 64ch; text-wrap: pretty;">Quem chega aqui às vezes está com pressa e com medo. A tela precisa ser curta, dizer o que está guardado do outro lado e não atrapalhar quem só quer um telefone às 3h da manhã.</p>
+    <div style="border-left: 3px solid oklch(0.46 0.085 150); padding: 4px 0 4px 20px; font-size: 16px; line-height: 1.65; color: oklch(0.35 0.018 150); max-width: 64ch;">O cuidado aqui não é decoração: é o campo já preenchido, o erro que não humilha, e a saída de emergência que não exige senha nenhuma.</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 28 · a porta</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Entrar no Petfy</span>
+    </div>
+
+    <div style="width: 1180px; background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden; display: grid; grid-template-columns: 1.05fr 1fr;">
+
+      <div style="background: oklch(0.975 0.008 150); padding: 56px 56px 52px; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid oklch(0.92 0.006 150);">
+        <div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 56px;">
+            <div style="width: 30px; height: 30px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 9px; height: 9px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+            <span style="font-family: Bitter, Georgia, serif; font-size: 20px; font-weight: 600;">Petfy</span>
+          </div>
+
+          <h2 style="font-family: Bitter, Georgia, serif; font-size: 34px; line-height: 1.2; font-weight: 500; margin: 0 0 18px; letter-spacing: -0.02em; max-width: 16ch; text-wrap: pretty;">A vida deles continua registrada, mesmo quando você não está olhando.</h2>
+          <p style="font-size: 16px; line-height: 1.65; color: oklch(0.42 0.015 150); margin: 0; max-width: 40ch;">Cada dose, cada consulta e cada dia de creche entrou aqui com o nome de quem fez. Nada some, nada é reescrito às escondidas.</p>
+        </div>
+
+        <div style="border-top: 1px solid oklch(0.90 0.008 150); padding-top: 28px;">
+          <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 16px;">Precisa de algo agora?</div>
+          <div style="font-size: 16px; line-height: 1.6; color: oklch(0.35 0.018 150); margin-bottom: 16px; max-width: 42ch;">Se o animal está passando mal e você não lembra a senha, o cartão de emergência dele abre sem login — alergias, remédios em curso e quem chamar.</div>
+          <a href="#cartao" style="display: inline-flex; align-items: center; text-decoration: none; font-size: 16px; font-weight: 500; color: oklch(0.25 0.02 150); background: #fff; border: 1px solid oklch(0.82 0.012 150); border-radius: 8px; padding: 14px 20px; min-height: 48px;">Abrir cartão de emergência</a>
+        </div>
+      </div>
+
+      <div style="padding: 56px 56px 52px; display: flex; flex-direction: column; justify-content: center;">
+        <h3 style="font-family: Bitter, Georgia, serif; font-size: 28px; font-weight: 500; margin: 0 0 8px; letter-spacing: -0.02em;">Que bom te ver</h3>
+        <p style="font-size: 16px; line-height: 1.6; color: oklch(0.45 0.015 150); margin: 0 0 32px;">Entre para continuar de onde parou.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 7px;">E-mail</label>
+            <div style="border: 1px solid oklch(0.46 0.085 150); outline: 2px solid oklch(0.46 0.085 150); outline-offset: 1px; border-radius: 4px; padding: 14px; font-size: 16px; min-height: 52px;">marcelo@exemplo.com.br<span style="opacity: 0.5;">|</span></div>
+          </div>
+          <div>
+            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 7px;">
+              <label style="font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150);">Senha</label>
+              <a href="#esqueci" style="font-size: 14px;">Esqueci a senha</a>
+            </div>
+            <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 14px; font-size: 16px; min-height: 52px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="letter-spacing: 0.2em;">••••••••••</span>
+              <span style="font-size: 14px; color: oklch(0.46 0.085 150);">Mostrar</span>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 20px; height: 20px; border-radius: 4px; background: oklch(0.46 0.085 150); flex: none; display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 2px; background: #fff;"></div></div>
+            <span style="font-size: 15px;">Continuar conectado neste aparelho</span>
+          </div>
+
+          <button style="font-family: inherit; font-size: 16px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 16px; min-height: 56px; cursor: pointer;" style-hover="background: oklch(0.39 0.085 150);">Entrar</button>
+
+          <div style="display: flex; align-items: center; gap: 16px; padding: 4px 0;">
+            <div style="flex: 1; height: 1px; background: oklch(0.92 0.006 150);"></div>
+            <span style="font-size: 14px; color: oklch(0.5 0.015 150);">ou</span>
+            <div style="flex: 1; height: 1px; background: oklch(0.92 0.006 150);"></div>
+          </div>
+
+          <button style="font-family: inherit; font-size: 16px; font-weight: 500; color: oklch(0.25 0.02 150); background: #fff; border: 1px solid oklch(0.82 0.012 150); border-radius: 8px; padding: 16px; min-height: 56px; cursor: pointer;" style-hover="border-color: oklch(0.46 0.085 150); color: oklch(0.46 0.085 150);">Receber um link por e-mail</button>
+          <div style="font-size: 14px; color: oklch(0.5 0.015 150); line-height: 1.55; margin-top: -8px;">Sem senha. Você clica no link e entra — serve quando a senha não vem à cabeça.</div>
+
+          <div style="border-top: 1px solid oklch(0.92 0.006 150); padding-top: 24px; font-size: 16px; color: oklch(0.45 0.015 150);">
+            Ainda não tem conta? <a href="#criar">Criar uma agora</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Os estados</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Errar a senha não pode ser humilhante</span>
+    </div>
+
+    <div style="width: 1180px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 18px;">Senha errada</div>
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; padding: 22px;">
+          <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 7px;">Senha</label>
+          <div style="border: 1px solid oklch(0.52 0.14 30); border-radius: 4px; padding: 13px 14px; font-size: 16px; min-height: 48px; letter-spacing: 0.2em;">••••••••</div>
+          <div style="display: flex; gap: 9px; align-items: flex-start; font-size: 14px; color: oklch(0.45 0.13 30); margin-top: 10px; line-height: 1.5;">
+            <span style="width: 10px; height: 10px; background: oklch(0.55 0.14 30); transform: rotate(45deg); margin-top: 4px; flex: none;"></span>
+            Essa senha não confere. Tente de novo, ou entre por link no e-mail.
+          </div>
+          <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: oklch(0.25 0.02 150); background: #fff; border: 1px solid oklch(0.82 0.012 150); border-radius: 8px; padding: 13px; min-height: 48px; cursor: pointer; width: 100%; margin-top: 16px;">Receber um link por e-mail</button>
+        </div>
+        <div style="font-size: 14px; line-height: 1.6; color: oklch(0.5 0.015 150); margin-top: 14px;">Não diz “usuário ou senha inválidos” nem conta quantas tentativas faltam. Oferece a saída junto com o erro.</div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 18px;">Link enviado</div>
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; padding: 26px 22px;">
+          <div style="width: 40px; height: 40px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center; margin-bottom: 18px;"><div style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+          <div style="font-family: Bitter, Georgia, serif; font-size: 20px; font-weight: 500; margin-bottom: 10px;">Está a caminho</div>
+          <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150);">Mandamos um link para <strong style="font-weight: 500; color: oklch(0.3 0.018 150);">marcelo@exemplo.com.br</strong>. Ele vale por 15 minutos e serve uma vez só.</div>
+          <div style="font-size: 15px; line-height: 1.6; color: oklch(0.5 0.015 150); margin-top: 14px;">Não chegou? Olhe no spam ou <a href="#reenviar">peça outro</a>.</div>
+        </div>
+        <div style="font-size: 14px; line-height: 1.6; color: oklch(0.5 0.015 150); margin-top: 14px;">Diz o endereço, o prazo e o que fazer se falhar. Ninguém fica olhando para uma caixa vazia.</div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 18px;">Aparelho novo</div>
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; padding: 22px;">
+          <div style="font-family: Bitter, Georgia, serif; font-size: 19px; font-weight: 500; margin-bottom: 10px;">Entrada em um aparelho novo</div>
+          <div style="font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150); margin-bottom: 16px;">Avisamos você por e-mail, porque essa conta guarda a saúde de dois animais.</div>
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 8px; padding: 14px 16px; background: oklch(0.975 0.004 150); font-size: 14px; line-height: 1.6; color: oklch(0.42 0.015 150);">
+            <div style="font-family: 'DM Mono', monospace; font-size: 13px; margin-bottom: 4px;">Hoje, 21h14 · São Paulo</div>
+            Chrome no Windows
+          </div>
+          <div style="font-size: 15px; line-height: 1.6; color: oklch(0.5 0.015 150); margin-top: 14px;">Não foi você? <a href="#seguranca">Encerre esta sessão</a>.</div>
+        </div>
+        <div style="font-size: 14px; line-height: 1.6; color: oklch(0.5 0.015 150); margin-top: 14px;">Aviso, não bloqueio. Quem está com pressa entra; quem foi invadido descobre.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 29 · na mão</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Entrar pelo celular</span>
+    </div>
+
+    <div style="display: flex; gap: 32px; align-items: flex-start;">
+      <div style="width: 390px; background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+        <div style="padding: 44px 26px 32px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid oklch(0.92 0.006 150); background: oklch(0.975 0.008 150);">
+          <div style="width: 56px; height: 56px; border-radius: 999px; border: 4px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center; margin-bottom: 20px;"><div style="width: 17px; height: 17px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+          <div style="font-family: Bitter, Georgia, serif; font-size: 26px; font-weight: 600; margin-bottom: 10px;">Petfy</div>
+          <div style="font-size: 16px; line-height: 1.55; color: oklch(0.42 0.015 150); text-align: center; max-width: 30ch;">A vida deles continua registrada, mesmo quando você não está olhando.</div>
+        </div>
+        <div style="padding: 28px 24px 32px; display: flex; flex-direction: column; gap: 18px;">
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150); margin-bottom: 7px;">E-mail</label>
+            <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 15px 14px; font-size: 16px; min-height: 54px;">marcelo@exemplo.com.br</div>
+          </div>
+          <div>
+            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 7px;">
+              <label style="font-size: 13px; font-weight: 500; color: oklch(0.42 0.015 150);">Senha</label>
+              <a href="#esqueci" style="font-size: 14px;">Esqueci</a>
+            </div>
+            <div style="border: 1px solid oklch(0.82 0.012 150); border-radius: 4px; padding: 15px 14px; font-size: 16px; min-height: 54px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="letter-spacing: 0.2em;">••••••••••</span>
+              <span style="font-size: 14px; color: oklch(0.46 0.085 150);">Mostrar</span>
+            </div>
+          </div>
+          <button style="font-family: inherit; font-size: 17px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 17px; min-height: 58px; cursor: pointer;">Entrar</button>
+          <button style="font-family: inherit; font-size: 16px; font-weight: 500; color: oklch(0.25 0.02 150); background: #fff; border: 1px solid oklch(0.82 0.012 150); border-radius: 8px; padding: 16px; min-height: 56px; cursor: pointer;">Receber um link por e-mail</button>
+          <div style="border-top: 1px solid oklch(0.92 0.006 150); padding-top: 18px; display: flex; flex-direction: column; gap: 12px;">
+            <a href="#cartao" style="text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500; color: oklch(0.25 0.02 150); border: 1px solid oklch(0.82 0.012 150); border-radius: 8px; padding: 16px; min-height: 56px;">Abrir cartão de emergência</a>
+            <div style="font-size: 14px; color: oklch(0.5 0.015 150); line-height: 1.55; text-align: center;">Sem senha, para quando não dá tempo.</div>
+          </div>
+          <div style="font-size: 16px; color: oklch(0.45 0.015 150); text-align: center; padding-top: 4px;">Ainda não tem conta? <a href="#criar">Criar</a></div>
+        </div>
+      </div>
+
+      <div style="width: 500px; background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 30px 32px;">
+        <div style="font-family: Bitter, Georgia, serif; font-size: 20px; font-weight: 500; margin-bottom: 16px;">O que faz esta tela ser cuidadosa</div>
+        <div style="display: flex; flex-direction: column; gap: 16px; font-size: 15px; line-height: 1.65; color: oklch(0.35 0.018 150);">
+          <div style="display: flex; gap: 12px;"><span style="width: 11px; height: 11px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 6px;"></span><span>O cartão de emergência abre sem senha. Quem chega às 3h da manhã com o animal passando mal não deveria enfrentar um formulário.</span></div>
+          <div style="display: flex; gap: 12px;"><span style="width: 11px; height: 11px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 6px;"></span><span>O erro de senha oferece a saída junto: link por e-mail, ali mesmo, sem trocar de tela.</span></div>
+          <div style="display: flex; gap: 12px;"><span style="width: 11px; height: 11px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 6px;"></span><span>“Mostrar” a senha existe porque digitar às cegas num teclado de celular, com pressa, é a causa mais comum do erro.</span></div>
+          <div style="display: flex; gap: 12px;"><span style="width: 11px; height: 11px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 6px;"></span><span>A frase da esquerda não vende o produto — lembra por que a conta existe. É a mesma tese do símbolo: o animal permanece, as pessoas passam.</span></div>
+          <div style="display: flex; gap: 12px;"><span style="width: 11px; height: 11px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none; margin-top: 6px;"></span><span>Nada de ilustração de bichinho, nada de emoji. O carinho está no que a tela resolve, não no que ela desenha.</span></div>
+        </div>
+        <div style="border-top: 1px solid oklch(0.92 0.006 150); margin-top: 22px; padding-top: 18px; font-size: 14px; line-height: 1.6; color: oklch(0.5 0.015 150);">
+          Alvos de 56 px no celular, campos de 54 px, e o botão principal a um polegar de distância. A pressa é parte do contexto de uso.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
