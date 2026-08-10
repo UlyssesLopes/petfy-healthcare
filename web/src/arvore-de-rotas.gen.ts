@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './rotas/index'
 import { Route as ComecarRouteImport } from './rotas/comecar'
 import { Route as CriarContaRouteImport } from './rotas/criar-conta'
 import { Route as EntrarRouteImport } from './rotas/entrar'
+import { Route as PacientesRouteImport } from './rotas/pacientes'
 import { Route as AnimaisAnimalIdRouteImport } from './rotas/animais.$animalId'
 import { Route as AnimaisNovoRouteImport } from './rotas/animais.novo'
 import { Route as OrganizacoesNovaRouteImport } from './rotas/organizacoes.nova'
@@ -40,6 +41,11 @@ const CriarContaRoute = CriarContaRouteImport.update({
 const EntrarRoute = EntrarRouteImport.update({
   id: '/entrar',
   path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PacientesRoute = PacientesRouteImport.update({
+  id: '/pacientes',
+  path: '/pacientes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnimaisAnimalIdRoute = AnimaisAnimalIdRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/comecar': typeof ComecarRoute
   '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
+  '/pacientes': typeof PacientesRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/comecar': typeof ComecarRoute
   '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
+  '/pacientes': typeof PacientesRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/comecar': typeof ComecarRoute
   '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
+  '/pacientes': typeof PacientesRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/comecar'
     | '/criar-conta'
     | '/entrar'
+    | '/pacientes'
     | '/animais/$animalId'
     | '/animais/novo'
     | '/organizacoes/nova'
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/comecar'
     | '/criar-conta'
     | '/entrar'
+    | '/pacientes'
     | '/animais/$animalId'
     | '/animais/novo'
     | '/organizacoes/nova'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/comecar'
     | '/criar-conta'
     | '/entrar'
+    | '/pacientes'
     | '/animais/$animalId'
     | '/animais/novo'
     | '/organizacoes/nova'
@@ -181,6 +193,7 @@ export interface RootRouteChildren {
   ComecarRoute: typeof ComecarRoute
   CriarContaRoute: typeof CriarContaRoute
   EntrarRoute: typeof EntrarRoute
+  PacientesRoute: typeof PacientesRoute
   AnimaisAnimalIdRoute: typeof AnimaisAnimalIdRoute
   AnimaisNovoRoute: typeof AnimaisNovoRoute
   OrganizacoesNovaRoute: typeof OrganizacoesNovaRoute
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/entrar'
       fullPath: '/entrar'
       preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pacientes': {
+      id: '/pacientes'
+      path: '/pacientes'
+      fullPath: '/pacientes'
+      preLoaderRoute: typeof PacientesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/animais/$animalId': {
@@ -285,6 +305,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComecarRoute: ComecarRoute,
   CriarContaRoute: CriarContaRoute,
   EntrarRoute: EntrarRoute,
+  PacientesRoute: PacientesRoute,
   AnimaisAnimalIdRoute: AnimaisAnimalIdRoute,
   AnimaisNovoRoute: AnimaisNovoRoute,
   OrganizacoesNovaRoute: OrganizacoesNovaRoute,

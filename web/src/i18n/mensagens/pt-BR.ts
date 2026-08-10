@@ -579,6 +579,30 @@ export const mensagens = {
   "transferir.enviado.prazo": "O convite vale até {data}.",
   "transferir.enviado.voltar": "Voltar para a vida do {nome}",
 
+  // --------------------------------------- a área de organização (Tela 03)
+  //
+  // A tabela do desenho tem quatro colunas; três dependem de agregação que nenhuma rota faz.
+  // O que sobra é dito com o nome certo, e a ausência é declarada em vez de disfarçada.
+  "pacientes.titulo": "Pacientes",
+  "pacientes.meusAnimais": "Meus animais",
+  "pacientes.busca": "Buscar por nome, microchip ou RGA",
+  "pacientes.todos": "Todos",
+  "pacientes.todos.contados": "Todos · {quantos}",
+  "pacientes.recortes.indisponiveis": "Vencendo, em tratamento e atendidos este mês dependem de uma consulta por organização que ainda não existe",
+  "pacientes.coluna.animal": "Animal",
+  "pacientes.coluna.tutor": "Tutor",
+  "pacientes.coluna.acessoDesde": "Acesso desde",
+  "pacientes.atender": "Atender",
+  "pacientes.oQue": "os pacientes",
+  "pacientes.vazio": "Nenhum tutor concedeu acesso a esta organização ainda.",
+  "pacientes.semResultado": "Nenhum paciente com esse nome.",
+  "pacientes.mostrando": "Mostrando {quantos} de {total}",
+  "pacientes.idade.anos": "{anos, plural, one {# ano} other {# anos}}",
+  "pacientes.idade.meses": "{meses, plural, =0 {recém-nascido} one {# mês} other {# meses}}",
+  "pacientes.vencendo.titulo": "Quem está vencendo",
+  "pacientes.vencendo.falta": "Esta lista não existe ainda: a pendência é sempre da pessoa logada, e não há consulta de quem está vencendo por organização. Montar no cliente exigiria uma leitura por animal — centenas de requisições para desenhar uma coluna.",
+  "pacientes.vencendo.aviso": "Quando ela existir, o aviso fala só da dose: acesso concedido não é lista de marketing.",
+
   // ------------------------------------------------- criar a organização (Tela 15)
   //
   // "A creche não assina por ninguém": a organização existe para o trabalho da equipe ficar

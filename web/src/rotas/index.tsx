@@ -128,6 +128,18 @@ function Inicio() {
               <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
             </div>
 
+            {/*
+             * A porta da area de organizacao (Tela 03), e ela so aparece para quem tem o que
+             * ver do outro lado. Nao e condicional de PAPEL — e do que a pessoa tem: o
+             * `professional` do `/me/context` sai de vinculo e credencial, nao de um campo de
+             * cadastro (PRODUTO.md 9.3).
+             */}
+            {contexto.data?.professional === true && (
+              <Link to="/pacientes" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
+                {intl.formatMessage({ id: "pacientes.titulo" })}
+              </Link>
+            )}
+
             <div style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "8px", padding: "8px 14px", minHeight: "44px", background: "oklch(0.975 0.004 150)" }}>
               <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
                 {intl.formatMessage({ id: "home.agindoComo" })}
