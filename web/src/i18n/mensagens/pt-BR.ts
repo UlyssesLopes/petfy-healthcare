@@ -122,6 +122,11 @@ export const mensagens = {
   "entrar.mostrar": "Mostrar",
   "entrar.ocultar": "Ocultar",
   "entrar.esqueci": "Esqueci a senha",
+  "entrar.esqueci.enviando": "Enviando…",
+  // O servidor responde igual para e-mail existente e inexistente, de propósito. A tela
+  // repete a postura: confirma o envio sem afirmar que a conta existe.
+  "entrar.esqueci.enviado": "Se {email} tiver conta aqui, o link para trocar a senha já saiu.",
+  "entrar.esqueci.precisaEmail": "Escreva seu e-mail acima para receber o link.",
   "entrar.ou": "ou",
 
   // A frase da esquerda nao vende o produto — lembra por que a conta existe. E a mesma
@@ -132,6 +137,7 @@ export const mensagens = {
   "entrar.agora.rotulo": "Precisa de algo agora?",
   "entrar.agora.texto": "Se o animal está passando mal e você não lembra a senha, o cartão de emergência dele abre sem login — alergias, remédios em curso e quem chamar.",
   "entrar.cartao.acao": "Abrir cartão de emergência",
+  "entrar.cartao.semSenha": "Sem senha, para quando não dá tempo.",
 
   "entrar.continuarConectado": "Continuar conectado neste aparelho",
   "entrar.link.acao": "Receber um link por e-mail",

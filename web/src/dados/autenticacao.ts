@@ -72,6 +72,29 @@ export function useCriarConta() {
   });
 }
 
+/**
+ * "Esqueci" — e ele resolve ali mesmo, sem trocar de tela.
+ *
+ * A Tela 29 escreve a regra: <b>"o erro de senha oferece a saida junto: link por e-mail, ali
+ * mesmo, sem trocar de tela"</b>. O link sem senha nao existe na API, mas a recuperacao
+ * existe e e publica — entao a saida real e esta, e ela cabe na propria porta.
+ *
+ * <b>A resposta e sempre a mesma, e isso e proposital do lado do servidor:</b> dizer "nao
+ * achamos esse e-mail" entregaria quais contas existem. A tela repete a postura e confirma o
+ * envio sem afirmar que a conta existe.
+ */
+export function usePedirNovaSenha() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const { error } = await cliente.POST("/auth/password-reset", { body: { email } });
+
+      if (error !== undefined) {
+        throw error;
+      }
+    },
+  });
+}
+
 export function useSair() {
   const consultas = useQueryClient();
 
