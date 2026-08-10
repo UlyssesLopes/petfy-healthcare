@@ -4,82 +4,101 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-08, no fim da sessão que pôs a home do tutor no ar.
+> Escrito em 2026-08-10, com a árvore limpa e o CI verde.
 
-## Onde o trabalho parou
+## Onde o trabalho está
 
-**Passo 5 da Fase 5 — construir.** O `pronto quando` da fase **fechou**: um tutor entra
-pelo navegador, vê o que precisa fazer hoje, registra uma dose e abre a linha do tempo.
+**Construindo as telas de verdade a partir de `design/IdentidadeVisual/`.** A árvore
+compila e passa: front com `tsc --noEmit` limpo e **32 testes**, backend com **780 testes,
+0 falhas, `Skipped: 0`** — este último medido no CI, com o `ContainerTestsHabilitadosTest`
+verde, então os containers subiram de verdade.
 
-| # | Bloco | Estado |
-|---|---|---|
-| B0 | CORS e caminho de auth | **Feito** — PR #40 |
-| 1 | Fundação do front | **Feito** — PR #42 |
-| 2 | Home do tutor, com login | **Feito** |
-| 3 | Linha do tempo | **Feito** |
-| 4 | Rede de quem cuida | **Feito** (leitura; conceder acesso ainda não age) |
-| 5 | Área de organização | **Não iniciado** — depende da decisão 15 |
+**Branch `feat/tela-do-animal`, PR #47, os dois checks verdes, aguardando merge.** O merge
+não foi feito: é comando seu (`gh pr merge 47 --merge`). Cinco commits — telas 28, 02, 01 e
+22, mais a limpeza do cache do TanStack que havia entrado por descuido.
 
-**Suíte:** 765 testes, 0 falhas, 0 pulados. Front: 23 testes.
+## As 20 telas da entrega — 4 feitas, 16 faltam
 
-## O que ler antes de planejar, e nesta ordem
+| Tela | Título | Rota | Estado |
+|---|---|---|---|
+| 01 | Área do tutor — o feed de pendências | `/` | **Feita** |
+| 02 | A vida do Code — carteira e linha do tempo | `/animais/$animalId` | **Feita** |
+| 22 | Quem alcança o Code — e o que cada um leu | `…/quem-cuida` | **Feita** |
+| 28 | Entrar no Petfy | `/entrar` | **Feita** |
+| 07 | Cadastro e login — uma só, para todo mundo | — | Falta |
+| 08 + Onboarding | Três cômodos, nenhum corredor (4 passos) | — | Falta |
+| 09 | Conceder acesso — escopo sem a palavra "escopo" | — | Falta, backend existe |
+| 11 | Transferir a titularidade | — | Falta |
+| 23 | Contestar um registro — sem botão de apagar | — | Falta |
+| 24 | Avisos — o que interrompe e o que espera | — | Falta |
+| 29 | Entrar pelo celular | — | Falta |
+| 03 | Área de organização — a segunda-feira da veterinária | — | Falta |
+| 14 | Os estados — desenhados, não descritos | — | Falta, é transversal |
+| 15, 16 | Criar a creche · equipe, funções e desligamento | — | Falta, **depende da decisão 15** |
+| 10, 12, 13, 17, 18 | Matrícula, abrigo, adoção, operação do dia, agenda de banho | — | Falta, **são os buracos** |
 
-1. **`ROADMAP.md`, "Passo 5 — construir"**, com as três seções de fechamento novas:
-   *Blocos 2, 3 e 4*, *Duas decisões de produto* e *As dívidas que a construção levantou*.
-2. **`DESIGN.md`** inteiro, mais `design/home-tutor.html`. A emenda da seção 6 registra que
-   **a validação de campo é do cliente**, porque a do servidor não é exibível.
-3. **`PRODUTO.md` seção 9** — as três superfícies e as duas áreas.
-4. **`contract/openapi.json`** e **`contract/error-codes.json`**, os dois versionados e com
-   guarda dos dois lados.
+O bloco 0 (tokens) fechou no #45. O que resta é bloco 2/3 — e o bloco 4 continua sendo
+escopo novo de produto, **não decidido**.
 
-## O primeiro passo da próxima sessão, e há três candidatos
+## Os cinco buracos, que não são custo de front
 
-**Nenhum é obviamente o certo — a escolha é sua.**
+| Tela | O que não existe no backend |
+|---|---|
+| 17 · Da Creche Quintal, hoje | **Conteúdo** — recado, foto, avaliação do dia |
+| 10 · Matrícula do Code | **Vínculo, turma, lotação, janela, check-in.** Só a flag `GERIR_TURMA_E_VAGA`, vazia |
+| 12 · Rede de lares | **Disponibilidade.** Idem: `MANTER_REDE_DE_LARES` é flag sem nada atrás |
+| — · Percepção ("uma leitura do Petfy") | **Insight.** Zero apoio |
+| — · Quem está vencendo | Pendência é da pessoa logada; consulta por organização não existe |
 
-1. **Pagar as dívidas de contrato** (tabela no `ROADMAP.md`). A mais barata e a que mais
-   rende: `spring.jackson.default-property-inclusion=non_null` faz o tipo gerado deixar de
-   mentir sobre nulo. Hoje a mentira para no `corpoDe()` do front, o que é um remendo bom
-   e no lugar errado.
-2. **Fechar o que a tela ainda não faz.** *Conceder acesso* aparece na rede mas não age;
-   não há como cadastrar um animal nem convidar co-tutor. São as três ações que faltam
-   para a área do tutor ser autossuficiente — e são o destino do onboarding da v2.
-3. **A área de organização** (bloco 5), que **depende da decisão 15** — quem cria uma
-   organização e como entra o primeiro membro. Sem resposta, não começa.
+Faltam também dois `DueItemKind`: **tema de casa** e **matrícula irregular**.
 
-## O que fica no ar, e como subir
+## O que aprendemos ao traduzir as quatro telas
 
-O ambiente local **não sobe sozinho**, e a máquina tem duas armadilhas próprias:
+**O markup vem do arquivo, convertido por script** (`style="..."` → `style={{...}}`), e o
+estilo fica **inline** contra o resto do projeto. Isso é decisão, não descuido: traduzir
+para classe foi exatamente o que abriu espaço entre o desenho aprovado e o que sobe — a
+primeira Tela 02 foi reescrita à minha maneira e apresentada como tradução, e teve de ser
+substituída inteira. O `style-hover` é a única coisa que não atravessa; virou `useHover`.
 
-- **Um PostgreSQL nativo do Windows já ocupa a 5432.** A aplicação fala com ele e toma
-  `password authentication failed`. Suba o banco noutra porta:
-  `docker run -d --name petfy-pg-sessao -e POSTGRES_DB=petfy -e POSTGRES_USER=petfy -e POSTGRES_PASSWORD=petfy -p 5433:5432 postgres:14`
-  e rode a aplicação com `DB_PORT=5433`.
-- **O volume `postgres_data` do `docker-local` tem um cluster antigo**, sem os roles
-  `petfy` nem `postgres`: o Postgres só aplica `POSTGRES_USER` na primeira inicialização,
-  com o diretório vazio. **Não foi apagado** — é decisão de quem for limpar.
+**Ver a tela no navegador acha o que teste não acha.** Barra de peso plana por escalar sem
+piso, pesagem aparecendo como `8.4` cru, microchip em quinze dígitos seguidos — nenhum
+apareceria no compilador.
+
+**A leitura fora de transação é o defeito recorrente deste backend: já são quatro defeitos
+em três rotas** (feed, agenda de vacinas e acessos, esta última com dois), e o
+`LeituraForaDeTransacaoContainerTest` é a guarda — hoje com quatro leituras cobertas, a
+quarta preventiva. Ele **serializa** o resultado, não só
+chama — a primeira versão só chamava e deixou passar um 500 real. E ele não é
+`@Transactional`, ao contrário das vizinhas: a anotação traria os bugs de volta em verde.
+
+## Armadilhas desta máquina, confirmadas de novo
+
+- **O Testcontainers falha na primeira chamada depois de ociosidade e funciona na segunda**
+  (`Bad chunk header` no npipe do Rancher). O sintoma é `Skipped: N` com `BUILD SUCCESS`:
+  um verde que não testou nada. Quem grita é o `ContainerTestsHabilitadosTest`, mas
+  **`-Dtest=` o deixa de fora** — com seleção de teste, conferir `Skipped: 0` sempre.
+  **Não reinicie o Rancher:** a máquina tem um cluster k8s com argocd no ar.
+- **`cd` dentro do Bash persiste entre chamadas.** Use caminho absoluto.
+- **`gh` e `git fetch` perdem a credencial.** `gh auth login` é interativo, tem de ser você.
+- **O merge de PR é bloqueado ao Claude pelo classificador.** É comando seu, sempre.
+- `clean verify` apaga o `target/` debaixo da aplicação em execução; parar a aplicação exige
+  matar o Java à mão.
+
+## Dívida de infra medida e não paga, de propósito
+
+**`.idea/` está versionado** (inclusive `sonarlint/issuestore/`), e por isso cada máquina
+gera arquivo novo aparecendo como não rastreado — hoje é o `.idea/aws.xml`. Fica **medido e
+registrado**; limpar isso é desvio da prioridade declarada, que é o front.
+
+## Como subir, e como regenerar
 
 ```
-docker run -d --name petfy-pg-sessao ... -p 5433:5432 postgres:14
+docker run -d --name petfy-pg-sessao -e POSTGRES_DB=petfy -e POSTGRES_USER=petfy -e POSTGRES_PASSWORD=petfy -p 5433:5432 postgres:14
 DB_PORT=5433 mvn spring-boot:run -Dspring-boot.run.profiles=local
 cd web && npm run dev      # http://localhost:5173
 ```
 
-**Parar a aplicação exige matar o processo Java à mão.** Encerrar o Maven deixa o filho
-vivo segurando a 8080, e a subida seguinte falha com *"Port 8080 was already in use"*.
-
-## Armadilhas confirmadas nesta sessão
-
-- **O `clean verify` apaga o `target/` embaixo da aplicação em execução.** Derrube antes.
-- **Acento pelo Git Bash sai em Latin-1** e o backend responde **500** — que é outra
-  dívida: JSON malformado devia ser `400`. Mande corpo com `--data-binary @arquivo`.
-- **PowerShell quebra `-D` com ponto.** Use aspas: `mvn "-Dpetfy.openapi.update=true"`.
-- **`Select-Object -First N` corta o pipeline** e devolve exit 255 com o Maven bem-sucedido.
-- **`Set-Content -Encoding utf8` escreve BOM** e o `javac` recusa.
-- **Em `pull_request`, o filtro por caminho olha o diff do PR inteiro**, e não o último
-  commit: num PR misto os dois pipelines correm a cada push, inclusive num commit só de
-  `.md`. O ganho aparece em PR focado.
-
-## Como regenerar o que é gerado
+Um PostgreSQL nativo do Windows ocupa a 5432 — por isso a 5433.
 
 ```
 mvn test -Dtest=OpenApiContractTest -Dpetfy.openapi.update=true
@@ -88,3 +107,14 @@ cd web && npm run gerar:api
 ```
 
 Os três entram no **mesmo commit** da mudança que os causou.
+
+## O primeiro passo da próxima sessão
+
+Depois do merge do #47, **a escolha é sua** e há três caminhos:
+
+1. **Tela 09 (conceder acesso)** — a mais barata das que faltam: o `GrantScope` já existe no
+   backend e a Tela 22, que mostra o resultado, já está no ar. Fecha o par.
+2. **Telas 07 / 08 + onboarding** — é o caminho de quem chega. Hoje não há como cadastrar um
+   animal pela interface.
+3. **Decidir o bloco 4** (os cinco buracos) ou a **decisão 15** (quem cria organização e
+   como entra o primeiro membro) — sem elas, sete das dezesseis telas não começam.
