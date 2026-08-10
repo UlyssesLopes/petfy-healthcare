@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.PostgresContainerTest;
+import br.com.petfy.healthcare.domain.dto.OrganizationAccessRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.entity.CustodyNature;
@@ -51,12 +52,19 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * teste de unidade, nao quebra compilacao e nao aparece no contrato. Aparece como 500 na
  * cara de quem usa, e so quando existe dado.
  *
- * Os tres casos ja pagos:
+ * Os casos ja pagos:
  * <ul>
  *   <li>o feed ({@code DueItemServiceImpl}) — corrigido antes desta classe existir;</li>
  *   <li>a agenda de vacinas — 500 para todo tutor com uma vacina registrada;</li>
- *   <li>a lista de acessos — 500 para todo animal com acesso concedido.</li>
+ *   <li>a lista de acessos — 500 para todo animal com acesso concedido;</li>
+ *   <li>o {@code scopes} do Grant entregue por referencia — 500 na serializacao;</li>
+ *   <li>reconceder acesso — 500 ao ajustar ou reconceder, achado ao construir a Tela 09.</li>
  * </ul>
+ *
+ * <b>O quinto caso mudou o criterio desta classe.</b> Ela nasceu para leitura, e o defeito
+ * reapareceu numa ESCRITA que devolve DTO. O que os cinco tem em comum nao e ler: e montar
+ * DTO a partir de entidade fora de transacao. Metodo que grava e devolve DTO entra aqui
+ * tambem.
  *
  * <b>Por que esta classe NAO e {@code @Transactional}, ao contrario das vizinhas.</b> A
  * anotacao manteria a sessao aberta durante a chamada e todos os casos passariam com os
@@ -84,6 +92,7 @@ class LeituraForaDeTransacaoContainerTest extends PostgresContainerTest {
     @Autowired private VaccineRepository vaccineRepository;
 
     private Animal code;
+    private Organization clinica;
 
     @BeforeEach
     void montarOCenario() {
@@ -100,7 +109,7 @@ class LeituraForaDeTransacaoContainerTest extends PostgresContainerTest {
                 .animal(code).holderPerson(tutor).nature(CustodyNature.DEFINITIVA)
                 .startedAt(LocalDateTime.now()).build());
 
-        Organization clinica = organizationRepository.saveAndFlush(Organization.builder()
+        clinica = organizationRepository.saveAndFlush(Organization.builder()
                 .name("Clinica Vet Norte")
                 .creationDate(LocalDateTime.now())
                 .build());
@@ -178,5 +187,30 @@ class LeituraForaDeTransacaoContainerTest extends PostgresContainerTest {
     @DisplayName("o feed de pendencias atravessa leitura e serializacao")
     void feedDePendencias() {
         leSemQuebrar(() -> dueItemService.doAutenticado(30, false));
+    }
+
+    /**
+     * <b>Escrever tambem devolve DTO, e o mesmo defeito mora aqui.</b>
+     *
+     * O {@code grant} nao le nada de proposito — ele grava. Mas devolve
+     * {@code toResponse(save(grant))}, e no caminho de RECONCEDER o grant vem do
+     * repositorio com a organizacao como proxy: o {@code merge} do {@code save} devolve
+     * instancia gerenciada cuja associacao preguicosa morre junto com a transacao dele.
+     *
+     * <b>So o caminho de reconceder quebra</b>, e por isso o cenario ja tem um acesso
+     * vigente para esta clinica. No caminho de conceder pela primeira vez a organizacao e a
+     * que {@code buscarClinica} acabou de carregar, e o {@code getName()} responde. E a tela
+     * de conceder acesso passa pelos dois: "ajustar" e "conceder de novo" sao este POST.
+     */
+    @Test
+    @DisplayName("reconceder acesso a quem ja tem atravessa escrita e serializacao")
+    void reconcederAcesso() {
+        OrganizationAccessRequestDTO pedido = OrganizationAccessRequestDTO.builder()
+                .organizationId(clinica.getOrganizationId())
+                .scopes(Set.of(GrantScope.CARTEIRA, GrantScope.PRONTUARIO))
+                .expiresAt(LocalDateTime.now().plusYears(1))
+                .build();
+
+        leSemQuebrar(() -> organizationAccessService.grant(code.getAnimalId(), pedido));
     }
 }

@@ -122,6 +122,11 @@ export const mensagens = {
   "entrar.mostrar": "Mostrar",
   "entrar.ocultar": "Ocultar",
   "entrar.esqueci": "Esqueci a senha",
+  "entrar.esqueci.enviando": "Enviando…",
+  // O servidor responde igual para e-mail existente e inexistente, de propósito. A tela
+  // repete a postura: confirma o envio sem afirmar que a conta existe.
+  "entrar.esqueci.enviado": "Se {email} tiver conta aqui, o link para trocar a senha já saiu.",
+  "entrar.esqueci.precisaEmail": "Escreva seu e-mail acima para receber o link.",
   "entrar.ou": "ou",
 
   // A frase da esquerda nao vende o produto — lembra por que a conta existe. E a mesma
@@ -132,6 +137,7 @@ export const mensagens = {
   "entrar.agora.rotulo": "Precisa de algo agora?",
   "entrar.agora.texto": "Se o animal está passando mal e você não lembra a senha, o cartão de emergência dele abre sem login — alergias, remédios em curso e quem chamar.",
   "entrar.cartao.acao": "Abrir cartão de emergência",
+  "entrar.cartao.semSenha": "Sem senha, para quando não dá tempo.",
 
   "entrar.continuarConectado": "Continuar conectado neste aparelho",
   "entrar.link.acao": "Receber um link por e-mail",
@@ -162,7 +168,6 @@ export const mensagens = {
   "home.nav.quemCuida": "Quem cuida",
   "home.custodia": "Sob sua custódia",
   "home.cadastrarAnimal": "Cadastrar animal",
-  "home.cadastrarAnimal.porque": "O cadastro ainda não tem tela. Por enquanto o animal entra pela API.",
   "home.hoje": "Hoje",
   // "Três coisas pedem você" — o desenho conta, e a contagem e o que da hierarquia:
   // sem numero, quinze pendencias e uma lista; com numero, e um dia.
@@ -311,8 +316,10 @@ export const mensagens = {
   "acesso.apoio": "Cada acesso que você concedeu, com o que foi lido e quando. Conceder deixa de ser um ato de fé quando você vê o que acontece depois.",
   "acesso.carregando": "Carregando os acessos…",
   "acesso.vazio": "Nenhuma organização alcança o {nome} hoje.",
+  "acesso.vazio.acao": "Conceder acesso a uma organização",
   "acesso.pessoas": "Pessoas",
   "acesso.pessoas.vazio": "Só você responde por este animal.",
+  "acesso.pessoas.transferir": "Transferir a titularidade",
   "acesso.pessoa.titular": "Responde pelo {nome}",
   "acesso.pessoa.coTutor": "Co-tutor · responde pelo {nome} com você",
   "acesso.ultimosAcessos": "Últimos acessos",
@@ -346,6 +353,321 @@ export const mensagens = {
   // decisão informada do arrependimento.
   "acesso.revogar.titulo": "O que revogar faz",
   "acesso.revogar.texto": "Fecha a porta a partir de agora. O que a organização registrou continua na linha do tempo, assinado por quem registrou — revogar acesso não apaga trabalho feito.",
+
+  // ------------------------------------------------------- conceder acesso (Tela 09)
+  //
+  // O desenho nomeia o problema: "o problema de design mais difícil da área do tutor é
+  // fazer alguém que nunca ouviu a palavra escopo escolher um. A saída é não nomear a
+  // abstração — nomear o que a organização vai ver". Então cada linha diz O QUE a
+  // organização verá e POR QUE ela precisa, e o rótulo do dado nunca aparece.
+  "conceder.voltar": "Quem cuida",
+  "conceder.escolher.titulo": "Quem vai poder ver o {nome}",
+  "conceder.escolher.apoio": "Escolha a organização. Se ela não estiver aqui, é porque ainda não tem cadastro no Petfy.",
+  // O desenho do onboarding (passo 4) escreve o campo assim: "buscar organização".
+  "conceder.escolher.busca": "Buscar organização por nome ou cidade",
+  "conceder.escolher.carregando": "Carregando as organizações…",
+  "conceder.escolher.vazio": "Nenhuma organização cadastrada ainda.",
+  "conceder.escolher.semResultado": "Nenhuma organização com esse nome.",
+  "conceder.escolher.acao": "Escolher",
+  "conceder.organizacao.semCidade": "Organização",
+  "conceder.organizacao.cidade": "{cidade}, {estado}",
+  "conceder.titulo": "O que a {organizacao} vai poder ver do {nome}",
+  "conceder.apoio": "Você escolhe item por item, e pode mudar ou revogar quando quiser. Quem tem acesso não responde pelo {nome} — isso continua sendo seu.",
+  // As quatro linhas concedíveis, na ordem do desenho. O título é o que a organização vê;
+  // a segunda linha é por que ela precisa — nunca o nome técnico do dado.
+  "conceder.item.CONDICOES": "Alergias e condições em curso",
+  "conceder.item.CONDICOES.porque": "Para não receitar nada que faça mal ao {nome}.",
+  "conceder.item.CARTEIRA": "Vacinação e antiparasitário",
+  "conceder.item.CARTEIRA.porque": "Para saber o que já foi aplicado e o que falta.",
+  "conceder.item.PRONTUARIO": "Diagnósticos, prescrições e exames",
+  "conceder.item.PRONTUARIO.porque": "O histórico clínico completo. Quem trata o {nome} precisa disto.",
+  "conceder.item.OBSERVACOES": "Fotos e recados que outras organizações enviaram",
+  "conceder.item.OBSERVACOES.porque": "É biografia, não saúde. A clínica não precisa.",
+  // A quinta linha do desenho, desabilitada com o motivo ao lado: a seção 06 pede que o
+  // desabilitado nunca apareça mudo. Conceder escrita não existe na API — o `GrantLevel`
+  // é sempre EDITOR e o escopo só governa leitura.
+  "conceder.item.registrar": "Registrar novos atendimentos",
+  "conceder.item.registrar.porque": "Sem isto, a clínica só lê. Marque quando o {nome} for se tratar lá.",
+  "conceder.item.registrar.indisponivel": "Ainda não é possível escolher isto: o Petfy hoje concede leitura, e quem registra atendimento é a própria organização, pela área dela.",
+  "conceder.ate.rotulo": "Até quando",
+  "conceder.ate.apoio": "Todo acesso tem prazo. Você pode revogar antes disso, a qualquer momento.",
+  "conceder.resumo.rotulo": "Resumo em uma frase",
+  "conceder.resumo.frase": "A {organizacao} vai ler {o_que} do {nome} até {data}.",
+  "conceder.resumo.semNada": "Escolha ao menos um item acima para a {organizacao} poder ver algo do {nome}.",
+  "conceder.resumo.naoVai": "E não vai ver {o_que}, nem registrar nada.",
+  "conceder.resumo.naoVaiNada": "E não vai registrar nada.",
+  "conceder.depois": "Você vai ver quem leu o quê, e quando, na rede de quem cuida do {nome}.",
+  "conceder.acao": "Conceder acesso",
+  "conceder.acao.concedendo": "Concedendo…",
+  "conceder.acao.cancelar": "Cancelar",
+
+  // --------------------------------------------------------- criar conta (Tela 07)
+  //
+  // "Uma conta serve para tudo" é a tese da tela, e ela é o oposto de um seletor de perfil:
+  // quem responde pela área é o que a pessoa TEM, não o que ela declarou no cadastro.
+  "criarConta.titulo": "Criar conta",
+  "criarConta.apoio": "Uma conta serve para tudo: cuidar dos seus animais e atender os animais de outras pessoas. Você decide isso depois, e pode mudar quando quiser.",
+  "criarConta.nome": "Nome completo",
+  "criarConta.email": "E-mail",
+  "criarConta.senha": "Senha",
+  "criarConta.senha.mostrar": "Mostrar",
+  "criarConta.senha.esconder": "Esconder",
+  // O desenho escreve 10; o contrato aceita 8. O cliente é mais rigoroso de propósito.
+  "criarConta.senha.minimo": "Ao menos {minimo} caracteres.",
+  "criarConta.termos": "Li e aceito os termos de uso e a política de privacidade, inclusive o tratamento de dados de saúde dos animais que eu registrar.",
+  "criarConta.faltaAceite": "Falta aceitar os termos para criar a conta.",
+  "criarConta.faltaCampo": "Preencha nome, e-mail e uma senha de ao menos 10 caracteres.",
+  "criarConta.acao": "Criar conta",
+  "criarConta.acao.criando": "Criando…",
+  "criarConta.jaTem": "Já tem conta?",
+  "criarConta.entrar": "Entrar",
+  // O painel "declarar credencial · em qualquer momento". Criar a conta é um deles.
+  "criarConta.credencial.abrir": "Sou veterinário e quero declarar meu registro",
+  "criarConta.credencial.registro": "Registro profissional (CRMV)",
+  "criarConta.credencial.uf": "UF",
+  "criarConta.credencial.informado": "O Petfy ainda não consulta o conselho. Seu registro aparece como informado em tudo que você assinar, e quem lê sabe disso.",
+  "criarConta.credencial.semClinica": "Não é preciso ter clínica. Atendimento domiciliar funciona inteiro sem organização nenhuma.",
+
+  // ------------------------------------------------ contestar um registro (Tela 23)
+  //
+  // Não há botão de apagar, e isso é a tese: "quem escreveu é quem corrige — é o que faz o
+  // registro valer alguma coisa". O tutor escreve ao lado, e o que ele escreve também fica.
+  "discordar.titulo": "Você discorda deste registro",
+  "discordar.apoio": "Quem escreveu é quem corrige — é o que faz o registro valer alguma coisa. O que você pode fazer é registrar sua discordância ao lado, e ela também fica para sempre.",
+  "discordar.registro": "O registro",
+  // A categoria é valor de domínio, e mostrar a constante seria mostrar código na cara de
+  // quem lê. O `eventType` que o profissional escreveu ganha da categoria quando existe.
+  "animal.categoria.CONSULTA": "Consulta",
+  "animal.categoria.RETORNO": "Retorno",
+  "animal.categoria.EXAME": "Exame",
+  "animal.categoria.CIRURGIA": "Cirurgia",
+  "animal.categoria.INTERNACAO": "Internação",
+  "animal.categoria.EMERGENCIA": "Emergência",
+  "animal.categoria.PROCEDIMENTO": "Procedimento",
+  "animal.categoria.OUTRO": "Atendimento",
+  "discordar.registro.carregando": "Carregando o registro…",
+  "discordar.registro.quando": "Registrado em {data}",
+  "discordar.sua": "Sua observação",
+  "discordar.campo": "O que você viu de diferente",
+  "discordar.campo.apoio": "Escreva o que aconteceu, não o que acha que quem atendeu errou. Sua observação entra na linha do tempo em {data}, ao lado do registro, assinada por você.",
+  "discordar.avisar": "Avisar quem registrou. Essa pessoa pode corrigir o registro dela, se concordar com você.",
+  "discordar.avisar.porque": "Ainda não dá para avisar: o Petfy não envia mensagem sobre observação, e uma caixa que promete aviso sem mandar nada seria pior que a ausência dela. Sua observação fica no lugar certo do mesmo jeito.",
+  "discordar.acao": "Registrar minha observação",
+  "discordar.acao.registrando": "Registrando…",
+  "discordar.cancelar": "Cancelar",
+  "discordar.falar": "Falar direto com quem registrou",
+  "discordar.falar.porque": "Ainda não há como: o registro traz o nome de quem atendeu, e não o contato dela. Falar pelo Petfy depende de um canal que ainda não existe.",
+  "discordar.seCorrigir": "Se ela corrigir",
+  "discordar.seCorrigir.texto": "A correção aparece ao lado do original, com o motivo e a hora. O registro não desaparece — ele passa a ter duas versões, e as duas ficam visíveis.",
+  "discordar.seNaoResponder": "Se ela não responder",
+  "discordar.seNaoResponder.texto": "Sua observação continua lá, do lado. Todo veterinário que abrir a linha do tempo do {nome} vai ler as duas coisas.",
+
+  // ----------------------------------------------- os três cômodos (Tela 08)
+  //
+  // "Nenhum passo pergunta se você é tutor ou profissional." Os três ficam abertos, e a
+  // área que a pessoa alcança vem do que ela tem — não do que declarou.
+  "comecar.agindoComo": "Agindo como",
+  "comecar.titulo": "Bem-vindo, {nome}",
+  "comecar.apoio": "O Petfy fica útil quando existe um animal com histórico aqui. Comece por onde fizer sentido para você — nada aqui é obrigatório, e nada disso bloqueia o resto.",
+  "comecar.animal.titulo": "Cadastrar um animal",
+  "comecar.animal.texto": "Nome e espécie bastam para começar. A carteirinha de papel você lança depois, com calma.",
+  "comecar.animal.acao": "Começar",
+  "comecar.rede.titulo": "Convidar quem mais cuida",
+  "comecar.rede.texto": "Quem divide a casa, a clínica que atende, a creche. Você escolhe o que cada um vê.",
+  "comecar.rede.acao": "Convidar",
+  "comecar.rede.semAnimal": "Convite é sempre para um animal, e você ainda não tem nenhum cadastrado. Comece pelo primeiro cômodo.",
+  "comecar.profissional.titulo": "Atender animais de outras pessoas",
+  "comecar.profissional.texto": "Se você é veterinário, monitor ou voluntário, declare seu registro profissional ou aceite o convite de uma organização.",
+  "comecar.profissional.acao": "Criar uma organização",
+  "comecar.profissional.indisponivel": "O registro profissional é declarado na criação da conta. Declarar depois, e aceitar convite de organização com uma conta que já existe, ainda não têm caminho.",
+  "comecar.tese": "Nenhum passo pergunta se você é tutor ou profissional. Os três cômodos ficam abertos, e a área que você alcança vem do que você tem — um animal sob sua custódia, ou um vínculo com uma organização.",
+
+  // ------------------------------------------- o primeiro animal, em quatro passos
+  //
+  // A regra do desenho: "só o passo 1 é obrigatório. Do 2 em diante, 'agora não' é um botão
+  // de verdade". E: "cada etapa deixa algo registrado, e sair no meio não desfaz nada".
+  "onboarding.depois": "Fazer isso depois",
+  "onboarding.continuar": "Continuar",
+  "onboarding.registrando": "Registrando…",
+  "onboarding.opcional": "· opcional",
+  "onboarding.trilho.animal": "O animal",
+  "onboarding.trilho.identificacao": "Identificação",
+  "onboarding.trilho.carteirinha": "Carteirinha",
+  "onboarding.trilho.quemCuida": "Quem mais cuida",
+  "onboarding.p1.titulo": "Quem é o animal?",
+  "onboarding.p1.apoio": "Nome e espécie bastam. O resto pode entrar a qualquer momento, inclusive anos depois.",
+  "onboarding.p1.nome": "Como você chama ele",
+  "onboarding.p1.especie": "Espécie",
+  "onboarding.p1.especie.outro": "Outro",
+  "onboarding.p1.especie.outro.porque": "Hoje o Petfy só registra cão e gato: a espécie é um dado do domínio, e não um texto livre. Outra espécie ficaria registrada errada.",
+  "onboarding.p1.nascimento": "Nascimento",
+  "onboarding.p1.nascimento.apoio": "Só o mês e o ano servem. Estimativa também.",
+  "onboarding.p1.foto": "Foto do animal",
+  "onboarding.p1.foto.apoio": "Ajuda quem cuida a reconhecer ele no balcão. Pode ficar para depois.",
+  "onboarding.p1.foto.indisponivel": "Ainda não dá para enviar a foto: o contrato da API não descreve o envio de arquivo, e o cliente é gerado a partir dele.",
+  "onboarding.p1.aviso": "O {nome} já fica registrado agora. Os próximos passos são opcionais.",
+  "onboarding.p2.titulo": "O {nome} tem algum número de identificação?",
+  "onboarding.p2.apoio": "Metade dos animais no Brasil não tem nenhum, e o Petfy funciona igual sem. Se tiver, o microchip é o que permite reconhecer o {nome} se ele se perder e for encontrado por outra pessoa.",
+  "onboarding.p2.microchip": "Microchip",
+  "onboarding.p2.microchip.apoio": "15 dígitos, geralmente na carteirinha ou na nota da aplicação.",
+  "onboarding.p2.semRgaNemTatuagem": "RGA e tatuagem ainda não têm onde ser guardados. Só o microchip tem campo próprio, e usar o dele para outro número faria o registro mentir.",
+  "onboarding.p2.naoValida": "O Petfy não emite nem valida esses números — guarda e usa o que você informar.",
+  "onboarding.p2.naoTem": "O {nome} não tem nenhum",
+  "onboarding.p3.titulo": "O que o {nome} já tomou",
+  "onboarding.p3.apoio": "É o passo mais trabalhoso e o mais valioso: sem ele, o Petfy não sabe o que vence e quando.",
+  "onboarding.p3.indisponivel": "A leitura da carteirinha por foto existe no servidor, mas o contrato da API não descreve o envio do arquivo — e o cliente desta tela é gerado a partir dele. Enquanto isso, cada dose pode ser lançada uma a uma na tela do animal, e cada uma entra na data em que foi aplicada.",
+  "onboarding.p3.naoTenho": "Não tenho a carteirinha agora",
+  "onboarding.p4.titulo": "Quem mais cuida do {nome}?",
+  "onboarding.p4.apoio": "Você escolhe o que cada pessoa ou organização vê, e por quanto tempo. Dá para mudar ou revogar depois, a qualquer momento.",
+  "onboarding.p4.pessoa": "Alguém que divide o cuidado",
+  "onboarding.p4.pessoa.apoio": "Quem também dá remédio e leva ao veterinário. Vê tudo e registra junto com você.",
+  "onboarding.p4.pessoa.campo": "e-mail",
+  "onboarding.p4.convidar": "Convidar",
+  "onboarding.p4.convidado": "Convite enviado para {email}. Ele aparece na rede quando a pessoa aceitar.",
+  "onboarding.p4.organizacao": "Uma clínica ou creche",
+  "onboarding.p4.organizacao.apoio": "Vê só o que você marcar, pelo prazo que você definir. Nada de tudo ou nada.",
+  "onboarding.p4.organizacao.semAnimal": "Primeiro cadastre o animal, no passo 1.",
+  "onboarding.p4.escolherOQueVe": "Escolher o que ela vê",
+  "onboarding.p4.ir": "Ir para o {nome}",
+  "onboarding.p4.sozinho": "Cuido sozinho por enquanto",
+
+  // ------------------------------------------------- consentimento atualizado (Tela 07)
+  //
+  // "Sem alarme e sem tom de erro: o texto mudou, não a conta" — a nota do desenho. Por
+  // isso não há "atenção", não há vermelho e "agora não" é saída de verdade.
+  "consentimento.titulo": "Atualizamos os termos",
+  "consentimento.texto": "Mudou o texto de {documentos}. Você continua usando o Petfy do mesmo jeito.",
+  "consentimento.documento.TERMS_OF_SERVICE": "termos de uso",
+  "consentimento.documento.PRIVACY_POLICY": "política de privacidade",
+  "consentimento.documento.OUTRO": "um documento",
+  "consentimento.aceitar": "Aceitar",
+  "consentimento.aceitando": "Aceitando…",
+  "consentimento.agoraNao": "Agora não",
+
+  // -------------------------------------------------- transferir a titularidade (Tela 11)
+  //
+  // A regra do desenho: "nenhuma custódia termina sem sucessor". Por isso não existe
+  // "abandonar" nem "sair" — existe passar para alguém, e a pessoa precisa aceitar.
+  "transferir.titulo": "Transferir o {nome} para outra pessoa",
+  "transferir.apoio": "A vida inteira do {nome} vai junto. Quem recebe passa a responder por ele a partir do aceite — não existe deixar o {nome} sem ninguém.",
+  "transferir.paraQuem": "Para quem",
+  "transferir.paraQuem.apoio": "A pessoa precisa aceitar. Enquanto não aceitar, o {nome} continua sob sua responsabilidade.",
+  "transferir.motivo": "Motivo",
+  "transferir.motivo.indisponivel": "Ainda não é possível registrar o motivo: o convite guarda o e-mail, o papel e o prazo, e não há campo para ele. Um campo que aceitasse o texto e o jogasse fora seria pior.",
+  "transferir.junto.rotulo": "O que vai junto com o {nome}",
+  "transferir.junto.linha": "A linha do tempo inteira, desde {ano}",
+  "transferir.junto.linhaVazia": "A linha do tempo inteira, do jeito que ela está hoje",
+  "transferir.junto.orientacao": "{o_que} em curso",
+  // O desenho escreve "com as 6 doses já dadas". A contagem não existe no
+  // CareInstructionResponseDTO — ele traz a última, e é isso que a linha diz.
+  "transferir.junto.orientacaoComDose": "{o_que} em curso, com a última dose em {data}",
+  "transferir.junto.condicoes": "{condicoes, plural, =0 {Nenhuma condição registrada} one {# condição registrada} other {# condições registradas}} e {anexos, plural, =0 {nenhum anexo} one {# anexo} other {# anexos}}",
+  // O desenho escreveu "quem deixa de ver o Code". O backend não revoga nada de ninguém
+  // na transferência, então a tela diz o que acontece de fato — com o mesmo peso de alerta.
+  "transferir.continua.rotulo": "Quem continua alcançando o {nome}",
+  "transferir.continua.voce": "Você",
+  "transferir.continua.voce.texto": "Deixa de responder pelo {nome} e continua alcançando ele como co-tutor, com permissão de registrar. Quem recebe pode revogar isso.",
+  "transferir.continua.coTutor": "{quem}, co-tutor",
+  "transferir.continua.coTutor.texto": "Continua com o mesmo acesso. Quem recebe pode revogar.",
+  "transferir.continua.organizacao.texto": "Continua com o acesso que você concedeu. Quem recebe pode revogar.",
+  "transferir.continua.tese": "Hoje os acessos são herdados: quem recebe o animal recebe também quem já alcançava ele, e decide o que fica.",
+  "transferir.acao": "Enviar transferência",
+  "transferir.acao.enviando": "Enviando…",
+  "transferir.acao.cancelar": "Cancelar",
+  "transferir.enviado.titulo": "Transferência enviada para {email}",
+  "transferir.enviado.apoio": "Enquanto a pessoa não aceitar, o {nome} continua sob sua responsabilidade e nada mudou.",
+  "transferir.enviado.prazo": "O convite vale até {data}.",
+  "transferir.enviado.voltar": "Voltar para a vida do {nome}",
+
+  // --------------------------------------- a área de organização (Tela 03)
+  //
+  // A tabela do desenho tem quatro colunas; três dependem de agregação que nenhuma rota faz.
+  // O que sobra é dito com o nome certo, e a ausência é declarada em vez de disfarçada.
+  "pacientes.titulo": "Pacientes",
+  "pacientes.meusAnimais": "Meus animais",
+  "pacientes.busca": "Buscar por nome, microchip ou RGA",
+  "pacientes.todos": "Todos",
+  "pacientes.todos.contados": "Todos · {quantos}",
+  "pacientes.recortes.indisponiveis": "Vencendo, em tratamento e atendidos este mês dependem de uma consulta por organização que ainda não existe",
+  "pacientes.coluna.animal": "Animal",
+  "pacientes.coluna.tutor": "Tutor",
+  "pacientes.coluna.acessoDesde": "Acesso desde",
+  "pacientes.atender": "Atender",
+  "pacientes.oQue": "os pacientes",
+  "pacientes.vazio": "Nenhum tutor concedeu acesso a esta organização ainda.",
+  "pacientes.semResultado": "Nenhum paciente com esse nome.",
+  "pacientes.mostrando": "Mostrando {quantos} de {total}",
+  "pacientes.idade.anos": "{anos, plural, one {# ano} other {# anos}}",
+  "pacientes.idade.meses": "{meses, plural, =0 {recém-nascido} one {# mês} other {# meses}}",
+  "pacientes.vencendo.titulo": "Quem está vencendo",
+  "pacientes.vencendo.falta": "Esta lista não existe ainda: a pendência é sempre da pessoa logada, e não há consulta de quem está vencendo por organização. Montar no cliente exigiria uma leitura por animal — centenas de requisições para desenhar uma coluna.",
+  "pacientes.vencendo.aviso": "Quando ela existir, o aviso fala só da dose: acesso concedido não é lista de marketing.",
+
+  // ------------------------------------------------- criar a organização (Tela 15)
+  //
+  // "A creche não assina por ninguém": a organização existe para o trabalho da equipe ficar
+  // assinado em nome dela, e quem registra continua tendo nome próprio (seção 10).
+  "organizacao.nova.titulo": "Criar uma organização",
+  "organizacao.nova.apoio": "Uma organização existe para que o trabalho da equipe fique assinado em nome dela. Você continua sendo {quem} em tudo que registrar — a organização não assina por ninguém.",
+  "organizacao.nova.nome": "Nome que os tutores vão ver",
+  "organizacao.nova.oQueFazem": "O que vocês fazem",
+  "organizacao.nova.oQueFazem.creche": "Creche e hospedagem",
+  "organizacao.nova.oQueFazem.clinica": "Clínica veterinária",
+  "organizacao.nova.oQueFazem.banhoETosa": "Banho e tosa",
+  "organizacao.nova.oQueFazem.abrigo": "Abrigo ou resgate",
+  "organizacao.nova.oQueFazem.adestramento": "Adestramento",
+  "organizacao.nova.oQueFazem.indisponivel": "Ainda não dá para declarar isso: o cadastro de organização não guarda o que ela faz, e é esse dado que definiria o que a equipe consegue registrar. Marcar aqui não viajaria para lugar nenhum.",
+  "organizacao.nova.cnpj": "CNPJ",
+  "organizacao.nova.telefone": "Telefone para emergência",
+  "organizacao.nova.telefone.apoio": "Aparece para o tutor quando o animal está com vocês.",
+  "organizacao.nova.endereco": "Endereço",
+  "organizacao.nova.cidade": "Cidade",
+  "organizacao.nova.estado": "UF",
+  "organizacao.nova.comecaVazia": "Criar uma organização não dá acesso a animal nenhum. Cada tutor concede o que quiser, animal por animal, e pode revogar quando quiser. {nome, select, other {Ela}} começa vazia.",
+  "organizacao.nova.acao": "Criar a organização",
+  "organizacao.nova.criando": "Criando…",
+  "organizacao.nova.responsavel": "Você fica como responsável.",
+  "organizacao.nova.voltar": "Voltar para o início",
+  "organizacao.nova.oQue": "a organização",
+
+  // ------------------------------------------------- equipe e convites (Tela 16)
+  "equipe.titulo": "Equipe e convites",
+  "equipe.apoio": "Quem entra passa a registrar em nome da organização, e cada registro continua assinado com o nome de quem fez.",
+  "equipe.pela": "· pela {organizacao}",
+  "equipe.convidar": "Convidar pessoa",
+  "equipe.convidar.campo": "e-mail",
+  "equipe.convidar.acao": "Convidar",
+  "equipe.convidando": "Convidando…",
+  "equipe.convidar.semFuncao": "Ainda não dá para escolher a função de quem entra: o convite guarda o e-mail e o prazo, e mais nada. Veterinária, monitora e recepção existem no modelo, mas não há por onde atribuí-las.",
+  "equipe.aguardando": "{quantos, plural, =0 {Nenhum convite aguardando} one {# convite aguardando} other {# convites aguardando}}",
+  "equipe.aguardando.vazio": "Ninguém foi convidado ainda.",
+  "equipe.carregando": "Carregando os convites…",
+  "equipe.convite.vale": "Vale até {data}",
+  "equipe.convite.revogar": "Revogar",
+  "equipe.encerrados": "{quantos, plural, one {# convite já encerrado} other {# convites já encerrados}} — aceitos, vencidos ou revogados.",
+  "equipe.oQue": "os convites da equipe",
+  "equipe.oQue.convite": "o convite",
+  "equipe.falta.titulo": "A tabela da equipe não existe ainda",
+  "equipe.falta.texto": "Nenhuma rota devolve quem já entrou na organização, então não há como listar a equipe, mostrar a função de cada um nem desligar alguém. Mostrar uma tabela vazia seria pior: os membros existem, e é o produto que ainda não sabe mostrá-los.",
+  "equipe.comoAceita": "Quem recebe o convite entra criando a conta com ele. Quem já tem conta no Petfy ainda não tem por onde aceitar.",
+
+  // ------------------------------------------------- os estados (Tela 14)
+  //
+  // "Desenhados, não descritos." As três partes do erro de carga andam juntas: o que falhou,
+  // de quem é a culpa e o que aconteceu com o dado — e a terceira é a que importa para quem
+  // está com o animal doente na frente.
+  "estado.erroDeCarga.titulo": "Não conseguimos carregar {o_que}",
+  "estado.erroDeCarga.nossa": "O problema é nosso. Nada do registro foi perdido.",
+  "estado.tentarDeNovo": "Tentar de novo",
+  "estado.tentando": "Tentando…",
+  "estado.carregando": "Carregando {o_que}…",
+  "estado.carregando.quantos": "Carregando {quantos} {o_que}…",
+  "estado.erroAoGravar": "Não conseguimos gravar {o_que}. O que você escreveu está aqui, intacto.",
+  // O "o que" de cada tela, para a frase do erro dizer o nome da coisa e não "os dados".
+  "acesso.oQue": "quem alcança o {nome}",
+  "conceder.oQue": "a lista de organizações",
+  "discordar.oQue": "este registro",
+  "discordar.oQue.gravar": "sua observação",
 
   "rota.naoEncontrada.titulo": "Esta página não existe.",
   "rota.naoEncontrada.acao": "Ir para o início",
@@ -403,6 +725,7 @@ export const mensagens = {
   "animal.linha.autoriaComOrg": "Registrado por {quem}, pela {organizacao} · lançado em {quando}",
   "animal.linha.lancado": "Lançado em {quando}",
   "animal.linha.corrigido": "{vezes, plural, one {# correção} other {# correções}}",
+  "animal.linha.discordar": "Discordo deste registro",
   "animal.credencial.INFORMADO": "informado",
   "animal.credencial.VERIFICADO": "verificado",
   "animal.credencial.SUSPENSO": "suspenso",

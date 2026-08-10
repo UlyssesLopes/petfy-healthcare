@@ -7,6 +7,7 @@ import { corpoDe } from "./resposta.ts";
 export type AcessoDeOrganizacao = components["schemas"]["OrganizationAccessResponseDTO"];
 export type Leitura = components["schemas"]["SensitiveAccessLogResponseDTO"];
 export type Escopo = NonNullable<AcessoDeOrganizacao["scopes"]>[number];
+export type Organizacao = components["schemas"]["OrganizationResponseDTO"];
 
 /** As organizacoes que alcancam o animal — vigentes, vencidas e revogadas. */
 export function useAcessosDeOrganizacao(animalId: string | undefined) {
@@ -66,6 +67,89 @@ export function useRevogarAcesso() {
       if (error !== undefined) {
         throw error;
       }
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        consultas.invalidateQueries({ queryKey: ["acessos-de-organizacao"] }),
+        consultas.invalidateQueries({ queryKey: ["rede-de-cuidado"] }),
+      ]);
+    },
+  });
+}
+
+/**
+ * As organizacoes que o tutor pode escolher para conceder acesso.
+ *
+ * <b>A rota devolve TODAS as organizacoes cadastradas</b> — o `listAllOrganizations` e um
+ * `findAll` paginado, e o SecurityConfig so restringe `/professional/**` e os convites.
+ * Isso e o certo para o caso de uso: o tutor precisa achar a clinica onde ele acabou de
+ * chegar, e ela nao tem relacao nenhuma com ele antes desta tela.
+ *
+ * <b>A busca e no cliente, e isso e divida.</b> Nao ha parametro de nome na rota; pedimos
+ * uma pagina grande e filtramos aqui. Funciona enquanto o cadastro de organizacoes for
+ * pequeno, e para de funcionar sem avisar — o gatilho para criar busca no servidor e o
+ * cadastro passar de algumas centenas.
+ */
+export function useOrganizacoes() {
+  return useQuery({
+    queryKey: ["organizacoes"],
+    queryFn: async () =>
+      corpoDe(await cliente.GET("/organizations", { params: { query: { size: 200 } } })).content ??
+      [],
+  });
+}
+
+/**
+ * O campo do desenho e uma data; o contrato pede `date-time`.
+ *
+ * <b>Fim do dia, e nao meia-noite.</b> "Ate 31/12/2027" para quem le significa o dia 31
+ * inteiro — converter para `2027-12-31T00:00:00` encurtaria o acesso em um dia sem avisar
+ * ninguem, e o tutor descobriria pela clinica batendo na porta fechada.
+ *
+ * Sem fuso de proposito: o backend guarda `LocalDateTime` e comparar com fuso e a divida 3,
+ * que tem PR proprio. Mandar `Z` aqui seria escolher UTC no lugar dela.
+ */
+export function fimDoDia(data: string): string {
+  return `${data}T23:59:59`;
+}
+
+/**
+ * Conceder acesso, e tambem AJUSTAR: e o mesmo POST.
+ *
+ * O servidor reativa a concessao vigente em vez de acumular linhas, entao conceder de novo
+ * a quem ja tem e ajustar o que ela ve sao o mesmo gesto para a API. Foi este caminho que
+ * respondia 500 antes do `@Transactional` no `grant` — o quinto caso de DTO montado fora de
+ * transacao no projeto.
+ */
+export function useConcederAcesso() {
+  const consultas = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      animalId,
+      organizationId,
+      escopos,
+      ate,
+    }: {
+      animalId: string;
+      organizationId: string;
+      escopos: Escopo[];
+      ate: string | undefined;
+    }) => {
+      const { data, error } = await cliente.POST("/animals/{animalId}/organization-access", {
+        params: { path: { animalId } },
+        body: {
+          organizationId,
+          scopes: escopos,
+          expiresAt: ate === undefined ? undefined : fimDoDia(ate),
+        },
+      });
+
+      if (error !== undefined) {
+        throw error;
+      }
+
+      return data;
     },
     onSuccess: async () => {
       await Promise.all([

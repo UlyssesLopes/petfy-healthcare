@@ -1,6 +1,8 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
 import { FormattedMessage } from "react-intl";
 
+import { FaixaDeConsentimento } from "../componentes/FaixaDeConsentimento.tsx";
+
 /**
  * A raiz da arvore de rotas.
  *
@@ -18,7 +20,17 @@ export const Route = createRootRoute({
 });
 
 function Raiz() {
-  return <Outlet />;
+  return (
+    <>
+      {/*
+       * A faixa de consentimento e da Tela 07, mas nao daquela rota: o texto pode mudar
+       * enquanto a pessoa esta em qualquer lugar do produto, e o desenho pede faixa e nao
+       * bloqueio. Por isso ela mora na raiz, acima do `Outlet`.
+       */}
+      <FaixaDeConsentimento />
+      <Outlet />
+    </>
+  );
 }
 
 function NaoEncontrada() {

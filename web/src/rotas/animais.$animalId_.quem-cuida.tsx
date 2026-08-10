@@ -13,8 +13,8 @@ import {
   type AcessoDeOrganizacao,
   type Leitura,
 } from "../dados/acessos.ts";
+import { ErroDeCarga } from "../componentes/Estados.tsx";
 import { lerSessao } from "../dados/sessao.ts";
-import { chaveDoErro } from "../i18n/erroDaApi.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
@@ -107,14 +107,30 @@ function QuemCuida() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {acessos.isError ? (
-                <p role="alert" style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.45 0.13 30)", background: "oklch(0.97 0.012 30)", borderRadius: "8px", padding: "12px 14px", margin: 0 }}>
-                  {intl.formatMessage({ id: chaveDoErro(acessos.error) })}
-                </p>
+                <ErroDeCarga
+                  oQue={intl.formatMessage({ id: "acesso.oQue" }, { nome })}
+                  erro={acessos.error}
+                  aoTentarDeNovo={() => void acessos.refetch()}
+                  carregando={acessos.isFetching}
+                />
               ) : acessos.isPending ? (
                 <Nota>{intl.formatMessage({ id: "acesso.carregando" })}</Nota>
               ) : lista.length === 0 ? (
+                /*
+                 * O desenho nao desenha o vazio desta tela, e sem uma saida aqui a Tela 09
+                 * seria inalcancavel por quem nunca concedeu nada — que e exatamente quem
+                 * mais precisa dela. A secao 06 pede vazio que ofereca o gesto, e nao
+                 * vazio que so informe.
+                 */
                 <div style={{ border: "1px dashed oklch(0.90 0.008 150)", borderRadius: "12px", padding: "24px", fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
-                  {intl.formatMessage({ id: "acesso.vazio" }, { nome })}
+                  <div>{intl.formatMessage({ id: "acesso.vazio" }, { nome })}</div>
+                  <Link
+                    to="/animais/$animalId/conceder-acesso"
+                    params={{ animalId }}
+                    style={{ display: "inline-block", marginTop: "14px", fontSize: "15px", color: "oklch(0.46 0.085 150)" }}
+                  >
+                    {intl.formatMessage({ id: "acesso.vazio.acao" })}
+                  </Link>
                 </div>
               ) : (
                 <>
@@ -127,7 +143,7 @@ function QuemCuida() {
                     />
                   ))}
                   {encerrados.map((acesso) => (
-                    <Encerrado key={acesso.grantId} acesso={acesso} />
+                    <Encerrado key={acesso.grantId} acesso={acesso} animalId={animalId} />
                   ))}
                 </>
               )}
@@ -159,6 +175,15 @@ function QuemCuida() {
                     ))}
                   </div>
                 )}
+
+                {/* A Tela 11 mora aqui: e das pessoas que ela trata, e nao dos acessos. */}
+                <Link
+                  to="/animais/$animalId/transferir"
+                  params={{ animalId }}
+                  style={{ display: "inline-block", marginTop: "16px", fontSize: "15px", color: "oklch(0.46 0.085 150)" }}
+                >
+                  {intl.formatMessage({ id: "acesso.pessoas.transferir" })}
+                </Link>
               </div>
 
               <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", background: "oklch(1 0 0)", padding: "22px 24px" }}>
@@ -221,14 +246,20 @@ function CartaoDeOrganizacao({
         </div>
 
         <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            type="button"
-            disabled
+          {/*
+           * "Ajustar" e a Tela 09 de novo, e nao uma tela propria: o POST de conceder
+           * reativa a concessao vigente em vez de acumular linhas, entao ajustar o que a
+           * organizacao ve e o mesmo gesto para a API. Era este caminho que respondia 500
+           * antes do `@Transactional` no `grant`.
+           */}
+          <Link
+            to="/animais/$animalId/conceder-acesso"
+            params={{ animalId }}
             {...ajustar.props}
-            style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "11px 16px", minHeight: "44px", cursor: "not-allowed", opacity: 0.55 }}
+            style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: ajustar.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: `1px solid ${ajustar.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.82 0.012 150)"}`, borderRadius: "8px", padding: "11px 16px", minHeight: "44px", display: "flex", alignItems: "center", textDecoration: "none" }}
           >
             {intl.formatMessage({ id: "acesso.acao.ajustar" })}
-          </button>
+          </Link>
 
           <button
             type="button"
@@ -286,7 +317,7 @@ function CartaoDeOrganizacao({
 }
 
 /** O acesso que acabou: cinza, e com a saida de "conceder de novo" ao lado. */
-function Encerrado({ acesso }: { acesso: AcessoDeOrganizacao }) {
+function Encerrado({ acesso, animalId }: { acesso: AcessoDeOrganizacao; animalId: string }) {
   const intl = useIntl();
   const conceder = useHover();
 
@@ -310,14 +341,14 @@ function Encerrado({ acesso }: { acesso: AcessoDeOrganizacao }) {
         </div>
       </div>
 
-      <button
-        type="button"
-        disabled
+      <Link
+        to="/animais/$animalId/conceder-acesso"
+        params={{ animalId }}
         {...conceder.props}
-        style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "11px 16px", minHeight: "44px", cursor: "not-allowed", opacity: 0.55 }}
+        style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: conceder.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: `1px solid ${conceder.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.82 0.012 150)"}`, borderRadius: "8px", padding: "11px 16px", minHeight: "44px", display: "flex", alignItems: "center", textDecoration: "none" }}
       >
         {intl.formatMessage({ id: "acesso.acao.concederDeNovo" })}
-      </button>
+      </Link>
     </div>
   );
 }

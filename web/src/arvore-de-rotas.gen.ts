@@ -10,13 +10,32 @@
 
 import { Route as rootRouteImport } from './rotas/__root'
 import { Route as IndexRouteImport } from './rotas/index'
+import { Route as ComecarRouteImport } from './rotas/comecar'
+import { Route as CriarContaRouteImport } from './rotas/criar-conta'
 import { Route as EntrarRouteImport } from './rotas/entrar'
+import { Route as PacientesRouteImport } from './rotas/pacientes'
 import { Route as AnimaisAnimalIdRouteImport } from './rotas/animais.$animalId'
+import { Route as AnimaisNovoRouteImport } from './rotas/animais.novo'
+import { Route as OrganizacoesNovaRouteImport } from './rotas/organizacoes.nova'
+import { Route as AnimaisAnimalIdConcederAcessoRouteImport } from './rotas/animais.$animalId_.conceder-acesso'
 import { Route as AnimaisAnimalIdQuemCuidaRouteImport } from './rotas/animais.$animalId_.quem-cuida'
+import { Route as AnimaisAnimalIdTransferirRouteImport } from './rotas/animais.$animalId_.transferir'
+import { Route as OrganizacoesOrganizationIdEquipeRouteImport } from './rotas/organizacoes.$organizationId.equipe'
+import { Route as AnimaisAnimalIdDiscordarRegistroIdRouteImport } from './rotas/animais.$animalId_.discordar.$registroId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComecarRoute = ComecarRouteImport.update({
+  id: '/comecar',
+  path: '/comecar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriarContaRoute = CriarContaRouteImport.update({
+  id: '/criar-conta',
+  path: '/criar-conta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EntrarRoute = EntrarRouteImport.update({
@@ -24,56 +43,165 @@ const EntrarRoute = EntrarRouteImport.update({
   path: '/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PacientesRoute = PacientesRouteImport.update({
+  id: '/pacientes',
+  path: '/pacientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnimaisAnimalIdRoute = AnimaisAnimalIdRouteImport.update({
   id: '/animais/$animalId',
   path: '/animais/$animalId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnimaisNovoRoute = AnimaisNovoRouteImport.update({
+  id: '/animais/novo',
+  path: '/animais/novo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizacoesNovaRoute = OrganizacoesNovaRouteImport.update({
+  id: '/organizacoes/nova',
+  path: '/organizacoes/nova',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnimaisAnimalIdConcederAcessoRoute =
+  AnimaisAnimalIdConcederAcessoRouteImport.update({
+    id: '/animais/$animalId_/conceder-acesso',
+    path: '/animais/$animalId/conceder-acesso',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AnimaisAnimalIdQuemCuidaRoute =
   AnimaisAnimalIdQuemCuidaRouteImport.update({
     id: '/animais/$animalId_/quem-cuida',
     path: '/animais/$animalId/quem-cuida',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AnimaisAnimalIdTransferirRoute =
+  AnimaisAnimalIdTransferirRouteImport.update({
+    id: '/animais/$animalId_/transferir',
+    path: '/animais/$animalId/transferir',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OrganizacoesOrganizationIdEquipeRoute =
+  OrganizacoesOrganizationIdEquipeRouteImport.update({
+    id: '/organizacoes/$organizationId/equipe',
+    path: '/organizacoes/$organizationId/equipe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AnimaisAnimalIdDiscordarRegistroIdRoute =
+  AnimaisAnimalIdDiscordarRegistroIdRouteImport.update({
+    id: '/animais/$animalId_/discordar/$registroId',
+    path: '/animais/$animalId/discordar/$registroId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/comecar': typeof ComecarRoute
+  '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
+  '/pacientes': typeof PacientesRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
+  '/animais/novo': typeof AnimaisNovoRoute
+  '/organizacoes/nova': typeof OrganizacoesNovaRoute
+  '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
+  '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
+  '/organizacoes/$organizationId/equipe': typeof OrganizacoesOrganizationIdEquipeRoute
+  '/animais/$animalId/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/comecar': typeof ComecarRoute
+  '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
+  '/pacientes': typeof PacientesRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
+  '/animais/novo': typeof AnimaisNovoRoute
+  '/organizacoes/nova': typeof OrganizacoesNovaRoute
+  '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
+  '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
+  '/organizacoes/$organizationId/equipe': typeof OrganizacoesOrganizationIdEquipeRoute
+  '/animais/$animalId/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/comecar': typeof ComecarRoute
+  '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
+  '/pacientes': typeof PacientesRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
+  '/animais/novo': typeof AnimaisNovoRoute
+  '/organizacoes/nova': typeof OrganizacoesNovaRoute
+  '/animais/$animalId_/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId_/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
+  '/animais/$animalId_/transferir': typeof AnimaisAnimalIdTransferirRoute
+  '/organizacoes/$organizationId/equipe': typeof OrganizacoesOrganizationIdEquipeRoute
+  '/animais/$animalId_/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/entrar' | '/animais/$animalId' | '/animais/$animalId/quem-cuida'
+    | '/'
+    | '/comecar'
+    | '/criar-conta'
+    | '/entrar'
+    | '/pacientes'
+    | '/animais/$animalId'
+    | '/animais/novo'
+    | '/organizacoes/nova'
+    | '/animais/$animalId/conceder-acesso'
+    | '/animais/$animalId/quem-cuida'
+    | '/animais/$animalId/transferir'
+    | '/organizacoes/$organizationId/equipe'
+    | '/animais/$animalId/discordar/$registroId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/entrar' | '/animais/$animalId' | '/animais/$animalId/quem-cuida'
+  to:
+    | '/'
+    | '/comecar'
+    | '/criar-conta'
+    | '/entrar'
+    | '/pacientes'
+    | '/animais/$animalId'
+    | '/animais/novo'
+    | '/organizacoes/nova'
+    | '/animais/$animalId/conceder-acesso'
+    | '/animais/$animalId/quem-cuida'
+    | '/animais/$animalId/transferir'
+    | '/organizacoes/$organizationId/equipe'
+    | '/animais/$animalId/discordar/$registroId'
   id:
     | '__root__'
     | '/'
+    | '/comecar'
+    | '/criar-conta'
     | '/entrar'
+    | '/pacientes'
     | '/animais/$animalId'
+    | '/animais/novo'
+    | '/organizacoes/nova'
+    | '/animais/$animalId_/conceder-acesso'
     | '/animais/$animalId_/quem-cuida'
+    | '/animais/$animalId_/transferir'
+    | '/organizacoes/$organizationId/equipe'
+    | '/animais/$animalId_/discordar/$registroId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ComecarRoute: typeof ComecarRoute
+  CriarContaRoute: typeof CriarContaRoute
   EntrarRoute: typeof EntrarRoute
+  PacientesRoute: typeof PacientesRoute
   AnimaisAnimalIdRoute: typeof AnimaisAnimalIdRoute
+  AnimaisNovoRoute: typeof AnimaisNovoRoute
+  OrganizacoesNovaRoute: typeof OrganizacoesNovaRoute
+  AnimaisAnimalIdConcederAcessoRoute: typeof AnimaisAnimalIdConcederAcessoRoute
   AnimaisAnimalIdQuemCuidaRoute: typeof AnimaisAnimalIdQuemCuidaRoute
+  AnimaisAnimalIdTransferirRoute: typeof AnimaisAnimalIdTransferirRoute
+  OrganizacoesOrganizationIdEquipeRoute: typeof OrganizacoesOrganizationIdEquipeRoute
+  AnimaisAnimalIdDiscordarRegistroIdRoute: typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,11 +213,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comecar': {
+      id: '/comecar'
+      path: '/comecar'
+      fullPath: '/comecar'
+      preLoaderRoute: typeof ComecarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criar-conta': {
+      id: '/criar-conta'
+      path: '/criar-conta'
+      fullPath: '/criar-conta'
+      preLoaderRoute: typeof CriarContaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/entrar': {
       id: '/entrar'
       path: '/entrar'
       fullPath: '/entrar'
       preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pacientes': {
+      id: '/pacientes'
+      path: '/pacientes'
+      fullPath: '/pacientes'
+      preLoaderRoute: typeof PacientesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/animais/$animalId': {
@@ -99,6 +248,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnimaisAnimalIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/animais/novo': {
+      id: '/animais/novo'
+      path: '/animais/novo'
+      fullPath: '/animais/novo'
+      preLoaderRoute: typeof AnimaisNovoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizacoes/nova': {
+      id: '/organizacoes/nova'
+      path: '/organizacoes/nova'
+      fullPath: '/organizacoes/nova'
+      preLoaderRoute: typeof OrganizacoesNovaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/animais/$animalId_/conceder-acesso': {
+      id: '/animais/$animalId_/conceder-acesso'
+      path: '/animais/$animalId/conceder-acesso'
+      fullPath: '/animais/$animalId/conceder-acesso'
+      preLoaderRoute: typeof AnimaisAnimalIdConcederAcessoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/animais/$animalId_/quem-cuida': {
       id: '/animais/$animalId_/quem-cuida'
       path: '/animais/$animalId/quem-cuida'
@@ -106,14 +276,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnimaisAnimalIdQuemCuidaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/animais/$animalId_/transferir': {
+      id: '/animais/$animalId_/transferir'
+      path: '/animais/$animalId/transferir'
+      fullPath: '/animais/$animalId/transferir'
+      preLoaderRoute: typeof AnimaisAnimalIdTransferirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizacoes/$organizationId/equipe': {
+      id: '/organizacoes/$organizationId/equipe'
+      path: '/organizacoes/$organizationId/equipe'
+      fullPath: '/organizacoes/$organizationId/equipe'
+      preLoaderRoute: typeof OrganizacoesOrganizationIdEquipeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/animais/$animalId_/discordar/$registroId': {
+      id: '/animais/$animalId_/discordar/$registroId'
+      path: '/animais/$animalId/discordar/$registroId'
+      fullPath: '/animais/$animalId/discordar/$registroId'
+      preLoaderRoute: typeof AnimaisAnimalIdDiscordarRegistroIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ComecarRoute: ComecarRoute,
+  CriarContaRoute: CriarContaRoute,
   EntrarRoute: EntrarRoute,
+  PacientesRoute: PacientesRoute,
   AnimaisAnimalIdRoute: AnimaisAnimalIdRoute,
+  AnimaisNovoRoute: AnimaisNovoRoute,
+  OrganizacoesNovaRoute: OrganizacoesNovaRoute,
+  AnimaisAnimalIdConcederAcessoRoute: AnimaisAnimalIdConcederAcessoRoute,
   AnimaisAnimalIdQuemCuidaRoute: AnimaisAnimalIdQuemCuidaRoute,
+  AnimaisAnimalIdTransferirRoute: AnimaisAnimalIdTransferirRoute,
+  OrganizacoesOrganizationIdEquipeRoute: OrganizacoesOrganizationIdEquipeRoute,
+  AnimaisAnimalIdDiscordarRegistroIdRoute:
+    AnimaisAnimalIdDiscordarRegistroIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

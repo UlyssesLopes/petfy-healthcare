@@ -26,6 +26,75 @@ export function useEntrar() {
   });
 }
 
+/**
+ * Criar conta — uma so, para todo mundo (Tela 07).
+ *
+ * <b>Nao existe conta de tutor e conta de veterinario</b>, e a tela diz isso na primeira
+ * frase: "uma conta serve para tudo". Quem responde pela area nao e um campo de cadastro, e
+ * o que a pessoa TEM — custodia de animal, vinculo com organizacao (PRODUTO.md 9.3).
+ *
+ * <b>Entra logo depois de criar</b>, com as credenciais que a pessoa acabou de digitar. Sem
+ * isso a tela seguinte seria o login, pedindo de novo o que ela escreveu dez segundos antes
+ * — e o desenho da Tela 08 e explicito em vir "depois do login".
+ *
+ * O `crmv` vai junto quando declarado: o `PersonRequestDTO` aceita, e o painel do desenho
+ * diz "em qualquer momento" — criar a conta e um desses momentos.
+ */
+export function useCriarConta() {
+  const entrar = useEntrar();
+
+  return useMutation({
+    mutationFn: async (conta: {
+      nome: string;
+      email: string;
+      senha: string;
+      crmv?: string;
+      crmvUf?: string;
+    }) => {
+      const criada = corpoDe(
+        await cliente.POST("/persons", {
+          body: {
+            name: conta.nome,
+            email: conta.email,
+            password: conta.senha,
+            acceptedTerms: true,
+            ...(conta.crmv === undefined || conta.crmv === ""
+              ? {}
+              : { crmv: conta.crmv, crmvUf: conta.crmvUf }),
+          },
+        }),
+      );
+
+      await entrar.mutateAsync({ email: conta.email, senha: conta.senha });
+
+      return criada;
+    },
+  });
+}
+
+/**
+ * "Esqueci" — e ele resolve ali mesmo, sem trocar de tela.
+ *
+ * A Tela 29 escreve a regra: <b>"o erro de senha oferece a saida junto: link por e-mail, ali
+ * mesmo, sem trocar de tela"</b>. O link sem senha nao existe na API, mas a recuperacao
+ * existe e e publica — entao a saida real e esta, e ela cabe na propria porta.
+ *
+ * <b>A resposta e sempre a mesma, e isso e proposital do lado do servidor:</b> dizer "nao
+ * achamos esse e-mail" entregaria quais contas existem. A tela repete a postura e confirma o
+ * envio sem afirmar que a conta existe.
+ */
+export function usePedirNovaSenha() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const { error } = await cliente.POST("/auth/password-reset", { body: { email } });
+
+      if (error !== undefined) {
+        throw error;
+      }
+    },
+  });
+}
+
 export function useSair() {
   const consultas = useQueryClient();
 

@@ -128,6 +128,18 @@ function Inicio() {
               <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
             </div>
 
+            {/*
+             * A porta da area de organizacao (Tela 03), e ela so aparece para quem tem o que
+             * ver do outro lado. Nao e condicional de PAPEL — e do que a pessoa tem: o
+             * `professional` do `/me/context` sai de vinculo e credencial, nao de um campo de
+             * cadastro (PRODUTO.md 9.3).
+             */}
+            {contexto.data?.professional === true && (
+              <Link to="/pacientes" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
+                {intl.formatMessage({ id: "pacientes.titulo" })}
+              </Link>
+            )}
+
             <div style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "8px", padding: "8px 14px", minHeight: "44px", background: "oklch(0.975 0.004 150)" }}>
               <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
                 {intl.formatMessage({ id: "home.agindoComo" })}
@@ -197,17 +209,14 @@ function Inicio() {
 
             <div style={{ height: "1px", background: "oklch(0.92 0.006 150)", margin: "12px 0" }}></div>
 
-            <button
-              type="button"
-              disabled
+            {/* Deixou de ser desabilitado quando o onboarding passou a existir. */}
+            <Link
+              to="/animais/novo"
               {...cadastrar.props}
-              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.84 0.012 150)", borderRadius: "8px", padding: "12px", minHeight: "44px", cursor: "not-allowed", textAlign: "left", opacity: 0.55 }}
+              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: cadastrar.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: `1px solid ${cadastrar.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.84 0.012 150)"}`, borderRadius: "8px", padding: "12px", minHeight: "44px", textAlign: "left", textDecoration: "none", display: "block" }}
             >
               {intl.formatMessage({ id: "home.cadastrarAnimal" })}
-            </button>
-            <div style={{ fontSize: "13px", lineHeight: 1.5, color: "oklch(0.5 0.015 150)", padding: "0 2px" }}>
-              {intl.formatMessage({ id: "home.cadastrarAnimal.porque" })}
-            </div>
+            </Link>
           </div>
 
           {/* ---------------------------------------------------------------- centro: hoje */}

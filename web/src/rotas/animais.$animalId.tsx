@@ -258,7 +258,7 @@ function VidaDoAnimal() {
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "128px 1fr" }}>
                 {visiveis.map((entrada, indice) => (
-                  <Evento key={entrada.eventId} entrada={entrada} ultimo={indice === visiveis.length - 1} />
+                  <Evento key={entrada.eventId} entrada={entrada} ultimo={indice === visiveis.length - 1} animalId={animalId} />
                 ))}
               </div>
             )}
@@ -494,7 +494,7 @@ function corDoPonto(tipo: string | undefined): string {
  * Um evento com dois anos entre as duas e normal — a carteirinha de papel de 2019 lancada
  * em 2024 —, e o desenho deixa isso legivel em vez de esconder.
  */
-function Evento({ entrada, ultimo }: { entrada: EntradaDaLinha; ultimo: boolean }) {
+function Evento({ entrada, ultimo, animalId }: { entrada: EntradaDaLinha; ultimo: boolean; animalId: string }) {
   const intl = useIntl();
   const quando = entrada.occurredAt === undefined ? undefined : new Date(entrada.occurredAt);
   const fundo = ultimo ? "0" : "26px";
@@ -532,6 +532,23 @@ function Evento({ entrada, ultimo }: { entrada: EntradaDaLinha; ultimo: boolean 
             <>
               {" · "}
               {intl.formatMessage({ id: "animal.linha.corrigido" }, { vezes: entrada.correctionCount })}
+            </>
+          )}
+          {/*
+           * A entrada para a Tela 23, e so no atendimento: e o registro de outra pessoa sobre
+           * a saude do animal, o unico que o tutor nao pode editar e sobre o qual ele pode
+           * discordar. Observacao e pesagem sao dele — nao ha o que contestar no proprio texto.
+           */}
+          {entrada.eventType === "ATENDIMENTO" && entrada.eventId !== undefined && (
+            <>
+              {" · "}
+              <Link
+                to="/animais/$animalId/discordar/$registroId"
+                params={{ animalId, registroId: entrada.eventId }}
+                style={{ fontSize: "13px", color: "oklch(0.46 0.085 150)" }}
+              >
+                {intl.formatMessage({ id: "animal.linha.discordar" })}
+              </Link>
             </>
           )}
         </div>

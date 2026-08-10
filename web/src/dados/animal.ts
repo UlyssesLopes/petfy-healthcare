@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { cliente } from "./cliente.ts";
 import type { components } from "./gerado/api";
 import { corpoDe } from "./resposta.ts";
 
 export type EntradaDaLinha = components["schemas"]["TimelineEntryResponseDTO"];
+export type Orientacao = components["schemas"]["CareInstructionResponseDTO"];
 export type Tutor = components["schemas"]["PetTutorResponseDTO"];
 export type AcessoDeOrganizacao = components["schemas"]["OrganizationAccessResponseDTO"];
 
@@ -66,6 +67,82 @@ export function useAcessosDeOrganizacao(animalId: string | undefined) {
           params: { path: { animalId: animalId! } },
         }),
       ),
+  });
+}
+
+/** As orientacoes de cuidado — o "Amoxicilina em curso" que a Tela 11 lista. */
+export function useOrientacoes(animalId: string | undefined) {
+  return useQuery({
+    queryKey: ["orientacoes", animalId],
+    enabled: animalId !== undefined,
+    queryFn: async () =>
+      corpoDe(
+        await cliente.GET("/animals/{animalId}/care-instructions", {
+          params: { path: { animalId: animalId! } },
+        }),
+      ),
+  });
+}
+
+/**
+ * Transferir a titularidade e CONVIDAR com papel de titular, e nao a rota `transfer-holder`.
+ *
+ * <b>As duas existem e fazem coisas diferentes.</b> O `POST .../tutors/{personId}/transfer-holder`
+ * passa a titularidade na hora, e exige que a pessoa JA alcance o animal por concessao — nao
+ * serve para o desenho, que manda um e-mail para alguem de fora. O convite com papel
+ * `HOLDER` e o caminho da Tela 11: ela escreve "a pessoa precisa aceitar. Enquanto nao
+ * aceitar, o Code continua sob sua responsabilidade", e e exatamente o que o `accept` faz —
+ * a custodia so troca de mao dentro dele.
+ */
+export function useConvidarSucessor() {
+  const consultas = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ animalId, email }: { animalId: string; email: string }) => {
+      const { data, error } = await cliente.POST("/animals/{animalId}/tutors/invites", {
+        params: { path: { animalId } },
+        body: { email, role: "HOLDER" },
+      });
+
+      if (error !== undefined) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: async () => {
+      await consultas.invalidateQueries({ queryKey: ["tutores"] });
+    },
+  });
+}
+
+/**
+ * Convidar quem divide o cuidado — o passo 4 do onboarding.
+ *
+ * Papel `EDITOR`, e o desenho explica por que sem usar a palavra: "quem tambem da remedio e
+ * leva ao veterinario. <b>Ve tudo e registra junto com voce</b>". Quem so acompanha e
+ * `VIEWER`, e essa escolha nao esta nesta tela — ela oferece um caminho, nao um seletor de
+ * papel.
+ */
+export function useConvidarCoTutor() {
+  const consultas = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ animalId, email }: { animalId: string; email: string }) => {
+      const { data, error } = await cliente.POST("/animals/{animalId}/tutors/invites", {
+        params: { path: { animalId } },
+        body: { email, role: "EDITOR" },
+      });
+
+      if (error !== undefined) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: async () => {
+      await consultas.invalidateQueries({ queryKey: ["tutores"] });
+    },
   });
 }
 
