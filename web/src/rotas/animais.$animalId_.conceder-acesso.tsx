@@ -10,6 +10,7 @@ import {
   type Escopo,
   type Organizacao,
 } from "../dados/acessos.ts";
+import { ErroDeCarga } from "../componentes/Estados.tsx";
 import { lerSessao } from "../dados/sessao.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
 
@@ -133,7 +134,12 @@ function Escolher({
       />
 
       {organizacoes.isError ? (
-        <Alerta>{intl.formatMessage({ id: chaveDoErro(organizacoes.error) })}</Alerta>
+        <ErroDeCarga
+          oQue={intl.formatMessage({ id: "conceder.oQue" })}
+          erro={organizacoes.error}
+          aoTentarDeNovo={() => void organizacoes.refetch()}
+          carregando={organizacoes.isFetching}
+        />
       ) : organizacoes.isPending ? (
         <Nota>{intl.formatMessage({ id: "conceder.escolher.carregando" })}</Nota>
       ) : achadas.length === 0 ? (

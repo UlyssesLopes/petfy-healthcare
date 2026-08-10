@@ -8,8 +8,8 @@ import {
   useRegistrarObservacao,
   useRegistro,
 } from "../dados/registros.ts";
+import { ErroAoGravar, ErroDeCarga } from "../componentes/Estados.tsx";
 import { lerSessao } from "../dados/sessao.ts";
-import { chaveDoErro } from "../i18n/erroDaApi.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
@@ -104,7 +104,12 @@ function Discordar() {
               <Rotulo>{intl.formatMessage({ id: "discordar.registro" })}</Rotulo>
 
               {registro.isError ? (
-                <Alerta>{intl.formatMessage({ id: chaveDoErro(registro.error) })}</Alerta>
+                <ErroDeCarga
+                  oQue={intl.formatMessage({ id: "discordar.oQue" })}
+                  erro={registro.error}
+                  aoTentarDeNovo={() => void registro.refetch()}
+                  carregando={registro.isFetching}
+                />
               ) : registro.isPending ? (
                 <Nota>{intl.formatMessage({ id: "discordar.registro.carregando" })}</Nota>
               ) : (
@@ -187,7 +192,11 @@ function Discordar() {
                 {intl.formatMessage({ id: "discordar.avisar.porque" })}
               </div>
 
-              {observar.isError && <Alerta>{intl.formatMessage({ id: chaveDoErro(observar.error) })}</Alerta>}
+              {observar.isError && (
+                <div style={{ marginTop: "16px" }}>
+                  <ErroAoGravar erro={observar.error} oQue={intl.formatMessage({ id: "discordar.oQue.gravar" })} />
+                </div>
+              )}
 
               <div style={{ display: "flex", gap: "12px", marginTop: "24px", flexWrap: "wrap" }}>
                 <button
@@ -247,14 +256,6 @@ function Rotulo({ children }: { children: ReactNode }) {
 
 function Nota({ children }: { children: ReactNode }) {
   return <div style={{ fontSize: "15px", color: "oklch(0.5 0.015 150)" }}>{children}</div>;
-}
-
-function Alerta({ children }: { children: ReactNode }) {
-  return (
-    <p role="alert" style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.45 0.13 30)", background: "oklch(0.97 0.012 30)", borderRadius: "8px", padding: "12px 14px", marginTop: "16px", marginBottom: 0 }}>
-      {children}
-    </p>
-  );
 }
 
 function Cartao({ titulo, texto }: { titulo: string; texto: string }) {

@@ -578,6 +578,24 @@ export const mensagens = {
   "transferir.enviado.prazo": "O convite vale até {data}.",
   "transferir.enviado.voltar": "Voltar para a vida do {nome}",
 
+  // ------------------------------------------------- os estados (Tela 14)
+  //
+  // "Desenhados, não descritos." As três partes do erro de carga andam juntas: o que falhou,
+  // de quem é a culpa e o que aconteceu com o dado — e a terceira é a que importa para quem
+  // está com o animal doente na frente.
+  "estado.erroDeCarga.titulo": "Não conseguimos carregar {o_que}",
+  "estado.erroDeCarga.nossa": "O problema é nosso. Nada do registro foi perdido.",
+  "estado.tentarDeNovo": "Tentar de novo",
+  "estado.tentando": "Tentando…",
+  "estado.carregando": "Carregando {o_que}…",
+  "estado.carregando.quantos": "Carregando {quantos} {o_que}…",
+  "estado.erroAoGravar": "Não conseguimos gravar {o_que}. O que você escreveu está aqui, intacto.",
+  // O "o que" de cada tela, para a frase do erro dizer o nome da coisa e não "os dados".
+  "acesso.oQue": "quem alcança o {nome}",
+  "conceder.oQue": "a lista de organizações",
+  "discordar.oQue": "este registro",
+  "discordar.oQue.gravar": "sua observação",
+
   "rota.naoEncontrada.titulo": "Esta página não existe.",
   "rota.naoEncontrada.acao": "Ir para o início",
 

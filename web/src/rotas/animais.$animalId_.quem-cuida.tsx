@@ -13,8 +13,8 @@ import {
   type AcessoDeOrganizacao,
   type Leitura,
 } from "../dados/acessos.ts";
+import { ErroDeCarga } from "../componentes/Estados.tsx";
 import { lerSessao } from "../dados/sessao.ts";
-import { chaveDoErro } from "../i18n/erroDaApi.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
@@ -107,9 +107,12 @@ function QuemCuida() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {acessos.isError ? (
-                <p role="alert" style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.45 0.13 30)", background: "oklch(0.97 0.012 30)", borderRadius: "8px", padding: "12px 14px", margin: 0 }}>
-                  {intl.formatMessage({ id: chaveDoErro(acessos.error) })}
-                </p>
+                <ErroDeCarga
+                  oQue={intl.formatMessage({ id: "acesso.oQue" }, { nome })}
+                  erro={acessos.error}
+                  aoTentarDeNovo={() => void acessos.refetch()}
+                  carregando={acessos.isFetching}
+                />
               ) : acessos.isPending ? (
                 <Nota>{intl.formatMessage({ id: "acesso.carregando" })}</Nota>
               ) : lista.length === 0 ? (
