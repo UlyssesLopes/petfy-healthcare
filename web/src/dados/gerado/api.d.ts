@@ -236,6 +236,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As matriculas do animal, com a comprovacao de saude de cada uma */
+        get: operations["listEnrollments_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}/observations": {
         parameters: {
             query?: never;
@@ -1211,6 +1228,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/professional/creche/class-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As turmas da organizacao ativa, com a ocupacao contada */
+        get: operations["listClassGroups"];
+        put?: never;
+        /** Cria uma turma */
+        post: operations["createClassGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/professional/creche/class-groups/{classGroupId}/day": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O dia da turma: esperados, presentes, saidas e faltas */
+        get: operations["listDay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/professional/creche/class-groups/{classGroupId}/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As matriculas da turma, com a comprovacao reavaliada agora */
+        get: operations["listEnrollments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/professional/creche/class-groups/{classGroupId}/enrollments/{animalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Matricula o animal na turma; nasce PENDENTE se a comprovacao nao fecha */
+        post: operations["enroll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/professional/creche/enrollments/{enrollmentId}/absence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marca falta de hoje */
+        post: operations["markAbsence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/professional/creche/enrollments/{enrollmentId}/check-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marca a entrada de hoje */
+        post: operations["checkIn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/professional/creche/enrollments/{enrollmentId}/check-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marca a saida de hoje */
+        post: operations["checkOut"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/professional/creche/vaccine-requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** O que a organizacao exige da carteira de quem entra */
+        get: operations["listRequirements"];
+        put?: never;
+        /** Passa a exigir uma vacina do catalogo */
+        post: operations["addRequirement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/professional/creche/vaccine-requirements/{requirementId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Deixa de exigir uma vacina */
+        delete: operations["removeRequirement"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/share/{token}": {
         parameters: {
             query?: never;
@@ -1657,6 +1829,30 @@ export interface components {
             /** Format: uuid */
             vaccineId?: string;
         };
+        AttendanceRequestDTO: {
+            pickupNote?: string;
+        };
+        AttendanceResponseDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: uuid */
+            attendanceId?: string;
+            blocked?: boolean;
+            blockedReason?: string;
+            /** Format: date-time */
+            checkedInAt?: string;
+            /** Format: date-time */
+            checkedOutAt?: string;
+            /** Format: date */
+            day?: string;
+            /** Format: uuid */
+            enrollmentId?: string;
+            pickupNote?: string;
+            species?: string;
+            status?: string;
+            todayNeeds?: string[];
+        };
         CareInstructionFulfillmentRequestDTO: {
             /** Format: date-time */
             fulfilledAt?: string;
@@ -1725,6 +1921,20 @@ export interface components {
             scopes?: ("CARTEIRA" | "CONDICOES" | "PRONTUARIO" | "OBSERVACOES" | "PESO" | "ANEXOS" | "CONTATO")[];
             /** Format: date-time */
             since?: string;
+        };
+        ClassGroupRequestDTO: {
+            /** Format: int32 */
+            capacity?: number;
+            name: string;
+        };
+        ClassGroupResponseDTO: {
+            /** Format: int32 */
+            capacity?: number;
+            /** Format: uuid */
+            classGroupId?: string;
+            name?: string;
+            /** Format: int64 */
+            occupied?: number;
         };
         CoTutorDTO: {
             /** Format: date-time */
@@ -1795,6 +2005,38 @@ export interface components {
         };
         EmailVerificationResendDTO: {
             email: string;
+        };
+        EnrollmentResponseDTO: {
+            /** Format: date-time */
+            activatedAt?: string;
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: uuid */
+            classGroupId?: string;
+            classGroupName?: string;
+            createdByName?: string;
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: uuid */
+            enrollmentId?: string;
+            healthProof?: components["schemas"]["HealthProofItemDTO"][];
+            organizationName?: string;
+            /** Format: date-time */
+            requestedAt?: string;
+            status?: string;
+        };
+        HealthProofItemDTO: {
+            blocks?: boolean;
+            /** Format: date */
+            lastApplicationDate?: string;
+            matchedByName?: boolean;
+            /** Format: date */
+            nextDoseDate?: string;
+            state?: string;
+            /** Format: uuid */
+            vaccineCatalogId?: string;
+            vaccineName?: string;
         };
         HealthRecordCorrectionResponseDTO: {
             /** Format: date-time */
@@ -2370,6 +2612,18 @@ export interface components {
             vaccineCatalogId?: string;
             vaccineName?: string;
         };
+        VaccineRequirementRequestDTO: {
+            /** Format: uuid */
+            vaccineCatalogId: string;
+        };
+        VaccineRequirementResponseDTO: {
+            /** Format: uuid */
+            requirementId?: string;
+            species?: string;
+            /** Format: uuid */
+            vaccineCatalogId?: string;
+            vaccineName?: string;
+        };
         VaccineResponseDTO: {
             /** Format: uuid */
             animalId?: string;
@@ -2863,6 +3117,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listEnrollments_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EnrollmentResponseDTO"][];
+                };
             };
         };
     };
@@ -4452,6 +4728,253 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["VaccineCorrectionResponseDTO"][];
                 };
+            };
+        };
+    };
+    listClassGroups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClassGroupResponseDTO"][];
+                };
+            };
+        };
+    };
+    createClassGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassGroupRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClassGroupResponseDTO"];
+                };
+            };
+        };
+    };
+    listDay: {
+        parameters: {
+            query?: {
+                day?: string;
+            };
+            header?: never;
+            path: {
+                classGroupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AttendanceResponseDTO"][];
+                };
+            };
+        };
+    };
+    listEnrollments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                classGroupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EnrollmentResponseDTO"][];
+                };
+            };
+        };
+    };
+    enroll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                classGroupId: string;
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EnrollmentResponseDTO"];
+                };
+            };
+        };
+    };
+    markAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AttendanceResponseDTO"];
+                };
+            };
+        };
+    };
+    checkIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AttendanceRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AttendanceResponseDTO"];
+                };
+            };
+        };
+    };
+    checkOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AttendanceResponseDTO"];
+                };
+            };
+        };
+    };
+    listRequirements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VaccineRequirementResponseDTO"][];
+                };
+            };
+        };
+    };
+    addRequirement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VaccineRequirementRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VaccineRequirementResponseDTO"];
+                };
+            };
+        };
+    };
+    removeRequirement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requirementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

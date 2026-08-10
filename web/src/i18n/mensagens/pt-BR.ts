@@ -91,11 +91,6 @@ export const mensagens = {
   "erro.143":
     "Algo saiu errado no envio, e não foi você. Recarregue a página e tente de novo.",
 
-  // -------------------------------------------------------------------- os tres gerais
-  //
-  // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
-  // nome de campo em ingles e sem acento, e nada disso e exibivel. Entao a validacao de
-  // campo e do front, ANTES de enviar, e o 400 que voltar e a rede de seguranca.
   // ------------------------------------------------------------ a operação da creche
   //
   // O 146 é o mais importante da tabela inteira do ponto de vista de quem lê: ele aparece na
@@ -107,6 +102,11 @@ export const mensagens = {
   "erro.146": "A comprovação de saúde deste animal está aberta — ele não pode entrar hoje. A matrícula se completa sozinha quando a dose for registrada.",
   "erro.147": "Este animal não tem entrada marcada hoje.",
 
+  // -------------------------------------------------------------------- os tres gerais
+  //
+  // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
+  // nome de campo em ingles e sem acento, e nada disso e exibivel. Entao a validacao de
+  // campo e do front, ANTES de enviar, e o 400 que voltar e a rede de seguranca.
   "erro.400": "Confira os campos marcados — algo ali não está completo.",
   "erro.401": "E-mail ou senha não conferem.",
   "erro.500":
@@ -590,6 +590,65 @@ export const mensagens = {
   "transferir.enviado.prazo": "O convite vale até {data}.",
   "transferir.enviado.voltar": "Voltar para a vida do {nome}",
 
+  // ------------------------------------------------- a matrícula na creche (Tela 10)
+  //
+  // "O produto responde pela saúde": a creche não julga e o tutor não prova nada. O servidor cruza
+  // o que a organização exige com o que a carteira tem, e esta tela só mostra.
+  "animal.acao.creches": "Creches",
+  "matricula.titulo": "As creches do {nome}",
+  "matricula.apoio": "A comprovação de saúde é do produto, e não da creche: o Petfy compara o que cada organização exige com o que a carteira tem, e refaz essa conta a cada vez que alguém olha.",
+  "matricula.oQue": "as matrículas",
+  "matricula.vazio": "O {nome} não está matriculado em nenhuma creche.",
+  "matricula.turma": "Turma {turma}",
+  "matricula.status.PENDENTE": "Matrícula pendente",
+  "matricula.status.ATIVA": "Matrícula ativa",
+  "matricula.status.ENCERRADA": "Matrícula encerrada",
+  "matricula.comprovacao": "Comprovação de saúde",
+  "matricula.comprovacao.semExigencia": "Esta organização não exige vacina nenhuma para matricular.",
+  "matricula.linha.emDia": "Em dia até {data}",
+  "matricula.linha.emDiaSemPrazo": "Em dia — a dose está registrada e não tem prazo declarado",
+  "matricula.linha.vencida": "Venceu em {data} — impede a matrícula",
+  "matricula.linha.semRegistro": "Sem registro — impede a matrícula, porque não dá para afirmar o que ninguém viu",
+  "matricula.linha.porNome": "Casada pelo nome da vacina, e não pelo catálogo: a prova é mais fraca.",
+  "matricula.pendente.titulo": "A matrícula está guardada",
+  "matricula.pendente.texto": "Ela se completa sozinha assim que a dose que falta for registrada na carteira. Ninguém precisa refazer o cadastro.",
+  "matricula.pendente.semAviso": "Ainda não há como avisar a creche daqui — não existe canal de aviso para matrícula. O que existe é isto: registre a dose, e ela ativa.",
+  "matricula.precisaSaber": "O que a creche precisa saber",
+  "matricula.precisaSaber.vazio": "Nada registrado sobre o {nome} que a creche precise saber.",
+  // A única linha do produto que ensina a diferença entre ausência de dado e ausência de acesso.
+  "matricula.naoCompartilhado": "O histórico completo de atendimentos do {nome} existe e não foi compartilhado com a {organizacao}. Isso é diferente de não existir.",
+  "matricula.voltar": "Voltar para a vida do {nome}",
+
+  // ------------------------------------------ a operação do dia da creche (Tela 17)
+  //
+  // A única tela em que a pressa é parte do contexto: 7h34, catorze esperados, quem opera com um
+  // cachorro em cada mão. O topo conta em vez de listar, e cada linha tem um gesto só.
+  "creche.contagem": "{esperados, plural, one {# esperado} other {# esperados}} · {chegaram, plural, one {# já chegou} other {# já chegaram}}",
+  "creche.turma.comLimite": "{nome} · {ocupadas} de {vagas} vagas",
+  "creche.turma.semLimite": "{nome} · {ocupadas, plural, one {# animal} other {# animais}}",
+  "creche.oQue.turmas": "as turmas",
+  "creche.oQue.dia": "o dia da turma",
+  "creche.semTurma": "Nenhuma turma criada ainda. A turma é o que dá vaga e organiza o dia.",
+  "creche.turmaVazia": "Ninguém matriculado nesta turma.",
+  "creche.coluna.animal": "Animal",
+  "creche.coluna.hojePrecisa": "Hoje precisa",
+  "creche.coluna.entrada": "Entrada",
+  "creche.nada": "Nada",
+  "creche.impedido": "{motivo} — não pode entrar hoje",
+  // O desenho põe "Avisar tutor" aqui. Avisar não existe no backend, e um botão que não avisa
+  // ninguém seria pior: o que fica é a frase e o caminho real, que é registrar a dose.
+  "creche.avisarNaoDa": "Ainda não dá para avisar o tutor daqui. A entrada libera sozinha quando a dose for registrada na carteira.",
+  "creche.estado.PRESENTE": "Chegou",
+  "creche.estado.SAIU": "Saiu {hora}",
+  "creche.estado.FALTA": "Falta",
+  "creche.acao.entrada": "Marcar entrada",
+  "creche.acao.saida": "Marcar saída",
+  "creche.acao.falta": "Falta",
+  // Os três estados da comprovação. "Não sabemos" não é "está ruim" — e as duas impedem.
+  "creche.comprovacao.EM_DIA": "Em dia",
+  "creche.comprovacao.VENCIDA": "Vencida",
+  "creche.comprovacao.SEM_REGISTRO": "Sem registro",
+
   // ----------------------------------------------------- a adoção (Tela 13)
   //
   // "O adotante não ganha uma ficha em branco com a data de hoje: ganha onze anos de vida de
@@ -625,6 +684,7 @@ export const mensagens = {
   // O que sobra é dito com o nome certo, e a ausência é declarada em vez de disfarçada.
   "pacientes.titulo": "Pacientes",
   "pacientes.meusAnimais": "Meus animais",
+  "pacientes.hoje": "Hoje na creche",
   "pacientes.busca": "Buscar por nome, microchip ou RGA",
   // Os dois recortes que uma consulta responde. "Vencendo", "em tratamento" e "atendidos este
   // mês" continuam sem agregação — a nota ao lado diz isso.

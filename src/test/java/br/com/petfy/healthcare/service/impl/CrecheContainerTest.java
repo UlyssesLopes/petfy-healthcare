@@ -47,6 +47,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -132,11 +133,18 @@ class CrecheContainerTest extends PostgresContainerTest {
                 .scopes(Set.of(GrantScope.CARTEIRA, GrantScope.CONDICOES))
                 .build());
 
+        // O id do catalogo e ATRIBUIDO, e nao gerado: os itens nascem de migracao com id fixo, para
+        // o mesmo codigo de vacina ter o mesmo id em todo ambiente. Quem cria um item em teste
+        // precisa dizer o id.
         antirrabica = vaccineCatalogRepository.saveAndFlush(VaccineCatalog.builder()
+                .vaccineCatalogId(UUID.randomUUID())
                 .code("ANTIRRABICA-" + UUID.randomUUID())
                 .name("Antirrabica")
                 .species(Species.CANINA)
                 .defaultIntervalDays(365)
+                .initialDoseCount(1)
+                .initialDoseIntervalDays(0)
+                .mandatory(true)
                 .build());
 
         agirComoVera();
@@ -319,7 +327,17 @@ class CrecheContainerTest extends PostgresContainerTest {
 
         AttendanceResponseDTO segundoClique = crecheService.checkIn(matricula.getEnrollmentId(), null);
         assertThat(segundoClique.getAttendanceId()).isEqualTo(chegou.getAttendanceId());
-        assertThat(segundoClique.getCheckedInAt()).isEqualTo(chegou.getCheckedInAt());
+
+        /*
+         * COMPARADO EM MILISSEGUNDOS, e nao no instante cru.
+         *
+         * A primeira resposta traz o horario que acabou de ser montado em memoria, com nanos; a
+         * segunda vem do banco, e o `timestamp` do Postgres guarda microssegundos. Sao o MESMO
+         * instante — o segundo clique nao mexeu na hora —, e a diferenca era so o arredondamento da
+         * ida ao banco. A assercao estava errada, e nao o codigo.
+         */
+        assertThat(segundoClique.getCheckedInAt().truncatedTo(ChronoUnit.MILLIS))
+                .isEqualTo(chegou.getCheckedInAt().truncatedTo(ChronoUnit.MILLIS));
 
         AttendanceResponseDTO saiu = crecheService.checkOut(matricula.getEnrollmentId());
         assertThat(saiu.getStatus()).isEqualTo("SAIU");

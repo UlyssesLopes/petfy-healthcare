@@ -13,6 +13,7 @@ import br.com.petfy.healthcare.domain.entity.Attendance;
 import br.com.petfy.healthcare.domain.entity.AttendanceStatus;
 import br.com.petfy.healthcare.domain.entity.ClassGroup;
 import br.com.petfy.healthcare.domain.entity.Enrollment;
+import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.EnrollmentStatus;
 import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.OrganizationCapability;
@@ -21,16 +22,17 @@ import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
 import br.com.petfy.healthcare.domain.repository.AttendanceRepository;
+import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
 import br.com.petfy.healthcare.domain.repository.ClassGroupRepository;
 import br.com.petfy.healthcare.domain.repository.EnrollmentRepository;
+import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.OrganizationVaccineRequirementRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCatalogRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
-import br.com.petfy.healthcare.security.ProfessionalContext;
-import br.com.petfy.healthcare.service.CareInstructionService;
 import br.com.petfy.healthcare.service.CrecheService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
 import lombok.RequiredArgsConstructor;
@@ -73,8 +75,10 @@ public class CrecheServiceImpl implements CrecheService {
     private final OrganizationVaccineRequirementRepository requirementRepository;
     private final VaccineCatalogRepository vaccineCatalogRepository;
     private final VaccineRepository vaccineRepository;
-    private final CareInstructionService careInstructionService;
+    private final CareInstructionRepository careInstructionRepository;
     private final CurrentProfessionalProvider currentProfessionalProvider;
+    private final CurrentPersonProvider currentPersonProvider;
+    private final GrantRepository grantRepository;
     private final AnimalAccessGuard animalAccessGuard;
 
     /* ------------------------------------------------------------------------------ turma */
@@ -170,7 +174,7 @@ public class CrecheServiceImpl implements CrecheService {
          * que ninguem lhe apresentou — e `requireLeitura` e o nivel certo, porque matricular nao
          * escreve na saude de ninguem.
          */
-        Animal animal = animalAccessGuard.requireLeitura(animalId);
+        Animal animal = animalAlcancadoPelaOrganizacao(animalId, organizacao);
 
         ClassGroup turma = classGroupRepository
                 .findDaOrganizacao(classGroupId, organizacao.getOrganizationId())
@@ -194,7 +198,7 @@ public class CrecheServiceImpl implements CrecheService {
                 .status(impede(comprovacao) ? EnrollmentStatus.PENDENTE : EnrollmentStatus.ATIVA)
                 .requestedAt(LocalDateTime.now())
                 .activatedAt(impede(comprovacao) ? null : LocalDateTime.now())
-                .createdBy(currentProfessionalProvider.require())
+                .createdBy(currentPersonProvider.require())
                 .build());
 
         return toResponse(matricula, comprovacao);
@@ -426,23 +430,55 @@ public class CrecheServiceImpl implements CrecheService {
      * concedido nao matricula ninguem, e o erro precisa dizer isso em vez de 404.
      */
     private Organization organizacaoQueGereTurma() {
-        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+        /*
+         * `organizacaoDeclarada`, E NAO `requireContext`.
+         *
+         * O `requireContext` exige credencial profissional ativa, e a monitora que marca entrada as
+         * 7h30 nao tem CRMV — nem deveria. O proprio `CurrentProfessionalProvider` documenta esta
+         * escolha no metodo que estou usando: "existe para quem age sem credencial profissional. O
+         * monitor da creche que manda um tema de casa e membro, e nao tem CRMV". Descobri isso pelo
+         * teste: doze casos falharam com "an active professional credential is required", e a
+         * credencial nao tem nada a ver com marcar presenca.
+         *
+         * O que autoriza aqui e o VINCULO com a organizacao mais a CAPACIDADE dela — e o
+         * `organizacaoDeclarada` ja confere o vinculo.
+         */
+        Organization organizacao = currentProfessionalProvider
+                .organizacaoDeclarada(currentPersonProvider.require())
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getMessage(),
+                        ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getCode(),
+                        HttpStatus.CONFLICT));
 
-        if (!contexto.atuaPorOrganizacao()) {
-            throw new PetfyHealthcareException(
-                    ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getMessage(),
-                    ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getCode(),
-                    HttpStatus.CONFLICT);
-        }
-
-        if (!contexto.permite(OrganizationCapability.GERIR_TURMA_E_VAGA)) {
+        if (!organizacao.pode(OrganizationCapability.GERIR_TURMA_E_VAGA)) {
             throw new PetfyHealthcareException(
                     ErrorMessageEnum.CAPABILITY_NOT_GRANTED.getMessage(),
                     ErrorMessageEnum.CAPABILITY_NOT_GRANTED.getCode(),
                     HttpStatus.FORBIDDEN);
         }
 
-        return contexto.organization();
+        return organizacao;
+    }
+
+    /**
+     * O animal que a ORGANIZACAO alcanca, e nao o que a pessoa alcanca.
+     *
+     * <b>O `AnimalAccessGuard` nao serve aqui, e o teste foi quem mostrou.</b> Ele resolve alcance por
+     * custodia ou concessao DA PESSOA — e a creche alcanca o animal por concessao da ORGANIZACAO:
+     * "Marcelo Dias concedeu acesso a saude do Code" foi concedido a Creche Quintal, e nao a Vera. Doze
+     * casos falharam com "animal not found" antes disso ficar claro.
+     *
+     * 404 e nao 403, como em toda parte: dizer "existe e voce nao pode ver" ja e informacao sobre o
+     * animal de outra pessoa.
+     */
+    private Animal animalAlcancadoPelaOrganizacao(UUID animalId, Organization organizacao) {
+        return grantRepository
+                .findVigenteDaClinicaNoAnimal(animalId, organizacao.getOrganizationId(), LocalDateTime.now())
+                .map(Grant::getAnimal)
+                .orElseThrow(() -> new PetfyHealthcareException(
+                        ErrorMessageEnum.ANIMAL_NOT_FOUND.getMessage(),
+                        ErrorMessageEnum.ANIMAL_NOT_FOUND.getCode(),
+                        HttpStatus.NOT_FOUND));
     }
 
     private Enrollment matriculaDaMinhaOrganizacao(UUID enrollmentId) {
@@ -478,7 +514,7 @@ public class CrecheServiceImpl implements CrecheService {
                 .enrollment(matricula)
                 .day(dia)
                 .status(AttendanceStatus.ESPERADO)
-                .recordedBy(currentProfessionalProvider.require())
+                .recordedBy(currentPersonProvider.require())
                 .creationDate(LocalDateTime.now())
                 .build();
     }
@@ -556,17 +592,27 @@ public class CrecheServiceImpl implements CrecheService {
      * linha entregar alergia a quem recebeu apenas a carteira.
      */
     private List<String> hojePrecisa(Animal animal) {
-        try {
-            return careInstructionService.listByAnimal(animal.getAnimalId()).stream()
-                    .filter(o -> o.isVigente())
-                    .map(o -> o.getDescription())
-                    .filter(descricao -> descricao != null && !descricao.isBlank())
-                    .toList();
-        } catch (PetfyHealthcareException semAcesso) {
-            // a creche pode nao alcancar a orientacao: nesse caso a linha fica vazia, e nao quebra o
-            // dia inteiro da turma por causa de um animal
-            return List.of();
-        }
+        /*
+         * LE DO REPOSITORIO, e nao do CareInstructionService — e a razao nao e gosto.
+         *
+         * A primeira versao chamava o servico e engolia a excecao dele para o caso de a creche nao
+         * alcancar a orientacao. O servico e `@Transactional`: quando ele lanca, a transacao fica
+         * marcada rollback-only, e engolir a excecao fazia o COMMIT do dia inteiro falhar depois com
+         * `UnexpectedRollback`. Quatro casos do teste morreram assim, e a mensagem nao apontava para
+         * lugar nenhum perto daqui.
+         *
+         * A guarda de alcance ja aconteceu antes: quem chega neste ponto passou pela concessao da
+         * organizacao no animal. Ler direto e mais honesto do que chamar algo para ignorar o erro.
+         */
+        LocalDate hoje = LocalDate.now();
+
+        return careInstructionRepository.findByAnimalAnimalIdOrderByStartsOnDesc(animal.getAnimalId())
+                .stream()
+                .filter(orientacao -> orientacao.getRevokedAt() == null)
+                .filter(orientacao -> orientacao.getEndsOn() == null || !orientacao.getEndsOn().isBefore(hoje))
+                .map(orientacao -> orientacao.getDescription())
+                .filter(descricao -> descricao != null && !descricao.isBlank())
+                .toList();
     }
 
     private String primeiraQueImpede(List<HealthProofItemDTO> comprovacao) {

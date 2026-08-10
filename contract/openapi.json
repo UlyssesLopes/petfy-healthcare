@@ -753,6 +753,69 @@
         },
         "type" : "object"
       },
+      "AttendanceRequestDTO" : {
+        "properties" : {
+          "pickupNote" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AttendanceResponseDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "attendanceId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "blocked" : {
+            "type" : "boolean"
+          },
+          "blockedReason" : {
+            "type" : "string"
+          },
+          "checkedInAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "checkedOutAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "day" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "enrollmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pickupNote" : {
+            "type" : "string"
+          },
+          "species" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "todayNeeds" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "CareInstructionFulfillmentRequestDTO" : {
         "properties" : {
           "fulfilledAt" : {
@@ -915,6 +978,41 @@
           "since" : {
             "format" : "date-time",
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ClassGroupRequestDTO" : {
+        "properties" : {
+          "capacity" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "name" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object"
+      },
+      "ClassGroupResponseDTO" : {
+        "properties" : {
+          "capacity" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "classGroupId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "occupied" : {
+            "format" : "int64",
+            "type" : "integer"
           }
         },
         "type" : "object"
@@ -1099,6 +1197,85 @@
           }
         },
         "required" : [ "email" ],
+        "type" : "object"
+      },
+      "EnrollmentResponseDTO" : {
+        "properties" : {
+          "activatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "classGroupId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "classGroupName" : {
+            "type" : "string"
+          },
+          "createdByName" : {
+            "type" : "string"
+          },
+          "endedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "enrollmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "healthProof" : {
+            "items" : {
+              "$ref" : "#/components/schemas/HealthProofItemDTO"
+            },
+            "type" : "array"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "requestedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "HealthProofItemDTO" : {
+        "properties" : {
+          "blocks" : {
+            "type" : "boolean"
+          },
+          "lastApplicationDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "matchedByName" : {
+            "type" : "boolean"
+          },
+          "nextDoseDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "vaccineCatalogId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "vaccineName" : {
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "HealthRecordCorrectionResponseDTO" : {
@@ -2588,6 +2765,35 @@
         "required" : [ "animalId" ],
         "type" : "object"
       },
+      "VaccineRequirementRequestDTO" : {
+        "properties" : {
+          "vaccineCatalogId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "vaccineCatalogId" ],
+        "type" : "object"
+      },
+      "VaccineRequirementResponseDTO" : {
+        "properties" : {
+          "requirementId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "species" : {
+            "type" : "string"
+          },
+          "vaccineCatalogId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "vaccineName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "VaccineResponseDTO" : {
         "properties" : {
           "animalId" : {
@@ -3408,6 +3614,37 @@
         },
         "summary" : "Atualiza a condicao",
         "tags" : [ "animal-health-condition-controller" ]
+      }
+    },
+    "/animals/{animalId}/enrollments" : {
+      "get" : {
+        "operationId" : "listEnrollments_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/EnrollmentResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "As matriculas do animal, com a comprovacao de saude de cada uma",
+        "tags" : [ "animal-controller" ]
       }
     },
     "/animals/{animalId}/observations" : {
@@ -5600,6 +5837,324 @@
         },
         "summary" : "O historico de correcoes da vacina",
         "tags" : [ "professional-animal-controller" ]
+      }
+    },
+    "/professional/creche/class-groups" : {
+      "get" : {
+        "operationId" : "listClassGroups",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ClassGroupResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "As turmas da organizacao ativa, com a ocupacao contada",
+        "tags" : [ "creche-controller" ]
+      },
+      "post" : {
+        "operationId" : "createClassGroup",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ClassGroupRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClassGroupResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Cria uma turma",
+        "tags" : [ "creche-controller" ]
+      }
+    },
+    "/professional/creche/class-groups/{classGroupId}/day" : {
+      "get" : {
+        "operationId" : "listDay",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "classGroupId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "day",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AttendanceResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O dia da turma: esperados, presentes, saidas e faltas",
+        "tags" : [ "creche-controller" ]
+      }
+    },
+    "/professional/creche/class-groups/{classGroupId}/enrollments" : {
+      "get" : {
+        "operationId" : "listEnrollments",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "classGroupId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/EnrollmentResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "As matriculas da turma, com a comprovacao reavaliada agora",
+        "tags" : [ "creche-controller" ]
+      }
+    },
+    "/professional/creche/class-groups/{classGroupId}/enrollments/{animalId}" : {
+      "post" : {
+        "operationId" : "enroll",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "classGroupId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EnrollmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Matricula o animal na turma; nasce PENDENTE se a comprovacao nao fecha",
+        "tags" : [ "creche-controller" ]
+      }
+    },
+    "/professional/creche/enrollments/{enrollmentId}/absence" : {
+      "post" : {
+        "operationId" : "markAbsence",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "enrollmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AttendanceResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Marca falta de hoje",
+        "tags" : [ "creche-controller" ]
+      }
+    },
+    "/professional/creche/enrollments/{enrollmentId}/check-in" : {
+      "post" : {
+        "operationId" : "checkIn",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "enrollmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AttendanceRequestDTO"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AttendanceResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Marca a entrada de hoje",
+        "tags" : [ "creche-controller" ]
+      }
+    },
+    "/professional/creche/enrollments/{enrollmentId}/check-out" : {
+      "post" : {
+        "operationId" : "checkOut",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "enrollmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AttendanceResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Marca a saida de hoje",
+        "tags" : [ "creche-controller" ]
+      }
+    },
+    "/professional/creche/vaccine-requirements" : {
+      "get" : {
+        "operationId" : "listRequirements",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/VaccineRequirementResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que a organizacao exige da carteira de quem entra",
+        "tags" : [ "creche-controller" ]
+      },
+      "post" : {
+        "operationId" : "addRequirement",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VaccineRequirementRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/VaccineRequirementResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Passa a exigir uma vacina do catalogo",
+        "tags" : [ "creche-controller" ]
+      }
+    },
+    "/professional/creche/vaccine-requirements/{requirementId}" : {
+      "delete" : {
+        "operationId" : "removeRequirement",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "requirementId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Deixa de exigir uma vacina",
+        "tags" : [ "creche-controller" ]
       }
     },
     "/share/{token}" : {

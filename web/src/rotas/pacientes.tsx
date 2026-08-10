@@ -78,6 +78,11 @@ function Pacientes() {
             <Link to="/" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
               {intl.formatMessage({ id: "pacientes.meusAnimais" })}
             </Link>
+
+            {/* A operacao do dia (Tela 17): a tela mais usada de quem tem creche. */}
+            <Link to="/creche" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
+              {intl.formatMessage({ id: "pacientes.hoje" })}
+            </Link>
           </div>
 
           {/*
