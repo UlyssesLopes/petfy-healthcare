@@ -311,6 +311,7 @@ export const mensagens = {
   "acesso.apoio": "Cada acesso que você concedeu, com o que foi lido e quando. Conceder deixa de ser um ato de fé quando você vê o que acontece depois.",
   "acesso.carregando": "Carregando os acessos…",
   "acesso.vazio": "Nenhuma organização alcança o {nome} hoje.",
+  "acesso.vazio.acao": "Conceder acesso a uma organização",
   "acesso.pessoas": "Pessoas",
   "acesso.pessoas.vazio": "Só você responde por este animal.",
   "acesso.pessoa.titular": "Responde pelo {nome}",
@@ -346,6 +347,53 @@ export const mensagens = {
   // decisão informada do arrependimento.
   "acesso.revogar.titulo": "O que revogar faz",
   "acesso.revogar.texto": "Fecha a porta a partir de agora. O que a organização registrou continua na linha do tempo, assinado por quem registrou — revogar acesso não apaga trabalho feito.",
+
+  // ------------------------------------------------------- conceder acesso (Tela 09)
+  //
+  // O desenho nomeia o problema: "o problema de design mais difícil da área do tutor é
+  // fazer alguém que nunca ouviu a palavra escopo escolher um. A saída é não nomear a
+  // abstração — nomear o que a organização vai ver". Então cada linha diz O QUE a
+  // organização verá e POR QUE ela precisa, e o rótulo do dado nunca aparece.
+  "conceder.voltar": "Quem cuida",
+  "conceder.escolher.titulo": "Quem vai poder ver o {nome}",
+  "conceder.escolher.apoio": "Escolha a organização. Se ela não estiver aqui, é porque ainda não tem cadastro no Petfy.",
+  // O desenho do onboarding (passo 4) escreve o campo assim: "buscar organização".
+  "conceder.escolher.busca": "Buscar organização por nome ou cidade",
+  "conceder.escolher.carregando": "Carregando as organizações…",
+  "conceder.escolher.vazio": "Nenhuma organização cadastrada ainda.",
+  "conceder.escolher.semResultado": "Nenhuma organização com esse nome.",
+  "conceder.escolher.acao": "Escolher",
+  "conceder.organizacao.semCidade": "Organização",
+  "conceder.organizacao.cidade": "{cidade}, {estado}",
+  "conceder.titulo": "O que a {organizacao} vai poder ver do {nome}",
+  "conceder.apoio": "Você escolhe item por item, e pode mudar ou revogar quando quiser. Quem tem acesso não responde pelo {nome} — isso continua sendo seu.",
+  // As quatro linhas concedíveis, na ordem do desenho. O título é o que a organização vê;
+  // a segunda linha é por que ela precisa — nunca o nome técnico do dado.
+  "conceder.item.CONDICOES": "Alergias e condições em curso",
+  "conceder.item.CONDICOES.porque": "Para não receitar nada que faça mal ao {nome}.",
+  "conceder.item.CARTEIRA": "Vacinação e antiparasitário",
+  "conceder.item.CARTEIRA.porque": "Para saber o que já foi aplicado e o que falta.",
+  "conceder.item.PRONTUARIO": "Diagnósticos, prescrições e exames",
+  "conceder.item.PRONTUARIO.porque": "O histórico clínico completo. Quem trata o {nome} precisa disto.",
+  "conceder.item.OBSERVACOES": "Fotos e recados que outras organizações enviaram",
+  "conceder.item.OBSERVACOES.porque": "É biografia, não saúde. A clínica não precisa.",
+  // A quinta linha do desenho, desabilitada com o motivo ao lado: a seção 06 pede que o
+  // desabilitado nunca apareça mudo. Conceder escrita não existe na API — o `GrantLevel`
+  // é sempre EDITOR e o escopo só governa leitura.
+  "conceder.item.registrar": "Registrar novos atendimentos",
+  "conceder.item.registrar.porque": "Sem isto, a clínica só lê. Marque quando o {nome} for se tratar lá.",
+  "conceder.item.registrar.indisponivel": "Ainda não é possível escolher isto: o Petfy hoje concede leitura, e quem registra atendimento é a própria organização, pela área dela.",
+  "conceder.ate.rotulo": "Até quando",
+  "conceder.ate.apoio": "Todo acesso tem prazo. Você pode revogar antes disso, a qualquer momento.",
+  "conceder.resumo.rotulo": "Resumo em uma frase",
+  "conceder.resumo.frase": "A {organizacao} vai ler {o_que} do {nome} até {data}.",
+  "conceder.resumo.semNada": "Escolha ao menos um item acima para a {organizacao} poder ver algo do {nome}.",
+  "conceder.resumo.naoVai": "E não vai ver {o_que}, nem registrar nada.",
+  "conceder.resumo.naoVaiNada": "E não vai registrar nada.",
+  "conceder.depois": "Você vai ver quem leu o quê, e quando, na rede de quem cuida do {nome}.",
+  "conceder.acao": "Conceder acesso",
+  "conceder.acao.concedendo": "Concedendo…",
+  "conceder.acao.cancelar": "Cancelar",
 
   "rota.naoEncontrada.titulo": "Esta página não existe.",
   "rota.naoEncontrada.acao": "Ir para o início",

@@ -53,7 +53,22 @@ public class OrganizationAccessServiceImpl implements OrganizationAccessService 
     private final AnimalAccessGuard animalAccessGuard;
     private final CurrentPersonProvider currentPersonProvider;
 
+    /**
+     * <b>Sem a transacao, RECONCEDER respondia 500 — e so reconceder.</b>
+     *
+     * Conceder pela primeira vez monta o Grant com a organizacao que o {@code buscarClinica}
+     * acabou de carregar, e o {@code toResponse} le o nome dela sem problema. Reconceder
+     * pega o grant vigente no repositorio, onde a organizacao e proxy preguicoso: o
+     * {@code save} faz {@code merge}, a transacao dele fecha, e o {@code getName()} do
+     * {@code toResponse} estoura {@code LazyInitializationException}.
+     *
+     * Era o quinto caso do mesmo defeito no projeto, e o primeiro numa ESCRITA — os quatro
+     * anteriores eram leitura. O que eles tem em comum nao e ler: e montar DTO a partir de
+     * entidade fora de transacao. A guarda esta no
+     * {@code LeituraForaDeTransacaoContainerTest}.
+     */
     @Override
+    @Transactional
     public OrganizationAccessResponseDTO grant(UUID animalId, OrganizationAccessRequestDTO request) {
         Animal animal = animalAccessGuard.requireEscrita(animalId);
         Organization organization = buscarClinica(request.getOrganizationId());
