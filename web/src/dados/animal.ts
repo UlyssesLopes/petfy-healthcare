@@ -117,6 +117,36 @@ export function useConvidarSucessor() {
 }
 
 /**
+ * Convidar quem divide o cuidado — o passo 4 do onboarding.
+ *
+ * Papel `EDITOR`, e o desenho explica por que sem usar a palavra: "quem tambem da remedio e
+ * leva ao veterinario. <b>Ve tudo e registra junto com voce</b>". Quem so acompanha e
+ * `VIEWER`, e essa escolha nao esta nesta tela — ela oferece um caminho, nao um seletor de
+ * papel.
+ */
+export function useConvidarCoTutor() {
+  const consultas = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ animalId, email }: { animalId: string; email: string }) => {
+      const { data, error } = await cliente.POST("/animals/{animalId}/tutors/invites", {
+        params: { path: { animalId } },
+        body: { email, role: "EDITOR" },
+      });
+
+      if (error !== undefined) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: async () => {
+      await consultas.invalidateQueries({ queryKey: ["tutores"] });
+    },
+  });
+}
+
+/**
  * As iniciais de quem registrou, que e a marca do evento (DESIGN.md 5.2): elas ocupam o
  * lugar que num produto comum teria um icone de tipo.
  *

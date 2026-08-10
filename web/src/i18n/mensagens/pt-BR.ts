@@ -162,7 +162,6 @@ export const mensagens = {
   "home.nav.quemCuida": "Quem cuida",
   "home.custodia": "Sob sua custódia",
   "home.cadastrarAnimal": "Cadastrar animal",
-  "home.cadastrarAnimal.porque": "O cadastro ainda não tem tela. Por enquanto o animal entra pela API.",
   "home.hoje": "Hoje",
   // "Três coisas pedem você" — o desenho conta, e a contagem e o que da hierarquia:
   // sem numero, quinze pendencias e uma lista; com numero, e um dia.
@@ -422,6 +421,74 @@ export const mensagens = {
   "criarConta.credencial.uf": "UF",
   "criarConta.credencial.informado": "O Petfy ainda não consulta o conselho. Seu registro aparece como informado em tudo que você assinar, e quem lê sabe disso.",
   "criarConta.credencial.semClinica": "Não é preciso ter clínica. Atendimento domiciliar funciona inteiro sem organização nenhuma.",
+
+  // ----------------------------------------------- os três cômodos (Tela 08)
+  //
+  // "Nenhum passo pergunta se você é tutor ou profissional." Os três ficam abertos, e a
+  // área que a pessoa alcança vem do que ela tem — não do que declarou.
+  "comecar.agindoComo": "Agindo como",
+  "comecar.titulo": "Bem-vindo, {nome}",
+  "comecar.apoio": "O Petfy fica útil quando existe um animal com histórico aqui. Comece por onde fizer sentido para você — nada aqui é obrigatório, e nada disso bloqueia o resto.",
+  "comecar.animal.titulo": "Cadastrar um animal",
+  "comecar.animal.texto": "Nome e espécie bastam para começar. A carteirinha de papel você lança depois, com calma.",
+  "comecar.animal.acao": "Começar",
+  "comecar.rede.titulo": "Convidar quem mais cuida",
+  "comecar.rede.texto": "Quem divide a casa, a clínica que atende, a creche. Você escolhe o que cada um vê.",
+  "comecar.rede.acao": "Convidar",
+  "comecar.rede.semAnimal": "Convite é sempre para um animal, e você ainda não tem nenhum cadastrado. Comece pelo primeiro cômodo.",
+  "comecar.profissional.titulo": "Atender animais de outras pessoas",
+  "comecar.profissional.texto": "Se você é veterinário, monitor ou voluntário, declare seu registro profissional ou aceite o convite de uma organização.",
+  "comecar.profissional.indisponivel": "O registro profissional é declarado na criação da conta. Declarar depois, e aceitar convite de organização, dependem de telas que ainda não existem.",
+  "comecar.tese": "Nenhum passo pergunta se você é tutor ou profissional. Os três cômodos ficam abertos, e a área que você alcança vem do que você tem — um animal sob sua custódia, ou um vínculo com uma organização.",
+
+  // ------------------------------------------- o primeiro animal, em quatro passos
+  //
+  // A regra do desenho: "só o passo 1 é obrigatório. Do 2 em diante, 'agora não' é um botão
+  // de verdade". E: "cada etapa deixa algo registrado, e sair no meio não desfaz nada".
+  "onboarding.depois": "Fazer isso depois",
+  "onboarding.continuar": "Continuar",
+  "onboarding.registrando": "Registrando…",
+  "onboarding.opcional": "· opcional",
+  "onboarding.trilho.animal": "O animal",
+  "onboarding.trilho.identificacao": "Identificação",
+  "onboarding.trilho.carteirinha": "Carteirinha",
+  "onboarding.trilho.quemCuida": "Quem mais cuida",
+  "onboarding.p1.titulo": "Quem é o animal?",
+  "onboarding.p1.apoio": "Nome e espécie bastam. O resto pode entrar a qualquer momento, inclusive anos depois.",
+  "onboarding.p1.nome": "Como você chama ele",
+  "onboarding.p1.especie": "Espécie",
+  "onboarding.p1.especie.outro": "Outro",
+  "onboarding.p1.especie.outro.porque": "Hoje o Petfy só registra cão e gato: a espécie é um dado do domínio, e não um texto livre. Outra espécie ficaria registrada errada.",
+  "onboarding.p1.nascimento": "Nascimento",
+  "onboarding.p1.nascimento.apoio": "Só o mês e o ano servem. Estimativa também.",
+  "onboarding.p1.foto": "Foto do animal",
+  "onboarding.p1.foto.apoio": "Ajuda quem cuida a reconhecer ele no balcão. Pode ficar para depois.",
+  "onboarding.p1.foto.indisponivel": "Ainda não dá para enviar a foto: o contrato da API não descreve o envio de arquivo, e o cliente é gerado a partir dele.",
+  "onboarding.p1.aviso": "O {nome} já fica registrado agora. Os próximos passos são opcionais.",
+  "onboarding.p2.titulo": "O {nome} tem algum número de identificação?",
+  "onboarding.p2.apoio": "Metade dos animais no Brasil não tem nenhum, e o Petfy funciona igual sem. Se tiver, o microchip é o que permite reconhecer o {nome} se ele se perder e for encontrado por outra pessoa.",
+  "onboarding.p2.microchip": "Microchip",
+  "onboarding.p2.microchip.apoio": "15 dígitos, geralmente na carteirinha ou na nota da aplicação.",
+  "onboarding.p2.semRgaNemTatuagem": "RGA e tatuagem ainda não têm onde ser guardados. Só o microchip tem campo próprio, e usar o dele para outro número faria o registro mentir.",
+  "onboarding.p2.naoValida": "O Petfy não emite nem valida esses números — guarda e usa o que você informar.",
+  "onboarding.p2.naoTem": "O {nome} não tem nenhum",
+  "onboarding.p3.titulo": "O que o {nome} já tomou",
+  "onboarding.p3.apoio": "É o passo mais trabalhoso e o mais valioso: sem ele, o Petfy não sabe o que vence e quando.",
+  "onboarding.p3.indisponivel": "A leitura da carteirinha por foto existe no servidor, mas o contrato da API não descreve o envio do arquivo — e o cliente desta tela é gerado a partir dele. Enquanto isso, cada dose pode ser lançada uma a uma na tela do animal, e cada uma entra na data em que foi aplicada.",
+  "onboarding.p3.naoTenho": "Não tenho a carteirinha agora",
+  "onboarding.p4.titulo": "Quem mais cuida do {nome}?",
+  "onboarding.p4.apoio": "Você escolhe o que cada pessoa ou organização vê, e por quanto tempo. Dá para mudar ou revogar depois, a qualquer momento.",
+  "onboarding.p4.pessoa": "Alguém que divide o cuidado",
+  "onboarding.p4.pessoa.apoio": "Quem também dá remédio e leva ao veterinário. Vê tudo e registra junto com você.",
+  "onboarding.p4.pessoa.campo": "e-mail",
+  "onboarding.p4.convidar": "Convidar",
+  "onboarding.p4.convidado": "Convite enviado para {email}. Ele aparece na rede quando a pessoa aceitar.",
+  "onboarding.p4.organizacao": "Uma clínica ou creche",
+  "onboarding.p4.organizacao.apoio": "Vê só o que você marcar, pelo prazo que você definir. Nada de tudo ou nada.",
+  "onboarding.p4.organizacao.semAnimal": "Primeiro cadastre o animal, no passo 1.",
+  "onboarding.p4.escolherOQueVe": "Escolher o que ela vê",
+  "onboarding.p4.ir": "Ir para o {nome}",
+  "onboarding.p4.sozinho": "Cuido sozinho por enquanto",
 
   // ------------------------------------------------- consentimento atualizado (Tela 07)
   //

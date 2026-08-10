@@ -85,7 +85,8 @@ function CriarConta() {
       crmvUf: crmv.trim() === "" ? undefined : crmvUf.trim().toUpperCase(),
     });
 
-    await navegar({ to: "/" });
+    // A Tela 08 e literalmente "depois do login": e para la que a conta nova vai.
+    await navegar({ to: "/comecar" });
   };
 
   return (

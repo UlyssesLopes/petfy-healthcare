@@ -197,17 +197,14 @@ function Inicio() {
 
             <div style={{ height: "1px", background: "oklch(0.92 0.006 150)", margin: "12px 0" }}></div>
 
-            <button
-              type="button"
-              disabled
+            {/* Deixou de ser desabilitado quando o onboarding passou a existir. */}
+            <Link
+              to="/animais/novo"
               {...cadastrar.props}
-              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.84 0.012 150)", borderRadius: "8px", padding: "12px", minHeight: "44px", cursor: "not-allowed", textAlign: "left", opacity: 0.55 }}
+              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: cadastrar.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: `1px solid ${cadastrar.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.84 0.012 150)"}`, borderRadius: "8px", padding: "12px", minHeight: "44px", textAlign: "left", textDecoration: "none", display: "block" }}
             >
               {intl.formatMessage({ id: "home.cadastrarAnimal" })}
-            </button>
-            <div style={{ fontSize: "13px", lineHeight: 1.5, color: "oklch(0.5 0.015 150)", padding: "0 2px" }}>
-              {intl.formatMessage({ id: "home.cadastrarAnimal.porque" })}
-            </div>
+            </Link>
           </div>
 
           {/* ---------------------------------------------------------------- centro: hoje */}
