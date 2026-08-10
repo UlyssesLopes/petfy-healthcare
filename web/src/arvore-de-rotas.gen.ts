@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './rotas/__root'
 import { Route as IndexRouteImport } from './rotas/index'
+import { Route as CriarContaRouteImport } from './rotas/criar-conta'
 import { Route as EntrarRouteImport } from './rotas/entrar'
 import { Route as AnimaisAnimalIdRouteImport } from './rotas/animais.$animalId'
 import { Route as AnimaisAnimalIdConcederAcessoRouteImport } from './rotas/animais.$animalId_.conceder-acesso'
@@ -19,6 +20,11 @@ import { Route as AnimaisAnimalIdTransferirRouteImport } from './rotas/animais.$
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriarContaRoute = CriarContaRouteImport.update({
+  id: '/criar-conta',
+  path: '/criar-conta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EntrarRoute = EntrarRouteImport.update({
@@ -52,6 +58,7 @@ const AnimaisAnimalIdTransferirRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
@@ -60,6 +67,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
@@ -69,6 +77,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/criar-conta': typeof CriarContaRoute
   '/entrar': typeof EntrarRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/$animalId_/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/criar-conta'
     | '/entrar'
     | '/animais/$animalId'
     | '/animais/$animalId/conceder-acesso'
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/criar-conta'
     | '/entrar'
     | '/animais/$animalId'
     | '/animais/$animalId/conceder-acesso'
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/criar-conta'
     | '/entrar'
     | '/animais/$animalId'
     | '/animais/$animalId_/conceder-acesso'
@@ -104,6 +116,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CriarContaRoute: typeof CriarContaRoute
   EntrarRoute: typeof EntrarRoute
   AnimaisAnimalIdRoute: typeof AnimaisAnimalIdRoute
   AnimaisAnimalIdConcederAcessoRoute: typeof AnimaisAnimalIdConcederAcessoRoute
@@ -118,6 +131,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criar-conta': {
+      id: '/criar-conta'
+      path: '/criar-conta'
+      fullPath: '/criar-conta'
+      preLoaderRoute: typeof CriarContaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/entrar': {
@@ -160,6 +180,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CriarContaRoute: CriarContaRoute,
   EntrarRoute: EntrarRoute,
   AnimaisAnimalIdRoute: AnimaisAnimalIdRoute,
   AnimaisAnimalIdConcederAcessoRoute: AnimaisAnimalIdConcederAcessoRoute,

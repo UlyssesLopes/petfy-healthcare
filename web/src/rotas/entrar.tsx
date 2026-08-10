@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
@@ -277,10 +277,11 @@ function Entrar() {
               {intl.formatMessage(
                 { id: "entrar.criarConta" },
                 {
+                  // Deixou de ser desabilitado quando a Tela 07 passou a existir.
                   acao: (
-                    <button type="button" disabled style={{ fontFamily: "inherit", background: "none", border: "none", padding: 0, fontSize: "16px", color: "oklch(0.46 0.085 150)", cursor: "not-allowed", opacity: 0.55 }}>
+                    <Link to="/criar-conta" style={{ fontSize: "16px", color: "oklch(0.46 0.085 150)" }}>
                       {intl.formatMessage({ id: "entrar.criarConta.acao" })}
-                    </button>
+                    </Link>
                   ),
                 },
               )}

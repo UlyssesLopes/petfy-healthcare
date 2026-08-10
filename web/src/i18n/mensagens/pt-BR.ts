@@ -396,6 +396,46 @@ export const mensagens = {
   "conceder.acao.concedendo": "Concedendo…",
   "conceder.acao.cancelar": "Cancelar",
 
+  // --------------------------------------------------------- criar conta (Tela 07)
+  //
+  // "Uma conta serve para tudo" é a tese da tela, e ela é o oposto de um seletor de perfil:
+  // quem responde pela área é o que a pessoa TEM, não o que ela declarou no cadastro.
+  "criarConta.titulo": "Criar conta",
+  "criarConta.apoio": "Uma conta serve para tudo: cuidar dos seus animais e atender os animais de outras pessoas. Você decide isso depois, e pode mudar quando quiser.",
+  "criarConta.nome": "Nome completo",
+  "criarConta.email": "E-mail",
+  "criarConta.senha": "Senha",
+  "criarConta.senha.mostrar": "Mostrar",
+  "criarConta.senha.esconder": "Esconder",
+  // O desenho escreve 10; o contrato aceita 8. O cliente é mais rigoroso de propósito.
+  "criarConta.senha.minimo": "Ao menos {minimo} caracteres.",
+  "criarConta.termos": "Li e aceito os termos de uso e a política de privacidade, inclusive o tratamento de dados de saúde dos animais que eu registrar.",
+  "criarConta.faltaAceite": "Falta aceitar os termos para criar a conta.",
+  "criarConta.faltaCampo": "Preencha nome, e-mail e uma senha de ao menos 10 caracteres.",
+  "criarConta.acao": "Criar conta",
+  "criarConta.acao.criando": "Criando…",
+  "criarConta.jaTem": "Já tem conta?",
+  "criarConta.entrar": "Entrar",
+  // O painel "declarar credencial · em qualquer momento". Criar a conta é um deles.
+  "criarConta.credencial.abrir": "Sou veterinário e quero declarar meu registro",
+  "criarConta.credencial.registro": "Registro profissional (CRMV)",
+  "criarConta.credencial.uf": "UF",
+  "criarConta.credencial.informado": "O Petfy ainda não consulta o conselho. Seu registro aparece como informado em tudo que você assinar, e quem lê sabe disso.",
+  "criarConta.credencial.semClinica": "Não é preciso ter clínica. Atendimento domiciliar funciona inteiro sem organização nenhuma.",
+
+  // ------------------------------------------------- consentimento atualizado (Tela 07)
+  //
+  // "Sem alarme e sem tom de erro: o texto mudou, não a conta" — a nota do desenho. Por
+  // isso não há "atenção", não há vermelho e "agora não" é saída de verdade.
+  "consentimento.titulo": "Atualizamos os termos",
+  "consentimento.texto": "Mudou o texto de {documentos}. Você continua usando o Petfy do mesmo jeito.",
+  "consentimento.documento.TERMS_OF_SERVICE": "termos de uso",
+  "consentimento.documento.PRIVACY_POLICY": "política de privacidade",
+  "consentimento.documento.OUTRO": "um documento",
+  "consentimento.aceitar": "Aceitar",
+  "consentimento.aceitando": "Aceitando…",
+  "consentimento.agoraNao": "Agora não",
+
   // -------------------------------------------------- transferir a titularidade (Tela 11)
   //
   // A regra do desenho: "nenhuma custódia termina sem sucessor". Por isso não existe
