@@ -124,6 +124,20 @@ export const mensagens = {
   // que o convite continua de pé, porque a pergunta seguinte de quem lê é se acabou de queimá-lo.
   "erro.153": "Você já é membro desta organização. O convite não foi usado e continua valendo para quem for entrar.",
 
+  // ------------------------------------------------------- a união de cadastros (Tela 32)
+  //
+  // O 154 fala de um cadastro que virou apontador. Ele diz onde a vida do animal continua, e não
+  // "não encontrado": some com o cadastro seria dizer que o animal nunca existiu.
+  "erro.154":
+    "Este cadastro foi unido a outro, e é lá que a vida do animal continua. Ele não recebe registro novo.",
+  "erro.155": "Não encontramos este pedido de união.",
+  // Decidir duas vezes não é falta de idempotência: a segunda decisão viria de quem leu a
+  // comparação antes da primeira união, sobre um estado que já não existe.
+  "erro.156":
+    "Este pedido já foi decidido. Recarregue para ver como os dois cadastros ficaram — o que você está vendo é de antes.",
+  "erro.157":
+    "Já existe um pedido para unir estes dois cadastros, esperando decisão de quem responde pelo animal.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -1059,6 +1073,12 @@ export const mensagens = {
   "paciente.pela": "pela {organizacao}",
   "paciente.credencial": "{registro}, {estado}",
   "paciente.semCredencial": "sem registro profissional",
+  // No topo e não numa caixa lateral: quem prescreve sem saber que existe outro cadastro
+  // prescreve contra metade do histórico.
+  "paciente.duplicado.titulo": "Este microchip está em outro cadastro",
+  "paciente.duplicado.pedido": "Pedem para unir este cadastro a outro",
+  "paciente.duplicado.texto":
+    "Provavelmente é o mesmo animal, visto por duas pessoas diferentes — e metade do histórico dele pode estar do outro lado. Abra para comparar.",
 
   // ------------------------------------------ registrar atendimento e prescrever (Tela 31)
   //
@@ -1114,6 +1134,77 @@ export const mensagens = {
   // ele sabe quem estará em casa."
   "atendimento.naoConcedeAcesso":
     "Prescrever não concede acesso a ninguém. Quem dá cada dose é o tutor quem decide — a creche só recebe a dose se já tiver acesso e se ele atribuir.",
+
+  // ------------------------------- o mesmo animal, cadastrado duas vezes (Tela 32)
+  //
+  // Uma tela, dois lados: quem percebe a duplicata é quase sempre a clínica, e quem decide é quem
+  // responde pelo animal. A comparação é a mesma para os dois — duas telas com a mesma tabela
+  // divergiriam, e a que o tutor lê é a que precisa estar certa.
+  "duplicado.oQue": "os cadastros parecidos",
+  "duplicado.oQue.pedido": "o pedido",
+  "duplicado.oQue.decisao": "a decisão",
+  "duplicado.titulo": "Este microchip já está em outro cadastro",
+  "duplicado.apoio":
+    "Você está cadastrando um animal com o microchip {microchip}, e ele já existe no Petfy. Provavelmente é o mesmo animal, visto por duas pessoas diferentes. Unir duas linhas do tempo não apaga nem reescreve nada — mas é irreversível, e por isso quem decide é quem responde pelo animal.",
+  "duplicado.varios":
+    "{quantos, plural, other {# cadastros parecidos}} — cada um é uma decisão própria",
+  "duplicado.lado.existe": "O cadastro que já existe",
+  "duplicado.lado.novo": "O que você está cadastrando",
+  "duplicado.responsavel": "Responsável",
+  "duplicado.semResponsavel": "nenhum ainda",
+  "duplicado.eventos": "Eventos",
+  "duplicado.eventos.desde": "{quantos}, desde {desde}",
+  "duplicado.eventos.semData": "{quantos}",
+  "duplicado.quemRegistrou": "Quem registrou",
+  "duplicado.quemRegistrou.valor":
+    "{pessoas, plural, one {# pessoa} other {# pessoas}}, {organizacoes, plural, =0 {nenhuma organização} one {# organização} other {# organizações}}",
+
+  // As quatro promessas, e nenhuma delas é decorativa.
+  "duplicado.oQueAcontece": "O que acontece se forem unidos",
+  "duplicado.acontece.ordem":
+    "As duas linhas do tempo viram uma só, ordenada por quando cada coisa aconteceu. Nenhum evento é descartado.",
+  "duplicado.acontece.assinatura":
+    "Cada evento continua assinado por quem o registrou, com a data de lançamento original.",
+  "duplicado.acontece.evento":
+    "A união em si vira um evento na linha do tempo, com seu nome e o motivo — quem ler daqui a cinco anos vai entender por que existem dois nomes no histórico.",
+  "duplicado.acontece.custodia":
+    "Quem responde pelo animal continua sendo quem já respondia. Unir não transfere custódia, e o acesso da sua organização continua sendo o que foi concedido.",
+
+  // Vem ANTES do botão, e não depois de um 403: quem clica e lê "proibido" aprende que o produto
+  // é hostil; quem lê antes entende a regra.
+  "duplicado.naoSozinha.titulo": "Você não pode unir sozinha",
+  "duplicado.naoSozinha.texto":
+    "Quem responde pelo animal é {quem}. Essa pessoa recebe o pedido, vê exatamente esta comparação e decide. É a mesma regra da transferência: ninguém mexe na vida registrada de um animal sem quem responde por ele.",
+
+  "duplicado.motivo": "Por que você acha que é o mesmo animal",
+  "duplicado.motivo.exemplo": "Mesmo microchip. Chegou com a Juliana, que disse ser co-tutora.",
+  "duplicado.motivo.nota":
+    "Sem motivo, quem decide recebe um pedido que só diz “una” e não tem como julgar. Ele vai junto para o evento da união.",
+  "duplicado.pedir": "Pedir a união a {quem}",
+  "duplicado.pedindo": "Enviando…",
+  "duplicado.pedido.enviado":
+    "Pedido enviado. {quem} decide, e nada muda até lá — os dois cadastros continuam como estão.",
+
+  // Acontece na hora: não mexe em nada, só acende a marca.
+  "duplicado.diferentes": "São animais diferentes",
+  "duplicado.diferentes.nota":
+    "“São animais diferentes” acontece na hora e não precisa de aprovação — não muda nada, só marca o microchip repetido nos dois cadastros. Provavelmente há um erro de digitação em algum lugar, e alguém vai precisar saber disso.",
+  "duplicado.marcado":
+    "Marcado nos dois cadastros. O produto não adivinha qual dos dois microchips está errado — quem tem o animal na frente é quem sabe.",
+
+  // O lado de quem decide.
+  "duplicado.pedido.titulo": "Pedem para unir este cadastro a outro",
+  "duplicado.pedido.dequem": "{quem}, {onde}, acha que são o mesmo animal:",
+  "duplicado.porSi": "por si mesma",
+  "duplicado.unir": "Unir os dois cadastros",
+  "duplicado.unindo": "Unindo…",
+  "duplicado.irreversivel":
+    "Unir é irreversível. Nada é apagado, mas as duas linhas do tempo não voltam a se separar.",
+
+  "duplicado.nenhuma.titulo": "Nenhum cadastro parecido",
+  "duplicado.nenhuma.texto":
+    "Nenhum outro cadastro tem este microchip. Se o animal tem microchip e ele não está preenchido aqui, vale registrar — é a única pista que permite reconhecer o mesmo bicho visto por duas pessoas.",
+  "duplicado.voltar": "Voltar ao paciente",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

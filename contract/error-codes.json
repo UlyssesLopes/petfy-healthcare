@@ -211,6 +211,22 @@
   "codigo" : 153,
   "mensagemDaApi" : "You are already an active member of this organization"
 }, {
+  "nome" : "ANIMAL_ALREADY_MERGED",
+  "codigo" : 154,
+  "mensagemDaApi" : "This record was merged into another one"
+}, {
+  "nome" : "MERGE_REQUEST_NOT_FOUND",
+  "codigo" : 155,
+  "mensagemDaApi" : "Merge request not found"
+}, {
+  "nome" : "MERGE_REQUEST_ALREADY_DECIDED",
+  "codigo" : 156,
+  "mensagemDaApi" : "This merge request was already decided"
+}, {
+  "nome" : "MERGE_REQUEST_ALREADY_PENDING",
+  "codigo" : 157,
+  "mensagemDaApi" : "There is already a pending merge request for these two records"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

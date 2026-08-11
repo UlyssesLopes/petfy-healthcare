@@ -4,121 +4,152 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-10, no fim da sessão que fechou a dívida de backend das telas.
+> Escrito em 2026-08-11, com o **bloco 2 (núcleo clínico) fechado por inteiro**.
 
-## Onde o trabalho está
+## Onde o trabalho está agora
 
-**Branch `feat/creche-turma-e-dia`, 14 commits, PR #50 aberto contra a `main`.**
+**Branch `feat/cadastro-duplicado`, quatro commits, sem PR aberto ainda.**
 
-**Tudo empurrado, árvore limpa, e o CI está verde nos dois jobs no último commit** — incluindo
-a Tela 11, que foi a última a entrar.
+**O bloco 2 está completo: Telas 30, 31 e 32.** Verde: **855 casos, 0 falhas, `Skipped: 0`**
+contra Postgres real; front com `tsc` limpo, 43 testes e build verde. Contrato sem nenhuma
+operação renomeada.
 
-Verde também localmente: **backend 829 casos, 0 falhas, Skipped 0** (contra Postgres real),
-**front `tsc` limpo e 43 testes**.
+**Próximo passo: abrir o PR desta branch, e começar o bloco 3** (Por onde o valor entra —
+Telas 40, 41, 42).
 
-**Não há nada pendente de verificação. O que falta é a decisão de mergear, que é sua.**
+## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 
-## O que esta sessão fez
+A versão anterior deste arquivo afirmava:
 
-Ela pegou a lista de dívidas que a sessão anterior deixou escrita e **fechou as cinco**, cada
-uma com backend e tela no mesmo passo.
+> *"Telas 12, 18 e 25–27 não têm especificação no repositório. O arquivo com as telas numeradas
+> do Claude Design nunca foi versionado — em `design/` só existem o `BRIEFING.md`, o
+> `home-tutor.html` e quatro capturas."*
 
-| # | Dívida | Estado |
+**Isso era falso, e travou trabalho à toa.** Havia 8 arquivos de tela versionados em
+`design/IdentidadeVisual/` desde antes, e as **Telas 12, 13 e 18 sempre tiveram especificação**.
+
+O que de fato nunca existiu são as **Telas 25, 26 e 27** — e também 04–06, 19–21, 35–36. Elas não
+foram desenhadas, e não é o repositório que as perdeu.
+
+## A fila, e onde ela está
+
+Em 2026-08-11 o Ulysses acrescentou **7 arquivos novos** em `design/IdentidadeVisual/`, com 19
+telas. Eles estão versionados (entraram no PR #53).
+
+| # | Bloco | Estado |
 |---|---|---|
-| 1 | multipart não declarado no contrato | **Fechada** — destrava o passo 3 do onboarding, a foto do animal e a foto da carteirinha |
-| 2 | dose duplicada não detectada | **Fechada** — 409/149, e a Tela 14 ganhou o sexto estado |
-| 3 | equipe da organização não existia | **Fechada** — listar, função no convite, ajustar e desligar; Tela 16 completa |
-| 4 | nenhuma agregação por organização | **Fechada** — situação, última visita e resumo; Tela 03 com as quatro colunas |
-| 5 | acesso herdado na transferência | **Fechada** — decisão tomada: o backend obedece ao desenho |
+| 1 | A faixa sai de dentro do cabeçalho sticky | **Fechado** — PR #54 |
+| 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado.** 30 e 31 no PR #54; 32 nesta branch |
+| 3 | Por onde o valor entra — 40, 41, 42 | pendente |
+| 4 | Custo do cuidado — 37, 38, 39 | pendente |
+| 5 | Fim e reencontro — 33, 34 | pendente |
+| 6 | Animal comunitário — 43, 44, 45 | pendente |
+| 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
+| 8 | Tela 18 — petshop | pendente (a especificação sempre existiu) |
 
-Antes disso, dois `fix:` que o CI e a ordem invertida cobraram (ver abaixo).
+A ordem foi escolhida por dependência: a 40 é literalmente "dentro da tela 31", e o custo (37–39)
+só tem o que dizer depois que 40–42 gravarem custo.
 
-## O que a sessão descobriu, e é o que importa daqui
+## O que esta sessão fechou, e o que importa daqui
 
-### Duas asserções mediam o BANCO INTEIRO num container compartilhado
+### A moldura do produto (PR #53)
 
-O CI reprovou o `SchemaMigrationContainerTest.catalogoDeveVirSemeado`: esperava 11 itens de
-catálogo e viu 23. **As duas execuções rodaram os mesmos 797 casos** — a diferença era a
-ORDEM. O container do Postgres é compartilhado entre as classes e ninguém limpa a tabela; o
-`CrecheContainerTest` cria um item de catálogo por caso, e são 12.
+Onze rotas desenhavam a própria marca à mão. Agora há **um** cabeçalho e **um** rodapé, na raiz —
+porque foi "cada rota se lembra de repetir" que produziu os onze. Três variantes, todas do desenho:
+completa nas telas autenticadas, reduzida nas portas e no stepper, nenhuma no cartão público.
 
-Rodar a suíte com **`-Dsurefire.runOrder=reversealphabetical`** achou a segunda antes do CI: o
-`UuidQueriesContainerTest.rotinaDeLembretesPegaAsCertas` varre o banco inteiro e recolhia
-vacinas de outras classes. **Essa flag vale como ferramenta de rotina** — ela mostra a
-fragilidade antes de a próxima classe nova mudar a ordem por acidente.
+Backend ganhou **um** campo: `emailVerified` no `/me/context`, para a faixa.
 
-### O teste que faltava era o da LIGAÇÃO HTTP, e foi ele que achou um 500
+**Duas afordâncias ficam desabilitadas com o motivo** — a busca (não há rota de busca, nem campo
+de RGA) e o marcador de avisos (não há canal). Um marcador que nunca acende ensina a pessoa a não
+olhar para ele.
 
-O upload de anexo e a leitura de carteirinha tinham serviço testado e armazenamento testado —
-e **nenhum cliente conseguia mandar arquivo**, porque `@RequestParam MultipartFile` não vira
-`requestBody` no contrato. Os testes de serviço continuariam verdes com a rota inalcançável.
+### O núcleo clínico (PR #54)
 
-O `MultipartUploadBindingTest`, que entra pelo MockMvc, cobrou também que **requisição sem a
-parte do arquivo respondia 500** — erro de cliente voltando como erro de servidor. Virou 400
-com código próprio (148).
+As três origens da Tela 30 **já vinham inteiras do servidor** — `organizationName`,
+`credentialLabel`/`credentialStatus`, `eventType`. Faltava a tela distinguir.
 
-### O springdoc RENOMEIA operação alheia
+Backend novo: os dois recortes do histórico (`onlyMyOrganization`, `onlyMine`). **Não é filtro de
+cliente** — a página tem vinte itens e a vida de um animal de dez anos tem centenas.
 
-Com os métodos da equipe chamados `list` e `changeRole`, o `openapi.json` saiu com `list_1`
-virando `list_2` numa rota de OUTRO controller e `changeRole` virando `changeRole_1` no
-pet-tutor. O `operationId` vem do nome do método e o desempate é sufixo numérico, **que
-depende da ordem de varredura**. Método com nome próprio (`listMembers`) manteve o contrato
-estável: 130 inserções e zero remoções.
+**O aviso de sobreposição de medicamento é do cliente**, e é decisão registrada: guardas que
+**recusam** moram no servidor (dose duplicada = 409/149); este só pede confirmação. O custo está
+escrito no arquivo — outro cliente que prescreva não vai avisar.
 
-### Convidar exigia credencial profissional
+### A união de cadastros (esta branch)
 
-E trancava a Tela 16 para exatamente quem ela serve: a administradora do abrigo e a da creche
-não têm CRMV. Era `requireContext` onde cabia `organizacaoDeclarada` — **a terceira vez que
-esse mesmo defeito aparece** (a creche cobrou as outras duas). O convite também saiu do
-`professionalAccessManager` na cadeia de filtros.
+**Evento move, vínculo não** — o critério inteiro do `AnimalMerger`. Custódia, concessão,
+matrícula, convite e log de acesso **ficam**, cada um por uma razão escrita na guarda de cobertura.
+
+**A guarda de cobertura pegou um defeito antes de eu escrever a linha seguinte:** o
+`AnimalPurgerCoverageContainerTest` reprovou porque `animal_merge_requests` aponta para `animals` e
+o purger não a cobria. **Quarta vez que essa guarda pega a mesma classe de defeito.**
+
+O `AnimalMergerCoverageContainerTest` nasce fazendo o mesmo pela união. Ali o sintoma seria pior
+que um 500 — **silencioso**: a união terminaria "com sucesso" deixando eventos para trás.
 
 ## O que continua faltando, e por quê
 
-- **Quem já tem conta não consegue aceitar convite de organização.** O único caminho de aceite
-  é o `inviteToken` na criação da conta. É a única parte da Tela 16 que ainda depende de
-  backend, e a tela diz isso.
-- **Não há canal de aviso.** Por isso a Tela 03 lista quem está vencendo mas não avisa
-  ninguém, a Tela 23 não avisa quem registrou, e a Tela 24 (avisos) continua inconstruível.
-  Um botão que não avisa seria pior que a ausência dele.
-- **A edição de vacina não passa pela guarda de dose duplicada** — mudar a data de um registro
-  para bater com outro cria a duplicata. Foi decisão consciente: é raro e deixa rastro no
-  `VaccineCorrectionLog`, enquanto a gravação dupla é comum e silenciosa.
-- **Telas 12, 18 e 25–27 não têm especificação no repositório.** O arquivo com as telas
-  numeradas do Claude Design nunca foi versionado — em `design/` só existem o `BRIEFING.md`, o
-  `home-tutor.html` e quatro capturas. Sem ele não dá para construir nenhuma delas.
-- **Capacidade de organização não se declara** na criação (Tela 15), **espécie é só CANINA e
-  FELINA**, e **RGA e tatuagem não têm campo**.
+- **Não há canal de aviso.** A Tela 03 lista quem está vencendo e não avisa ninguém, a Tela 23 não
+  avisa quem registrou, e a Tela 24 continua inconstruível. É decisão de produto, não de código.
+- **A busca não existe** — nem rota, nem campo de RGA no modelo.
+- **Capacidade de organização não se declara** na criação (Tela 15), e **espécie é só CANINA e
+  FELINA**.
+- **O escopo do evento de união é um compromisso**: quem tem concessão só de `OBSERVACOES` ou só de
+  `PESO` não verá a união, e para essa pessoa o histórico vai parecer ter dobrado sozinho.
+  Resolver de verdade pede um escopo que não existe hoje.
+- **A edição de vacina não passa pela guarda de dose duplicada.**
 
 ## Armadilhas desta máquina
 
-- **O Docker subiu e ficou de pé a sessão inteira** (`petfy-pg-sessao` no ar). A distro
-  `rancher-desktop-data` já esteve `Stopped` em sessões passadas; **não reinicie o Rancher** —
-  a máquina tem k8s com argocd no ar.
+- **`vite build` suja o `arvore-de-rotas.gen.ts`**: `git status` mostra modificado, `git diff` vem
+  vazio (é `core.autocrlf` sem `.gitattributes`), e **o `git pull` aborta**. Já me fez ramificar de
+  uma `main` desatualizada. Conferir `git log` DEPOIS do pull; `git reset --hard origin/main`
+  destrava com segurança porque o arquivo é gerado.
+- **O Rancher Desktop precisa estar aberto** — sem ele não há Docker, e sem Docker o
+  `OpenApiContractTest` é **pulado** em silêncio. Conferir `Skipped: 0`.
+- **O container `petfy-pg-sessao` já existe**: `docker start petfy-pg-sessao`, e não `docker run`.
 - **`-Dtest=` com vírgula e `-D` com ponto precisam de aspas no PowerShell**, e
-  `Select-Object -First N` corta o pipe e faz o `$LASTEXITCODE` mentir (dá 255 com BUILD
-  SUCCESS).
-- **Reescrever arquivo com `Set-Content -Encoding utf8` corrompe acento** (dupla codificação).
-  Use a ferramenta de escrita, ou `[IO.File]::WriteAllText`.
-- **O scratchpad da sessão pode não existir**: `Out-File` para um diretório inexistente mata o
-  pipe e o comando anterior nem roda. Criar antes.
-- **`cd` no Bash persiste entre chamadas** — e o `git add` falha com pathspec se o cwd for
-  `web/`.
-- **O merge de PR é bloqueado ao agente pelo classificador** — é comando seu, sempre.
-- **O gerador de rotas do TanStack** não tem CLI aqui: quem regenera `arvore-de-rotas.gen.ts`
-  é `npx vite build`.
-- **Nenhuma tela foi conferida no navegador nesta sessão.**
+  `Select-Object -First N` corta o pipe e faz o `$LASTEXITCODE` mentir.
+- **Here-string do PowerShell quebra em aspas duplas** dentro da mensagem: escrever a mensagem de
+  commit num arquivo e usar `git commit -F`.
+- **`cd` no Bash contamina o cwd do PowerShell** — rodar `mvn -f <pom absoluto>`.
+- **O merge de PR é comando do Ulysses, sempre.**
+- **Nenhuma tela foi conferida no navegador** em nenhuma destas entregas: a extensão do Chrome não
+  esteve conectada.
 
-## Primeiro passo de amanhã
+## Primeiro passo da próxima sessão
 
-**O merge do PR #50** — é comando seu, e o CI já está verde. Depois dele, o que resta com dono
-claro é a lista de "o que continua faltando" acima; a maior parte dela **não é trabalho de
-tela, é decisão de produto** (canal de aviso) ou **falta de especificação versionada** (telas
-12, 18 e 25–27).
+**Abrir o PR desta branch** (`feat/cadastro-duplicado`, quatro commits) e conferir o CI.
+
+Depois, **o bloco 3: Por onde o valor entra (Telas 40, 41, 42)**, de
+`design/IdentidadeVisual/Telas Petfy - Por onde o valor entra.dc.html`.
+
+- **Tela 40** é literalmente "dentro da tela 31": o campo de custo no registro de atendimento.
+  A Tela 31 já existe (`web/src/rotas/pacientes.$animalId.atendimento.tsx`), então é ali que ele
+  entra — e o `HealthRecordRequestDTO` **não tem campo de custo**, então há backend.
+- **Tela 41** é a mensalidade da creche, dentro da matrícula.
+- **Tela 42** é o que o tutor compra por fora.
+
+O levantamento de backend ainda não foi feito para nenhuma das três.
+
+## O que a Tela 32 deixou pronto, e vale saber antes de mexer
+
+Cinco rotas: `GET /animals/{id}/duplicates`, `POST /animals/{id}/merge-requests`,
+`GET /animals/{id}/merge-requests`, `POST /merge-requests/{id}/accept`, `.../reject`, e
+`POST /animals/{id}/duplicates/{outro}/distinct`.
+
+**O desenho tinha um botão que o backend não cobria:** "são animais diferentes" aparece na tela da
+clínica, sem pedido nenhum no meio. Virou rota própria — pedir a união mexe na vida registrada e
+precisa de quem responde; dizer "são outros bichos" só acende uma marca.
+
+**A tela não adivinha quem pode decidir.** Mostra os botões e deixa o servidor responder 403.
+Esconder o botão exigiria o cliente recalcular custódia — uma segunda verdade sobre quem manda.
 
 ## Como subir, e como regenerar
 
 ```
-docker run -d --name petfy-pg-sessao -e POSTGRES_DB=petfy -e POSTGRES_USER=petfy -e POSTGRES_PASSWORD=petfy -p 5433:5432 postgres:14
+docker start petfy-pg-sessao
 DB_PORT=5433 mvn spring-boot:run -Dspring-boot.run.profiles=local
 cd web && npm run dev      # http://localhost:5173
 ```

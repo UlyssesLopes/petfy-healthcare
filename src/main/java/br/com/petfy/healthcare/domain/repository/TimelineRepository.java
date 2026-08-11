@@ -83,6 +83,36 @@ public interface TimelineRepository extends JpaRepository<TimelineEntry, UUID> {
             + "group by t.organizationId")
     List<UltimaContribuicao> ultimaContribuicaoPorOrganizacao(@Param("animalId") UUID animalId);
 
+    /**
+     * O TAMANHO da vida registrada deste cadastro — o que a Tela 32 poe lado a lado.
+     *
+     * <b>"147 eventos, desde 14/02/2019" contra "1, hoje" e o que faz quem decide entender qual
+     * dos dois e o cadastro real do animal.</b> Sem isso a comparacao mostraria dois nomes e duas
+     * racas, e a pergunta "qual devo manter" ficaria sem a resposta que ela realmente tem.
+     *
+     * <b>Uma consulta agregada, e nao a lista.</b> Um cadastro de dez anos tem centenas de
+     * eventos, e trazer todos para contar em memoria — duas vezes, uma por lado — seria pagar a
+     * vida inteira do animal para escrever quatro numeros.
+     */
+    @Query("select count(t) as eventos, min(t.occurredAt) as primeiro, "
+            + "count(distinct t.recordedByPersonId) as pessoas, "
+            + "count(distinct t.organizationId) as organizacoes "
+            + "from TimelineEntry t where t.animalId = :animalId")
+    Tamanho tamanhoDe(@Param("animalId") UUID animalId);
+
+    /** Projecao da consulta acima. */
+    interface Tamanho {
+
+        long getEventos();
+
+        LocalDateTime getPrimeiro();
+
+        long getPessoas();
+
+        long getOrganizacoes();
+
+    }
+
     /** Projecao das duas consultas acima. O id e de pessoa ou de organizacao, conforme a consulta. */
     interface UltimaContribuicao {
 

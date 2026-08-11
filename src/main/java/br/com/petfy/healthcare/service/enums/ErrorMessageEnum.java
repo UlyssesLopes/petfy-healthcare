@@ -117,6 +117,20 @@ public enum ErrorMessageEnum {
     // segundo vinculo daria a mesma pessoa duas funcoes na mesma organizacao — e a pergunta
     // "qual delas vale" nao tem resposta.
     ALREADY_ORGANIZATION_MEMBER(153, "You are already an active member of this organization"),
+    // ------------------------------------------------ a uniao de cadastros duplicados (Tela 32)
+    //
+    // Um cadastro que ja foi absorvido nao recebe registro novo nem entra em pedido novo: ele e
+    // um apontador para onde a vida do animal continua. Escrever nele criaria um evento que a
+    // linha do tempo do animal nunca mostraria — perdido num cadastro que ninguem mais le.
+    ANIMAL_ALREADY_MERGED(154, "This record was merged into another one"),
+    MERGE_REQUEST_NOT_FOUND(155, "Merge request not found"),
+    // Decidir duas vezes nao e idempotencia: a segunda decisao chegaria de alguem que leu a
+    // comparacao ANTES da primeira uniao acontecer, e estaria decidindo sobre um estado que ja
+    // nao existe.
+    MERGE_REQUEST_ALREADY_DECIDED(156, "This merge request was already decided"),
+    // O mesmo par, pedido duas vezes. Quem responde receberia a mesma pergunta em duplicata e
+    // aceitaria as duas — e a segunda tentaria absorver um cadastro que ja foi absorvido.
+    MERGE_REQUEST_ALREADY_PENDING(157, "There is already a pending merge request for these two records"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

@@ -52,7 +52,24 @@ public enum TimelineEventType {
      * diferentes, e juntar os dois perderia o historico de aderencia - o dado que o
      * veterinario nao tem quando o tratamento nao funciona.
      */
-    CUMPRIMENTO(GrantScope.PRONTUARIO);
+    CUMPRIMENTO(GrantScope.PRONTUARIO),
+
+    /**
+     * Dois cadastros do mesmo animal viraram um (Tela 32).
+     *
+     * <b>Nao e dado de saude — e ato administrativo</b>, e por isso a view o marca com
+     * {@code is_health_data = false}. Mas ele precisa aparecer: sem ele, quem le ve 147 eventos
+     * assinados por gente de tres organizacoes mais um lote que surgiu de repente vindo de um
+     * cadastro que nao existe em lugar nenhum — e conclui que houve erro de sistema.
+     *
+     * <b>O ESCOPO AQUI E UM COMPROMISSO, e vale dizer qual.</b> O modelo de concessao exige que
+     * todo tipo aponte para um escopo, e nao tem "sempre visivel". A uniao e sobre a IDENTIDADE
+     * do animal, que e o que a carteira carrega — entao ela entra na {@code CARTEIRA}, que e
+     * tambem o escopo mais concedido. <b>A consequencia registrada:</b> uma concessao que tenha
+     * so {@code OBSERVACOES}, ou so {@code PESO}, nao vera a uniao, e para ela o historico vai
+     * parecer ter dobrado sozinho. Resolver de verdade pede um escopo que nao existe hoje.
+     */
+    UNIAO(GrantScope.CARTEIRA);
 
     private final GrantScope escopo;
 
