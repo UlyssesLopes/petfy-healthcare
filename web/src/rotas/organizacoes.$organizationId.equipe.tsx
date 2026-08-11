@@ -5,9 +5,13 @@ import { useIntl } from "react-intl";
 import { ErroAoGravar, ErroDeCarga } from "../componentes/Estados.tsx";
 import { useMeuContexto } from "../dados/contexto.ts";
 import {
+  useAjustarFuncao,
   useConvidarParaEquipe,
   useConvitesDaOrganizacao,
+  useDesligarDaEquipe,
+  useEquipe,
   useRevogarConvite,
+  type FuncaoNaEquipe,
 } from "../dados/organizacoes.ts";
 import { lerSessao } from "../dados/sessao.ts";
 
@@ -16,29 +20,27 @@ import { lerSessao } from "../dados/sessao.ts";
  * A "Tela 16 · administracao — Equipe, funcoes e desligamento", de
  * `design/IdentidadeVisual/Telas Petfy - Organizacao.dc.html`.
  *
- * <b>ESTA TELA ESTA A UM QUARTO DO QUE O DESENHO PEDE, e a razao e o contrato.</b> O desenho
- * mostra uma tabela de equipe com quatro colunas — pessoa, funcao, o que ela registra e
- * "ajustar" — mais o desligamento. Do contrato inteiro, existe isto:
+ * <b>A TELA ESTAVA A UM QUARTO DO DESENHO, e o que faltava era backend.</b> Ela dizia isso em
+ * vez de desenhar uma tabela vazia — a armadilha que a secao 06 nomeia: <b>vazio nao e a mesma
+ * coisa que nao existe</b>. Uma tabela de equipe com "nenhum membro" seria mentira, porque os
+ * membros existiam e o produto e que nao sabia mostra-los.
+ *
+ * As tres coisas que faltavam entraram, e por isso a tela tem agora as quatro colunas do
+ * desenho — pessoa, funcao, o que ela registra e "ajustar" — mais o desligamento:
  *
  * <ul>
- *   <li><b>Nao ha rota que liste MEMBROS.</b> `GET /organizations/invites` devolve convites, e
- *       nada devolve quem ja entrou. A tabela do desenho nao tem de onde sair — nem os nomes,
- *       nem o "desde 03/2024", nem o CRMV ao lado da veterinaria.</li>
- *   <li><b>Nao ha FUNCAO no convite.</b> O `OrganizationInviteRequestDTO` tem e-mail e prazo.
- *       Os papeis (`VETERINARIO`, `MONITOR`, `VOLUNTARIO`, `ADMINISTRADOR`) existem no
- *       `ContextOptionDTO`, mas nao ha por onde escolher um ao convidar nem depois.</li>
- *   <li><b>Nao ha "ajustar" nem desligamento.</b> Sem membro listado e sem papel, nao ha o que
- *       ajustar; e nao existe rota para desligar ninguem.</li>
+ *   <li><b>`GET /organizations/members`</b> devolve quem ja entrou, com funcao, "desde" e o
+ *       registro profissional de quem tem.</li>
+ *   <li><b>A funcao viaja no CONVITE</b>, escolhida por quem convida. Ela nao esta no cadastro
+ *       de quem aceita de proposito: escolher a propria funcao e escolher a propria
+ *       permissao.</li>
+ *   <li><b>Ajustar e desligar existem</b>, so para administrador. Desligar marca a saida e nao
+ *       apaga o vinculo, porque o que a pessoa registrou continua no historico dos animais.</li>
  * </ul>
  *
- * O que existe e o convite: criar, ver quem esta esperando e revogar. E e isso que esta tela
- * faz, dizendo o resto em vez de desenhar uma tabela vazia — que e a armadilha que a secao 06
- * nomeia: <b>vazio nao e a mesma coisa que nao existe</b>. Uma tabela de equipe com "nenhum
- * membro" seria mentira: os membros existem, e o produto e que nao sabe mostra-los.
- *
- * <b>Como alguem aceita o convite:</b> pelo `inviteToken` do `PersonRequestDTO`, na criacao da
- * conta. Nao ha rota de aceite para quem JA tem conta — quem ja e do Petfy e recebe convite de
- * organizacao nao tem por onde entrar.
+ * <b>O que AINDA falta, e continua sendo dito em vez de desenhado:</b> quem JA tem conta no
+ * Petfy e recebe convite de organizacao nao tem por onde aceitar — o unico caminho de aceite e
+ * o `inviteToken` do `PersonRequestDTO`, na criacao da conta.
  */
 
 export const Route = createFileRoute("/organizacoes/$organizationId/equipe")({
@@ -49,6 +51,14 @@ export const Route = createFileRoute("/organizacoes/$organizationId/equipe")({
   },
   component: Equipe,
 });
+
+/**
+ * As quatro funcoes, na ordem do que pode menos para o que pode mais.
+ *
+ * A ordem nao e alfabetica de proposito: o primeiro item e o default do campo de convite, e o
+ * default tem de ser o que pode menos. Promover alguem e um ato escolhido.
+ */
+const FUNCOES: FuncaoNaEquipe[] = ["VOLUNTARIO", "MONITOR", "VETERINARIO", "ADMINISTRADOR"];
 
 function useHover() {
   const [sobre, setSobre] = useState(false);
@@ -71,9 +81,15 @@ function Equipe() {
   const convites = useConvitesDaOrganizacao();
   const convidar = useConvidarParaEquipe();
   const revogar = useRevogarConvite();
+  const equipe = useEquipe();
+  const ajustar = useAjustarFuncao();
+  const desligar = useDesligarDaEquipe();
   const acao = useHover();
 
   const [email, setEmail] = useState("");
+  /* ADMINISTRADOR nao e o default: promover alguem tem de ser um ato escolhido, e nao o que
+     acontece quando ninguem mexe no campo. VOLUNTARIO e a funcao que pode menos. */
+  const [funcao, setFuncao] = useState<FuncaoNaEquipe>("VOLUNTARIO");
 
   const quem = contexto.data?.personName ?? "";
   const daOrganizacao = (convites.data ?? []).filter(
@@ -135,12 +151,25 @@ function Equipe() {
                     aria-label={intl.formatMessage({ id: "equipe.convidar.campo" })}
                     style={{ fontFamily: "inherit", flex: 1, minWidth: "220px", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "4px", padding: "13px 14px", fontSize: "16px", minHeight: "48px", background: "oklch(1 0 0)" }}
                   />
+                  <select
+                    value={funcao}
+                    onChange={(evento) => setFuncao(evento.target.value as FuncaoNaEquipe)}
+                    aria-label={intl.formatMessage({ id: "equipe.funcao.rotulo" })}
+                    style={{ fontFamily: "inherit", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "4px", padding: "13px 14px", fontSize: "16px", minHeight: "48px", background: "oklch(1 0 0)" }}
+                  >
+                    {FUNCOES.map((opcao) => (
+                      <option key={opcao} value={opcao}>
+                        {intl.formatMessage({ id: `equipe.funcao.${opcao}` })}
+                      </option>
+                    ))}
+                  </select>
+
                   <button
                     type="button"
                     disabled={convidar.isPending || email.trim() === ""}
                     {...acao.props}
                     onClick={async () => {
-                      await convidar.mutateAsync(email.trim());
+                      await convidar.mutateAsync({ email: email.trim(), funcao });
                       setEmail("");
                     }}
                     style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(1 0 0)", background: convidar.isPending || email.trim() === "" ? "oklch(0.62 0.05 150)" : acao.sobre ? "oklch(0.40 0.09 150)" : "oklch(0.46 0.085 150)", border: "none", borderRadius: "8px", padding: "13px 20px", minHeight: "48px", cursor: email.trim() === "" ? "not-allowed" : "pointer" }}
@@ -150,12 +179,107 @@ function Equipe() {
                 </div>
 
                 <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.42 0.015 150)", marginTop: "12px" }}>
-                  {intl.formatMessage({ id: "equipe.convidar.semFuncao" })}
+                  {intl.formatMessage({ id: "equipe.convidar.apoio" })}
                 </div>
 
                 {convidar.isError && (
                   <div style={{ marginTop: "14px" }}>
                     <ErroAoGravar erro={convidar.error} oQue={intl.formatMessage({ id: "equipe.oQue.convite" })} />
+                  </div>
+                )}
+              </div>
+
+              {/* ------------------------------------------------------------ a equipe */}
+              <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", background: "oklch(1 0 0)", padding: "24px 26px" }}>
+                <Rotulo>
+                  {intl.formatMessage({ id: "equipe.tabela" }, { quantos: (equipe.data ?? []).length })}
+                </Rotulo>
+
+                {equipe.isError ? (
+                  <ErroDeCarga
+                    oQue={intl.formatMessage({ id: "equipe.oQue.equipe" })}
+                    erro={equipe.error}
+                    aoTentarDeNovo={() => void equipe.refetch()}
+                    carregando={equipe.isFetching}
+                  />
+                ) : equipe.isPending ? (
+                  <Nota>{intl.formatMessage({ id: "equipe.carregando.membros" })}</Nota>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {(equipe.data ?? []).map((membro) => (
+                      <div
+                        key={membro.membershipId}
+                        style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "16px", alignItems: "center", borderTop: "1px solid oklch(0.95 0.005 150)", paddingTop: "12px" }}
+                      >
+                        <div>
+                          <div style={{ fontSize: "16px" }}>{membro.personName}</div>
+                          <div style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)", marginTop: "2px" }}>
+                            {membro.joinedAt === undefined
+                              ? ""
+                              : intl.formatMessage(
+                                  { id: "equipe.membro.desde" },
+                                  { data: intl.formatDate(new Date(membro.joinedAt), { month: "2-digit", year: "numeric" }) },
+                                )}
+                            {/*
+                              O CRMV so aparece de quem tem, e a ausencia NAO vira "sem registro":
+                              monitor e voluntario nao tem credencial e nao ha nada de pendente
+                              nisso. Dizer o vazio aqui inventaria uma cobranca.
+                            */}
+                            {membro.professionalCredential !== undefined
+                              ? ` · ${membro.professionalCredential}`
+                              : ""}
+                          </div>
+                        </div>
+
+                        <select
+                          value={membro.role}
+                          disabled={ajustar.isPending || membro.membershipId === undefined}
+                          onChange={(evento) =>
+                            ajustar.mutate({
+                              membershipId: membro.membershipId!,
+                              funcao: evento.target.value as FuncaoNaEquipe,
+                            })
+                          }
+                          aria-label={intl.formatMessage(
+                            { id: "equipe.membro.ajustar" },
+                            { pessoa: membro.personName ?? "" },
+                          )}
+                          style={{ fontFamily: "inherit", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "4px", padding: "11px 12px", fontSize: "15px", minHeight: "44px", background: "oklch(1 0 0)" }}
+                        >
+                          {FUNCOES.map((opcao) => (
+                            <option key={opcao} value={opcao}>
+                              {intl.formatMessage({ id: `equipe.funcao.${opcao}` })}
+                            </option>
+                          ))}
+                        </select>
+
+                        <button
+                          type="button"
+                          disabled={desligar.isPending || membro.membershipId === undefined}
+                          onClick={() => desligar.mutate(membro.membershipId!)}
+                          style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.42 0.13 30)", background: "oklch(1 0 0)", border: "1px solid oklch(0.86 0.03 30)", borderRadius: "8px", padding: "11px 16px", minHeight: "44px", cursor: "pointer" }}
+                        >
+                          {intl.formatMessage({ id: "equipe.membro.desligar" })}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/*
+                  As duas recusas do servidor aparecem AQUI, e nao ao lado do controle: quem nao
+                  administra recebe 151 e quem tentou tirar o ultimo administrador recebe 152, e
+                  as duas frases dizem a saida. Desabilitar o controle sem explicar seria o
+                  "desabilitado mudo" que a secao 06 proibe.
+                */}
+                {ajustar.isError && (
+                  <div style={{ marginTop: "14px" }}>
+                    <ErroAoGravar erro={ajustar.error} oQue={intl.formatMessage({ id: "equipe.oQue.funcao" })} />
+                  </div>
+                )}
+                {desligar.isError && (
+                  <div style={{ marginTop: "14px" }}>
+                    <ErroAoGravar erro={desligar.error} oQue={intl.formatMessage({ id: "equipe.oQue.desligamento" })} />
                   </div>
                 )}
               </div>

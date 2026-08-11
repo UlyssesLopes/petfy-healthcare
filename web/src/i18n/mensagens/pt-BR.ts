@@ -766,7 +766,14 @@ export const mensagens = {
   "equipe.convidar.campo": "e-mail",
   "equipe.convidar.acao": "Convidar",
   "equipe.convidando": "Convidando…",
-  "equipe.convidar.semFuncao": "Ainda não dá para escolher a função de quem entra: o convite guarda o e-mail e o prazo, e mais nada. Veterinária, monitora e recepção existem no modelo, mas não há por onde atribuí-las.",
+  // A frase diz por que a função é escolhida AQUI, e não por quem aceita: sem isso o campo
+  // parece burocracia. Com isso, ele é a decisão de quem responde pela organização.
+  "equipe.convidar.apoio": "A função é escolhida por você, no convite — quem aceita não escolhe o próprio papel. Dá para ajustar depois.",
+  "equipe.funcao.rotulo": "Função",
+  "equipe.funcao.VOLUNTARIO": "Voluntária",
+  "equipe.funcao.MONITOR": "Monitora",
+  "equipe.funcao.VETERINARIO": "Veterinária",
+  "equipe.funcao.ADMINISTRADOR": "Administradora",
   "equipe.aguardando": "{quantos, plural, =0 {Nenhum convite aguardando} one {# convite aguardando} other {# convites aguardando}}",
   "equipe.aguardando.vazio": "Ninguém foi convidado ainda.",
   "equipe.carregando": "Carregando os convites…",
@@ -775,8 +782,21 @@ export const mensagens = {
   "equipe.encerrados": "{quantos, plural, one {# convite já encerrado} other {# convites já encerrados}} — aceitos, vencidos ou revogados.",
   "equipe.oQue": "os convites da equipe",
   "equipe.oQue.convite": "o convite",
-  "equipe.falta.titulo": "A tabela da equipe não existe ainda",
-  "equipe.falta.texto": "Nenhuma rota devolve quem já entrou na organização, então não há como listar a equipe, mostrar a função de cada um nem desligar alguém. Mostrar uma tabela vazia seria pior: os membros existem, e é o produto que ainda não sabe mostrá-los.",
+  "equipe.oQue.equipe": "a equipe",
+  "equipe.oQue.funcao": "a função",
+  "equipe.oQue.desligamento": "o desligamento",
+
+  // A tabela da equipe. O "desde" é mês e ano: dia exato não ajuda ninguém a decidir nada, e
+  // sugere uma precisão que a pergunta ("faz tempo que ela está aqui?") não pede.
+  "equipe.tabela": "{quantos, plural, =0 {Ninguém na equipe ainda} one {# pessoa na equipe} other {# pessoas na equipe}}",
+  "equipe.carregando.membros": "Carregando a equipe…",
+  "equipe.membro.desde": "Desde {data}",
+  "equipe.membro.ajustar": "Função de {pessoa}",
+  "equipe.membro.desligar": "Desligar",
+
+  // O que ainda falta, e continua sendo dito em vez de desenhado.
+  "equipe.falta.titulo": "Quem já tem conta ainda não consegue aceitar",
+  "equipe.falta.texto": "O convite só é aceito na criação da conta. Quem já é do Petfy e recebe um convite de organização não tem por onde entrar — e essa é a única parte desta tela que ainda depende de backend.",
   "equipe.comoAceita": "Quem recebe o convite entra criando a conta com ele. Quem já tem conta no Petfy ainda não tem por onde aceitar.",
 
   // ------------------------------------------------- os estados (Tela 14)
