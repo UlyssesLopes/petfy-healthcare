@@ -42,6 +42,10 @@ class AnimalMergerCoverageContainerTest extends PostgresContainerTest {
      * "Nenhum evento e descartado" e a promessa que a tela faz a quem decide, e esta lista e ela.
      */
     private static final Set<String> MOVEM = Set.of(
+            // O custo E da vida do animal: "o custo do Code" nao muda porque descobriram que
+            // havia dois cadastros dele. Se ficasse para tras, unir os cadastros faria metade do
+            // que o tutor gastou desaparecer da conta — sem aviso nenhum.
+            "animal_costs",
             "attachments",
             "vaccines",
             "health_records",
@@ -84,6 +88,10 @@ class AnimalMergerCoverageContainerTest extends PostgresContainerTest {
             "health_record_corrections",
             "care_instruction_fulfillments",
             "attendances",
+            // O dia combinado e do combinado, que e da matricula — e a matricula FICA. Mover os
+            // dias sem mover a matricula deixaria uma turma esperando um animal na segunda e a
+            // matricula dele em outro cadastro.
+            "enrollment_weekdays",
             "grant_scopes",
             "animal_merge_requests");
 

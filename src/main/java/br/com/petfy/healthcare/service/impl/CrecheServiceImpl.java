@@ -4,11 +4,14 @@ import br.com.petfy.healthcare.domain.dto.AttendanceRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AttendanceResponseDTO;
 import br.com.petfy.healthcare.domain.dto.ClassGroupRequestDTO;
 import br.com.petfy.healthcare.domain.dto.ClassGroupResponseDTO;
+import br.com.petfy.healthcare.domain.dto.EnrollmentAgreementRequestDTO;
 import br.com.petfy.healthcare.domain.dto.EnrollmentResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthProofItemDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequirementRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequirementResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.entity.AnimalCost;
+import br.com.petfy.healthcare.domain.entity.AnimalCostKind;
 import br.com.petfy.healthcare.domain.entity.Attendance;
 import br.com.petfy.healthcare.domain.entity.AttendanceStatus;
 import br.com.petfy.healthcare.domain.entity.ClassGroup;
@@ -21,6 +24,7 @@ import br.com.petfy.healthcare.domain.entity.OrganizationVaccineRequirement;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
+import br.com.petfy.healthcare.domain.repository.AnimalCostRepository;
 import br.com.petfy.healthcare.domain.repository.AttendanceRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
 import br.com.petfy.healthcare.domain.repository.ClassGroupRepository;
@@ -40,13 +44,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -72,6 +80,7 @@ public class CrecheServiceImpl implements CrecheService {
     private final ClassGroupRepository classGroupRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final AttendanceRepository attendanceRepository;
+    private final AnimalCostRepository animalCostRepository;
     private final OrganizationVaccineRequirementRepository requirementRepository;
     private final VaccineCatalogRepository vaccineCatalogRepository;
     private final VaccineRepository vaccineRepository;
@@ -185,7 +194,7 @@ public class CrecheServiceImpl implements CrecheService {
                 .findVivaDoAnimalNaTurma(animalId, classGroupId);
 
         if (viva.isPresent()) {
-            return toResponse(viva.get(), comprovar(animal, organizacao));
+            return toResponse(viva.get(), comprovar(animal, organizacao), true);
         }
 
         exigirVagaLivre(turma);
@@ -201,7 +210,7 @@ public class CrecheServiceImpl implements CrecheService {
                 .createdBy(currentPersonProvider.require())
                 .build());
 
-        return toResponse(matricula, comprovacao);
+        return toResponse(matricula, comprovacao, true);
     }
 
     @Override
@@ -213,7 +222,8 @@ public class CrecheServiceImpl implements CrecheService {
                 .orElseThrow(this::naoEncontrado);
 
         return enrollmentRepository.findVivasDaTurma(classGroupId).stream()
-                .map(matricula -> toResponse(matricula, comprovar(matricula.getAnimal(), organizacao)))
+                // a creche LE o que ela mesma combinou: precisa, para conferir e corrigir
+                .map(matricula -> toResponse(matricula, comprovar(matricula.getAnimal(), organizacao), true))
                 .toList();
     }
 
@@ -223,10 +233,95 @@ public class CrecheServiceImpl implements CrecheService {
         // do lado do tutor: quem le e quem alcanca o animal, e nao um membro de creche
         animalAccessGuard.requireLeitura(animalId);
 
+        /*
+         * O COMBINADO SO VAI PARA QUEM RESPONDE PELO ANIMAL, e a leitura da matricula nao.
+         *
+         * Esta rota e alcancada por concessao — e a Tela 10 vista por quem recebeu acesso. O
+         * petshop com acesso a carteira do Code precisa ver que ele tem matricula na creche; nao
+         * precisa, e nao pode, ver quanto o Marcelo paga por ela. "Nenhum escopo de acesso concede
+         * preco junto com saude" — a regra do custo vale no unico outro lugar em que ha dinheiro.
+         *
+         * Uma pergunta a mais por chamada, e nao por matricula: o animal e o mesmo nas tres linhas.
+         */
+        boolean mostrarCombinado = animalAccessGuard.respondePor(animalId);
+
         return enrollmentRepository.findVivasDoAnimal(animalId).stream()
                 .map(matricula -> toResponse(matricula,
-                        comprovar(matricula.getAnimal(), matricula.getClassGroup().getOrganization())))
+                        comprovar(matricula.getAnimal(), matricula.getClassGroup().getOrganization()),
+                        mostrarCombinado))
                 .toList();
+    }
+
+    /**
+     * "Combinado com o tutor" — a caixa da Tela 41.
+     *
+     * <b>Quem grava e a creche que gere a turma</b>, e nao quem responde pelo animal. E a mesma
+     * assimetria do custo: escreve quem registra, le so quem responde. A creche e quem sabe o que
+     * combinou; exigir que o tutor digitasse o proprio boleto e o oposto de "o custo do animal so
+     * existe se o dado entrar sem esforco".
+     *
+     * <b>Substitui o combinado inteiro, campo por campo, inclusive com nulo.</b> Quem renegocia diz
+     * de novo o que passou a valer — e uma mensalidade que sobrasse de um combinado antigo iria
+     * para a conta do tutor sem ninguem ter dito nada.
+     */
+    @Override
+    @Transactional
+    public EnrollmentResponseDTO setAgreement(UUID enrollmentId, EnrollmentAgreementRequestDTO request) {
+        Enrollment matricula = matriculaDaMinhaOrganizacao(enrollmentId);
+
+        matricula.setMonthlyFee(request.getMonthlyFee());
+        matricula.setDueDay(request.getDueDay());
+        matricula.setDailyRate(request.getDailyRate());
+
+        /*
+         * A COLECAO E ESVAZIADA E PREENCHIDA, e nao trocada por outra.
+         *
+         * Trocar a instancia de uma colecao gerenciada e o gesto que o Hibernate persegue com
+         * "a collection with cascade=all-delete-orphan was no longer referenced" — e o erro nao
+         * aparece aqui, mas no flush, longe deste metodo.
+         */
+        Set<DayOfWeek> dias = diasCombinados(request.getWeekdays());
+
+        if (matricula.getWeekdays() == null) {
+            matricula.setWeekdays(new LinkedHashSet<>());
+        }
+
+        matricula.getWeekdays().clear();
+        matricula.getWeekdays().addAll(dias);
+
+        Enrollment salva = enrollmentRepository.save(matricula);
+
+        return toResponse(salva,
+                comprovar(salva.getAnimal(), salva.getClassGroup().getOrganization()),
+                true);
+    }
+
+    /**
+     * Os nomes de dia que o cliente mandou, virados em {@link DayOfWeek}.
+     *
+     * <b>Um nome invalido e recusado, e nao ignorado.</b> Ignorar faria a creche combinar tres dias
+     * e o servidor guardar dois — e o dia que sumiu viraria diaria avulsa na conta do tutor, todo
+     * mes, sem que ninguem soubesse de onde veio.
+     */
+    private Set<DayOfWeek> diasCombinados(List<String> nomes) {
+        if (nomes == null) {
+            return new LinkedHashSet<>();
+        }
+
+        Set<DayOfWeek> dias = new LinkedHashSet<>();
+
+        for (String nome : nomes) {
+            try {
+                dias.add(DayOfWeek.valueOf(nome.trim().toUpperCase(Locale.ROOT)));
+            } catch (IllegalArgumentException | NullPointerException erro) {
+                throw new PetfyHealthcareException(
+                        ErrorMessageEnum.INVALID_WEEKDAY.getMessage(),
+                        ErrorMessageEnum.INVALID_WEEKDAY.getCode(),
+                        HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        return dias;
     }
 
     /* ------------------------------------------------------------------------------- o dia */
@@ -293,7 +388,64 @@ public class CrecheServiceImpl implements CrecheService {
             registro.setPickupNote(request.getPickupNote().trim());
         }
 
-        return toResponse(matricula, attendanceRepository.save(registro), hoje, comprovacao);
+        Attendance salvo = attendanceRepository.save(registro);
+
+        lancarDiariaSeForDiaAvulso(matricula, hoje);
+
+        return toResponse(matricula, salvo, hoje, comprovacao);
+    }
+
+    /**
+     * A diaria avulsa, que entra sozinha.
+     *
+     * <b>E o encadeamento central do bloco 3, e a frase do desenho e literal:</b> "a diaria avulsa
+     * entrou sozinha: a creche marcou a entrada do Code num dia fora da combinacao, e o evento de
+     * entrada carregou o valor. NINGUEM DIGITOU NADA. E esse encadeamento que faz o custo se manter
+     * atualizado sem virar tarefa."
+     *
+     * <b>Tres condicoes, e cada uma e uma recusa a cobrar por suposicao:</b>
+     *
+     * <ul>
+     *   <li><b>Ha dias combinados.</b> Sem eles nao existe "fora do combinado" — ver
+     *       {@link Enrollment#foraDoCombinado}. O silencio da creche nao vira cobranca.</li>
+     *   <li><b>Ha diaria combinada.</b> Um dia extra sem valor combinado e um dia extra, e nao um
+     *       valor que o servidor teria de inventar.</li>
+     *   <li><b>Ainda nao ha diaria deste dia.</b> A creche que marca a entrada, desfaz por engano e
+     *       marca de novo nao pode cobrar duas diarias — e o tutor descobriria isso no fim do mes,
+     *       quando ninguem mais lembra do que aconteceu naquela terca.</li>
+     * </ul>
+     *
+     * <b>Falhar aqui derruba o check-in inteiro, e e proposital.</b> A alternativa seria engolir a
+     * excecao para "nao atrapalhar a porta das 7h30" — e ai o animal entraria com uma diaria
+     * perdida, que ninguem jamais saberia que faltou. Um check-in que falha, alguem repete.
+     */
+    private void lancarDiariaSeForDiaAvulso(Enrollment matricula, LocalDate dia) {
+        if (!matricula.foraDoCombinado(dia.getDayOfWeek()) || matricula.getDailyRate() == null) {
+            return;
+        }
+
+        if (animalCostRepository.existeDiariaNoDia(
+                matricula.getEnrollmentId(), dia.atStartOfDay(), dia.plusDays(1).atStartOfDay())) {
+            return;
+        }
+
+        Organization creche = matricula.getClassGroup().getOrganization();
+
+        animalCostRepository.save(AnimalCost.builder()
+                .animal(matricula.getAnimal())
+                .description("Diaria avulsa")
+                .amount(matricula.getDailyRate())
+                .kind(AnimalCostKind.CRECHE_DIARIA)
+                // `paid` NULO, e nao false: "ninguem disse". O produto nao sabe se o tutor pagou a
+                // diaria no dia, e afirmar que nao pagou seria inventar uma divida.
+                .sourceEnrollmentId(matricula.getEnrollmentId())
+                .occurredAt(LocalDateTime.now())
+                // o evento por tras do valor: quem marcou a entrada, pela creche. "Cada valor tem
+                // um evento por tras, com autor e data — e por isso pode ser CONTESTADO."
+                .recordedBy(currentPersonProvider.require())
+                .organization(creche)
+                .creationDate(LocalDateTime.now())
+                .build());
     }
 
     @Override
@@ -537,11 +689,27 @@ public class CrecheServiceImpl implements CrecheService {
                 .build();
     }
 
-    private EnrollmentResponseDTO toResponse(Enrollment matricula, List<HealthProofItemDTO> comprovacao) {
+    /**
+     * A matricula na resposta.
+     *
+     * <b>O {@code mostrarCombinado} nao tem valor padrao de proposito.</b> Um parametro com padrao
+     * seria "mostra, a menos que alguem lembre de esconder" — e quem esquecesse entregaria a
+     * mensalidade do tutor a quem tem so uma concessao de leitura. Obrigar cada chamada a
+     * responder faz a decisao aparecer no lugar onde ela e tomada.
+     */
+    private EnrollmentResponseDTO toResponse(Enrollment matricula, List<HealthProofItemDTO> comprovacao,
+                                             boolean mostrarCombinado) {
         Person quemMatriculou = matricula.getCreatedBy();
         ClassGroup turma = matricula.getClassGroup();
 
         return EnrollmentResponseDTO.builder()
+                .monthlyFee(mostrarCombinado ? matricula.getMonthlyFee() : null)
+                .dueDay(mostrarCombinado ? matricula.getDueDay() : null)
+                .dailyRate(mostrarCombinado ? matricula.getDailyRate() : null)
+                // os DIAS acompanham o dinheiro, e nao a matricula: "3 dias por semana" e a
+                // primeira metade da frase que termina em "R$ 530/mes", e o desenho os poe na
+                // mesma linha do combinado
+                .weekdays(mostrarCombinado ? diasEmNome(matricula) : null)
                 .enrollmentId(matricula.getEnrollmentId())
                 .animalId(matricula.getAnimal().getAnimalId())
                 .animalName(matricula.getAnimal().getName())
@@ -557,6 +725,24 @@ public class CrecheServiceImpl implements CrecheService {
                 // transacao, e foi assim que o `scopes` do Grant respondeu 500 na serializacao
                 .healthProof(List.copyOf(comprovacao))
                 .build();
+    }
+
+    /**
+     * Os dias combinados em nome, na ordem da semana.
+     *
+     * <b>Ordenado, e nao na ordem em que a creche clicou.</b> "Segunda, quarta e sexta" e "quarta,
+     * segunda e sexta" sao o mesmo combinado, e uma tela que mostrasse a segunda ordem faria o
+     * tutor achar que algo mudou.
+     */
+    private List<String> diasEmNome(Enrollment matricula) {
+        if (matricula.getWeekdays() == null) {
+            return List.of();
+        }
+
+        return matricula.getWeekdays().stream()
+                .sorted()
+                .map(DayOfWeek::name)
+                .toList();
     }
 
     private AttendanceResponseDTO toResponse(Enrollment matricula, Attendance registro, LocalDate dia,

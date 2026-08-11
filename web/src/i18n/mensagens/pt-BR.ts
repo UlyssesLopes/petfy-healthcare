@@ -137,6 +137,10 @@ export const mensagens = {
     "Este pedido já foi decidido. Recarregue para ver como os dois cadastros ficaram — o que você está vendo é de antes.",
   "erro.157":
     "Já existe um pedido para unir estes dois cadastros, esperando decisão de quem responde pelo animal.",
+  // O dia da semana chegou num formato que o servidor nao entende. Nao e a creche que errou
+  // de digitacao — os dias sao botoes —, entao a frase nao a manda "conferir os campos": ela
+  // diz que o combinado nao foi gravado, que e a consequencia que importa para quem esta ali.
+  "erro.158": "Não conseguimos gravar os dias combinados. O resto do combinado também não foi salvo — tente de novo.",
 
   // -------------------------------------------------------------------- os tres gerais
   //
@@ -641,6 +645,7 @@ export const mensagens = {
   // "O produto responde pela saúde": a creche não julga e o tutor não prova nada. O servidor cruza
   // o que a organização exige com o que a carteira tem, e esta tela só mostra.
   "animal.acao.creches": "Creches",
+  "animal.acao.compra": "Lançar uma compra",
   "matricula.titulo": "As creches do {nome}",
   "matricula.apoio": "A comprovação de saúde é do produto, e não da creche: o Petfy compara o que cada organização exige com o que a carteira tem, e refaz essa conta a cada vez que alguém olha.",
   "matricula.oQue": "as matrículas",
@@ -1134,6 +1139,130 @@ export const mensagens = {
   // ele sabe quem estará em casa."
   "atendimento.naoConcedeAcesso":
     "Prescrever não concede acesso a ninguém. Quem dá cada dose é o tutor quem decide — a creche só recebe a dose se já tiver acesso e se ele atribuir.",
+
+  // ---------------------------------------------------------- Tela 40 · o valor cobrado
+  //
+  // "O campo é opcional, e um evento sem valor é NORMAL — nunca um erro, nunca um alerta."
+  // Nenhuma destas frases cobra o preenchimento, e a de baixo diz o contrário com todas as
+  // letras: se informar valor virar obrigação, a clínica para de registrar o atendimento.
+  "valor.titulo": "Valor cobrado",
+  "valor.opcional": " · opcional",
+  "valor.soOTutorVe": "Só o tutor do {nome} vê",
+  "valor.oQue": "O que foi cobrado",
+  "valor.quanto": "Valor",
+  "valor.jaFoiPago": "Já foi pago",
+  "valor.outroItem": "Adicionar outro item",
+  "valor.emBranco":
+    "Deixe em branco se o valor não faz parte do que você quer registrar. O atendimento fica igual, e o custo do {nome} simplesmente não conta este evento.",
+
+  // ------------------------------------------------- Tela 41 · o combinado com o tutor
+  //
+  // "O Petfy não cobra, não emite boleto e não processa pagamento. Ele guarda o que foi
+  // combinado" — e nenhuma frase daqui pode sugerir o contrário. Gravar a mensalidade não
+  // lança mensalidade nenhuma; o único valor que entra sozinho é a diária, e ela nasce da
+  // entrada do animal, e não deste formulário.
+  "combinado.oQue": "o combinado",
+  "combinado.semMatricula":
+    "Não encontramos esta matrícula nesta turma. Ela pode ter sido encerrada — volte ao dia da creche para ver as que estão valendo.",
+  "combinado.voltar": "Voltar ao dia da creche",
+  "combinado.titulo": "Matrícula do {nome} · turma {turma}",
+  "combinado.assinatura": "{quem}, pela {onde}",
+  "combinado.caixa": "Combinado com o tutor",
+  "combinado.opcional": " · opcional",
+  "combinado.mensalidade": "Mensalidade",
+  "combinado.vencimento": "Vence todo dia",
+  "combinado.diaria": "Diária avulsa",
+  "combinado.diaria.nota": "Usada quando o {nome} vem fora dos dias combinados.",
+  "combinado.dias": "Dias combinados",
+  // As iniciais, como se lê um calendário. Segunda a domingo, na ordem da semana.
+  "combinado.dia.MONDAY": "Seg",
+  "combinado.dia.TUESDAY": "Ter",
+  "combinado.dia.WEDNESDAY": "Qua",
+  "combinado.dia.THURSDAY": "Qui",
+  "combinado.dia.FRIDAY": "Sex",
+  "combinado.dia.SATURDAY": "Sáb",
+  "combinado.dia.SUNDAY": "Dom",
+  // Não é um erro: não declarar dia é comum. O aviso existe só quando há diária combinada
+  // sem dia nenhum — o único caso em que o combinado não faz o que parece fazer.
+  "combinado.semDias":
+    "Sem dias combinados, a diária nunca entra sozinha: não há como saber que o {nome} veio fora do combinado. Marque os dias em que ele é esperado.",
+  "combinado.naoCobra":
+    "O Petfy não cobra, não emite boleto e não processa pagamento. Ele guarda o que foi combinado, para que o tutor veja o custo real do {nome} e ninguém precise perguntar por telefone.",
+  "combinado.gravar": "Gravar o combinado",
+  "combinado.gravando": "Gravando…",
+  "combinado.gravado": "Combinado gravado.",
+
+  "combinado.oQueOTutorVe": "O que o tutor passa a ver, sem perguntar",
+  "combinado.linha.mensalidade": "{onde} · mensalidade",
+  // Duas mensagens e nao um `select` sobre string vazia: chave vazia nao é ICU válido, e o
+  // erro só apareceria em tela, no dia em que alguém combinasse mensalidade sem vencimento.
+  "combinado.linha.mensalidade.detalhe":
+    "{dias, plural, =0 {Nenhum dia combinado} one {# dia por semana} other {# dias por semana}}",
+  "combinado.linha.mensalidade.vence": ", vence dia {vence}",
+  "combinado.porMes": "{valor}/mês",
+  "combinado.linha.diaria": "Diária avulsa",
+  "combinado.linha.diaria.detalhe": "Registrada pela creche no dia, sem ninguém digitar",
+  "combinado.sozinha":
+    "A diária avulsa entra sozinha: quando a creche marca a entrada do {nome} num dia fora da combinação, o evento de entrada carrega o valor. Ninguém digita nada.",
+  "combinado.contestavel":
+    "Cada valor tem um evento por trás, com autor e data — e por isso pode ser contestado como qualquer outro registro.",
+  // A creche não lê custo: ler exige custódia, e nenhum escopo de acesso substitui.
+  "combinado.naoLemos":
+    "Esta é a sua parte do combinado, e não a conta do {nome}. O que outras organizações cobram, e o que o tutor lança por fora, só quem responde pelo animal lê.",
+
+  // O mesmo combinado, lido por quem responde pelo animal. Vem nulo para quem só alcança o
+  // animal por concessão, e aí a caixa nem existe.
+  "matricula.combinado": "O que foi combinado",
+  "matricula.combinado.mensalidade": "Mensalidade",
+  "matricula.combinado.detalhe":
+    "{dias, plural, =0 {Sem dias combinados} one {# dia por semana} other {# dias por semana}}",
+  "matricula.combinado.vence": ", vence dia {vence}",
+  "matricula.combinado.porMes": "{valor}/mês",
+  "matricula.combinado.diaria": "Diária avulsa",
+  "matricula.combinado.diaria.detalhe":
+    "Entra sozinha quando a creche marca a entrada num dia fora do combinado",
+  "matricula.combinado.naoCobra":
+    "O Petfy não cobra e não processa pagamento — ele guarda o que foi combinado, para você não precisar perguntar por telefone.",
+
+  // ------------------------------------------------ Tela 42 · o que você compra por fora
+  //
+  // "Este é o único formulário de dinheiro em todo o Petfy, e ele cabe em três toques.
+  // Quanto mais campos, menos gente lança, e menos verdadeiro fica o custo." Nenhuma frase
+  // aqui cobra o lançamento: a última diz o contrário, e é dela que a tela depende.
+  "compra.titulo": "Lançar uma compra",
+  "compra.oQue": "O que foi",
+  "compra.oQue.racao": "Ração",
+  "compra.oQue.remedio": "Remédio",
+  "compra.oQue.outro": "Outro",
+  "compra.valor": "Valor",
+  "compra.duraUmMes": "Dura cerca de um mês",
+  "compra.lancar": "Lançar",
+  "compra.lancando": "Lançando…",
+  "compra.lancado": "{valor} entrou no custo do {nome}.",
+  "compra.oQueE": "a compra",
+  "compra.tresToques":
+    "Três toques. Se você não lançar, o custo do {nome} fica incompleto — e tudo bem, ele continua servindo.",
+  "compra.voltar": "Voltar para o {nome}",
+
+  "compra.unico.titulo": "O único lançamento manual do produto",
+  "compra.unico.p1":
+    "Tudo que acontece numa organização entra sozinho, porque alguém já estava registrando o evento. Ração e coisas de mercado não têm organização por trás — só existem se você lançar.",
+  "compra.unico.p2":
+    "Por isso este é o único formulário de dinheiro em todo o Petfy, e ele cabe em três toques. Quanto mais campos, menos gente lança, e menos verdadeiro fica o custo.",
+
+  "compra.mensal.titulo": "“Dura cerca de um mês”",
+  "compra.mensal.texto":
+    "Essa caixinha é o que transforma uma compra avulsa em custo mensal previsível — e é também o que permite a um abrigo dizer ao adotante que a ração dele custa R$ 190 por mês, todo mês. Sem ela, o produto só saberia somar o passado.",
+
+  "compra.naoExiste.titulo": "O que não existe aqui",
+  "compra.naoExiste.banco":
+    "Nenhuma integração com banco ou cartão. O Petfy não olha sua conta.",
+  "compra.naoExiste.orcamento":
+    "Nenhum orçamento mensal, nenhuma meta, nenhum aviso de que você passou do limite.",
+  "compra.naoExiste.loja":
+    "Nenhuma loja, nenhum link de compra, nenhuma sugestão de ração mais barata.",
+  "compra.naoExiste.fecho":
+    "O custo existe para responder “o que vem pela frente” e “quanto este animal realmente custa”. Tudo além disso seria outro produto morando dentro deste.",
 
   // ------------------------------- o mesmo animal, cadastrado duas vezes (Tela 32)
   //

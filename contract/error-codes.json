@@ -227,6 +227,10 @@
   "codigo" : 157,
   "mensagemDaApi" : "There is already a pending merge request for these two records"
 }, {
+  "nome" : "INVALID_WEEKDAY",
+  "codigo" : 158,
+  "mensagemDaApi" : "Weekday must be one of MONDAY..SUNDAY"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

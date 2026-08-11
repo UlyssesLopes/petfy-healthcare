@@ -51,6 +51,9 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             // um deles. Entrou aqui porque este teste o acusou assim que a tabela nasceu — a
             // quarta vez que ele pega a mesma classe de defeito.
             "animal_merge_requests",
+            // O custo (V36) aponta para o animal, e tambem para o atendimento e para a matricula
+            // de onde saiu — por isso sai antes das duas no purger.
+            "animal_costs",
             "attachments",
             "vaccines",
             "vaccine_corrections",
@@ -63,6 +66,12 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             // responderiam 500 no primeiro animal com matricula.
             "enrollments",
             "attendances",
+            // Os dias combinados (V37) sao colecao de valor DA matricula, e nao entidade propria:
+            // quem os apaga e o proprio `deleteByAnimalAnimalIdIn` das matriculas, que carrega e
+            // remove entidade por entidade — o Hibernate limpa a tabela de colecao junto. Entra
+            // nesta lista porque a consulta alcanca `animals` pela mae, e uma tabela nao
+            // declarada aqui e uma tabela sobre a qual ninguem decidiu nada.
+            "enrollment_weekdays",
             // as duas anteriores - animal_shares e pet_organization_access - se dissolveram
             // em grants no P2a. grant_scopes entra porque alcanca animals pela neta:
             // aponta para grants, que aponta para animals

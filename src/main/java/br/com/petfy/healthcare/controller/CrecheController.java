@@ -4,6 +4,7 @@ import br.com.petfy.healthcare.domain.dto.AttendanceRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AttendanceResponseDTO;
 import br.com.petfy.healthcare.domain.dto.ClassGroupRequestDTO;
 import br.com.petfy.healthcare.domain.dto.ClassGroupResponseDTO;
+import br.com.petfy.healthcare.domain.dto.EnrollmentAgreementRequestDTO;
 import br.com.petfy.healthcare.domain.dto.EnrollmentResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequirementRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequirementResponseDTO;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -88,6 +90,33 @@ public class CrecheController {
                                                         @PathVariable UUID animalId) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(crecheService.enroll(animalId, classGroupId));
+    }
+
+    /**
+     * "Combinado com o tutor" — a caixa da Tela 41.
+     *
+     * <b>PUT, e nao PATCH.</b> Combinar e um ato unico: quem renegocia diz de novo o que passou a
+     * valer, e o que ele nao repetir deixou de valer. Num PATCH, "apagar a mensalidade" e "nao
+     * falei da mensalidade" chegariam iguais ao servidor — e o valor velho que sobrasse iria para
+     * a conta do tutor sem ninguem ter dito nada.
+     *
+     * <b>200 e nao 201</b>: nao nasce recurso nenhum aqui. O combinado e um lado da matricula que
+     * ja existe, e o corpo devolve a matricula inteira porque e ela que a tela estava mostrando.
+     */
+    @PutMapping("/enrollments/{enrollmentId}/agreement")
+    @Operation(summary = "Grava o combinado da matricula: mensalidade, vencimento, diaria e os dias",
+               description = "SUBSTITUI o combinado inteiro — campo omitido passa a ser nulo, "
+                             + "porque quem renegocia diz de novo o que vale. Todos os campos sao "
+                             + "opcionais: a propria caixa do desenho se chama 'Combinado com o "
+                             + "tutor · opcional'. Nada aqui cobra nem lanca valor: o Petfy guarda "
+                             + "o que foi combinado. Os DIAS decidem, sozinhos, se o check-in de "
+                             + "um dia fora da combinacao lanca a diaria avulsa; sem dias "
+                             + "declarados a diaria nunca entra, porque o silencio da creche nao "
+                             + "pode virar cobranca ao tutor.")
+    public ResponseEntity<EnrollmentResponseDTO> setAgreement(
+            @PathVariable UUID enrollmentId,
+            @Valid @RequestBody EnrollmentAgreementRequestDTO request) {
+        return ResponseEntity.ok(crecheService.setAgreement(enrollmentId, request));
     }
 
     @GetMapping("/class-groups/{classGroupId}/enrollments")

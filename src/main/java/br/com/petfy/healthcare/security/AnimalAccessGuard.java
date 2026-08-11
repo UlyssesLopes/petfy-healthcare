@@ -163,6 +163,32 @@ public class AnimalAccessGuard {
                 .orElseGet(java.util.Set::of);
     }
 
+    /**
+     * Responde pelo animal? — a pergunta do {@link #requireCustodia}, sem lancar.
+     *
+     * <b>Existe para o dinheiro, e so para ele.</b> O combinado da creche (Tela 41) viaja no mesmo
+     * DTO da matricula, que quem tem concessao le: sem esta pergunta, o petshop com acesso a
+     * carteira do animal leria a mensalidade que o tutor paga a creche. "Nenhum escopo de acesso
+     * concede preco junto com saude."
+     *
+     * <b>Nao serve para decidir o que uma rota deixa fazer</b> — para isso e {@code
+     * requireCustodia}, que responde 404 ou 403 e nao deixa a decisao para quem chamou. Aqui a
+     * resposta e "false" e o efeito e um campo que vem nulo, que e outra coisa.
+     */
+    public boolean respondePor(UUID animalId) {
+        UUID personId = currentPersonProvider.require().getPersonId();
+
+        if (custodyRepository.findEmCursoDaPessoa(animalId, personId).isPresent()) {
+            return true;
+        }
+
+        // a custodia da ORGANIZACAO declarada conta, pela mesma razao do requireCustodia: o abrigo
+        // que resgatou o animal responde por ele, e nao ha tutor humano nenhum
+        return organizacaoAtiva()
+                .flatMap(organizationId -> custodyRepository.findEmCursoDaOrganizacao(animalId, organizationId))
+                .isPresent();
+    }
+
     /** Alcanca de qualquer forma - por responder pelo animal ou por concessao. */
     public boolean alcanca(UUID animalId) {
         UUID personId = currentPersonProvider.require().getPersonId();

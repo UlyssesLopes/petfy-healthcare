@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.entity.AnimalCost;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthCondition;
 import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
@@ -51,6 +52,10 @@ public class AnimalMerger {
      * tela faz a quem decide.
      */
     private static final List<Class<?>> MOVEM = List.of(
+            // O custo e da vida do animal: "o custo do Code" nao muda porque descobriram que havia
+            // dois cadastros dele. Se ficasse para tras, unir os cadastros faria metade do que o
+            // tutor gastou desaparecer da conta — sem aviso nenhum.
+            AnimalCost.class,
             Attachment.class,
             Vaccine.class,
             HealthRecord.class,

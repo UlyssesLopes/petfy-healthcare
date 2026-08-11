@@ -4,10 +4,13 @@ import br.com.petfy.healthcare.PostgresContainerTest;
 import br.com.petfy.healthcare.domain.dto.AttendanceResponseDTO;
 import br.com.petfy.healthcare.domain.dto.ClassGroupRequestDTO;
 import br.com.petfy.healthcare.domain.dto.ClassGroupResponseDTO;
+import br.com.petfy.healthcare.domain.dto.EnrollmentAgreementRequestDTO;
 import br.com.petfy.healthcare.domain.dto.EnrollmentResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthProofItemDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequirementRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.entity.AnimalCost;
+import br.com.petfy.healthcare.domain.entity.AnimalCostKind;
 import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.Grant;
@@ -21,6 +24,7 @@ import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Species;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.entity.VaccineCatalog;
+import br.com.petfy.healthcare.domain.repository.AnimalCostRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
@@ -45,6 +49,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -83,6 +89,7 @@ class CrecheContainerTest extends PostgresContainerTest {
     @Autowired private GrantRepository grantRepository;
     @Autowired private VaccineRepository vaccineRepository;
     @Autowired private VaccineCatalogRepository vaccineCatalogRepository;
+    @Autowired private AnimalCostRepository animalCostRepository;
 
     private Organization creche;
     private Person vera;
@@ -427,7 +434,249 @@ class CrecheContainerTest extends PostgresContainerTest {
         assertThat(minhas.get(0).getHealthProof()).hasSize(1);
     }
 
+    /* ------------------------------------------------- o combinado, e a diaria que entra sozinha */
+
+    /**
+     * <b>Substitui o combinado inteiro, e nao emenda campo a campo.</b> Quem renegocia diz de novo
+     * o que passou a valer — e uma mensalidade que sobrasse do combinado anterior iria para a conta
+     * do tutor sem ninguem ter dito nada.
+     */
+    @Test
+    @DisplayName("o combinado e gravado inteiro, e o segundo combinado apaga o que ele nao repetir")
+    void oCombinadoSubstituiInteiro() {
+        EnrollmentResponseDTO matricula = matricularNaTurmaTarde();
+
+        EnrollmentResponseDTO combinada = crecheService.setAgreement(matricula.getEnrollmentId(),
+                EnrollmentAgreementRequestDTO.builder()
+                        .monthlyFee(new BigDecimal("530.00"))
+                        .dueDay(5)
+                        .dailyRate(new BigDecimal("88.00"))
+                        .weekdays(List.of("WEDNESDAY", "MONDAY", "FRIDAY"))
+                        .build());
+
+        assertThat(combinada.getMonthlyFee()).isEqualByComparingTo("530.00");
+        assertThat(combinada.getDueDay()).isEqualTo(5);
+        assertThat(combinada.getDailyRate()).isEqualByComparingTo("88.00");
+        assertThat(combinada.getWeekdays())
+                .as("na ordem da semana, e nao na ordem em que a creche clicou: "
+                        + "'segunda, quarta e sexta' e 'quarta, segunda e sexta' sao o mesmo combinado")
+                .containsExactly("MONDAY", "WEDNESDAY", "FRIDAY");
+
+        EnrollmentResponseDTO recombinada = crecheService.setAgreement(matricula.getEnrollmentId(),
+                EnrollmentAgreementRequestDTO.builder().monthlyFee(new BigDecimal("600.00")).build());
+
+        assertThat(recombinada.getMonthlyFee()).isEqualByComparingTo("600.00");
+        assertThat(recombinada.getDueDay()).isNull();
+        assertThat(recombinada.getDailyRate())
+                .as("a diaria que sobrasse de um combinado antigo cobraria o tutor sozinha")
+                .isNull();
+        assertThat(recombinada.getWeekdays()).isEmpty();
+    }
+
+    /**
+     * <b>O encadeamento central do bloco 3</b>, e a frase do desenho e literal: "a diaria avulsa
+     * entrou sozinha: a creche marcou a entrada do Code num dia fora da combinacao, e o evento de
+     * entrada carregou o valor. Ninguem digitou nada."
+     */
+    @Test
+    @DisplayName("check-in em dia fora do combinado lanca a diaria sozinho, com autor e organizacao")
+    void aDiariaEntraSozinha() {
+        EnrollmentResponseDTO matricula = matricularNaTurmaTarde();
+        combinarExcluindoHoje(matricula.getEnrollmentId(), new BigDecimal("88.00"));
+
+        crecheService.checkIn(matricula.getEnrollmentId(), null);
+
+        List<AnimalCost> custos = animalCostRepository
+                .findByAnimalAnimalIdOrderByOccurredAtDesc(code.getAnimalId());
+
+        assertThat(custos).hasSize(1);
+
+        AnimalCost diaria = custos.get(0);
+        assertThat(diaria.getKind()).isEqualTo(AnimalCostKind.CRECHE_DIARIA);
+        assertThat(diaria.getAmount()).isEqualByComparingTo("88.00");
+        assertThat(diaria.getSourceEnrollmentId()).isEqualTo(matricula.getEnrollmentId());
+        assertThat(diaria.getPaid())
+                .as("'ninguem disse' — afirmar que nao foi pago seria inventar uma divida")
+                .isNull();
+        assertThat(diaria.getRecordedBy().getPersonId())
+                .as("cada valor tem um evento por tras, com autor — e por isso pode ser contestado")
+                .isEqualTo(vera.getPersonId());
+        assertThat(diaria.getOrganization().getOrganizationId()).isEqualTo(creche.getOrganizationId());
+    }
+
+    @Test
+    @DisplayName("no dia combinado a entrada nao lanca nada: a mensalidade ja cobre o dia")
+    void diaCombinadoNaoCobra() {
+        EnrollmentResponseDTO matricula = matricularNaTurmaTarde();
+
+        crecheService.setAgreement(matricula.getEnrollmentId(),
+                EnrollmentAgreementRequestDTO.builder()
+                        .monthlyFee(new BigDecimal("530.00"))
+                        .dailyRate(new BigDecimal("88.00"))
+                        .weekdays(List.of(LocalDate.now().getDayOfWeek().name()))
+                        .build());
+
+        crecheService.checkIn(matricula.getEnrollmentId(), null);
+
+        assertThat(animalCostRepository.findByAnimalAnimalIdOrderByOccurredAtDesc(code.getAnimalId()))
+                .isEmpty();
+    }
+
+    /**
+     * <b>O silencio da creche nao vira cobranca.</b> Sem dias declarados nao existe "fora do
+     * combinado" — e ler o vazio como "todo dia e avulso" faria cada entrada virar diaria na conta
+     * de um tutor que nunca combinou nada disso.
+     */
+    @Test
+    @DisplayName("sem dias declarados a diaria nunca entra, mesmo com valor combinado")
+    void semDiasNaoCobra() {
+        EnrollmentResponseDTO matricula = matricularNaTurmaTarde();
+
+        crecheService.setAgreement(matricula.getEnrollmentId(),
+                EnrollmentAgreementRequestDTO.builder().dailyRate(new BigDecimal("88.00")).build());
+
+        crecheService.checkIn(matricula.getEnrollmentId(), null);
+
+        assertThat(animalCostRepository.findByAnimalAnimalIdOrderByOccurredAtDesc(code.getAnimalId()))
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("dia avulso sem diaria combinada nao inventa valor nenhum")
+    void semValorNaoCobra() {
+        EnrollmentResponseDTO matricula = matricularNaTurmaTarde();
+        combinarExcluindoHoje(matricula.getEnrollmentId(), null);
+
+        crecheService.checkIn(matricula.getEnrollmentId(), null);
+
+        assertThat(animalCostRepository.findByAnimalAnimalIdOrderByOccurredAtDesc(code.getAnimalId()))
+                .isEmpty();
+    }
+
+    /**
+     * A creche que marca a entrada, desfaz por engano e marca de novo nao pode cobrar duas diarias —
+     * e o tutor descobriria isso no fim do mes, quando ninguem mais lembra do que aconteceu naquela
+     * terca.
+     */
+    @Test
+    @DisplayName("o segundo clique em marcar entrada nao cobra a diaria duas vezes")
+    void aDiariaNaoDobra() {
+        EnrollmentResponseDTO matricula = matricularNaTurmaTarde();
+        combinarExcluindoHoje(matricula.getEnrollmentId(), new BigDecimal("88.00"));
+
+        crecheService.checkIn(matricula.getEnrollmentId(), null);
+        crecheService.checkIn(matricula.getEnrollmentId(), null);
+        crecheService.checkOut(matricula.getEnrollmentId());
+        crecheService.checkIn(matricula.getEnrollmentId(), null);
+
+        assertThat(animalCostRepository.findByAnimalAnimalIdOrderByOccurredAtDesc(code.getAnimalId()))
+                .hasSize(1);
+    }
+
+    /**
+     * <b>"Nenhum escopo de acesso concede preco junto com saude."</b> A regra que mantem o custo
+     * fora da linha do tempo vale tambem no unico outro lugar do produto em que ha dinheiro: o
+     * combinado viaja no DTO da matricula, que quem tem concessao le.
+     */
+    @Test
+    @DisplayName("quem so alcanca o animal ve a matricula, e nao ve o combinado")
+    void oCombinadoNaoVazaPorConcessao() {
+        EnrollmentResponseDTO matricula = matricularNaTurmaTarde();
+
+        crecheService.setAgreement(matricula.getEnrollmentId(),
+                EnrollmentAgreementRequestDTO.builder()
+                        .monthlyFee(new BigDecimal("530.00"))
+                        .dueDay(5)
+                        .dailyRate(new BigDecimal("88.00"))
+                        .weekdays(List.of("MONDAY"))
+                        .build());
+
+        Person petshop = personRepository.saveAndFlush(Person.builder()
+                .name("Rita do Petshop")
+                .email("rita-" + UUID.randomUUID() + "@petfy.com.br")
+                .password("hash")
+                .build());
+
+        grantRepository.saveAndFlush(Grant.builder()
+                .animal(code).granteePerson(petshop).level(GrantLevel.VIEWER)
+                .grantedBy(tutor).grantedAt(LocalDateTime.now())
+                .scopes(Set.of(GrantScope.CARTEIRA)).build());
+
+        agirComo(petshop);
+
+        EnrollmentResponseDTO comConcessao =
+                crecheService.listEnrollmentsOfAnimal(code.getAnimalId()).get(0);
+
+        assertThat(comConcessao.getClassGroupName())
+                .as("a matricula ela ve: precisa saber que o Code tem creche")
+                .isNotNull();
+        assertThat(comConcessao.getMonthlyFee()).isNull();
+        assertThat(comConcessao.getDueDay()).isNull();
+        assertThat(comConcessao.getDailyRate()).isNull();
+        assertThat(comConcessao.getWeekdays()).isNull();
+
+        agirComoTutor();
+
+        EnrollmentResponseDTO doTutor =
+                crecheService.listEnrollmentsOfAnimal(code.getAnimalId()).get(0);
+
+        assertThat(doTutor.getMonthlyFee())
+                .as("quem responde pelo animal le o que ele custa")
+                .isEqualByComparingTo("530.00");
+        assertThat(doTutor.getWeekdays()).containsExactly("MONDAY");
+    }
+
+    /**
+     * Ignorar o dia invalido faria a creche combinar tres dias e o servidor guardar dois — e o dia
+     * que sumiu viraria diaria avulsa na conta do tutor, todo mes, sem que ninguem soubesse de onde
+     * veio.
+     */
+    @Test
+    @DisplayName("dia da semana escrito em outra lingua e recusado, e nao ignorado")
+    void diaInvalidoERecusado() {
+        EnrollmentResponseDTO matricula = matricularNaTurmaTarde();
+
+        assertThatThrownBy(() -> crecheService.setAgreement(matricula.getEnrollmentId(),
+                EnrollmentAgreementRequestDTO.builder()
+                        .weekdays(List.of("MONDAY", "SEGUNDA")).build()))
+                .isInstanceOf(PetfyHealthcareException.class);
+    }
+
     /* -------------------------------------------------------------------------- bastidores */
+
+    private EnrollmentResponseDTO matricularNaTurmaTarde() {
+        ClassGroupResponseDTO turma = crecheService.createClassGroup(
+                ClassGroupRequestDTO.builder().name("Turma Tarde").capacity(15).build());
+
+        return crecheService.enroll(code.getAnimalId(), turma.getClassGroupId());
+    }
+
+    /**
+     * Combina todos os dias da semana MENOS o de hoje.
+     *
+     * O teste nao pode escolher o dia da entrada — o check-in e sempre de hoje —, entao quem se
+     * move e o combinado. Assim o caso vale numa segunda e num domingo, sem depender de quando a
+     * suite roda.
+     */
+    private void combinarExcluindoHoje(UUID enrollmentId, BigDecimal diaria) {
+        List<String> menosHoje = java.util.Arrays.stream(DayOfWeek.values())
+                .filter(dia -> dia != LocalDate.now().getDayOfWeek())
+                .map(DayOfWeek::name)
+                .toList();
+
+        crecheService.setAgreement(enrollmentId, EnrollmentAgreementRequestDTO.builder()
+                .monthlyFee(new BigDecimal("530.00"))
+                .dueDay(5)
+                .dailyRate(diaria)
+                .weekdays(menosHoje)
+                .build());
+    }
+
+    private void agirComo(Person pessoa) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(pessoa.getEmail(), "n/a", List.of()));
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(new MockHttpServletRequest()));
+    }
 
     private void agirComoVera() {
         SecurityContextHolder.getContext().setAuthentication(

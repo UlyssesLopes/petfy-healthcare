@@ -1,6 +1,8 @@
 package br.com.petfy.healthcare.domain.entity;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -16,7 +18,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -72,7 +78,60 @@ public class Enrollment {
     @JoinColumn(name = "created_by_person_id")
     private Person createdBy;
 
+    /* ------------------------------------------------- o combinado com o tutor (Tela 41) */
+
+    /**
+     * A mensalidade.
+     *
+     * <b>Mora na matricula, e nao numa tabela propria</b>, porque e propriedade do combinado
+     * daquele animal naquela turma: mudar de turma e recombinar, e a mensalidade antiga fica com a
+     * matricula antiga, onde ela conta a verdade sobre o periodo em que valeu.
+     *
+     * "O Petfy nao cobra, nao emite boleto e nao processa pagamento. Ele guarda o que foi
+     * combinado, para que o tutor veja o custo real do Code e ninguem precise perguntar por
+     * telefone."
+     */
+    @Column(name = "monthly_fee", precision = 12, scale = 2)
+    private BigDecimal monthlyFee;
+
+    /** "Vence todo dia 05". Nulo quando nao se combinou dia — e comum, e nao pendencia. */
+    @Column(name = "due_day")
+    private Integer dueDay;
+
+    /** A diaria de quem vem fora dos dias combinados. E ela que entra sozinha no check-in. */
+    @Column(name = "daily_rate", precision = 12, scale = 2)
+    private BigDecimal dailyRate;
+
+    /**
+     * Os dias em que o animal e esperado — "3 dias por semana", que o tutor le sem perguntar.
+     *
+     * <b>Existe para a diaria avulsa poder entrar sozinha.</b> Sem os dias, "fora do combinado" nao
+     * e pergunta que o servidor saiba responder, e a diaria so entraria se alguem digitasse — que e
+     * exatamente o que o desenho recusa: "ninguem digitou nada".
+     *
+     * <b>Vazio e "nao sei", e nunca "nenhum dia".</b> Ver {@link #foraDoCombinado}.
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "enrollment_weekdays",
+                     joinColumns = @JoinColumn(name = "enrollment_id"))
+    @Column(name = "weekday", nullable = false, length = 12)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Set<DayOfWeek> weekdays = new LinkedHashSet<>();
+
     public boolean estaViva() {
         return endedAt == null;
+    }
+
+    /**
+     * O dia esta fora do que se combinou?
+     *
+     * <b>Conjunto vazio responde `false`, e essa e a linha que impede o produto de cobrar do tutor
+     * por um dado que ninguem informou.</b> A creche que nunca abriu a caixa do combinado nao
+     * declarou dia nenhum — e ler isso como "todo dia e avulso" faria cada entrada virar diaria.
+     * O silencio nao vira cobranca.
+     */
+    public boolean foraDoCombinado(DayOfWeek dia) {
+        return weekdays != null && !weekdays.isEmpty() && !weekdays.contains(dia);
     }
 }
