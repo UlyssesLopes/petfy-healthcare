@@ -63,6 +63,9 @@ export function useLancarCusto() {
       mensal?: boolean;
       atendimentoId?: string;
       matriculaId?: string;
+      /* A dose de onde o valor saiu. É esta ligação que faz o reforço do ano que vem ter preço
+         na Tela 38 — o preço vem da dose do MESMO item de catálogo deste animal. */
+      doseId?: string;
     }) => {
       const { data, error } = await cliente.POST("/animals/{animalId}/costs", {
         params: { path: { animalId: lancamento.animalId } },
@@ -81,6 +84,7 @@ export function useLancarCusto() {
           ...(lancamento.matriculaId === undefined
             ? {}
             : { sourceEnrollmentId: lancamento.matriculaId }),
+          ...(lancamento.doseId === undefined ? {} : { sourceVaccineId: lancamento.doseId }),
         },
       });
 
@@ -97,6 +101,9 @@ export function useLancarCusto() {
            alimentação, e uma tela que atualizasse só a lista mostraria o gráfico velho ao lado
            do valor novo. */
         consultas.invalidateQueries({ queryKey: ["resumo-de-custo", lancamento.animalId] }),
+        /* E a previsão também: o valor de hoje é o que vai precificar o reforço do ano que vem,
+           então a Tela 38 deixa de estar sem preço no instante em que alguém informa um. */
+        consultas.invalidateQueries({ queryKey: ["previsao-de-custo", lancamento.animalId] }),
       ]);
     },
   });
@@ -123,6 +130,30 @@ export function useResumoDeCusto(animalId: string | undefined, janela: "DOZE_MES
       corpoDe(
         await cliente.GET("/animals/{animalId}/costs/summary", {
           params: { path: { animalId: animalId! }, query: { window: janela } },
+        }),
+      ),
+  });
+}
+
+/**
+ * "Os próximos 12 meses" (Tela 38).
+ *
+ * <b>Não é previsão de gasto: é o que já está marcado no registro do animal.</b> Dose de vacina com
+ * data de reforço, antiparasitário no intervalo, mensalidade combinada e compra marcada como
+ * mensal — cada linha sai de um fato escrito.
+ *
+ * <b>Nenhuma linha aqui é prognóstico clínico.</b> A leitura pode dizer que adiar a vacina custa
+ * dias de creche perdidos, porque isso é aritmética sobre fatos registrados; não pode dizer que
+ * tratar agora sai mais barato que operar depois. O servidor não tem como dizer isso, e é decisão.
+ */
+export function usePrevisaoDeCusto(animalId: string | undefined) {
+  return useQuery({
+    queryKey: ["previsao-de-custo", animalId],
+    enabled: animalId !== undefined,
+    queryFn: async () =>
+      corpoDe(
+        await cliente.GET("/animals/{animalId}/costs/forecast", {
+          params: { path: { animalId: animalId! } },
         }),
       ),
   });

@@ -64,4 +64,15 @@ public class AnimalCostRequestDTO {
     /** De qual matricula (Tela 41). */
     private UUID sourceEnrollmentId;
 
+    /**
+     * De qual dose de vacina.
+     *
+     * <b>E o que da preco a previsao da Tela 38</b>: o reforco do ano que vem sai da dose do mesmo
+     * item de catalogo deste animal. Quem informa e a clinica, no momento em que registra a dose.
+     */
+    private UUID sourceVaccineId;
+
+    /** De qual antiparasitario, pela mesma razao. */
+    private UUID sourceAntiparasiticId;
+
 }

@@ -1321,6 +1321,11 @@ export const mensagens = {
   "custo.quemPagou.soMostra":
     "Dois co-tutores dividem o cuidado e quase sempre perdem a conta de quem pagou o quê. O Petfy só mostra o que alguém informou — não cobra ninguém, não faz acerto, e não vai pedir que você preencha o resto depois.",
 
+  // O valor da dose, dentro do registro que já estava sendo feito. Opcional como em toda
+  // tela que o oferece: "um evento sem valor é normal — nunca um erro, nunca um alerta".
+  "dose.valor": "Valor · opcional",
+  "dose.valor.apoio": "Informe e o Petfy saberá quanto o próximo reforço deve custar.",
+
   "custo.semJulgamento.titulo": "Sem comparação, sem julgamento",
   "custo.semJulgamento.texto":
     "Nenhuma tela aqui diz que você gasta mais ou menos que outros tutores, nem sugere trocar de clínica por preço. Quem cuida de um animal doente já tem o suficiente na cabeça.",

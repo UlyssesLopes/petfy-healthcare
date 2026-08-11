@@ -106,6 +106,21 @@ public class AnimalCost extends AnimalEvent {
     @Column(name = "source_enrollment_id")
     private UUID sourceEnrollmentId;
 
+    /**
+     * De qual dose de vacina, quando saiu de uma.
+     *
+     * <b>E o que faz a previsao da Tela 38 ter preco.</b> O reforco do ano que vem e precificado
+     * pela dose do MESMO item de catalogo daquele animal — "aritmetica sobre fatos registrados". Sem
+     * esta ligacao a unica alternativa seria o ultimo custo de categoria SAUDE, que cobraria a
+     * antirrabica com o preco de uma consulta dermatologica.
+     */
+    @Column(name = "source_vaccine_id")
+    private UUID sourceVaccineId;
+
+    /** De qual antiparasitario. Existe pela mesma razao, e a Tela 38 poe os dois lado a lado. */
+    @Column(name = "source_antiparasitic_id")
+    private UUID sourceAntiparasiticId;
+
     @Column(name = "creation_date", nullable = false)
     private LocalDateTime creationDate;
 

@@ -39,7 +39,7 @@ export function useRegistrarDose() {
       applicationDate: string;
       nextDoseDate: string | undefined;
     }) => {
-      const { error } = await cliente.POST("/vaccines", {
+      const { data, error } = await cliente.POST("/vaccines", {
         body: {
           animalId: dose.animalId,
           vaccineName: dose.vaccineName,
@@ -52,6 +52,11 @@ export function useRegistrarDose() {
       if (error !== undefined) {
         throw error;
       }
+
+      /* A dose gravada VOLTA agora, com o id — antes ela era descartada. Quem chama precisa dele
+         para ligar o valor a esta dose (`sourceVaccineId`), e e essa ligacao que faz o reforco do
+         ano que vem ter preco na Tela 38. */
+      return data;
     },
     /*
      * A dose duplicada tambem invalida as duas leituras, e nao e detalhe: o 149 significa que a

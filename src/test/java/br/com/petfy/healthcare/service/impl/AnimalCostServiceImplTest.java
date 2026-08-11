@@ -9,6 +9,9 @@ import br.com.petfy.healthcare.domain.entity.CostRecurrence;
 import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.AnimalCostRepository;
+import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
+import br.com.petfy.healthcare.domain.repository.EnrollmentRepository;
+import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
@@ -47,6 +50,9 @@ class AnimalCostServiceImplTest {
     @Mock private AnimalAccessGuard animalAccessGuard;
     @Mock private CurrentPersonProvider currentPersonProvider;
     @Mock private CurrentProfessionalProvider currentProfessionalProvider;
+    @Mock private VaccineRepository vaccineRepository;
+    @Mock private AntiparasiticRepository antiparasiticRepository;
+    @Mock private EnrollmentRepository enrollmentRepository;
 
     private AnimalCostServiceImpl service;
 
@@ -58,8 +64,17 @@ class AnimalCostServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        /*
+         * A PREVISAO ENTRA COM O BUILDER DE VERDADE, e nao com um mock dele.
+         *
+         * Ele nao toca em repositorio nenhum — recebe listas e devolve a conta —, entao mocka-lo
+         * so esconderia a aritmetica que mais precisa ser vista. Os repositorios das quatro fontes
+         * seguem mocks, porque leitura e o que este teste isola.
+         */
         service = new AnimalCostServiceImpl(animalCostRepository, animalAccessGuard,
-                currentPersonProvider, currentProfessionalProvider);
+                currentPersonProvider, currentProfessionalProvider,
+                vaccineRepository, antiparasiticRepository, enrollmentRepository,
+                new CostForecastBuilder());
 
         lenient().when(currentPersonProvider.require()).thenReturn(marcelo);
         lenient().when(currentProfessionalProvider.organizacaoDeclarada(any())).thenReturn(Optional.empty());

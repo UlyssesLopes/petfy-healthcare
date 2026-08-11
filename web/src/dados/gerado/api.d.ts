@@ -260,6 +260,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/costs/forecast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O que vem pela frente nos proximos 12 meses (Tela 38)
+         * @description NAO E PREVISAO DE GASTO: e o que ja esta marcado no registro do animal — dose de vacina com data de reforco, antiparasitario no intervalo, mensalidade combinada e compra marcada como mensal. O valor de uma dose futura sai da ULTIMA DOSE DO MESMO ITEM DE CATALOGO deste animal; sem valor anterior a linha vem sem preco, e isso nao e erro — `itemsWithoutAmount` diz quantas ficaram de fora do total. NUNCA HA PROGNOSTICO CLINICO: a leitura pode dizer que adiar a vacina custa dias de creche perdidos, porque isso e aritmetica sobre fatos registrados; nao pode dizer que tratar agora sai mais barato que operar depois. EXIGE CUSTODIA.
+         */
+        get: operations["forecast"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}/costs/summary": {
         parameters: {
             query?: never;
@@ -1886,16 +1906,20 @@ export interface components {
             category?: "SAUDE" | "ALIMENTACAO" | "CRECHE" | "HIGIENE" | "OUTRO";
             description: string;
             /** @enum {string} */
-            kind?: "ATENDIMENTO" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";
+            kind?: "ATENDIMENTO" | "VACINA" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";
             /** Format: date-time */
             occurredAt?: string;
             paid?: boolean;
             /** @enum {string} */
             recurrence?: "MENSAL";
             /** Format: uuid */
+            sourceAntiparasiticId?: string;
+            /** Format: uuid */
             sourceEnrollmentId?: string;
             /** Format: uuid */
             sourceHealthRecordId?: string;
+            /** Format: uuid */
+            sourceVaccineId?: string;
         };
         AnimalCostResponseDTO: {
             amount?: number;
@@ -1905,7 +1929,7 @@ export interface components {
             category?: "SAUDE" | "ALIMENTACAO" | "CRECHE" | "HIGIENE" | "OUTRO";
             description?: string;
             /** @enum {string} */
-            kind?: "ATENDIMENTO" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";
+            kind?: "ATENDIMENTO" | "VACINA" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";
             /** Format: date-time */
             occurredAt?: string;
             organizationName?: string;
@@ -2354,6 +2378,25 @@ export interface components {
             corrigidoEm?: string;
             corrigidoPor?: string;
             valorAnterior?: string;
+        };
+        CostForecastItemDTO: {
+            amount?: number;
+            amountFrom?: string;
+            /** @enum {string} */
+            category?: "SAUDE" | "ALIMENTACAO" | "CRECHE" | "HIGIENE" | "OUTRO";
+            description?: string;
+            /** Format: date */
+            dueOn?: string;
+            kind?: string;
+            overdue?: boolean;
+            /** Format: int32 */
+            timesInTwelveMonths?: number;
+        };
+        CostForecastResponseDTO: {
+            items?: components["schemas"]["CostForecastItemDTO"][];
+            /** Format: int32 */
+            itemsWithoutAmount?: number;
+            total?: number;
         };
         Divergencia: {
             absorbedValue?: string;
@@ -3629,6 +3672,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AnimalCostResponseDTO"];
+                };
+            };
+        };
+    };
+    forecast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CostForecastResponseDTO"];
                 };
             };
         };

@@ -3,6 +3,7 @@ package br.com.petfy.healthcare.controller;
 import br.com.petfy.healthcare.domain.dto.AnimalCostRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalCostResponseDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalCostSummaryResponseDTO;
+import br.com.petfy.healthcare.domain.dto.CostForecastResponseDTO;
 import br.com.petfy.healthcare.service.AnimalCostService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -57,6 +58,22 @@ public class AnimalCostController {
             @PathVariable UUID animalId,
             @RequestParam(required = false) String window) {
         return ResponseEntity.ok(animalCostService.resumo(animalId, window));
+    }
+
+    @Operation(summary = "O que vem pela frente nos proximos 12 meses (Tela 38)",
+               description = "NAO E PREVISAO DE GASTO: e o que ja esta marcado no registro do "
+                             + "animal — dose de vacina com data de reforco, antiparasitario no "
+                             + "intervalo, mensalidade combinada e compra marcada como mensal. O "
+                             + "valor de uma dose futura sai da ULTIMA DOSE DO MESMO ITEM DE "
+                             + "CATALOGO deste animal; sem valor anterior a linha vem sem preco, e "
+                             + "isso nao e erro — `itemsWithoutAmount` diz quantas ficaram de fora "
+                             + "do total. NUNCA HA PROGNOSTICO CLINICO: a leitura pode dizer que "
+                             + "adiar a vacina custa dias de creche perdidos, porque isso e "
+                             + "aritmetica sobre fatos registrados; nao pode dizer que tratar agora "
+                             + "sai mais barato que operar depois. EXIGE CUSTODIA.")
+    @GetMapping("/forecast")
+    public ResponseEntity<CostForecastResponseDTO> forecast(@PathVariable UUID animalId) {
+        return ResponseEntity.ok(animalCostService.previsao(animalId));
     }
 
     @Operation(summary = "Lanca um valor gasto com o animal",

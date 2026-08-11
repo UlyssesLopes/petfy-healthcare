@@ -167,7 +167,7 @@
             "type" : "string"
           },
           "kind" : {
-            "enum" : [ "ATENDIMENTO", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
+            "enum" : [ "ATENDIMENTO", "VACINA", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
             "type" : "string"
           },
           "occurredAt" : {
@@ -181,11 +181,19 @@
             "enum" : [ "MENSAL" ],
             "type" : "string"
           },
+          "sourceAntiparasiticId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "sourceEnrollmentId" : {
             "format" : "uuid",
             "type" : "string"
           },
           "sourceHealthRecordId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sourceVaccineId" : {
             "format" : "uuid",
             "type" : "string"
           }
@@ -210,7 +218,7 @@
             "type" : "string"
           },
           "kind" : {
-            "enum" : [ "ATENDIMENTO", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
+            "enum" : [ "ATENDIMENTO", "VACINA", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
             "type" : "string"
           },
           "occurredAt" : {
@@ -1358,6 +1366,56 @@
           },
           "valorAnterior" : {
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CostForecastItemDTO" : {
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "amountFrom" : {
+            "type" : "string"
+          },
+          "category" : {
+            "enum" : [ "SAUDE", "ALIMENTACAO", "CRECHE", "HIGIENE", "OUTRO" ],
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "dueOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "overdue" : {
+            "type" : "boolean"
+          },
+          "timesInTwelveMonths" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "CostForecastResponseDTO" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CostForecastItemDTO"
+            },
+            "type" : "array"
+          },
+          "itemsWithoutAmount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "type" : "number"
           }
         },
         "type" : "object"
@@ -4135,6 +4193,35 @@
           }
         },
         "summary" : "Lanca um valor gasto com o animal",
+        "tags" : [ "animal-cost-controller" ]
+      }
+    },
+    "/animals/{animalId}/costs/forecast" : {
+      "get" : {
+        "description" : "NAO E PREVISAO DE GASTO: e o que ja esta marcado no registro do animal — dose de vacina com data de reforco, antiparasitario no intervalo, mensalidade combinada e compra marcada como mensal. O valor de uma dose futura sai da ULTIMA DOSE DO MESMO ITEM DE CATALOGO deste animal; sem valor anterior a linha vem sem preco, e isso nao e erro — `itemsWithoutAmount` diz quantas ficaram de fora do total. NUNCA HA PROGNOSTICO CLINICO: a leitura pode dizer que adiar a vacina custa dias de creche perdidos, porque isso e aritmetica sobre fatos registrados; nao pode dizer que tratar agora sai mais barato que operar depois. EXIGE CUSTODIA.",
+        "operationId" : "forecast",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CostForecastResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que vem pela frente nos proximos 12 meses (Tela 38)",
         "tags" : [ "animal-cost-controller" ]
       }
     },

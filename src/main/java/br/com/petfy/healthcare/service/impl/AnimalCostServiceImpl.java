@@ -10,7 +10,11 @@ import br.com.petfy.healthcare.domain.entity.AnimalCost;
 import br.com.petfy.healthcare.domain.entity.AnimalCostCategory;
 import br.com.petfy.healthcare.domain.entity.AnimalCostKind;
 import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.dto.CostForecastResponseDTO;
 import br.com.petfy.healthcare.domain.repository.AnimalCostRepository;
+import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
+import br.com.petfy.healthcare.domain.repository.EnrollmentRepository;
+import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
@@ -21,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
@@ -72,6 +77,12 @@ public class AnimalCostServiceImpl implements AnimalCostService {
     private final CurrentPersonProvider currentPersonProvider;
     private final CurrentProfessionalProvider currentProfessionalProvider;
 
+    /* as quatro fontes da previsao (Tela 38), e a peca que faz a conta com elas */
+    private final VaccineRepository vaccineRepository;
+    private final AntiparasiticRepository antiparasiticRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final CostForecastBuilder costForecastBuilder;
+
     /**
      * O que o tutor ve: tudo que se gastou com o animal.
      *
@@ -115,6 +126,8 @@ public class AnimalCostServiceImpl implements AnimalCostService {
                 .occurredAt(request.getOccurredAt() == null ? LocalDateTime.now() : request.getOccurredAt())
                 .sourceHealthRecordId(request.getSourceHealthRecordId())
                 .sourceEnrollmentId(request.getSourceEnrollmentId())
+                .sourceVaccineId(request.getSourceVaccineId())
+                .sourceAntiparasiticId(request.getSourceAntiparasiticId())
                 .recordedBy(eu)
                 .organization(currentProfessionalProvider.organizacaoDeclarada(eu).orElse(null))
                 .creationDate(LocalDateTime.now())
@@ -168,6 +181,27 @@ public class AnimalCostServiceImpl implements AnimalCostService {
                 .byCategory(fatias(recorte))
                 .byPayer(pagadores(recorte))
                 .build();
+    }
+
+    /**
+     * "Os proximos 12 meses do Code" (Tela 38).
+     *
+     * <b>Le as quatro fontes e entrega a aritmetica ao {@link CostForecastBuilder}.</b> A conta mora
+     * numa peca sem repositorio de proposito: ela e o que precisa de teste denso, porque um erro ali
+     * aparece como um numero plausivel e errado na frente do tutor — e um numero plausivel ninguem
+     * confere.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public CostForecastResponseDTO previsao(UUID animalId) {
+        animalAccessGuard.requireCustodia(animalId);
+
+        return costForecastBuilder.montar(
+                LocalDate.now(),
+                vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId),
+                antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(animalId),
+                enrollmentRepository.findVivasDoAnimal(animalId),
+                animalCostRepository.findByAnimalAnimalIdOrderByOccurredAtDesc(animalId));
     }
 
     /**
@@ -277,7 +311,7 @@ public class AnimalCostServiceImpl implements AnimalCostService {
      */
     private static AnimalCostCategory categoriaDe(AnimalCostKind tipo, AnimalCostCategory pedida) {
         return switch (tipo) {
-            case ATENDIMENTO -> AnimalCostCategory.SAUDE;
+            case ATENDIMENTO, VACINA -> AnimalCostCategory.SAUDE;
             case CRECHE_MENSALIDADE, CRECHE_DIARIA -> AnimalCostCategory.CRECHE;
             case COMPRA -> pedida == null ? AnimalCostCategory.OUTRO : pedida;
         };
