@@ -187,6 +187,10 @@
   "codigo" : 147,
   "mensagemDaApi" : "Attendance has no check-in for today"
 }, {
+  "nome" : "MISSING_FILE_PART",
+  "codigo" : 148,
+  "mensagemDaApi" : "Request is missing the file part"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

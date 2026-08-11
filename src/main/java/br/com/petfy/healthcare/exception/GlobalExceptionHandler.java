@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -66,6 +67,30 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(
                 ErrorMessageEnum.MALFORMED_REQUEST_BODY.getMessage(),
                 ErrorMessageEnum.MALFORMED_REQUEST_BODY.getCode(),
+                HttpStatus.BAD_REQUEST.value(),
+                LocalDateTime.now());
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    /**
+     * Requisicao multipart sem a parte do arquivo.
+     *
+     * O contrato declara {@code required: ["file"]} nas duas rotas que recebem arquivo, e sem
+     * este handler a falta dela caia no generico e voltava <b>500</b> — servidor assumindo a
+     * culpa de um erro de quem chamou, e entrando no alerta de erro do servidor por isso.
+     *
+     * O codigo e proprio, e nao o ATTACHMENT_EMPTY: arquivo vazio e um arquivo escolhido, e a
+     * tela responde "esse arquivo esta vazio". Aqui nao veio arquivo nenhum, e o que a tela tem
+     * a dizer e "escolha um arquivo".
+     */
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleParteAusente(MissingServletRequestPartException ex) {
+        log.warn("Requisicao multipart sem a parte esperada: {}", ex.getRequestPartName());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                ErrorMessageEnum.MISSING_FILE_PART.getMessage(),
+                ErrorMessageEnum.MISSING_FILE_PART.getCode(),
                 HttpStatus.BAD_REQUEST.value(),
                 LocalDateTime.now());
 

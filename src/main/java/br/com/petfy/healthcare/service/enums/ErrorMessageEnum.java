@@ -92,6 +92,12 @@ public enum ErrorMessageEnum {
     CLASS_GROUP_FULL(145, "Class group has no free spot"),
     ENROLLMENT_HEALTH_PROOF_MISSING(146, "Enrollment health proof is incomplete"),
     ATTENDANCE_NOT_CHECKED_IN(147, "Attendance has no check-in for today"),
+    // Requisicao multipart que chegou sem a parte do arquivo. E diferente de ATTACHMENT_EMPTY,
+    // que e arquivo escolhido e vazio: aqui nao houve arquivo nenhum, e o conselho da tela muda
+    // de "esse arquivo esta vazio" para "escolha um arquivo". Sem este codigo a excecao caia no
+    // handler generico e voltava 500, dizendo que o servidor falhou quando quem errou foi quem
+    // chamou — e o contrato declara a parte como obrigatoria.
+    MISSING_FILE_PART(148, "Request is missing the file part"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

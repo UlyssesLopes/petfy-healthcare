@@ -3234,6 +3234,22 @@
             "type" : "string"
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
         "responses" : {
           "200" : {
             "content" : {
@@ -5369,6 +5385,22 @@
       "post" : {
         "description" : "Le a carteirinha por OCR. Existe porque a historia de saude que importa esta em papel, e digitar tudo a mao e o que faz o tutor desistir antes de comecar. O resultado e um ponto de partida para revisao, e nao um registro conferido - OCR erra, e o que ele produz nao carrega assinatura de quem afirmou nada.",
         "operationId" : "importPetIdCard",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
         "responses" : {
           "200" : {
             "content" : {

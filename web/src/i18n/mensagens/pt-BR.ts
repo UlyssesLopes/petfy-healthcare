@@ -76,6 +76,10 @@ export const mensagens = {
   "erro.127": "Este arquivo passa do tamanho máximo.",
   "erro.128": "Não conseguimos guardar o anexo agora. Tente de novo em instantes.",
   "erro.129": "Este arquivo está vazio.",
+  // O 148 é vizinho do 129 e diz outra coisa: lá havia um arquivo, e ele estava vazio; aqui não
+  // veio arquivo nenhum. Por isso a frase é um pedido, e não um diagnóstico — o que resolve é
+  // escolher o arquivo.
+  "erro.148": "Escolha um arquivo para enviar.",
 
   // ---------------------------------------------------------- pendencia e orientacao
   "erro.140": "Esta orientação não estava valendo na data informada.",
