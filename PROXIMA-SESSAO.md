@@ -10,12 +10,13 @@
 
 **Branch `feat/creche-turma-e-dia`, 14 commits, PR #50 aberto contra a `main`.**
 
-O CI passou em todos os pushes até o penúltimo commit. **O último commit (`4e448c9`, a Tela
-11) foi commitado mas NÃO foi empurrado, e portanto não tem CI.** É o primeiro passo de
-amanhã: `git push`, esperar os dois jobs e conferir.
+**Tudo empurrado, árvore limpa, e o CI está verde nos dois jobs no último commit** — incluindo
+a Tela 11, que foi a última a entrar.
 
-Verde localmente no último commit: **backend 829 casos, 0 falhas, Skipped 0** (contra
-Postgres real), **front `tsc` limpo e 43 testes**.
+Verde também localmente: **backend 829 casos, 0 falhas, Skipped 0** (contra Postgres real),
+**front `tsc` limpo e 43 testes**.
+
+**Não há nada pendente de verificação. O que falta é a decisão de mergear, que é sua.**
 
 ## O que esta sessão fez
 
@@ -109,12 +110,10 @@ esse mesmo defeito aparece** (a creche cobrou as outras duas). O convite também
 
 ## Primeiro passo de amanhã
 
-```
-git push                      # o commit da Tela 11 ainda não subiu
-gh pr checks 50               # os dois jobs
-```
-
-Depois, se estiver verde, o merge é seu.
+**O merge do PR #50** — é comando seu, e o CI já está verde. Depois dele, o que resta com dono
+claro é a lista de "o que continua faltando" acima; a maior parte dela **não é trabalho de
+tela, é decisão de produto** (canal de aviso) ou **falta de especificação versionada** (telas
+12, 18 e 25–27).
 
 ## Como subir, e como regenerar
 
