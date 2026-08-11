@@ -137,6 +137,10 @@ export const mensagens = {
     "Este pedido já foi decidido. Recarregue para ver como os dois cadastros ficaram — o que você está vendo é de antes.",
   "erro.157":
     "Já existe um pedido para unir estes dois cadastros, esperando decisão de quem responde pelo animal.",
+  // O dia da semana chegou num formato que o servidor nao entende. Nao e a creche que errou
+  // de digitacao — os dias sao botoes —, entao a frase nao a manda "conferir os campos": ela
+  // diz que o combinado nao foi gravado, que e a consequencia que importa para quem esta ali.
+  "erro.158": "Não conseguimos gravar os dias combinados. O resto do combinado também não foi salvo — tente de novo.",
 
   // -------------------------------------------------------------------- os tres gerais
   //
@@ -1134,6 +1138,21 @@ export const mensagens = {
   // ele sabe quem estará em casa."
   "atendimento.naoConcedeAcesso":
     "Prescrever não concede acesso a ninguém. Quem dá cada dose é o tutor quem decide — a creche só recebe a dose se já tiver acesso e se ele atribuir.",
+
+  // ---------------------------------------------------------- Tela 40 · o valor cobrado
+  //
+  // "O campo é opcional, e um evento sem valor é NORMAL — nunca um erro, nunca um alerta."
+  // Nenhuma destas frases cobra o preenchimento, e a de baixo diz o contrário com todas as
+  // letras: se informar valor virar obrigação, a clínica para de registrar o atendimento.
+  "valor.titulo": "Valor cobrado",
+  "valor.opcional": " · opcional",
+  "valor.soOTutorVe": "Só o tutor do {nome} vê",
+  "valor.oQue": "O que foi cobrado",
+  "valor.quanto": "Valor",
+  "valor.jaFoiPago": "Já foi pago",
+  "valor.outroItem": "Adicionar outro item",
+  "valor.emBranco":
+    "Deixe em branco se o valor não faz parte do que você quer registrar. O atendimento fica igual, e o custo do {nome} simplesmente não conta este evento.",
 
   // ------------------------------- o mesmo animal, cadastrado duas vezes (Tela 32)
   //

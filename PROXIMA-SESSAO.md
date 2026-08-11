@@ -23,15 +23,36 @@ renomeada. O front ainda não foi tocado neste bloco.
 - A regra de acesso, com cinco testes
 - `animal_costs` classificada nas **duas** guardas de cobertura (move na união, some no purge)
 
+### O que já está pronto no bloco 3 (continuação)
+
+- **O combinado da creche, inteiro** — `V37__os_dias_combinados.sql`, `PUT
+  /professional/creche/enrollments/{id}/agreement`, e os quatro campos no DTO de matrícula.
+- **A diária avulsa entra sozinha no check-in**, com as três recusas a cobrar por suposição.
+- **Tela 40** — a caixa "Valor cobrado · opcional" dentro de `pacientes.$animalId.atendimento.tsx`.
+
+**868 casos no backend, 43 no front, tudo verde, `Skipped: 0`.**
+
+### O DIA COMBINADO NÃO EXISTIA, e essa foi a decisão desta sessão
+
+O desenho diz *"diária avulsa: usada quando o Code vem **fora dos dias combinados**"* — e não havia,
+em lugar nenhum do modelo, o dia em que o animal é esperado. Sem isso o encadeamento central do
+bloco não tinha como existir sem alguém digitar, que é o que o desenho recusa.
+
+Duas saídas sem coluna foram olhadas e recusadas: *"diária só quando não há mensalidade"* contradiz
+o próprio exemplo do desenho (R$ 530/mês **e** uma diária de 22/07 na mesma matrícula), e *"a creche
+marca avulso no check-in"* apaga o *"ninguém digitou nada"*.
+
+O custo: a Tela 41 ganhou **um controle que o mockup não desenhou** — a linha de dias dentro da
+caixa "Combinado com o tutor". Está registrado aqui porque é um desvio do FE aprovado, e foi
+aprovado em sessão.
+
+**Conjunto vazio é "não sei", e nunca "nenhum dia"** — sem dias declarados a diária nunca entra.
+O silêncio da creche não vira cobrança.
+
 ### O que falta no bloco 3
 
-1. **A mensalidade dentro da matrícula (Tela 41, backend).** As colunas existem na `enrollments`;
-   falta expor no DTO de matrícula e aceitar na escrita.
-2. **A diária avulsa que entra sozinha.** É o encadeamento central do bloco: a creche marca a
-   entrada num dia fora da combinação e o evento de check-in cria o custo — *"ninguém digitou
-   nada"*. O repositório já tem `existeDiariaNoDia` para impedir cobrança dobrada quando a creche
-   desfaz e refaz o check-in. Falta ligar no serviço de check-in.
-3. **As três telas.** A 40 entra dentro de `pacientes.$animalId.atendimento.tsx`, que já existe.
+1. **Tela 41** — o combinado, dentro da tela de matrícula (creche escreve, tutor lê).
+2. **Tela 42** — "o que você compra por fora": três toques, na área do tutor.
 
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 

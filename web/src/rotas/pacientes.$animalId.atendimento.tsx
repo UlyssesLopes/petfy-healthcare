@@ -12,6 +12,7 @@ import {
 } from "../dados/atendimento.ts";
 import { useAnimal } from "../dados/carteira.ts";
 import { useMeuContexto } from "../dados/contexto.ts";
+import { useLancarCusto } from "../dados/custo.ts";
 import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
@@ -63,6 +64,21 @@ type Receita = {
 
 const RECEITA_VAZIA: Receita = { descricao: "", intervaloEmDias: "24", dias: "7", comoDar: "" };
 
+/**
+ * Um item cobrado (Tela 40). O desenho oferece "adicionar outro item".
+ *
+ * <b>Sao itens, e nao um total</b>: um atendimento tem consulta, exame e medicacao aplicada, e
+ * guardar so a soma perderia do que ela e feita — que e exatamente o que o tutor quer ler.
+ */
+type Item = { oQue: string; valor: string; pago: boolean };
+
+const ITEM_VAZIO: Item = { oQue: "", valor: "", pago: false };
+
+/** "R$ 180,00" e "180.00" chegam iguais aqui. Virgula e como se digita dinheiro em pt-BR. */
+function emNumero(valor: string): number {
+  return Number(valor.replace(/[^\d,.-]/g, "").replace(",", "."));
+}
+
 function hoje(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -86,6 +102,7 @@ function Atendimento() {
   const registrar = useRegistrarAtendimento();
   const prescrever = usePrescrever();
   const pesar = useRegistrarPeso();
+  const lancarCusto = useLancarCusto();
 
   const [quando, setQuando] = useState(hoje());
   const [peso, setPeso] = useState("");
@@ -93,6 +110,7 @@ function Atendimento() {
   const [diagnostico, setDiagnostico] = useState("");
   const [referenciadas, setReferenciadas] = useState<string[]>([]);
   const [receitas, setReceitas] = useState<Receita[]>([{ ...RECEITA_VAZIA }]);
+  const [itens, setItens] = useState<Item[]>([{ ...ITEM_VAZIO }]);
   const [gravando, setGravando] = useState(false);
   const [erro, setErro] = useState<unknown>(undefined);
 
@@ -119,6 +137,16 @@ function Atendimento() {
     }));
 
   const receitasPreenchidas = receitas.filter((receita) => receita.descricao.trim() !== "");
+
+  /*
+   * O ITEM SO CONTA COM DESCRICAO E VALOR, e a exigencia e do lado do produto e nao do contrato:
+   * "R$ 180,00" sem dizer do que faria o tutor ler um numero solto na conta do animal dele, sem
+   * ter a quem perguntar. Deixar os dois em branco e o caso normal.
+   */
+  const itensPreenchidos = itens.filter(
+    (item) => item.oQue.trim() !== "" && item.valor.trim() !== "" && !Number.isNaN(emNumero(item.valor)),
+  );
+
   const podeGravar = constatacao.trim() !== "" && !gravando;
 
   /*
@@ -151,7 +179,7 @@ function Atendimento() {
         .filter((parte) => parte !== "")
         .join("\n\n");
 
-      await registrar.mutateAsync({
+      const atendimento = await registrar.mutateAsync({
         animalId,
         categoria: "CONSULTA",
         rotulo: intl.formatMessage({ id: "atendimento.rotulo" }),
@@ -159,6 +187,24 @@ function Atendimento() {
         diagnostico: diagnostico.trim(),
         quando,
       });
+
+      /*
+       * O VALOR ENTRA DEPOIS DO ATENDIMENTO GRAVAR, e nao junto, e a ordem carrega a tese do
+       * desenho: "o campo e opcional, e um evento sem valor e NORMAL". O custo aponta para o
+       * atendimento pelo `sourceHealthRecordId`, entao ele precisa do id que so existe agora — e,
+       * se o lancamento falhar, o que ficou registrado foi o ato clinico, que e o que importa de
+       * verdade. O contrario perderia o atendimento por causa de um preco.
+       */
+      for (const item of itensPreenchidos) {
+        await lancarCusto.mutateAsync({
+          animalId,
+          descricao: item.oQue.trim(),
+          valor: emNumero(item.valor),
+          tipo: "ATENDIMENTO",
+          pago: item.pago,
+          atendimentoId: atendimento?.healthRecordId,
+        });
+      }
 
       if (peso.trim() !== "") {
         await pesar.mutateAsync({
@@ -396,6 +442,112 @@ function Atendimento() {
               ))}
           </div>
 
+          {/* ------------------------------------------------------ Tela 40 · o valor cobrado
+           *
+           * <b>UM CAMPO DENTRO DO QUE JA ESTAVA SENDO REGISTRADO, e nada alem disso</b> — a tese
+           * de abertura do desenho: "o custo do animal so existe se o dado entrar sem esforco.
+           * Nenhuma tela nova para a clinica, nenhum trabalho a mais para a creche".
+           *
+           * <b>NENHUM LOSANGO E NENHUM "VALOR NAO INFORMADO" EM CINZA.</b> A caixa nao acusa nada
+           * quando esta vazia, e nao ha marca de pendencia em lugar nenhum: "a ausencia de preco
+           * nao e uma pendencia — e so um evento clinico completo". Se informar valor virasse
+           * obrigacao, a clinica pararia de registrar o atendimento.
+           */}
+          <div style={{ marginTop: "32px", border: "1px solid oklch(0.46 0.085 150)", borderRadius: "12px", background: "oklch(1 0 0)", padding: "24px 26px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "12px", marginBottom: "18px", flexWrap: "wrap" }}>
+              <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "20px", fontWeight: 500 }}>
+                {intl.formatMessage({ id: "valor.titulo" })}
+                <span style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 400, color: "oklch(0.5 0.015 150)" }}>
+                  {intl.formatMessage({ id: "valor.opcional" })}
+                </span>
+              </div>
+
+              {/* "So o tutor do Code ve." Quem esta digitando precisa saber disso ANTES. */}
+              <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
+                {intl.formatMessage({ id: "valor.soOTutorVe" }, { nome: bicho?.name ?? "" })}
+              </div>
+            </div>
+
+            {itens.map((item, indice) => (
+              <div key={indice} style={{ marginBottom: "16px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 200px", gap: "16px" }}>
+                  <div>
+                    <label htmlFor={`item-${indice}`} style={rotuloDoCampo}>
+                      {intl.formatMessage({ id: "valor.oQue" })}
+                    </label>
+                    <input
+                      id={`item-${indice}`}
+                      type="text"
+                      value={item.oQue}
+                      onChange={(evento) =>
+                        setItens((antes) =>
+                          antes.map((atual, i) =>
+                            i === indice ? { ...atual, oQue: evento.target.value } : atual,
+                          ),
+                        )
+                      }
+                      style={campo}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor={`valor-${indice}`} style={rotuloDoCampo}>
+                      {intl.formatMessage({ id: "valor.quanto" })}
+                    </label>
+                    <input
+                      id={`valor-${indice}`}
+                      type="text"
+                      inputMode="decimal"
+                      value={item.valor}
+                      onChange={(evento) =>
+                        setItens((antes) =>
+                          antes.map((atual, i) =>
+                            i === indice ? { ...atual, valor: evento.target.value } : atual,
+                          ),
+                        )
+                      }
+                      placeholder="180,00"
+                      style={{ ...campo, fontFamily: "'DM Mono', monospace" }}
+                    />
+                  </div>
+                </div>
+
+                {/*
+                 * "Ja foi pago" desmarcado NAO afirma que nao foi pago: o desenho oferece a caixa e
+                 * nao a obriga, e o lancamento so leva `paid` quando alguem marcou. Nulo e "ninguem
+                 * disse", e afirmar o contrario seria inventar uma divida do tutor.
+                 */}
+                <label style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 0 0", fontSize: "15px", cursor: "pointer", minHeight: "44px" }}>
+                  <input
+                    type="checkbox"
+                    checked={item.pago}
+                    onChange={(evento) =>
+                      setItens((antes) =>
+                        antes.map((atual, i) =>
+                          i === indice ? { ...atual, pago: evento.target.checked } : atual,
+                        ),
+                      )
+                    }
+                    style={{ width: "20px", height: "20px", accentColor: "oklch(0.46 0.085 150)" }}
+                  />
+                  {intl.formatMessage({ id: "valor.jaFoiPago" })}
+                </label>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setItens((antes) => [...antes, { ...ITEM_VAZIO }])}
+              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "12px 18px", minHeight: "44px", cursor: "pointer" }}
+            >
+              {intl.formatMessage({ id: "valor.outroItem" })}
+            </button>
+
+            <div style={{ borderTop: "1px solid oklch(0.94 0.006 150)", marginTop: "20px", paddingTop: "16px", fontSize: "14px", lineHeight: 1.65, color: "oklch(0.5 0.015 150)" }}>
+              {intl.formatMessage({ id: "valor.emBranco" }, { nome: bicho?.name ?? "" })}
+            </div>
+          </div>
+
           {erro !== undefined && (
             <div style={{ marginTop: "22px" }}>
               <ErroAoGravar erro={erro} oQue={intl.formatMessage({ id: "atendimento.oQue" })} />
@@ -475,10 +627,18 @@ const campo = {
   background: "oklch(1 0 0)",
 } as const;
 
+const rotuloDoCampo = {
+  display: "block",
+  fontSize: "13px",
+  fontWeight: 500,
+  color: "oklch(0.42 0.015 150)",
+  marginBottom: "7px",
+} as const;
+
 function Campo({ rotulo, para, children }: { rotulo: string; para: string; children: ReactNode }) {
   return (
     <div style={{ marginTop: "18px" }}>
-      <label htmlFor={para} style={{ display: "block", fontSize: "13px", fontWeight: 500, color: "oklch(0.42 0.015 150)", marginBottom: "7px" }}>
+      <label htmlFor={para} style={rotuloDoCampo}>
         {rotulo}
       </label>
       {children}

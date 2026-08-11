@@ -236,6 +236,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O que se gastou com este animal
+         * @description EXIGE CUSTODIA, e nenhum escopo de concessao substitui: o que uma clinica cobra do tutor nao e assunto da creche, do petshop nem de outra clinica. E a unica leitura deste produto que pede responder pelo animal em vez de alcanca-lo — e por isso o custo nao entra na linha do tempo, onde quem governa a leitura e o escopo.
+         */
+        get: operations["costs"];
+        put?: never;
+        /**
+         * Lanca um valor gasto com o animal
+         * @description Exige o mesmo alcance de escrita que registrar qualquer evento: a clinica lanca o valor do atendimento que ela mesma fez, a creche a mensalidade que combinou, e o tutor a racao que comprou. Pedir custodia aqui faria o valor ficar de fora justamente de quem tem o dado na mao. O campo e opcional em toda tela — evento sem valor e normal, nunca um erro e nunca um alerta.
+         */
+        post: operations["addCost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}/duplicates": {
         parameters: {
             query?: never;
@@ -1539,6 +1563,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/professional/creche/enrollments/{enrollmentId}/agreement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Grava o combinado da matricula: mensalidade, vencimento, diaria e os dias
+         * @description SUBSTITUI o combinado inteiro — campo omitido passa a ser nulo, porque quem renegocia diz de novo o que vale. Todos os campos sao opcionais: a propria caixa do desenho se chama 'Combinado com o tutor · opcional'. Nada aqui cobra nem lanca valor: o Petfy guarda o que foi combinado. Os DIAS decidem, sozinhos, se o check-in de um dia fora da combinacao lanca a diaria avulsa; sem dias declarados a diaria nunca entra, porque o silencio da creche nao pode virar cobranca ao tutor.
+         */
+        put: operations["setAgreement"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/professional/creche/enrollments/{enrollmentId}/check-in": {
         parameters: {
             query?: never;
@@ -1810,6 +1854,40 @@ export interface components {
             originalFilename?: string;
             /** Format: int64 */
             sizeBytes?: number;
+        };
+        AnimalCostRequestDTO: {
+            amount: number;
+            description: string;
+            /** @enum {string} */
+            kind?: "ATENDIMENTO" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";
+            /** Format: date-time */
+            occurredAt?: string;
+            paid?: boolean;
+            /** @enum {string} */
+            recurrence?: "MENSAL";
+            /** Format: uuid */
+            sourceEnrollmentId?: string;
+            /** Format: uuid */
+            sourceHealthRecordId?: string;
+        };
+        AnimalCostResponseDTO: {
+            amount?: number;
+            /** Format: uuid */
+            animalCostId?: string;
+            description?: string;
+            /** @enum {string} */
+            kind?: "ATENDIMENTO" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";
+            /** Format: date-time */
+            occurredAt?: string;
+            organizationName?: string;
+            paid?: boolean;
+            recordedByName?: string;
+            /** @enum {string} */
+            recurrence?: "MENSAL";
+            /** Format: uuid */
+            sourceEnrollmentId?: string;
+            /** Format: uuid */
+            sourceHealthRecordId?: string;
         };
         AnimalExportDTO: {
             acessosDeClinica?: components["schemas"]["AcessoDeClinicaDTO"][];
@@ -2259,6 +2337,13 @@ export interface components {
         EmailVerificationResendDTO: {
             email: string;
         };
+        EnrollmentAgreementRequestDTO: {
+            dailyRate?: number;
+            /** Format: int32 */
+            dueDay?: number;
+            monthlyFee?: number;
+            weekdays?: string[];
+        };
         EnrollmentResponseDTO: {
             /** Format: date-time */
             activatedAt?: string;
@@ -2269,15 +2354,20 @@ export interface components {
             classGroupId?: string;
             classGroupName?: string;
             createdByName?: string;
+            dailyRate?: number;
+            /** Format: int32 */
+            dueDay?: number;
             /** Format: date-time */
             endedAt?: string;
             /** Format: uuid */
             enrollmentId?: string;
             healthProof?: components["schemas"]["HealthProofItemDTO"][];
+            monthlyFee?: number;
             organizationName?: string;
             /** Format: date-time */
             requestedAt?: string;
             status?: string;
+            weekdays?: string[];
         };
         HealthProofItemDTO: {
             blocks?: boolean;
@@ -3446,6 +3536,54 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    costs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalCostResponseDTO"][];
+                };
+            };
+        };
+    };
+    addCost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnimalCostRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalCostResponseDTO"];
+                };
             };
         };
     };
@@ -5489,6 +5627,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AttendanceResponseDTO"];
+                };
+            };
+        };
+    };
+    setAgreement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentAgreementRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EnrollmentResponseDTO"];
                 };
             };
         };
