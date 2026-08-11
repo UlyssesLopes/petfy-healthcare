@@ -1007,6 +1007,113 @@ export const mensagens = {
     "Guardamos e organizamos o que profissionais e cuidadores registram, e não emitimos diagnóstico. Registros profissionais informados por quem se cadastra não são verificados junto aos conselhos. Em emergência, procure um veterinário.",
   "moldura.rodape.assinatura": "© 2026 Petfy · São Paulo, Brasil",
   "moldura.rodape.lgpd": "Encarregado de dados (LGPD)",
+
+  // ------------------------------------------- o paciente pelos olhos da clínica (Tela 30)
+  //
+  // É o mesmo animal da Tela 02, e não é a mesma tela: aquela é a vida do animal como o tutor
+  // a lê, esta é o que a clínica precisa ter na frente ANTES de prescrever.
+  "paciente.oQue": "este paciente",
+  "paciente.oQue.vacinas": "a vacinação",
+  "paciente.oQue.historico": "o histórico clínico",
+  "paciente.peso": "{peso} kg",
+  "paciente.microchip": "Microchip {numero}",
+  "paciente.tutor": "Tutor: {nome}",
+  "paciente.registrar": "Registrar atendimento",
+  "paciente.imprimir": "Imprimir carteirinha",
+  "paciente.imprimir.indisponivel":
+    "Não existe rota para gerar a carteirinha ainda. O botão fica visível para não sumir da tela quando passar a funcionar.",
+
+  // A caixa mais importante, e por isso a primeira. Prescrever sem ver alergia e o que já está
+  // em uso é o erro que este produto existe para tornar difícil.
+  "paciente.antesDePrescrever": "Antes de prescrever",
+  "paciente.antesDePrescrever.nada":
+    "Nenhuma alergia, condição ativa ou medicação em curso registrada. Ausência de registro não é o mesmo que ausência de condição — pergunte ao tutor.",
+  "paciente.emUso": "Em uso: {o_que}{ate, select, undefined {} other { · até {ate}}}",
+  "paciente.vacinacao": "Vacinação",
+  "paciente.peso.titulo":
+    "{quantos, plural, =0 {Peso · sem registro} one {Peso · # registro} other {Peso · # registros}}",
+  "paciente.peso.vazio": "Nenhuma pesagem registrada.",
+  "paciente.peso.variacao": "{de} kg → {para} kg",
+
+  // "Existe e não foi compartilhado com a clínica." A saída é humana e não técnica de propósito:
+  // quem pode liberar é o tutor, e não um botão daqui.
+  "paciente.foraDoAlcance": "Fora do seu alcance",
+  "paciente.foraDoAlcance.texto":
+    "{quantos, plural, one {# registro deste animal existe} other {# registros deste animal existem}} e não {quantos, plural, one {foi} other {foram}} compartilhado{quantos, plural, one {} other {s}} com esta organização. Se for necessário para o caso, peça a {quem}.",
+
+  "paciente.historico": "Histórico clínico",
+  "paciente.recorte.tudo": "Tudo",
+  "paciente.recorte.desta-clinica": "Só desta clínica",
+  "paciente.recorte.meus": "Só o que eu registrei",
+  // Vazio com recorte marcado não é o mesmo que vazio: "esta clínica nunca registrou nada deste
+  // animal" é um fato, e não a ausência de histórico.
+  "paciente.historico.vazio.tudo": "Nada foi registrado para este animal ainda.",
+  "paciente.historico.vazio.desta-clinica":
+    "Esta organização nunca registrou nada deste animal. Isso não quer dizer que ele não tenha histórico — tire o filtro para ver o resto.",
+  "paciente.historico.vazio.meus":
+    "Você nunca registrou nada deste animal. Tire o filtro para ver o que a equipe e outras clínicas registraram.",
+
+  // O rótulo que impede um relato de creche de parecer um diagnóstico.
+  "paciente.naoClinico": "Observação, não clínico",
+  "paciente.corrigido": "{quantas, plural, one {# correção} other {# correções}}",
+  "paciente.pela": "pela {organizacao}",
+  "paciente.credencial": "{registro}, {estado}",
+  "paciente.semCredencial": "sem registro profissional",
+
+  // ------------------------------------------ registrar atendimento e prescrever (Tela 31)
+  //
+  // O próprio desenho a chama de "o loop central". É a única tela que grava três coisas de uma
+  // vez: o prontuário, a pesagem do dia e cada medicamento.
+  "atendimento.titulo": "Atendimento do {nome}",
+  // A assinatura aparece ANTES do primeiro campo. É o que separa um registro que um veterinário
+  // aceita de um caderno digital, e quem digita precisa saber em nome de quem antes de escrever.
+  "atendimento.assinatura": "Será assinado por {quem}, {onde}. A autoria não muda depois.",
+  "atendimento.porMim": "por você mesmo",
+  "atendimento.quando": "Quando aconteceu",
+  "atendimento.quando.nota":
+    "Pode ser retroativo. A data de lançamento fica registrada à parte — o histórico mostra as duas.",
+  "atendimento.peso": "Peso hoje",
+  "atendimento.constatacao": "O que você constatou",
+  "atendimento.diagnostico": "Diagnóstico",
+  "atendimento.diagnostico.nota":
+    "Campo próprio, e não enterrado na descrição: é por ele que o histórico destaca o diagnóstico anos depois.",
+
+  // "Referenciar não transforma observação em diagnóstico. Ela continua sendo o que é, assinada
+  // por quem escreveu."
+  "atendimento.evidencias": "Evidências que outros registraram",
+  "atendimento.evidencias.nota":
+    "Referenciar não transforma observação em diagnóstico. Ela continua sendo o que é, assinada por quem escreveu — vai para o prontuário entre aspas, com o nome de quem disse.",
+  "atendimento.referencia": "“{texto}” — {quem}, {onde}",
+  "atendimento.rotulo": "Consulta",
+
+  "atendimento.prescricao": "Prescrição",
+  "atendimento.prescricao.nota": "Vira pendência na casa do tutor, uma por dia.",
+  "atendimento.medicamento": "Medicamento e dose",
+  "atendimento.intervalo": "Intervalo, em horas",
+  "atendimento.duracao": "Por quantos dias",
+  "atendimento.comoDar": "Como dar",
+  "atendimento.outroMedicamento": "Adicionar outro medicamento",
+  // O aviso NÃO recusa: sobrepor dois medicamentos às vezes é exatamente o que se quer. O número
+  // de dias é a informação — um dia é ruído, duas semanas é outra conversa.
+  "atendimento.sobreposicao":
+    "O {nome} está em uso de {o_que} até {ate}. Os dois vão se sobrepor por {dias, plural, one {# dia} other {# dias}} — confirme que é intencional.",
+
+  "atendimento.oQue": "o atendimento",
+  "atendimento.gravar": "Registrar atendimento",
+  "atendimento.gravando": "Registrando…",
+  "atendimento.soCorrecao": "Depois disso, só correção — com motivo, ao lado do original.",
+  "atendimento.voltar": "Voltar ao paciente",
+
+  "atendimento.oQueRecebe": "O que o tutor vai receber",
+  "atendimento.oQueRecebe.nada":
+    "Nenhuma prescrição ainda. Um atendimento sem prescrição é válido — nem toda consulta termina em remédio.",
+  "atendimento.pendencia": "Dia 1 de {total} · orientação de {quem}",
+  "atendimento.somemSozinhas":
+    "Uma pendência por dia, no feed do tutor e de quem mais cuidar do animal. Somem sozinhas quando o tratamento acaba.",
+  // "Você prescreve o que o animal precisa. Quem dá cada dose é o tutor quem decide, porque só
+  // ele sabe quem estará em casa."
+  "atendimento.naoConcedeAcesso":
+    "Prescrever não concede acesso a ninguém. Quem dá cada dose é o tutor quem decide — a creche só recebe a dose se já tiver acesso e se ele atribuir.",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;
