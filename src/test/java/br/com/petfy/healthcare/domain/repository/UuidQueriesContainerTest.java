@@ -380,6 +380,16 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
     @DisplayName("agenda e rastro")
     class AgendaERastro {
 
+        /**
+         * <b>O recorte pelo Rex nao e detalhe de cenario: e o que impede a ORDEM de decidir o
+         * resultado.</b> A consulta e da rotina de lembretes e varre o banco inteiro, e o container
+         * do Postgres e compartilhado entre as classes de teste — qualquer classe que rode antes e
+         * grave vacina com proxima dose dentro da janela entra nesta lista. Foi o que aconteceu
+         * quando a suite rodou em ordem invertida: sete vacinas de outras classes apareceram aqui.
+         *
+         * A afirmacao do teste sempre foi sobre a JANELA DE DATAS — vencida entra, no limite entra,
+         * alem nao entra — e nao sobre o banco estar vazio.
+         */
         @Test
         @DisplayName("a rotina de lembretes deve pegar vencidas e as ate o limite, nao alem")
         void rotinaDeLembretesPegaAsCertas() {
@@ -387,7 +397,12 @@ class UuidQueriesContainerTest extends PostgresContainerTest {
             vacina(rex, "No limite", LocalDate.now().plusDays(30));
             vacina(rex, "Alem", LocalDate.now().plusDays(31));
 
-            assertThat(vaccineRepository.findByNextDoseDateLessThanEqual(LocalDate.now().plusDays(30)))
+            var doRex = vaccineRepository.findByNextDoseDateLessThanEqual(LocalDate.now().plusDays(30))
+                    .stream()
+                    .filter(v -> v.getAnimal().getAnimalId().equals(rex.getAnimalId()))
+                    .toList();
+
+            assertThat(doRex)
                     .extracting(Vaccine::getVaccineName)
                     .containsExactlyInAnyOrder("Vencida", "No limite");
         }
