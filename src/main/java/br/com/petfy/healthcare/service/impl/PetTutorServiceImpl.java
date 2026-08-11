@@ -163,10 +163,12 @@ public class PetTutorServiceImpl implements PetTutorService {
             Custody nova = transferir(atual, aceitante,
                     ehAdocao ? CustodyEndReason.ADOCAO : CustodyEndReason.TRANSFERENCIA);
 
-            // quem respondia ate ontem continua enxergando a carteira, agora por
-            // concessao - e quem passou a responder decide se revoga
+            revogarAcessosHerdados(animal);
+
+            // quem respondia ate ontem continua enxergando a carteira, agora por concessao de
+            // LEITURA - decidir sobre o animal e de quem responde por ele
             if (titularAnterior != null) {
-                conceder(animal, titularAnterior, GrantLevel.EDITOR, aceitante);
+                conceder(animal, titularAnterior, GrantLevel.VIEWER, aceitante);
             }
 
             /*
@@ -337,8 +339,9 @@ public class PetTutorServiceImpl implements PetTutorService {
      * dele e o convite com papel HOLDER - la a pessoa aceita, e aqui nao haveria como
      * pedir consentimento de quem passaria a responder pelo animal.
      *
-     * Quem respondia continua enxergando a carteira, agora por concessao EDITOR, e
-     * quem passou a responder decide se revoga.
+     * <b>Acessos nao sao herdados:</b> toda concessao vigente do animal cai no ato. Quem respondia
+     * continua enxergando a carteira, agora por concessao de LEITURA — decidir sobre o animal e de
+     * quem responde por ele, e quem passou a responder decide se revoga ate isso.
      */
     @Override
     @Transactional
@@ -367,8 +370,10 @@ public class PetTutorServiceImpl implements PetTutorService {
         concessaoDoDestino.setRevokedAt(LocalDateTime.now());
         grantRepository.save(concessaoDoDestino);
 
+        revogarAcessosHerdados(animal);
+
         if (titularAnterior != null) {
-            conceder(animal, titularAnterior, GrantLevel.EDITOR, destino);
+            conceder(animal, titularAnterior, GrantLevel.VIEWER, destino);
         }
 
         grantRepository.flush();
@@ -409,6 +414,33 @@ public class PetTutorServiceImpl implements PetTutorService {
         custodyRepository.save(atual);
 
         return nova;
+    }
+
+    /**
+     * <b>ACESSOS NAO SAO HERDADOS.</b> No aceite da transferencia, toda concessao vigente do
+     * animal cai — co-tutora, clinica, creche, abrigo e link compartilhado.
+     *
+     * A tese e do desenho da Tela 11, e ela e sobre consentimento: quem autorizou a clinica a ver
+     * o prontuario foi o titular ANTERIOR, e quem passa a responder pelo animal nao herda as
+     * decisoes dele. Manter os acessos faria o produto tratar autorizacao como propriedade do
+     * animal, quando ela e de quem responde por ele.
+     *
+     * <b>O link compartilhado cai junto, e ele e o mais importante da lista</b>: uma URL que
+     * continua abrindo a carteira e um acesso que ninguem ve na tela de quem agora responde.
+     *
+     * O que o titular anterior e o abrigo recebem DEPOIS disto e concessao nova, de leitura, e
+     * nao sobra da anterior — por isso a revogacao vem primeiro.
+     */
+    private void revogarAcessosHerdados(Animal animal) {
+        LocalDateTime agora = LocalDateTime.now();
+
+        List<Grant> vigentes = grantRepository
+                .findTodasVigentesNoAnimal(animal.getAnimalId(), agora);
+
+        vigentes.forEach(concessao -> concessao.setRevokedAt(agora));
+
+        grantRepository.saveAll(vigentes);
+        grantRepository.flush();
     }
 
     /**

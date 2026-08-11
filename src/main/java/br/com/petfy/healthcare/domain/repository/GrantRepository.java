@@ -69,6 +69,19 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
                                               @Param("agora") LocalDateTime agora);
 
     /**
+     * TODAS as concessoes vigentes do animal — pessoa, organizacao e link.
+     *
+     * Existe para a transferencia de titularidade, e o "todas" e a regra: <b>acessos nao sao
+     * herdados</b>. Quem recebe a responsabilidade recebe um animal cujos acessos ele proprio
+     * concedera, e nao a lista que o titular anterior montou — inclusive o link compartilhado,
+     * que continua valendo na mao de quem tiver a URL.
+     */
+    @Query("select g from Grant g where g.animal.animalId = :animalId "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
+    List<Grant> findTodasVigentesNoAnimal(@Param("animalId") UUID animalId,
+                                          @Param("agora") LocalDateTime agora);
+
+    /**
      * Toda concessao que toca esta pessoa - recebida ou concedida por ela.
      *
      * Usada na exclusao de conta. As duas pontas entram: a concessao que ela recebeu

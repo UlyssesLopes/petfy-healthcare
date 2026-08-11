@@ -362,9 +362,15 @@ class PetTutorServiceImplTest {
          * Quem respondia continua enxergando a carteira, agora por concessao: nao perde
          * o acesso por ter transferido.
          */
+        /**
+         * <b>LEITURA, e nao EDITOR.</b> Ate a rodada da Tela 11 o titular anterior saia com
+         * escrita, e o desenho dizia o contrario: quem passa a responder pelo animal e quem
+         * decide sobre ele. Ver tambem {@code revogarAcessosHerdados} — este caso guarda o nivel,
+         * e o de baixo guarda a revogacao.
+         */
         @Test
-        @DisplayName("convite HOLDER deixa o responsavel anterior com concessao EDITOR")
-        void conviteHolderDeixaAnteriorComoEditor() {
+        @DisplayName("convite HOLDER deixa o responsavel anterior com LEITURA")
+        void conviteHolderDeixaAnteriorComoLeitor() {
             autenticado(maria());
             conviteValido(PetTutorRole.HOLDER);
             naoAlcanca(MARIA_ID);
@@ -374,9 +380,35 @@ class PetTutorServiceImplTest {
             petTutorService.accept(TOKEN);
 
             var captor = ArgumentCaptor.forClass(Grant.class);
-            verify(grantRepository).save(captor.capture());
-            assertThat(captor.getValue().getGranteePerson().getPersonId()).isEqualTo(OWNER_ID);
-            assertThat(captor.getValue().getLevel()).isEqualTo(GrantLevel.EDITOR);
+            verify(grantRepository, org.mockito.Mockito.atLeastOnce()).save(captor.capture());
+            assertThat(captor.getAllValues()).anySatisfy(g -> {
+                assertThat(g.getGranteePerson().getPersonId()).isEqualTo(OWNER_ID);
+                assertThat(g.getLevel()).isEqualTo(GrantLevel.VIEWER);
+                assertThat(g.getRevokedAt()).isNull();
+            });
+        }
+
+        /**
+         * <b>Acessos nao sao herdados.</b> Quem autorizou a clinica a ver o prontuario foi o
+         * titular ANTERIOR, e quem passa a responder nao herda as decisoes dele.
+         */
+        @Test
+        @DisplayName("o aceite de HOLDER revoga as concessoes que existiam no animal")
+        void conviteHolderRevogaOsAcessosHerdados() {
+            autenticado(maria());
+            conviteValido(PetTutorRole.HOLDER);
+            naoAlcanca(MARIA_ID);
+            when(custodyRepository.findEmCurso(ANIMAL_ID)).thenReturn(Optional.of(custodiaDe(ulysses())));
+            devolveOQueSalva();
+
+            Grant daClinica = Grant.builder()
+                    .grantId(UUID.randomUUID()).animal(animal()).level(GrantLevel.EDITOR).build();
+            when(grantRepository.findTodasVigentesNoAnimal(eq(ANIMAL_ID), any()))
+                    .thenReturn(List.of(daClinica));
+
+            petTutorService.accept(TOKEN);
+
+            assertThat(daClinica.getRevokedAt()).isNotNull();
         }
 
         @Test
@@ -513,7 +545,7 @@ class PetTutorServiceImplTest {
         }
 
         @Test
-        @DisplayName("o responsavel antigo continua alcancando, como EDITOR")
+        @DisplayName("o responsavel antigo continua alcancando, como LEITOR")
         void responsavelAntigoContinuaAlcancando() {
             responsavelTransferindo();
 
@@ -523,7 +555,7 @@ class PetTutorServiceImplTest {
             verify(grantRepository, org.mockito.Mockito.atLeastOnce()).save(captor.capture());
             assertThat(captor.getAllValues()).anySatisfy(g -> {
                 assertThat(g.getGranteePerson().getPersonId()).isEqualTo(OWNER_ID);
-                assertThat(g.getLevel()).isEqualTo(GrantLevel.EDITOR);
+                assertThat(g.getLevel()).isEqualTo(GrantLevel.VIEWER);
                 assertThat(g.getRevokedAt()).isNull();
             });
         }

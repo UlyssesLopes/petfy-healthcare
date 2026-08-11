@@ -10,41 +10,39 @@ import { mensagens } from "./mensagens/pt-BR.ts";
  * Quando isso acontece, quem descobre e a pessoa que confiou.
  */
 
-describe("a Tela 11 nao promete revogacao que o backend nao faz", () => {
+describe("a Tela 11 promete a revogacao que o backend agora faz", () => {
   /*
-   * O desenho pede "quem deixa de ver o Code", com co-tutora e organizacoes perdendo acesso
-   * no aceite. Conferido no PetTutorServiceImpl, nos dois caminhos de transferencia: NENHUMA
-   * concessao e revogada — nem de pessoa, nem de organizacao. O titular anterior ainda ganha
-   * uma concessao EDITOR, que e escrita.
+   * ESTE BLOCO ERA O CONTRARIO, E CAIU DE PROPOSITO.
    *
-   * Se alguem "consertar" estes textos na direcao do desenho sem mexer no backend, este
-   * teste cai. E ele deve cair junto no dia em que o backend passar a revogar: ai as duas
-   * coisas mudam no mesmo commit, que e o ponto.
+   * Ele travava as frases na verdade de entao: "nenhuma frase diz que alguem perde acesso",
+   * porque o `PetTutorServiceImpl` nao revogava nada e ainda dava EDITOR ao titular anterior.
+   * Estava escrito ali que ele deveria cair no dia em que o backend passasse a revogar, com as
+   * duas coisas mudando no mesmo commit. Foi o que aconteceu.
+   *
+   * Agora ele guarda a promessa nova, e pela mesma razao: no aceite, `revogarAcessosHerdados`
+   * derruba TODA concessao vigente do animal — pessoa, organizacao e link —, e o titular
+   * anterior recebe VIEWER. Se alguem voltar o backend atras sem mexer aqui, este teste cai.
    */
-  const frases = [
-    mensagens["transferir.continua.voce.texto"],
-    mensagens["transferir.continua.coTutor.texto"],
-    mensagens["transferir.continua.organizacao.texto"],
-    mensagens["transferir.continua.tese"],
-  ];
-
-  it("nenhuma frase diz que alguem perde ou deixa de ver", () => {
-    for (const frase of frases) {
-      expect(frase.toLowerCase(), frase).not.toMatch(/perde|deixa de ver|deixam de ver/);
-    }
+  it("as frases dizem que o acesso cai no aceite", () => {
+    expect(mensagens["transferir.continua.coTutor.texto"].toLowerCase()).toMatch(/perde/);
+    expect(mensagens["transferir.continua.organizacao.texto"].toLowerCase()).toMatch(/perde/);
   });
 
-  it("o rotulo do painel fala de quem CONTINUA, e nao de quem sai", () => {
-    expect(mensagens["transferir.continua.rotulo"].toLowerCase()).toContain("continua");
+  it("o link compartilhado e nomeado, porque e o acesso que ninguem ve na tela", () => {
+    expect(mensagens["transferir.continua.organizacao.texto"].toLowerCase()).toContain("link");
   });
 
-  it("a frase do titular anterior nao chama de leitura o que e escrita", () => {
-    // O backend concede EDITOR ao titular anterior. Prometer "leitura" seria descrever
-    // menos poder do que a pessoa realmente mantem sobre o animal.
+  it("a tese e a do desenho: acessos nao sao herdados", () => {
+    expect(mensagens["transferir.continua.tese"].toLowerCase()).toContain("não são herdados");
+  });
+
+  it("o titular anterior fica com leitura, e a frase nao promete registrar", () => {
+    // O backend concede VIEWER. Dizer "registrar" aqui prometeria um poder que a pessoa
+    // perdeu no aceite — o defeito simetrico do que este bloco guardava antes.
     const texto = mensagens["transferir.continua.voce.texto"].toLowerCase();
 
-    expect(texto).toContain("registrar");
-    expect(texto).not.toMatch(/somente leitura|apenas leitura|so leitura/);
+    expect(texto).toMatch(/ver|leitura/);
+    expect(texto).not.toMatch(/permissão de registrar|com permissão de registrar/);
   });
 });
 

@@ -596,13 +596,15 @@ export const mensagens = {
   "transferir.junto.condicoes": "{condicoes, plural, =0 {Nenhuma condição registrada} one {# condição registrada} other {# condições registradas}} e {anexos, plural, =0 {nenhum anexo} one {# anexo} other {# anexos}}",
   // O desenho escreveu "quem deixa de ver o Code". O backend não revoga nada de ninguém
   // na transferência, então a tela diz o que acontece de fato — com o mesmo peso de alerta.
-  "transferir.continua.rotulo": "Quem continua alcançando o {nome}",
+  // O painel virou "quem deixa de ver", como o desenho pede. A mudança é do backend, e não de
+  // texto: no aceite, toda concessão do animal é revogada e você fica com leitura.
+  "transferir.continua.rotulo": "O que muda no acesso ao {nome}",
   "transferir.continua.voce": "Você",
-  "transferir.continua.voce.texto": "Deixa de responder pelo {nome} e continua alcançando ele como co-tutor, com permissão de registrar. Quem recebe pode revogar isso.",
+  "transferir.continua.voce.texto": "Deixa de responder pelo {nome} e passa a apenas ver o histórico dele. Registrar, conceder e transferir passam a ser de quem recebe.",
   "transferir.continua.coTutor": "{quem}, co-tutor",
-  "transferir.continua.coTutor.texto": "Continua com o mesmo acesso. Quem recebe pode revogar.",
-  "transferir.continua.organizacao.texto": "Continua com o acesso que você concedeu. Quem recebe pode revogar.",
-  "transferir.continua.tese": "Hoje os acessos são herdados: quem recebe o animal recebe também quem já alcançava ele, e decide o que fica.",
+  "transferir.continua.coTutor.texto": "Perde o acesso no aceite. Quem recebe concede de novo, se quiser.",
+  "transferir.continua.organizacao.texto": "Perde o acesso no aceite — inclusive o link compartilhado. Quem recebe concede de novo, se quiser.",
+  "transferir.continua.tese": "Acessos não são herdados: quem autorizou foi você, e quem passa a responder pelo animal decide do zero quem alcança ele.",
   "transferir.acao": "Enviar transferência",
   "transferir.acao.enviando": "Enviando…",
   "transferir.acao.cancelar": "Cancelar",
