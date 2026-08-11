@@ -171,6 +171,19 @@ function VidaDoAnimal() {
             >
               {intl.formatMessage({ id: "animal.acao.creches" })}
             </Link>
+
+            {/*
+             * Tela 42, e o caminho fica AQUI porque e daqui que ele faz sentido: o unico
+             * lancamento manual do produto e sobre ESTE animal. "Racao e coisas de mercado nao tem
+             * organizacao por tras — so existem se o tutor lancar."
+             */}
+            <Link
+              to="/animais/$animalId/compra"
+              params={{ animalId }}
+              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "12px 20px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+            >
+              {intl.formatMessage({ id: "animal.acao.compra" })}
+            </Link>
           </div>
         </div>
 

@@ -645,6 +645,7 @@ export const mensagens = {
   // "O produto responde pela saúde": a creche não julga e o tutor não prova nada. O servidor cruza
   // o que a organização exige com o que a carteira tem, e esta tela só mostra.
   "animal.acao.creches": "Creches",
+  "animal.acao.compra": "Lançar uma compra",
   "matricula.titulo": "As creches do {nome}",
   "matricula.apoio": "A comprovação de saúde é do produto, e não da creche: o Petfy compara o que cada organização exige com o que a carteira tem, e refaz essa conta a cada vez que alguém olha.",
   "matricula.oQue": "as matrículas",
@@ -1222,6 +1223,46 @@ export const mensagens = {
     "Entra sozinha quando a creche marca a entrada num dia fora do combinado",
   "matricula.combinado.naoCobra":
     "O Petfy não cobra e não processa pagamento — ele guarda o que foi combinado, para você não precisar perguntar por telefone.",
+
+  // ------------------------------------------------ Tela 42 · o que você compra por fora
+  //
+  // "Este é o único formulário de dinheiro em todo o Petfy, e ele cabe em três toques.
+  // Quanto mais campos, menos gente lança, e menos verdadeiro fica o custo." Nenhuma frase
+  // aqui cobra o lançamento: a última diz o contrário, e é dela que a tela depende.
+  "compra.titulo": "Lançar uma compra",
+  "compra.oQue": "O que foi",
+  "compra.oQue.racao": "Ração",
+  "compra.oQue.remedio": "Remédio",
+  "compra.oQue.outro": "Outro",
+  "compra.valor": "Valor",
+  "compra.duraUmMes": "Dura cerca de um mês",
+  "compra.lancar": "Lançar",
+  "compra.lancando": "Lançando…",
+  "compra.lancado": "{valor} entrou no custo do {nome}.",
+  "compra.oQueE": "a compra",
+  "compra.tresToques":
+    "Três toques. Se você não lançar, o custo do {nome} fica incompleto — e tudo bem, ele continua servindo.",
+  "compra.voltar": "Voltar para o {nome}",
+
+  "compra.unico.titulo": "O único lançamento manual do produto",
+  "compra.unico.p1":
+    "Tudo que acontece numa organização entra sozinho, porque alguém já estava registrando o evento. Ração e coisas de mercado não têm organização por trás — só existem se você lançar.",
+  "compra.unico.p2":
+    "Por isso este é o único formulário de dinheiro em todo o Petfy, e ele cabe em três toques. Quanto mais campos, menos gente lança, e menos verdadeiro fica o custo.",
+
+  "compra.mensal.titulo": "“Dura cerca de um mês”",
+  "compra.mensal.texto":
+    "Essa caixinha é o que transforma uma compra avulsa em custo mensal previsível — e é também o que permite a um abrigo dizer ao adotante que a ração dele custa R$ 190 por mês, todo mês. Sem ela, o produto só saberia somar o passado.",
+
+  "compra.naoExiste.titulo": "O que não existe aqui",
+  "compra.naoExiste.banco":
+    "Nenhuma integração com banco ou cartão. O Petfy não olha sua conta.",
+  "compra.naoExiste.orcamento":
+    "Nenhum orçamento mensal, nenhuma meta, nenhum aviso de que você passou do limite.",
+  "compra.naoExiste.loja":
+    "Nenhuma loja, nenhum link de compra, nenhuma sugestão de ração mais barata.",
+  "compra.naoExiste.fecho":
+    "O custo existe para responder “o que vem pela frente” e “quanto este animal realmente custa”. Tudo além disso seria outro produto morando dentro deste.",
 
   // ------------------------------- o mesmo animal, cadastrado duas vezes (Tela 32)
   //

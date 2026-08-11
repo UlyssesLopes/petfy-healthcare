@@ -4,33 +4,31 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-11, com o **bloco 2 fechado e mergeado** e a **espinha do bloco 3 de pé**.
+> Escrito em 2026-08-11, com o **bloco 3 fechado** — as três telas de pé, sem PR aberto.
 
 ## Onde o trabalho está agora
 
-**Branch `feat/por-onde-o-valor-entra`, um commit (`bba76b3`), sem PR aberto.**
+**Branch `feat/por-onde-o-valor-entra`, cinco commits, sem PR aberto.**
 A `main` está em `931dac0` — os PRs #53, #54 e #55 já foram mergeados.
 
-**860 casos, 0 falhas, `Skipped: 0`** contra Postgres real. Contrato regenerado, nenhuma operação
-renomeada. O front ainda não foi tocado neste bloco.
+**868 casos no backend, 43 no front, tudo verde, `Skipped: 0`.** Contrato regenerado, nenhuma
+operação renomeada. `npm run build` limpo.
 
-### O que já está pronto no bloco 3
+### O bloco 3, inteiro
 
 - `V36__custo_do_animal.sql` — a tabela `animal_costs`, e `monthly_fee` / `due_day` / `daily_rate`
   na `enrollments`
+- `V37__os_dias_combinados.sql` — a `enrollment_weekdays`, sem a qual a diária não tinha como entrar
 - `AnimalCost`, `AnimalCostKind`, `CostRecurrence`, repositório, serviço e duas rotas
   (`GET` e `POST /animals/{animalId}/costs`)
-- A regra de acesso, com cinco testes
-- `animal_costs` classificada nas **duas** guardas de cobertura (move na união, some no purge)
-
-### O que já está pronto no bloco 3 (continuação)
-
-- **O combinado da creche, inteiro** — `V37__os_dias_combinados.sql`, `PUT
-  /professional/creche/enrollments/{id}/agreement`, e os quatro campos no DTO de matrícula.
-- **A diária avulsa entra sozinha no check-in**, com as três recusas a cobrar por suposição.
-- **Tela 40** — a caixa "Valor cobrado · opcional" dentro de `pacientes.$animalId.atendimento.tsx`.
-
-**868 casos no backend, 43 no front, tudo verde, `Skipped: 0`.**
+- `PUT /professional/creche/enrollments/{id}/agreement` — o combinado inteiro, e não campo a campo
+- **A diária avulsa entra sozinha no check-in**, com as três recusas a cobrar por suposição
+- `AnimalAccessGuard.respondePor` — a guarda que impede o combinado de vazar por concessão
+- **Tela 40** — "Valor cobrado · opcional" dentro de `pacientes.$animalId.atendimento.tsx`
+- **Tela 41** — `/creche/matricula/{turma}/{matricula}` (creche escreve) e a caixa "O que foi
+  combinado" em `animais.$animalId_.matricula.tsx` (tutor lê)
+- **Tela 42** — `/animais/{id}/compra`, o único lançamento manual do produto
+- `animal_costs` e `enrollment_weekdays` classificadas nas **duas** guardas de cobertura
 
 ### O DIA COMBINADO NÃO EXISTIA, e essa foi a decisão desta sessão
 
@@ -61,9 +59,16 @@ nulos do servidor.
 Rota nova: `/creche/matricula/{classGroupId}/{enrollmentId}`, alcançada pelo **nome do animal** na
 Tela 17 — um nome não disputa com o gesto das 7h30, um botão disputaria.
 
-### O que falta no bloco 3
+### Tela 42, e o preço que ela paga de propósito
 
-1. **Tela 42** — "o que você compra por fora": três toques, na área do tutor.
+"O que foi" são **três botões e nenhum campo de texto**, como o desenho desenha. A consequência é
+real e foi aceita: uma compra marcada como "Outro" chega ao custo dizendo só "Outro". O desenho
+aceita isso de olhos abertos — *"quanto mais campos, menos gente lança, e menos verdadeiro fica o
+custo"*. Uma compra lançada vale mais do que uma compra bem descrita que ninguém lançou.
+
+**A caixinha "dura cerca de um mês" é o campo mais importante da tela**, e não parece. É ela que
+transforma compra avulsa em custo mensal previsível — e é dela que o bloco 4 vai depender para
+dizer "a ração do Teco custa R$ 190 por mês, todo mês".
 
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 
@@ -88,7 +93,7 @@ telas. Eles estão versionados (entraram no PR #53).
 |---|---|---|
 | 1 | A faixa sai de dentro do cabeçalho sticky | **Fechado** — PR #54 |
 | 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado e mergeado** (PRs #54 e #55) |
-| 3 | Por onde o valor entra — 40, 41, 42 | **Espinha de backend pronta**; falta o resto |
+| 3 | Por onde o valor entra — 40, 41, 42 | **Fechado**, sem PR aberto |
 | 4 | Custo do cuidado — 37, 38, 39 | pendente |
 | 5 | Fim e reencontro — 33, 34 | pendente |
 | 6 | Animal comunitário — 43, 44, 45 | pendente |
@@ -164,23 +169,27 @@ que um 500 — **silencioso**: a união terminaria "com sucesso" deixando evento
 - **`cd` no Bash contamina o cwd do PowerShell** — rodar `mvn -f <pom absoluto>`.
 - **O merge de PR é comando do Ulysses, sempre.**
 - **Nenhuma tela foi conferida no navegador** em nenhuma destas entregas: a extensão do Chrome não
-  esteve conectada.
+  esteve conectada. **E isso já custou um defeito:** o `creche.tsx` estava com texto
+  **duplo-codificado** — `Â·` entre o nome do animal e a espécie, `â€”` na coluna de entrada —, e
+  isso apareceria assim em tela desde que a Tela 17 foi entregue. Os dois foram corrigidos; **os
+  comentários daquele arquivo continuam corrompidos**, e nenhum teste pega isso.
+- **ICU não aceita chave vazia em `select`.** `{x, select, {} {} other {…}}` compila e só explode
+  em tela, no caso raro. Quando o texto muda conforme um campo existir ou não, são **duas
+  mensagens** concatenadas — não um `select` sobre string vazia.
 
 ## Primeiro passo da próxima sessão
 
-**Terminar o bloco 3**, na ordem abaixo. O desenho é
-`design/IdentidadeVisual/Telas Petfy - Por onde o valor entra.dc.html`.
+**Abrir o PR do bloco 3** (o merge é comando do Ulysses), e então **começar o bloco 4 — Custo do
+cuidado, Telas 37, 38 e 39**. O desenho é
+`design/IdentidadeVisual/Telas Petfy - Custo do cuidado.dc.html`.
 
-1. **A mensalidade na matrícula.** Expor `monthlyFee`, `dueDay` e `dailyRate` no DTO de matrícula
-   e aceitá-los na escrita. As colunas já existem.
-2. **A diária avulsa no check-in.** Em `CrecheServiceImpl`, no `check-in`: se o dia não é dos
-   combinados e a matrícula tem `dailyRate`, criar um `AnimalCost` do tipo `CRECHE_DIARIA` com
-   `sourceEnrollmentId`. Usar `existeDiariaNoDia` antes, para não cobrar duas vezes.
-3. **Tela 40** — o campo de valor dentro de `pacientes.$animalId.atendimento.tsx`. Um item tem
-   descrição, valor e "já foi pago", e há "adicionar outro item". Lançar depois de o atendimento
-   gravar, com `sourceHealthRecordId`.
-4. **Tela 41** — o combinado, dentro da tela de matrícula.
-5. **Tela 42** — "o que você compra por fora": três toques, na área do tutor.
+O bloco 4 é a **leitura** do que o 3 passou a gravar: `GET /animals/{id}/costs` já existe e já
+devolve tudo com `kind`, `recurrence` e a origem. O que ele vai precisar decidir é como somar o
+recorrente — a `CostRecurrence.MENSAL` marca a linha, e ninguém ainda calculou nada com ela.
+
+**Duas coisas do bloco 3 que o 4 vai encontrar prontas:** a caixinha "dura cerca de um mês" da
+Tela 42, que é a única fonte de "custo mensal previsível" que não vem de mensalidade de creche; e
+o `monthlyFee` da matrícula, que o tutor já lê na tela dele.
 
 ### O que essas telas NÃO têm, e o desenho diz com todas as letras
 
