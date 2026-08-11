@@ -30,6 +30,33 @@ public interface TimelineRepository extends JpaRepository<TimelineEntry, UUID> {
     Page<TimelineEntry> findDoAnimal(@Param("animalId") UUID animalId, Pageable pageable);
 
     /**
+     * A mesma linha, recortada por quem registrou — os dois filtros da Tela 30.
+     *
+     * <b>Os dois recortes existem porque respondem perguntas diferentes numa consulta.</b> "So
+     * desta clinica" e "o que nos ja sabiamos deste animal antes de hoje"; "so o que eu registrei"
+     * e "o que EU vi com meus olhos", que e o que a veterinaria confere antes de contradizer um
+     * colega. Um filtro de cliente sobre a pagina carregada responderia errado as duas: a pagina
+     * tem vinte itens e a vida do animal tem centenas.
+     *
+     * <b>Nulo desliga o filtro</b>, em vez de existir uma consulta por combinacao. Com dois
+     * recortes seriam quatro metodos, e o quarto — os dois ao mesmo tempo — e exatamente o que a
+     * tela permite marcar.
+     *
+     * <b>O escopo NAO entra aqui</b>, e continua sendo aplicado depois de paginar, como sempre
+     * foi: filtrar por autor e recortar o que a pessoa pediu, e mascarar por escopo e esconder o
+     * que ela nao alcanca. Misturar os dois faria um evento fora do escopo desaparecer quando ela
+     * marcasse "so desta clinica" — e sumir diria que o animal nunca foi atendido.
+     */
+    @Query("select t from TimelineEntry t where t.animalId = :animalId "
+            + "and (:organizationId is null or t.organizationId = :organizationId) "
+            + "and (:recordedByPersonId is null or t.recordedByPersonId = :recordedByPersonId) "
+            + "order by t.occurredAt desc, t.recordedAt desc")
+    Page<TimelineEntry> findDoAnimalFiltrada(@Param("animalId") UUID animalId,
+                                             @Param("organizationId") UUID organizationId,
+                                             @Param("recordedByPersonId") UUID recordedByPersonId,
+                                             Pageable pageable);
+
+    /**
      * Quando cada pessoa contribuiu por ultimo neste animal.
      *
      * <b>E o que faz a rede de quem cuida parecer viva</b> (DESIGN 5.4): "cada pessoa

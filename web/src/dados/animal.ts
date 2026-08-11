@@ -37,6 +37,40 @@ export function useLinhaDoTempo(animalId: string | undefined) {
   });
 }
 
+/** Os tres botoes do historico da Tela 30, na ordem em que ela os desenha. */
+export type RecorteDoHistorico = "tudo" | "desta-clinica" | "meus";
+
+/**
+ * A mesma linha do tempo, com o recorte da Tela 30.
+ *
+ * <b>O recorte e do SERVIDOR, e nao um filtro sobre o que ja foi carregado.</b> A pergunta "o
+ * que esta clinica ja sabia deste animal" tem de olhar a vida inteira, e nao os 200 eventos que
+ * a Tela 02 traz para desenhar a faixa de anos — um animal de dez anos passa disso, e o filtro
+ * de cliente responderia errado com toda a confianca do mundo.
+ *
+ * <b>O recorte entra na `queryKey`</b>, entao trocar de aba nao reaproveita a resposta anterior.
+ * E o que se quer: cada recorte e uma pergunta diferente, e nao uma vista da mesma resposta.
+ */
+export function useHistoricoClinico(animalId: string | undefined, recorte: RecorteDoHistorico) {
+  return useQuery({
+    queryKey: ["historico-clinico", animalId, recorte],
+    enabled: animalId !== undefined,
+    queryFn: async () =>
+      corpoDe(
+        await cliente.GET("/animals/{animalId}/timeline", {
+          params: {
+            path: { animalId: animalId! },
+            query: {
+              size: 200,
+              onlyMyOrganization: recorte === "desta-clinica",
+              onlyMine: recorte === "meus",
+            },
+          },
+        }),
+      ).content ?? [],
+  });
+}
+
 /**
  * Quem responde pelo animal e quem o alcanca por concessao.
  *

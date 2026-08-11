@@ -305,8 +305,15 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
             </Link>
           )}
 
+          {/*
+           * <b>Leva a Tela 30, e nao mais a Tela 02.</b> As duas mostram o mesmo animal e
+           * respondem perguntas diferentes: a Tela 02 e a vida dele como o TUTOR a le, e a 30 e
+           * o que a clinica precisa ter na frente antes de prescrever — alergia e o que ja esta
+           * em uso primeiro, e o historico com "so desta clinica" ao lado. Quem chega por aqui
+           * esta atendendo, e nao visitando.
+           */}
           <Link
-            to="/animais/$animalId"
+            to="/pacientes/$animalId"
             params={{ animalId: paciente.animalId }}
             style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "11px 16px", minHeight: "44px", display: "flex", alignItems: "center", textDecoration: "none" }}
           >

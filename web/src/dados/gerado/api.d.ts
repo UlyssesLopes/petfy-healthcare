@@ -351,7 +351,7 @@ export interface paths {
         };
         /**
          * A vida do animal em ordem, atravessando custodias e organizacoes
-         * @description Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario.
+         * @description Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir.
          */
         get: operations["timeline"];
         put?: never;
@@ -3474,6 +3474,8 @@ export interface operations {
     timeline: {
         parameters: {
             query?: {
+                onlyMyOrganization?: boolean;
+                onlyMine?: boolean;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
