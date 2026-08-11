@@ -4,18 +4,34 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-11, com o **bloco 2 (núcleo clínico) fechado por inteiro**.
+> Escrito em 2026-08-11, com o **bloco 2 fechado e mergeado** e a **espinha do bloco 3 de pé**.
 
 ## Onde o trabalho está agora
 
-**Branch `feat/cadastro-duplicado`, quatro commits, sem PR aberto ainda.**
+**Branch `feat/por-onde-o-valor-entra`, um commit (`bba76b3`), sem PR aberto.**
+A `main` está em `931dac0` — os PRs #53, #54 e #55 já foram mergeados.
 
-**O bloco 2 está completo: Telas 30, 31 e 32.** Verde: **855 casos, 0 falhas, `Skipped: 0`**
-contra Postgres real; front com `tsc` limpo, 43 testes e build verde. Contrato sem nenhuma
-operação renomeada.
+**860 casos, 0 falhas, `Skipped: 0`** contra Postgres real. Contrato regenerado, nenhuma operação
+renomeada. O front ainda não foi tocado neste bloco.
 
-**Próximo passo: abrir o PR desta branch, e começar o bloco 3** (Por onde o valor entra —
-Telas 40, 41, 42).
+### O que já está pronto no bloco 3
+
+- `V36__custo_do_animal.sql` — a tabela `animal_costs`, e `monthly_fee` / `due_day` / `daily_rate`
+  na `enrollments`
+- `AnimalCost`, `AnimalCostKind`, `CostRecurrence`, repositório, serviço e duas rotas
+  (`GET` e `POST /animals/{animalId}/costs`)
+- A regra de acesso, com cinco testes
+- `animal_costs` classificada nas **duas** guardas de cobertura (move na união, some no purge)
+
+### O que falta no bloco 3
+
+1. **A mensalidade dentro da matrícula (Tela 41, backend).** As colunas existem na `enrollments`;
+   falta expor no DTO de matrícula e aceitar na escrita.
+2. **A diária avulsa que entra sozinha.** É o encadeamento central do bloco: a creche marca a
+   entrada num dia fora da combinação e o evento de check-in cria o custo — *"ninguém digitou
+   nada"*. O repositório já tem `existeDiariaNoDia` para impedir cobrança dobrada quando a creche
+   desfaz e refaz o check-in. Falta ligar no serviço de check-in.
+3. **As três telas.** A 40 entra dentro de `pacientes.$animalId.atendimento.tsx`, que já existe.
 
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 
@@ -39,8 +55,8 @@ telas. Eles estão versionados (entraram no PR #53).
 | # | Bloco | Estado |
 |---|---|---|
 | 1 | A faixa sai de dentro do cabeçalho sticky | **Fechado** — PR #54 |
-| 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado.** 30 e 31 no PR #54; 32 nesta branch |
-| 3 | Por onde o valor entra — 40, 41, 42 | pendente |
+| 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado e mergeado** (PRs #54 e #55) |
+| 3 | Por onde o valor entra — 40, 41, 42 | **Espinha de backend pronta**; falta o resto |
 | 4 | Custo do cuidado — 37, 38, 39 | pendente |
 | 5 | Fim e reencontro — 33, 34 | pendente |
 | 6 | Animal comunitário — 43, 44, 45 | pendente |
@@ -120,18 +136,26 @@ que um 500 — **silencioso**: a união terminaria "com sucesso" deixando evento
 
 ## Primeiro passo da próxima sessão
 
-**Abrir o PR desta branch** (`feat/cadastro-duplicado`, quatro commits) e conferir o CI.
-
-Depois, **o bloco 3: Por onde o valor entra (Telas 40, 41, 42)**, de
+**Terminar o bloco 3**, na ordem abaixo. O desenho é
 `design/IdentidadeVisual/Telas Petfy - Por onde o valor entra.dc.html`.
 
-- **Tela 40** é literalmente "dentro da tela 31": o campo de custo no registro de atendimento.
-  A Tela 31 já existe (`web/src/rotas/pacientes.$animalId.atendimento.tsx`), então é ali que ele
-  entra — e o `HealthRecordRequestDTO` **não tem campo de custo**, então há backend.
-- **Tela 41** é a mensalidade da creche, dentro da matrícula.
-- **Tela 42** é o que o tutor compra por fora.
+1. **A mensalidade na matrícula.** Expor `monthlyFee`, `dueDay` e `dailyRate` no DTO de matrícula
+   e aceitá-los na escrita. As colunas já existem.
+2. **A diária avulsa no check-in.** Em `CrecheServiceImpl`, no `check-in`: se o dia não é dos
+   combinados e a matrícula tem `dailyRate`, criar um `AnimalCost` do tipo `CRECHE_DIARIA` com
+   `sourceEnrollmentId`. Usar `existeDiariaNoDia` antes, para não cobrar duas vezes.
+3. **Tela 40** — o campo de valor dentro de `pacientes.$animalId.atendimento.tsx`. Um item tem
+   descrição, valor e "já foi pago", e há "adicionar outro item". Lançar depois de o atendimento
+   gravar, com `sourceHealthRecordId`.
+4. **Tela 41** — o combinado, dentro da tela de matrícula.
+5. **Tela 42** — "o que você compra por fora": três toques, na área do tutor.
 
-O levantamento de backend ainda não foi feito para nenhuma das três.
+### O que essas telas NÃO têm, e o desenho diz com todas as letras
+
+- Nenhuma integração com banco ou cartão. "O Petfy não olha sua conta."
+- Nenhum orçamento mensal, nenhuma meta, nenhum aviso de que passou do limite.
+- Nenhum losango e nenhum "valor não informado" em cinza: **a ausência de preço não é pendência**,
+  é um evento clínico completo.
 
 ## O que a Tela 32 deixou pronto, e vale saber antes de mexer
 
