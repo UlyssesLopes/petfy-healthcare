@@ -2,6 +2,7 @@ import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
 import { FormattedMessage } from "react-intl";
 
 import { FaixaDeConsentimento } from "../componentes/FaixaDeConsentimento.tsx";
+import { Moldura } from "../componentes/Moldura.tsx";
 
 /**
  * A raiz da arvore de rotas.
@@ -28,7 +29,14 @@ function Raiz() {
        * bloqueio. Por isso ela mora na raiz, acima do `Outlet`.
        */}
       <FaixaDeConsentimento />
-      <Outlet />
+      {/*
+       * A moldura mora aqui, e nao em cada rota, porque foi exatamente "cada rota se lembra de
+       * repetir" que produziu onze cabecalhos parecidos e nenhum igual. Quem sai do padrao —
+       * as portas, o stepper — declara isso dentro da propria Moldura, num lugar so.
+       */}
+      <Moldura>
+        <Outlet />
+      </Moldura>
     </>
   );
 }

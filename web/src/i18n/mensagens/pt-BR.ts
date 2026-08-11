@@ -939,6 +939,74 @@ export const mensagens = {
   "animal.credencial.INFORMADO": "informado",
   "animal.credencial.VERIFICADO": "verificado",
   "animal.credencial.SUSPENSO": "suspenso",
+
+  // ------------------------------------------------------------ a moldura do produto
+  //
+  // Cabeçalho e rodapé de toda tela autenticada. O diagnóstico está na primeira frase do
+  // desenho: "o que eu vinha desenhando era um cabeçalho por tela — parecido, nunca igual. É
+  // isso que dá a sensação de falta na implementação."
+  "moldura.agindoComo": "Agindo como",
+  "moldura.agindoComo.voceMesmo": "· você mesmo",
+  // Em contexto de organização o seletor diz "pela". "É a diferença visual entre registrar como
+  // pessoa e registrar em nome de alguém — e ela nunca é sutil."
+  "moldura.agindoComo.pela": "pela {organizacao}",
+  // Ambíguo não é erro: com mais de um vínculo e sem escolha declarada, o servidor se recusa a
+  // decidir em silêncio — porque um registro assinado por uma organização que a pessoa não
+  // pretendia não se corrige depois.
+  "moldura.agindoComo.escolha": "· escolha por quem",
+  "moldura.contexto.pessoa": "Você mesmo",
+  "moldura.voce": "Sua conta",
+  "moldura.sair": "Sair",
+
+  // No máximo quatro, e só entra destino que existe: um item de menu que leva a lugar nenhum é
+  // pior que a ausência dele.
+  "moldura.destino.hoje": "Hoje",
+  "moldura.destino.pacientes": "Pacientes",
+  "moldura.destino.creche": "Creche",
+  "moldura.destino.equipe": "Equipe",
+
+  // As duas afordâncias sem backend. A seção 06 da identidade manda: "o desabilitado nunca
+  // aparece mudo — ao lado dele, sempre a frase que diz por que".
+  "moldura.busca": "Buscar animal",
+  "moldura.busca.indisponivel":
+    "A busca ainda não existe: não há rota de busca no servidor, e o RGA nem é um campo do cadastro.",
+  "moldura.avisos.indisponivel":
+    "Não há canal de aviso no produto ainda, então este marcador nunca acende. Ele fica visível para não sumir da tela quando passar a funcionar.",
+
+  // A faixa. "Faixa é aviso de sessão, nunca de animal" — pendência de saúde vive no feed, e se
+  // subir para o cabeçalho o produto vira cobrador.
+  "moldura.faixa.email": "Confirme seu e-mail para receber avisos de vacina.",
+  "moldura.faixa.email.reenviar": "Reenviar",
+  "moldura.faixa.email.enviando": "Enviando…",
+  "moldura.faixa.email.enviado": "Enviado — veja sua caixa de entrada",
+
+  // O rodapé. A tese é a do produto inteiro, e não uma frase de marketing.
+  "moldura.rodape.tese":
+    "O registro é do animal. Ele atravessa tutores, clínicas e abrigos, e não recomeça quando a responsabilidade muda de mão.",
+  "moldura.rodape.produto": "O produto",
+  "moldura.rodape.produto.tutores": "Para tutores",
+  "moldura.rodape.produto.clinicas": "Para clínicas",
+  "moldura.rodape.produto.creches": "Para creches e petshops",
+  "moldura.rodape.produto.abrigos": "Para abrigos",
+  // "Seus dados" não vai para dentro de configurações: num produto que pede acesso à saúde de um
+  // ser vivo, esses links são a garantia — e garantia escondida não sossega ninguém.
+  "moldura.rodape.dados": "Seus dados",
+  "moldura.rodape.dados.privacidade": "Política de privacidade",
+  "moldura.rodape.dados.termos": "Termos de uso",
+  "moldura.rodape.dados.quemLe": "Quem lê o registro dos meus animais",
+  "moldura.rodape.dados.exportar": "Levar meus dados embora",
+  "moldura.rodape.ajuda": "Ajuda",
+  "moldura.rodape.ajuda.central": "Central de ajuda",
+  "moldura.rodape.ajuda.contato": "Falar com a gente",
+  "moldura.rodape.ajuda.acessibilidade": "Acessibilidade",
+  "moldura.rodape.ajuda.status": "Status do sistema",
+  // A linha de fé. Não é rodapé jurídico enfiado no fim: é o limite do produto, dito onde
+  // qualquer pessoa alcança.
+  "moldura.rodape.fe.titulo": "O Petfy não substitui atendimento veterinário.",
+  "moldura.rodape.fe.texto":
+    "Guardamos e organizamos o que profissionais e cuidadores registram, e não emitimos diagnóstico. Registros profissionais informados por quem se cadastra não são verificados junto aos conselhos. Em emergência, procure um veterinário.",
+  "moldura.rodape.assinatura": "© 2026 Petfy · São Paulo, Brasil",
+  "moldura.rodape.lgpd": "Encarregado de dados (LGPD)",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

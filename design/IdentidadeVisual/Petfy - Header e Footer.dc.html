@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Bitter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: oklch(0.94 0.006 150); }
+  * { box-sizing: border-box; }
+  a { color: oklch(0.46 0.085 150); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: oklch(0.36 0.085 150); }
+</style>
+</helmet>
+
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: oklch(0.25 0.02 150); padding: 72px 56px 120px; display: flex; flex-direction: column; gap: 80px; align-items: flex-start;">
+
+  <div style="max-width: 900px;">
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 40px;">
+      <div style="width: 34px; height: 34px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;">
+        <div style="width: 10px; height: 10px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div>
+      </div>
+      <div style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 600;">Petfy</div>
+    </div>
+    <h1 style="font-family: Bitter, Georgia, serif; font-size: 48px; line-height: 1.1; font-weight: 500; letter-spacing: -0.025em; margin: 0 0 20px; max-width: 20ch;">A moldura de toda tela.</h1>
+    <p style="font-size: 18px; line-height: 1.6; color: oklch(0.42 0.015 150); margin: 0 0 24px; max-width: 64ch; text-wrap: pretty;">Um cabeçalho e um rodapé fixos, com anatomia definida e estados resolvidos. O que eu vinha desenhando era um cabeçalho por tela — parecido, nunca igual. É isso que dá a sensação de falta na implementação.</p>
+    <div style="border-left: 3px solid oklch(0.52 0.14 30); padding: 4px 0 4px 20px; font-size: 16px; line-height: 1.65; color: oklch(0.35 0.018 150); max-width: 64ch;">Uma exceção que precisa ficar na regra: o cartão de emergência e as telas públicas <strong style="font-weight: 500;">não</strong> recebem este par. Sem sessão, sem navegação, sem rodapé institucional entre o dedo e o telefone do veterinário. Variante mínima na seção 4.</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">01 · anatomia</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Cabeçalho — 64 px, três zonas</span>
+    </div>
+
+    <div style="width: 1360px; display: flex; flex-direction: column; gap: 16px;">
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 32px; align-items: center; padding: 0 28px; height: 64px; border-bottom: 1px solid oklch(0.90 0.008 150);">
+          <div style="display: flex; align-items: center; gap: 28px;">
+            <a href="#inicio" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+              <div style="width: 26px; height: 26px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+              <span style="font-family: Bitter, Georgia, serif; font-size: 17px; font-weight: 600; color: oklch(0.25 0.02 150);">Petfy</span>
+            </a>
+            <div style="display: flex; align-items: center; gap: 10px; border: 1px solid oklch(0.86 0.008 150); border-radius: 8px; padding: 0 14px; height: 44px; background: oklch(0.975 0.004 150);">
+              <span style="font-size: 13px; color: oklch(0.5 0.015 150);">Agindo como</span>
+              <span style="font-size: 15px; font-weight: 500;">Marcelo Dias</span>
+              <span style="font-size: 13px; color: oklch(0.5 0.015 150);">· você mesmo</span>
+              <span style="width: 7px; height: 7px; border-right: 1.5px solid oklch(0.45 0.015 150); border-bottom: 1.5px solid oklch(0.45 0.015 150); transform: rotate(45deg); margin-left: 4px; margin-top: -3px;"></span>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 4px; justify-self: center;">
+            <div style="display: flex; align-items: center; padding: 0 14px; height: 44px; border-radius: 8px; background: oklch(0.94 0.02 150); font-size: 15px; font-weight: 500; color: oklch(0.38 0.07 150);">Hoje</div>
+            <div style="display: flex; align-items: center; padding: 0 14px; height: 44px; border-radius: 8px; font-size: 15px; color: oklch(0.42 0.015 150);">Meus animais</div>
+            <div style="display: flex; align-items: center; padding: 0 14px; height: 44px; border-radius: 8px; font-size: 15px; color: oklch(0.42 0.015 150);">Quem cuida</div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 9px; border: 1px solid oklch(0.86 0.008 150); border-radius: 8px; padding: 0 14px; height: 44px; width: 200px; color: oklch(0.5 0.015 150); font-size: 15px;">
+              <div style="width: 13px; height: 13px; border-radius: 999px; border: 2px solid oklch(0.6 0.015 150); flex: none;"></div>
+              Buscar animal
+            </div>
+            <div style="position: relative; width: 44px; height: 44px; border: 1px solid oklch(0.86 0.008 150); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 15px; height: 15px; border-radius: 999px; border: 2px solid oklch(0.42 0.015 150);"></div>
+              <div style="position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 999px; background: oklch(0.55 0.14 30); border: 2px solid #fff;"></div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 999px; background: oklch(0.90 0.03 150);"></div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;">
+          <div style="padding: 22px 28px; border-right: 1px solid oklch(0.94 0.006 150);">
+            <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 10px;">Esquerda · quem você é agora</div>
+            <div style="font-size: 15px; line-height: 1.6; color: oklch(0.35 0.018 150);">Marca sempre volta ao início. Ao lado, o seletor “Agindo como” — a peça mais importante do cabeçalho, porque a mesma conta atende como pessoa e em nome de organizações, e tudo que se registra leva esse nome.</div>
+          </div>
+          <div style="padding: 22px 28px; border-right: 1px solid oklch(0.94 0.006 150);">
+            <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 10px;">Centro · onde você está</div>
+            <div style="font-size: 15px; line-height: 1.6; color: oklch(0.35 0.018 150);">No máximo quatro destinos, e eles mudam conforme o contexto ativo. Nunca mais de quatro: o produto não é um portal.</div>
+          </div>
+          <div style="padding: 22px 28px;">
+            <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 10px;">Direita · buscar, avisos, você</div>
+            <div style="font-size: 15px; line-height: 1.6; color: oklch(0.35 0.018 150);">Busca por nome, microchip ou RGA. O marcador de avisos usa as mesmas formas de estado do sistema — losango só quando algo venceu.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 24px 26px;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 16px;">Contexto de organização</div>
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 8px; overflow: hidden;">
+            <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; padding: 0 20px; height: 64px;">
+              <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="display: flex; align-items: center; gap: 9px;">
+                  <div style="width: 24px; height: 24px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 7px; height: 7px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+                  <span style="font-family: Bitter, Georgia, serif; font-size: 16px; font-weight: 600;">Petfy</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 9px; border: 1px solid oklch(0.46 0.085 150); border-radius: 8px; padding: 0 13px; height: 44px; background: oklch(0.96 0.02 150);">
+                  <span style="font-size: 13px; color: oklch(0.42 0.05 150);">Agindo como</span>
+                  <span style="font-size: 14px; font-weight: 500;">Ana Ferreira</span>
+                  <span style="font-size: 14px; color: oklch(0.42 0.05 150);">pela Clínica Vet Norte</span>
+                </div>
+              </div>
+              <div></div>
+              <div style="width: 32px; height: 32px; border-radius: 999px; background: oklch(0.90 0.03 150);"></div>
+            </div>
+          </div>
+          <div style="font-size: 14px; line-height: 1.6; color: oklch(0.5 0.015 150); margin-top: 14px;">Em contexto de organização o seletor ganha contorno musgo e diz “pela”. É a diferença visual entre registrar como pessoa e registrar em nome de alguém — e ela nunca é sutil.</div>
+        </div>
+
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 24px 26px;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 16px;">Faixas do cabeçalho · abaixo dos 64 px, empilháveis</div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="border: 1px solid oklch(0.86 0.03 70); background: oklch(0.985 0.012 70); border-radius: 8px; padding: 13px 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="width: 12px; height: 12px; border-radius: 999px; border: 3px solid oklch(0.62 0.11 70); flex: none;"></div>
+              <span style="font-size: 15px; flex: 1;">Confirme seu e-mail para receber avisos de vacina.</span>
+              <a href="#reenviar" style="font-size: 14px;">Reenviar</a>
+            </div>
+            <div style="border: 1px solid oklch(0.90 0.008 150); background: oklch(0.975 0.004 150); border-radius: 8px; padding: 13px 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="width: 12px; height: 12px; border-radius: 999px; border: 2px dashed oklch(0.6 0.015 150); flex: none;"></div>
+              <span style="font-size: 15px; flex: 1;">Você está sem conexão. O que registrar agora será enviado depois.</span>
+            </div>
+          </div>
+          <div style="font-size: 14px; line-height: 1.6; color: oklch(0.5 0.015 150); margin-top: 14px;">Faixa é aviso de sessão, nunca de animal. Pendência de saúde vive no feed — se ela subir para o cabeçalho, o produto vira cobrador.</div>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 24px 26px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 16px;">No celular · 56 px, e a navegação vai para baixo</div>
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+          <div style="width: 390px; border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; overflow: hidden;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 0 18px; height: 56px; border-bottom: 1px solid oklch(0.92 0.006 150);">
+              <div style="width: 24px; height: 24px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center; flex: none;"><div style="width: 7px; height: 7px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+              <span style="font-family: Bitter, Georgia, serif; font-size: 16px; font-weight: 600;">Petfy</span>
+              <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+                <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 14px; height: 14px; border-radius: 999px; border: 2px solid oklch(0.42 0.015 150);"></div>
+                  <div style="position: absolute; top: 0; right: 0; width: 8px; height: 8px; border-radius: 999px; background: oklch(0.55 0.14 30); border: 2px solid #fff;"></div>
+                </div>
+                <div style="width: 30px; height: 30px; border-radius: 999px; background: oklch(0.90 0.03 150);"></div>
+              </div>
+            </div>
+            <div style="padding: 18px; background: oklch(0.985 0.004 120); min-height: 130px; display: flex; align-items: center; justify-content: center;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 12px; color: oklch(0.5 0.015 150);">conteúdo da tela</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid oklch(0.92 0.006 150);">
+              <div style="padding: 12px 0 14px; display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 60px;">
+                <div style="width: 13px; height: 13px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div>
+                <span style="font-size: 13px; font-weight: 500; color: oklch(0.38 0.07 150);">Hoje</span>
+              </div>
+              <div style="padding: 12px 0 14px; display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 60px;">
+                <div style="width: 13px; height: 13px; border-radius: 999px; border: 2px solid oklch(0.6 0.015 150);"></div>
+                <span style="font-size: 13px; color: oklch(0.45 0.015 150);">Animais</span>
+              </div>
+              <div style="padding: 12px 0 14px; display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 60px;">
+                <div style="width: 13px; height: 13px; border-radius: 4px; border: 2px solid oklch(0.6 0.015 150);"></div>
+                <span style="font-size: 13px; color: oklch(0.45 0.015 150);">Quem cuida</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex: 1; font-size: 15px; line-height: 1.65; color: oklch(0.35 0.018 150); padding-top: 4px;">
+            <p style="margin: 0 0 14px;">No celular o cabeçalho guarda só marca, avisos e você. Os destinos descem para a barra inferior, onde o polegar alcança — três, no máximo.</p>
+            <p style="margin: 0 0 14px;">O “Agindo como” sai do cabeçalho e passa para o menu do avatar, com o contexto ativo escrito por extenso no topo dele. Ele não pode desaparecer: um monitor que registra achando que está como pessoa física é um problema de responsabilidade, não de interface.</p>
+            <p style="margin: 0; color: oklch(0.5 0.015 150);">Não há rodapé institucional no celular. Ele viraria uma parede de links acima da barra de navegação.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">02 · anatomia</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Rodapé — quatro colunas e uma linha de fé</span>
+    </div>
+
+    <div style="width: 1360px; background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+      <div style="background: oklch(0.975 0.008 150); border-bottom: 1px solid oklch(0.90 0.008 150); padding: 44px 40px 36px;">
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 11px; margin-bottom: 16px;">
+              <div style="width: 28px; height: 28px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+              <span style="font-family: Bitter, Georgia, serif; font-size: 18px; font-weight: 600;">Petfy</span>
+            </div>
+            <div style="font-size: 15px; line-height: 1.65; color: oklch(0.42 0.015 150); max-width: 34ch;">O registro é do animal. Ele atravessa tutores, clínicas e abrigos, e não recomeça quando a responsabilidade muda de mão.</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 16px;">O produto</div>
+            <div style="display: flex; flex-direction: column; gap: 11px; font-size: 15px;">
+              <a href="#tutores">Para tutores</a>
+              <a href="#clinicas">Para clínicas</a>
+              <a href="#creches">Para creches e petshops</a>
+              <a href="#abrigos">Para abrigos</a>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 16px;">Seus dados</div>
+            <div style="display: flex; flex-direction: column; gap: 11px; font-size: 15px;">
+              <a href="#privacidade">Política de privacidade</a>
+              <a href="#termos">Termos de uso</a>
+              <a href="#quem-le">Quem lê o registro dos meus animais</a>
+              <a href="#exportar">Levar meus dados embora</a>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 16px;">Ajuda</div>
+            <div style="display: flex; flex-direction: column; gap: 11px; font-size: 15px;">
+              <a href="#ajuda">Central de ajuda</a>
+              <a href="#contato">Falar com a gente</a>
+              <a href="#acessibilidade">Acessibilidade</a>
+              <a href="#status">Status do sistema</a>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid oklch(0.90 0.008 150); padding-top: 26px; display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start;">
+          <div style="width: 13px; height: 13px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); margin-top: 4px;"></div>
+          <div style="font-size: 15px; line-height: 1.65; color: oklch(0.35 0.018 150); max-width: 96ch;">
+            <strong style="font-weight: 500;">O Petfy não substitui atendimento veterinário.</strong> Guardamos e organizamos o que profissionais e cuidadores registram, e não emitimos diagnóstico. Registros profissionais informados por quem se cadastra não são verificados junto aos conselhos. Em emergência, procure um veterinário.
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+        <div style="font-size: 14px; color: oklch(0.5 0.015 150);">© 2026 Petfy · São Paulo, Brasil</div>
+        <div style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: oklch(0.5 0.015 150);">
+          <span style="font-family: 'DM Mono', monospace; font-size: 13px;">v1.0</span>
+          <a href="#lgpd">Encarregado de dados (LGPD)</a>
+        </div>
+      </div>
+    </div>
+
+    <div style="width: 1360px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 22px 24px; font-size: 15px; line-height: 1.65; color: oklch(0.35 0.018 150);">
+        <div style="font-family: Bitter, Georgia, serif; font-size: 18px; font-weight: 500; margin-bottom: 10px;">A coluna que não é padrão</div>
+        “Seus dados” traz “quem lê o registro dos meus animais” e “levar meus dados embora” para o rodapé, não para dentro de configurações. Num produto que pede acesso à saúde de um ser vivo, esses dois links são a garantia — e garantia escondida não sossega ninguém.
+      </div>
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 22px 24px; font-size: 15px; line-height: 1.65; color: oklch(0.35 0.018 150);">
+        <div style="font-family: Bitter, Georgia, serif; font-size: 18px; font-weight: 500; margin-bottom: 10px;">A linha de fé</div>
+        O aviso de que o Petfy não substitui veterinário, e de que credenciais são informadas e não verificadas, aparece em toda tela autenticada. É a mesma honestidade do “informado” ao lado do CRMV — dita uma vez no lugar certo, não escondida nos termos.
+      </div>
+      <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 22px 24px; font-size: 15px; line-height: 1.65; color: oklch(0.35 0.018 150);">
+        <div style="font-family: Bitter, Georgia, serif; font-size: 18px; font-weight: 500; margin-bottom: 10px;">Sem redes sociais</div>
+        Nenhum ícone de rede, nenhuma newsletter, nenhum selo. O rodapé de um registro de saúde não é espaço de aquisição. Se um dia precisar existir, vive na página pública, não na área logada.
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">03 · aplicado</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">A tela do tutor entre os dois</span>
+    </div>
+
+    <div style="width: 1360px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+
+      <div style="background: #fff; border-bottom: 1px solid oklch(0.90 0.008 150);">
+        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 32px; align-items: center; padding: 0 28px; height: 64px;">
+          <div style="display: flex; align-items: center; gap: 28px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 26px; height: 26px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+              <span style="font-family: Bitter, Georgia, serif; font-size: 17px; font-weight: 600;">Petfy</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; border: 1px solid oklch(0.86 0.008 150); border-radius: 8px; padding: 0 14px; height: 44px; background: oklch(0.975 0.004 150);">
+              <span style="font-size: 13px; color: oklch(0.5 0.015 150);">Agindo como</span>
+              <span style="font-size: 15px; font-weight: 500;">Marcelo Dias</span>
+              <span style="font-size: 13px; color: oklch(0.5 0.015 150);">· você mesmo</span>
+              <span style="width: 7px; height: 7px; border-right: 1.5px solid oklch(0.45 0.015 150); border-bottom: 1.5px solid oklch(0.45 0.015 150); transform: rotate(45deg); margin-left: 4px; margin-top: -3px;"></span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px; justify-self: center;">
+            <div style="display: flex; align-items: center; padding: 0 14px; height: 44px; border-radius: 8px; background: oklch(0.94 0.02 150); font-size: 15px; font-weight: 500; color: oklch(0.38 0.07 150);">Hoje</div>
+            <div style="display: flex; align-items: center; padding: 0 14px; height: 44px; border-radius: 8px; font-size: 15px; color: oklch(0.42 0.015 150);">Meus animais</div>
+            <div style="display: flex; align-items: center; padding: 0 14px; height: 44px; border-radius: 8px; font-size: 15px; color: oklch(0.42 0.015 150);">Quem cuida</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 9px; border: 1px solid oklch(0.86 0.008 150); border-radius: 8px; padding: 0 14px; height: 44px; width: 200px; color: oklch(0.5 0.015 150); font-size: 15px;">
+              <div style="width: 13px; height: 13px; border-radius: 999px; border: 2px solid oklch(0.6 0.015 150); flex: none;"></div>
+              Buscar animal
+            </div>
+            <div style="position: relative; width: 44px; height: 44px; border: 1px solid oklch(0.86 0.008 150); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 15px; height: 15px; border-radius: 999px; border: 2px solid oklch(0.42 0.015 150);"></div>
+              <div style="position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 999px; background: oklch(0.55 0.14 30); border: 2px solid #fff;"></div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 999px; background: oklch(0.90 0.03 150);"></div>
+          </div>
+        </div>
+        <div style="border-top: 1px solid oklch(0.94 0.006 150); background: oklch(0.985 0.012 70); padding: 12px 28px; display: flex; align-items: center; gap: 12px;">
+          <div style="width: 12px; height: 12px; border-radius: 999px; border: 3px solid oklch(0.62 0.11 70); flex: none;"></div>
+          <span style="font-size: 15px; flex: 1;">Confirme seu e-mail para receber avisos de vacina e remédio.</span>
+          <a href="#reenviar" style="font-size: 14px;">Reenviar confirmação</a>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 264px 1fr 320px; min-height: 520px;">
+        <div style="border-right: 1px solid oklch(0.90 0.008 150); padding: 24px 20px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); padding: 0 12px 10px;">Sob sua custódia</div>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: oklch(0.94 0.02 150); min-height: 44px;">
+            <div style="width: 38px; height: 38px; border-radius: 999px; background: oklch(0.86 0.03 150); flex: none;"></div>
+            <div><div style="font-family: Bitter, Georgia, serif; font-size: 17px; font-weight: 500;">Code</div><div style="font-size: 13px; color: oklch(0.45 0.015 150);">Cão · 6 anos</div></div>
+            <div style="margin-left: auto; width: 12px; height: 12px; background: oklch(0.55 0.14 30); transform: rotate(45deg); flex: none;"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; min-height: 44px;">
+            <div style="width: 38px; height: 38px; border-radius: 999px; background: oklch(0.90 0.012 150); flex: none;"></div>
+            <div><div style="font-family: Bitter, Georgia, serif; font-size: 17px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;">Bartolomeu Silveira</div><div style="font-size: 13px; color: oklch(0.45 0.015 150);">Gato · 2 anos</div></div>
+            <div style="margin-left: auto; width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></div>
+          </div>
+        </div>
+
+        <div style="padding: 32px 36px;">
+          <h2 style="font-family: Bitter, Georgia, serif; font-size: 30px; font-weight: 500; margin: 0 0 6px; letter-spacing: -0.02em;">Hoje</h2>
+          <p style="font-size: 15px; color: oklch(0.45 0.015 150); margin: 0 0 24px;">Duas coisas pedem você.</p>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="border: 1px solid oklch(0.86 0.03 30); background: oklch(0.985 0.008 30); border-radius: 12px; padding: 20px 22px; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center;">
+              <div style="width: 13px; height: 13px; background: oklch(0.55 0.14 30); transform: rotate(45deg);"></div>
+              <div>
+                <div style="font-size: 17px; font-weight: 500; margin-bottom: 4px;">Antirrábica do Code vencida há 23 dias</div>
+                <div style="font-size: 14px; color: oklch(0.45 0.015 150);">Última dose em 12/03/2024, pela Clínica Vet Norte</div>
+              </div>
+              <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 12px 20px; min-height: 44px; cursor: pointer;">Registrar dose</button>
+            </div>
+            <div style="border: 1px solid oklch(0.90 0.008 150); background: #fff; border-radius: 12px; padding: 20px 22px; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center;">
+              <div style="width: 13px; height: 13px; border-radius: 999px; border: 3px solid oklch(0.62 0.11 70);"></div>
+              <div>
+                <div style="font-size: 17px; font-weight: 500; margin-bottom: 4px;">Amoxicilina do Code, 1 comprimido às 20h</div>
+                <div style="font-size: 14px; color: oklch(0.45 0.015 150);">Dia 6 de 10 · orientação de Ana Ferreira, pela Clínica Vet Norte</div>
+              </div>
+              <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: oklch(0.25 0.02 150); background: #fff; border: 1px solid oklch(0.82 0.012 150); border-radius: 8px; padding: 12px 20px; min-height: 44px; cursor: pointer;" style-hover="border-color: oklch(0.46 0.085 150); color: oklch(0.46 0.085 150);">Já dei</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-left: 1px solid oklch(0.90 0.008 150); padding: 32px 24px;">
+          <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 14px;">Code, de relance</div>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px;">
+            <div style="display: flex; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; background: oklch(0.55 0.14 30); transform: rotate(45deg); flex: none;"></div>Vacinação irregular</div>
+            <div style="display: flex; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></div>Antiparasitário em dia</div>
+            <div style="display: flex; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; border-radius: 999px; border: 2px dashed oklch(0.55 0.015 150); flex: none;"></div>Peso sem registro há 5 meses</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: oklch(0.975 0.008 150); border-top: 1px solid oklch(0.90 0.008 150); padding: 40px 40px 32px;">
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 32px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 11px; margin-bottom: 14px;">
+              <div style="width: 26px; height: 26px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+              <span style="font-family: Bitter, Georgia, serif; font-size: 17px; font-weight: 600;">Petfy</span>
+            </div>
+            <div style="font-size: 15px; line-height: 1.65; color: oklch(0.42 0.015 150); max-width: 34ch;">O registro é do animal. Ele atravessa tutores, clínicas e abrigos.</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 14px;">O produto</div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px;">
+              <a href="#tutores">Para tutores</a>
+              <a href="#clinicas">Para clínicas</a>
+              <a href="#creches">Para creches e petshops</a>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 14px;">Seus dados</div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px;">
+              <a href="#privacidade">Política de privacidade</a>
+              <a href="#quem-le">Quem lê o registro dos meus animais</a>
+              <a href="#exportar">Levar meus dados embora</a>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 14px;">Ajuda</div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px;">
+              <a href="#ajuda">Central de ajuda</a>
+              <a href="#contato">Falar com a gente</a>
+              <a href="#acessibilidade">Acessibilidade</a>
+            </div>
+          </div>
+        </div>
+        <div style="border-top: 1px solid oklch(0.90 0.008 150); padding-top: 22px; display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; margin-bottom: 20px;">
+          <div style="width: 12px; height: 12px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); margin-top: 4px;"></div>
+          <div style="font-size: 14px; line-height: 1.65; color: oklch(0.42 0.015 150); max-width: 100ch;">O Petfy não substitui atendimento veterinário. Registros profissionais informados no cadastro não são verificados junto aos conselhos. Em emergência, procure um veterinário.</div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; font-size: 14px; color: oklch(0.5 0.015 150);">
+          <div>© 2026 Petfy · São Paulo, Brasil</div>
+          <div style="display: flex; align-items: center; gap: 22px;"><span style="font-family: 'DM Mono', monospace; font-size: 13px;">v1.0</span><a href="#lgpd">Encarregado de dados (LGPD)</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">04 · a exceção</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">Onde este par não entra</span>
+    </div>
+
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+      <div style="width: 400px; background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+        <div style="background: oklch(0.46 0.085 150); padding: 18px 22px; color: #fff; display: flex; align-items: center; gap: 10px;">
+          <div style="width: 20px; height: 20px; border-radius: 999px; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; flex: none;"><div style="width: 6px; height: 6px; border-radius: 999px; background: #fff;"></div></div>
+          <span style="font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase;">Cartão do animal · só leitura</span>
+        </div>
+        <div style="padding: 22px;">
+          <div style="font-family: Bitter, Georgia, serif; font-size: 26px; font-weight: 500; margin-bottom: 16px;">Code</div>
+          <div style="display: flex; flex-direction: column; gap: 12px; font-size: 16px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px;"><span style="width: 12px; height: 12px; background: oklch(0.55 0.14 30); transform: rotate(45deg); flex: none;"></span>Alergia a frango</div>
+            <div style="display: flex; align-items: center; gap: 10px;"><span style="width: 12px; height: 12px; border-radius: 999px; border: 3px solid oklch(0.62 0.11 70); flex: none;"></span>Amoxicilina, até 12/08</div>
+          </div>
+          <a href="#tel" style="display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 17px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border-radius: 8px; padding: 16px; min-height: 56px;">Ligar para Marcelo Dias</a>
+        </div>
+        <div style="border-top: 1px solid oklch(0.92 0.006 150); padding: 14px 22px; font-size: 13px; line-height: 1.55; color: oklch(0.5 0.015 150);">
+          Cartão gerado por quem responde pelo Code · vale até 31/12/2026 · <a href="#privacidade">privacidade</a>
+        </div>
+      </div>
+
+      <div style="width: 560px; background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 28px 30px;">
+        <div style="font-family: Bitter, Georgia, serif; font-size: 20px; font-weight: 500; margin-bottom: 14px;">Rodapé mínimo, e nenhum cabeçalho</div>
+        <div style="font-size: 15px; line-height: 1.7; color: oklch(0.35 0.018 150); margin-bottom: 18px;">Quem abre o cartão de emergência não tem sessão, não tem para onde navegar e está com pressa. Cabeçalho com “Agindo como” não faz sentido, e um rodapé de quatro colunas seria uma parede entre o dedo e o telefone do veterinário. Sobra uma linha: quem gerou, até quando vale, e privacidade.</div>
+        <div style="border-top: 1px solid oklch(0.92 0.006 150); padding-top: 18px;">
+          <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 12px;">Recebem o par completo</div>
+          <div style="font-size: 15px; line-height: 1.7; color: oklch(0.35 0.018 150); margin-bottom: 16px;">Toda tela autenticada: área do tutor, área de organização, administração, configurações.</div>
+          <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 12px;">Recebem versão reduzida</div>
+          <div style="font-size: 15px; line-height: 1.7; color: oklch(0.35 0.018 150);">Login e criação de conta ficam com a marca no lugar do cabeçalho e uma linha só de rodapé — termos, privacidade e ajuda. O stepper do primeiro animal mantém a marca e o “fazer isso depois”, sem navegação: sair no meio é botão, não link de menu.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

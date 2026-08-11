@@ -84,6 +84,9 @@
             },
             "type" : "array"
           },
+          "emailVerified" : {
+            "type" : "boolean"
+          },
           "personId" : {
             "format" : "uuid",
             "type" : "string"

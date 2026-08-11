@@ -3,7 +3,6 @@ import { useState, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
 import { Carregando, ErroDeCarga } from "../componentes/Estados.tsx";
-import { useMeuContexto } from "../dados/contexto.ts";
 import {
   usePacientes,
   useResumoDosPacientes,
@@ -14,17 +13,17 @@ import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
- * A "Tela 03 · web, tela grande — Area de organizacao, a segunda-feira da veterinaria", de
+ * A "Tela 03 Â· web, tela grande â€” Area de organizacao, a segunda-feira da veterinaria", de
  * `design/IdentidadeVisual/Telas Petfy.dc.html`.
  *
- * <b>A COLUNA MAIS IMPORTANTE DELA EXISTE AGORA.</b> O desenho pede quatro colunas — animal,
- * tutor, <b>situacao</b> e <b>ultima visita</b> —, quatro recortes contados no topo e um painel
+ * <b>A COLUNA MAIS IMPORTANTE DELA EXISTE AGORA.</b> O desenho pede quatro colunas â€” animal,
+ * tutor, <b>situacao</b> e <b>ultima visita</b> â€”, quatro recortes contados no topo e um painel
  * "quem esta vencendo". Ate a rodada passada nada disso vinha do backend: o `VetPetDTO` tinha
  * nome, tutor, raca, sexo, nascimento e peso, e zero sobre saude.
  *
  * O que destravou foi a agregacao por organizacao: `healthStatus`, `lastVisitAt` e
  * `underTreatment` viajam por animal, e `/professional/animals/summary` conta o conjunto
- * inteiro. <b>Tudo em lote, no servidor</b> — era justamente a leitura por animal (318
+ * inteiro. <b>Tudo em lote, no servidor</b> â€” era justamente a leitura por animal (318
  * requisicoes para desenhar uma tabela) que tornava isso impossivel no cliente.
  *
  * <b>A TELA NAO RECALCULA NADA.</b> A situacao vem pronta, como na Tela 10: no dia em que o
@@ -32,7 +31,7 @@ import { lerSessao } from "../dados/sessao.ts";
  * apareceria em dia para quem decide a quem ligar.
  *
  * <b>O que AINDA nao existe e o GESTO:</b> "avisar os doze tutores". Nao ha canal de aviso no
- * produto, e um botao que nao avisa ninguem seria pior que a ausencia dele — entao o painel
+ * produto, e um botao que nao avisa ninguem seria pior que a ausencia dele â€” entao o painel
  * lista quem esta vencendo e diz, em vez de desenhar, que avisar dali nao existe.
  *
  * <b>A busca e do servidor</b> (`q`), e nao do cliente: 318 pacientes nao caberiam numa
@@ -50,12 +49,11 @@ export const Route = createFileRoute("/pacientes")({
 
 function Pacientes() {
   const intl = useIntl();
-  const contexto = useMeuContexto();
   const [busca, setBusca] = useState("");
 
   /*
    * DUAS LISTAS, e nao um filtro: "quem eu alcanco porque alguem me concedeu" e "por quem eu
-   * respondo" sao perguntas diferentes. O abrigo precisa da segunda para decidir uma adocao —
+   * respondo" sao perguntas diferentes. O abrigo precisa da segunda para decidir uma adocao â€”
    * e a Tela 12 inteira mora nela, quando tiver onde-esta e saude.
    */
   const [aba, setAba] = useState<"acesso" | "custodia">("acesso");
@@ -65,8 +63,6 @@ function Pacientes() {
   const resumo = useResumoDosPacientes();
   const pacientes = aba === "acesso" ? porAcesso : porCustodia;
 
-  const quem = contexto.data?.personName ?? "";
-  const ativo = contexto.data?.active;
   const lista = pacientes.data?.content ?? [];
   const total = pacientes.data?.totalElements;
 
@@ -81,40 +77,6 @@ function Pacientes() {
   return (
     <div style={{ padding: "40px 24px" }}>
       <div style={{ maxWidth: "1360px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div aria-hidden style={{ width: "26px", height: "26px", borderRadius: "999px", border: "2.5px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
-              </div>
-              <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
-            </div>
-            <Link to="/" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
-              {intl.formatMessage({ id: "pacientes.meusAnimais" })}
-            </Link>
-
-            {/* A operacao do dia (Tela 17): a tela mais usada de quem tem creche. */}
-            <Link to="/creche" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
-              {intl.formatMessage({ id: "pacientes.hoje" })}
-            </Link>
-          </div>
-
-          {/*
-           * "Agindo como" com a organizacao ao lado: e o chip que a Tela 01 ja usa, e aqui ele
-           * e obrigatorio — quem atende precisa saber em nome de quem esta registrando.
-           */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "8px", padding: "8px 14px", minHeight: "44px", background: "oklch(0.975 0.004 150)" }}>
-            <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-              {intl.formatMessage({ id: "comecar.agindoComo" })}
-            </span>
-            <span style={{ fontSize: "15px", fontWeight: 500 }}>{quem}</span>
-            {ativo?.organizationName !== undefined && (
-              <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-                {intl.formatMessage({ id: "equipe.pela" }, { organizacao: ativo.organizationName })}
-              </span>
-            )}
-          </div>
-        </div>
 
         <div style={{ padding: "28px 32px 36px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "18px", flexWrap: "wrap" }}>
@@ -134,7 +96,7 @@ function Pacientes() {
 
           {/*
            * Os quatro recortes do desenho. As duas abas contam pelo `totalElements` de cada
-           * lista — sao dois conjuntos diferentes, e nao dois filtros do mesmo. Os outros tres
+           * lista â€” sao dois conjuntos diferentes, e nao dois filtros do mesmo. Os outros tres
            * vem do resumo, que conta sobre a organizacao INTEIRA: numero que muda ao buscar nao
            * e resumo.
            */}
@@ -222,8 +184,8 @@ function Pacientes() {
           )}
 
           {/*
-            "QUEM ESTA VENCENDO". A lista existe agora; o GESTO do desenho — "avisar os doze
-            tutores" — continua nao existindo, e por isso continua escrito em vez de desenhado:
+            "QUEM ESTA VENCENDO". A lista existe agora; o GESTO do desenho â€” "avisar os doze
+            tutores" â€” continua nao existindo, e por isso continua escrito em vez de desenhado:
             nao ha canal de aviso no produto, e um botao que nao avisa ninguem seria pior que a
             ausencia dele.
 
@@ -246,8 +208,8 @@ function Pacientes() {
                     <b style={{ fontWeight: 500 }}>{paciente.name}</b>
                     {paciente.personName === undefined
                       ? ""
-                      : ` · ${paciente.personName}`}
-                    {" · "}
+                      : ` Â· ${paciente.personName}`}
+                    {" Â· "}
                     <Situacao status={paciente.healthStatus} />
                   </li>
                 ))}
@@ -282,13 +244,13 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
       <div>
         <span style={{ fontSize: "16px", fontWeight: 500 }}>{paciente.name}</span>
         {identidade !== "" && (
-          <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}> · {identidade}</span>
+          <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}> Â· {identidade}</span>
         )}
       </div>
 
       {/*
        * SEM TUTOR HUMANO e uma informacao, e nao um campo vazio. O animal sob custodia do
-       * abrigo nao tem tutor — escrever o nome do abrigo aqui faria a coluna mentir, e deixar
+       * abrigo nao tem tutor â€” escrever o nome do abrigo aqui faria a coluna mentir, e deixar
        * em branco faria parecer defeito.
        */}
       <div style={{ fontSize: "15px", color: paciente.personName === undefined ? "oklch(0.5 0.015 150)" : "oklch(0.35 0.018 150)" }}>
@@ -296,7 +258,7 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
       </div>
 
       {/*
-        A COLUNA QUE A TELA NAO TINHA. O servidor manda a dose mais urgente da carteira pronta —
+        A COLUNA QUE A TELA NAO TINHA. O servidor manda a dose mais urgente da carteira pronta â€”
         vencida vence vencendo, que vence em dia. A tela nao recalcula nada: no dia em que ela
         divergisse do servidor, seria o dia em que um animal com antirrabica vencida apareceria
         em dia para quem decide a quem ligar.
@@ -314,7 +276,7 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
       </div>
 
       {/*
-        Nunca visitou NAO e "—": e "sem visita registrada", e a diferenca importa para quem le.
+        Nunca visitou NAO e "â€”": e "sem visita registrada", e a diferenca importa para quem le.
         O tracinho diz "nao sei"; a frase diz o que o produto sabe.
       */}
       <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", fontFamily: "'DM Mono', monospace" }}>
@@ -332,7 +294,7 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
         <span></span>
       ) : (
         <div style={{ display: "flex", gap: "10px" }}>
-          {/* Adotar so aparece para quem o abrigo RESPONDE — e a Tela 13. */}
+          {/* Adotar so aparece para quem o abrigo RESPONDE â€” e a Tela 13. */}
           {sobCustodia && (
             <Link
               to="/animais/$animalId/adocao"
@@ -360,7 +322,7 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
  * A situacao da carteira, em palavra e cor.
  *
  * <b>`NO_NEXT_DOSE` nao e "em dia", e por isso tem frase propria.</b> Pode ser dose unica e pode
- * ser carteira que ninguem registrou — dizer "em dia" ali seria o produto afirmando saude a
+ * ser carteira que ninguem registrou â€” dizer "em dia" ali seria o produto afirmando saude a
  * partir de ausencia de dado, que e exatamente o que ele existe para nao fazer.
  */
 function Situacao({ status }: { status: Paciente["healthStatus"] }) {
@@ -403,7 +365,7 @@ function Recorte({ texto, atencao = false }: { texto: string; atencao?: boolean 
   );
 }
 
-/** Os recortes do topo: só existem os dois que uma consulta responde. */
+/** Os recortes do topo: sÃ³ existem os dois que uma consulta responde. */
 function Aba({
   escolhida,
   aoEscolher,

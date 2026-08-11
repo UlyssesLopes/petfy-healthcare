@@ -59,6 +59,10 @@ public class ActiveContextServiceImpl implements ActiveContextService {
                 .personId(person.getPersonId())
                 .personName(person.getName())
                 .professional(credentialRepository.existsAtivaPorEmail(person.getEmail(), CredentialStatus.SUSPENSO))
+                // O mesmo predicado que decide se a pessoa recebe notificacao, e nao uma segunda
+                // leitura do instante: se um dia a regra de "pode receber" mudar, a faixa muda com
+                // ela em vez de continuar dizendo o que era verdade antes.
+                .emailVerified(person.podeReceberNotificacao())
                 .active(ativo)
                 .ambiguous(ambiguo)
                 .available(disponiveis(vinculos))
