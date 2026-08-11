@@ -50,6 +50,15 @@ export function useCriarConta() {
       senha: string;
       crmv?: string;
       crmvUf?: string;
+      /**
+       * O convite de organizacao, quando a pessoa chegou por um.
+       *
+       * <b>O backend aceita isso desde sempre, e o front nunca mandou.</b> O campo existia no
+       * `PersonRequestDTO` e nenhuma tela o preenchia — entao quem recebia um convite sem ter
+       * conta dependia de alguem montar a URL na mao. Era a outra metade do buraco que o
+       * aceite com conta existente fechou.
+       */
+      convite?: string;
     }) => {
       const criada = corpoDe(
         await cliente.POST("/persons", {
@@ -61,6 +70,9 @@ export function useCriarConta() {
             ...(conta.crmv === undefined || conta.crmv === ""
               ? {}
               : { crmv: conta.crmv, crmvUf: conta.crmvUf }),
+            ...(conta.convite === undefined || conta.convite === ""
+              ? {}
+              : { inviteToken: conta.convite }),
           },
         }),
       );
