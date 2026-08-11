@@ -107,6 +107,21 @@ function Adocao() {
       <Titulo>{intl.formatMessage({ id: "adocao.titulo" }, { nome })}</Titulo>
       <Apoio>{intl.formatMessage({ id: "adocao.apoio" }, { abrigo })}</Apoio>
 
+      {/*
+       * Tela 39, e o caminho fica ANTES do convite de propósito: "a conversa honesta antes da
+       * adoção". O que ela resolve é o animal voltar — "quase sempre porque alguém adotou sem
+       * saber quanto custa" —, e depois de o convite sair já é tarde para essa conversa.
+       */}
+      <div style={{ margin: "0 0 24px" }}>
+        <Link
+          to="/animais/$animalId/custo-da-adocao"
+          params={{ animalId }}
+          style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}
+        >
+          {intl.formatMessage({ id: "adocao.verCusto" }, { nome })}
+        </Link>
+      </div>
+
       {animal.isError ? (
         <ErroDeCarga
           oQue={intl.formatMessage({ id: "adocao.oQue" })}

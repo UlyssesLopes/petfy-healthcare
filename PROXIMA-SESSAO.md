@@ -4,11 +4,12 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-11, com o **bloco 3 mergeado** e o **bloco 4 faltando só a Tela 39**.
+> Escrito em 2026-08-11, com o **bloco 3 mergeado** e o **bloco 4 fechado**, esperando merge.
 
 ## Onde o trabalho está agora
 
-**Branch `feat/custo-do-cuidado`, no PR #57 — em RASCUNHO, porque falta a Tela 39.**
+**Branch `feat/custo-do-cuidado`, no PR #57 — pronto para revisão, CI verde. O merge é comando
+do Ulysses.**
 A `main` está em `818333f`: o **bloco 3 foi mergeado** pelo PR #56, com CI verde.
 
 **Uma armadilha de fluxo que custou tempo:** o bloco 4 começou na branch do bloco 3 (decisão de
@@ -87,6 +88,7 @@ dizer "a ração do Teco custa R$ 190 por mês, todo mês".
 - `GET /animals/{id}/costs/forecast` — as quatro fontes do que vem pela frente
 - **Tela 37** — `/animais/{id}/custo`
 - **Tela 38** — `/animais/{id}/previsao`
+- **Tela 39** — `/animais/{id}/custo-da-adocao`, alcançada da tela de adoção
 
 ### Duas decisões desta parte
 
@@ -154,12 +156,27 @@ aparece como exceção, aparece como número plausível e errado, e número plau
 comprovação impede a entrada. Genérica, ela viraria conselho, e conselho genérico é o que faz a
 pessoa parar de ler.
 
-### O que falta no bloco 4
+### A Tela 39, e o rótulo que mudou
 
-1. **Tela 39** — a conversa antes da adoção, pelo lado do abrigo. Não precisa de regra de acesso
-   nova: `requireCustodia` já conta custódia de organização, então o abrigo lê o custo do Teco.
-   Reusa `GET /costs/summary` e `GET /costs/forecast`; o "o que o Teco precisa todo mês" é a
-   previsão filtrada pelo que se repete.
+Ela é **frontend puro**: reusa os dois endpoints, e o abrigo lê o custo do Teco sem regra de acesso
+nova — `requireCustodia` já conta custódia de organização desde a Tela 13.
+
+**O desenho chama o segundo número de "Previsto para os próximos 12", e eu não pude.** A previsão
+deste produto cobre só **o que está marcado**; a consulta que vai aparecer no meio do ano não está
+nela, e não pode estar (seria estimativa). Logo o número vem **menor** que os doze meses que
+passaram — e chamá-lo de "previsto" na frente de quem está decidindo adotar **subestimaria o custo
+do animal**, o oposto exato do que a tela existe para fazer.
+
+Virou **"Já marcado para os próximos 12"**, com a falta dita ao lado do número e não num rodapé:
+*"este número é um piso, e não um teto."*
+
+E **"tende a subir: ele tem 11 anos" o produto não afirma.** Definir a partir de que idade um animal
+é idoso é conhecimento veterinário que este código não tem, e varia por espécie e porte. A idade
+aparece como fato na ficha; o julgamento fica com quem conversa.
+
+## O bloco 4 está fechado
+
+**Telas 37, 38 e 39 de pé. 892 casos no backend, 43 no front, `Skipped: 0`.** PR #57.
 
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 
@@ -185,7 +202,7 @@ telas. Eles estão versionados (entraram no PR #53).
 | 1 | A faixa sai de dentro do cabeçalho sticky | **Fechado** — PR #54 |
 | 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado e mergeado** (PRs #54 e #55) |
 | 3 | Por onde o valor entra — 40, 41, 42 | **Fechado**, sem PR aberto |
-| 4 | Custo do cuidado — 37, 38, 39 | **37 e 38 fechadas**; falta a 39 |
+| 4 | Custo do cuidado — 37, 38, 39 | **Fechado** — PR #57, esperando merge |
 | 5 | Fim e reencontro — 33, 34 | pendente |
 | 6 | Animal comunitário — 43, 44, 45 | pendente |
 | 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
@@ -270,17 +287,17 @@ que um 500 — **silencioso**: a união terminaria "com sucesso" deixando evento
 
 ## Primeiro passo da próxima sessão
 
-**Abrir o PR do bloco 3** (o merge é comando do Ulysses), e então **começar o bloco 4 — Custo do
-cuidado, Telas 37, 38 e 39**. O desenho é
-`design/IdentidadeVisual/Telas Petfy - Custo do cuidado.dc.html`.
+**Mergear o #57** (comando do Ulysses), e então **o bloco 5 — Fim e reencontro, Telas 33 e 34**. O
+desenho é `design/IdentidadeVisual/Telas Petfy - Fim, reencontro e conta.dc.html`, que **ainda não
+foi lido nesta sessão**.
 
-O bloco 4 é a **leitura** do que o 3 passou a gravar: `GET /animals/{id}/costs` já existe e já
-devolve tudo com `kind`, `recurrence` e a origem. O que ele vai precisar decidir é como somar o
-recorrente — a `CostRecurrence.MENSAL` marca a linha, e ninguém ainda calculou nada com ela.
+**Duas coisas para conferir antes de planejar o bloco 5:** o `CustodyEndReason` já traz os motivos
+de fim (a adoção usa `ADOCAO`), e a Tela 34 do índice antigo era "a conta" — vale abrir o arquivo e
+ver quais das três telas dele são 33 e 34, porque o nome do arquivo cobre mais do que o bloco.
 
-**Duas coisas do bloco 3 que o 4 vai encontrar prontas:** a caixinha "dura cerca de um mês" da
-Tela 42, que é a única fonte de "custo mensal previsível" que não vem de mensalidade de creche; e
-o `monthlyFee` da matrícula, que o tutor já lê na tela dele.
+**E há uma dívida barata pendente, do bloco 3:** os **comentários** do `web/src/rotas/creche.tsx`
+continuam duplo-codificados (`Â·`, `â€”`). As strings visíveis foram corrigidas; os comentários não,
+e nenhum teste pega isso. É um `sed` e uma revisão.
 
 ### O que essas telas NÃO têm, e o desenho diz com todas as letras
 

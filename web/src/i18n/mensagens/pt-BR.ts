@@ -707,6 +707,9 @@ export const mensagens = {
   // um animal que ele acabou de conhecer." É a tese do produto inteiro, num gesto só.
   "adocao.titulo": "Adoção do {nome}",
   "adocao.apoio": "A vida registrada passa inteira para quem adota. O {abrigo} continua vendo o que produziu, e deixa de mandar no registro.",
+  // O caminho para a Tela 39, antes do convite: depois de ele sair já é tarde para a conversa
+  // que impede o animal de voltar.
+  "adocao.verCusto": "Ver quanto o {nome} custou, para conversar com quem vai adotar",
   "adocao.oQue": "este animal",
   "adocao.oQue.enviar": "a adoção",
   "adocao.recebe": "O que o adotante recebe",
@@ -1321,6 +1324,50 @@ export const mensagens = {
   "custo.quemPagou.semNome.detalhe": "O que a clínica e a creche registraram",
   "custo.quemPagou.soMostra":
     "Dois co-tutores dividem o cuidado e quase sempre perdem a conta de quem pagou o quê. O Petfy só mostra o que alguém informou — não cobra ninguém, não faz acerto, e não vai pedir que você preencha o resto depois.",
+
+  // ------------------------------------------ Tela 39 · a conversa honesta antes da adoção
+  //
+  // "O abrigo tem um problema que custa vidas: o animal volta. Quase sempre porque alguém
+  // adotou sem saber que um cão de 11 anos com artrose custa R$ 270 por mês, todo mês, até o
+  // fim." Nenhuma frase daqui desanima nem desqualifica quem vai adotar — a última linha do
+  // cartão da direita diz por que: "dizer isso antes é o oposto de dificultar a adoção".
+  "adocaoCusto.oQue": "o que este animal custou",
+  "adocaoCusto.anos": "{anos, plural, one {# ano} other {# anos}}",
+  "adocaoCusto.abertura":
+    "Antes de você decidir, o abrigo quer que você saiba quanto o {nome} custou nos últimos doze meses. Não para desanimar — para que ele não volte para cá.",
+  "adocaoCusto.custou": "Custou nos últimos 12 meses",
+  "adocaoCusto.porMes": "{valor} por mês",
+  // NÃO se chama "previsto": a previsão cobre só o que tem data ou se repete, e chamar isso de
+  // previsto na frente de quem está decidindo adotar subestimaria o custo do animal.
+  "adocaoCusto.jaMarcado": "Já marcado para os próximos 12",
+  "adocaoCusto.jaMarcado.falta":
+    "Só o que tem data ou se repete. A consulta que o {nome} vier a precisar não está aqui — este número é um piso, e não um teto.",
+  "adocaoCusto.todoMes": "O que o {nome} precisa todo mês",
+  "adocaoCusto.todoMes.vazio":
+    "Ainda não há nada registrado como mensal para o {nome}. Ração e remédio de uso contínuo aparecem aqui quando alguém os lançar marcando “dura cerca de um mês”.",
+  "adocaoCusto.origem.CRECHE_MENSALIDADE": "Mensalidade combinada com a creche",
+  "adocaoCusto.origem.COMPRA_MENSAL": "Lançado como compra que dura cerca de um mês",
+  "adocaoCusto.origem.DOSE_DE_VACINA": "Dose com data de reforço",
+  "adocaoCusto.origem.ANTIPARASITARIO": "Antiparasitário no intervalo de reforço",
+  "adocaoCusto.realmentePagou":
+    "Estes valores são o que o abrigo realmente pagou, evento por evento, e não uma estimativa de mercado. Onde você mora e onde você trata podem mudar tudo.",
+  "adocaoCusto.voltar": "Voltar para a adoção do {nome}",
+
+  "adocaoCusto.porQue.titulo": "Por que esta é a tela mais valiosa do conjunto",
+  "adocaoCusto.porQue.p1":
+    "O abrigo tem um problema que custa vidas: o animal volta. Quase sempre porque alguém adotou sem saber que um cão idoso com artrose custa a mesma quantia por mês, todo mês, até o fim.",
+  "adocaoCusto.porQue.p2":
+    "Nenhum questionário de adoção resolve isso, porque o abrigo também não tinha o número. Agora tem — está em cada evento registrado do {nome}.",
+  "adocaoCusto.porQue.p3":
+    "Dizer isso antes é o oposto de dificultar a adoção. É o que faz a adoção durar, e é a mesma tese do produto: o que interessa é o animal, não a transação.",
+
+  "adocaoCusto.foraDeProposito.titulo": "O que fica de fora, de propósito",
+  "adocaoCusto.foraDeProposito.triagem":
+    "Nenhuma triagem por renda. O abrigo mostra o custo; quem decide se dá conta é o adotante.",
+  "adocaoCusto.foraDeProposito.orcamento":
+    "Nenhum “animais dentro do seu orçamento”. Isso transformaria um ser vivo em item de catálogo por faixa de preço.",
+  "adocaoCusto.foraDeProposito.plano":
+    "Nenhuma oferta de plano de saúde animal nesta tela. O produto não vende no momento em que alguém está decidindo adotar.",
 
   // -------------------------------------- Tela 38 · o que vem pela frente, e o custo de adiar
   //
