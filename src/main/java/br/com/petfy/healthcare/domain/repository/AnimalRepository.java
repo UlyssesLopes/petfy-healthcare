@@ -51,4 +51,20 @@ public interface AnimalRepository extends JpaRepository<Animal, UUID> {
 
     void deleteByAnimalIdIn(List<UUID> animalIds);
 
+    /**
+     * Outros cadastros com o mesmo microchip — a deteccao da Tela 32.
+     *
+     * <b>Exclui quem ja foi absorvido</b>, e nao por elegancia: um cadastro absorvido guarda o
+     * microchip que tinha, e sem este filtro a duplicata reapareceria para sempre — a clinica
+     * uniria os dois e, no dia seguinte, o produto ofereceria unir de novo com o fantasma.
+     *
+     * <b>E exclui quem ja foi marcado como animal diferente?</b> Nao, e de proposito: a marca diz
+     * "alguem afirmou que sao outros bichos", e nao "pare de perguntar". Se a duplicata some da
+     * deteccao, o erro de digitacao que a marca denuncia nunca mais e encontrado por ninguem.
+     */
+    @Query("select a from Animal a where a.microchipNumber = :microchip "
+            + "and a.animalId <> :exceto and a.mergedIntoAnimalId is null")
+    List<Animal> findOutrosComMicrochip(@Param("microchip") String microchip,
+                                        @Param("exceto") UUID exceto);
+
 }

@@ -329,6 +329,66 @@
         },
         "type" : "object"
       },
+      "AnimalMergeRequestDTO" : {
+        "properties" : {
+          "absorbedAnimalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reason" : {
+            "maxLength" : 500,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "absorbedAnimalId", "reason" ],
+        "type" : "object"
+      },
+      "AnimalMergeRequestResponseDTO" : {
+        "properties" : {
+          "absorbed" : {
+            "$ref" : "#/components/schemas/LadoDaUniao"
+          },
+          "animalMergeRequestId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "creationDate" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "decidedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "decidedByName" : {
+            "type" : "string"
+          },
+          "divergences" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Divergencia"
+            },
+            "type" : "array"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "requestedByName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "PENDENTE", "ACEITO", "RECUSADO" ],
+            "type" : "string"
+          },
+          "surviving" : {
+            "$ref" : "#/components/schemas/LadoDaUniao"
+          }
+        },
+        "type" : "object"
+      },
       "AnimalRequestDTO" : {
         "properties" : {
           "bornDate" : {
@@ -1144,6 +1204,20 @@
         },
         "type" : "object"
       },
+      "Divergencia" : {
+        "properties" : {
+          "absorbedValue" : {
+            "type" : "string"
+          },
+          "field" : {
+            "type" : "string"
+          },
+          "survivingValue" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "DueItemResponseDTO" : {
         "properties" : {
           "animalId" : {
@@ -1380,6 +1454,46 @@
           },
           "updateDate" : {
             "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LadoDaUniao" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "breed" : {
+            "type" : "string"
+          },
+          "eventCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "firstEventAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "holderName" : {
+            "type" : "string"
+          },
+          "microchipNumber" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "organizationCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "peopleCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "species" : {
             "type" : "string"
           }
         },
@@ -2638,7 +2752,7 @@
             "type" : "string"
           },
           "eventType" : {
-            "enum" : [ "VACINA", "ANTIPARASITARIO", "ATENDIMENTO", "OBSERVACAO", "PESAGEM", "CONDICAO", "ANEXO", "ORIENTACAO", "CUMPRIMENTO" ],
+            "enum" : [ "VACINA", "ANTIPARASITARIO", "ATENDIMENTO", "OBSERVACAO", "PESAGEM", "CONDICAO", "ANEXO", "ORIENTACAO", "CUMPRIMENTO", "UNIAO" ],
             "type" : "string"
           },
           "healthData" : {
@@ -3754,6 +3868,38 @@
         "tags" : [ "animal-health-condition-controller" ]
       }
     },
+    "/animals/{animalId}/duplicates" : {
+      "get" : {
+        "description" : "A deteccao da duplicata. Devolve o minimo para a comparacao — nome, especie, raca, quem responde e o TAMANHO da linha do tempo —, e nenhum evento: o prontuario do outro cadastro continua protegido pelo escopo. Nao filtra pelo que quem pergunta alcanca, porque a clinica que acabou de cadastrar quase nunca alcanca o cadastro antigo — e e por isso que ela nao sabia que ele existia.",
+        "operationId" : "duplicates",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/LadoDaUniao"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Outros cadastros com o mesmo microchip deste animal",
+        "tags" : [ "animal-merge-controller" ]
+      }
+    },
     "/animals/{animalId}/enrollments" : {
       "get" : {
         "operationId" : "listEnrollments_1",
@@ -3783,6 +3929,106 @@
         },
         "summary" : "As matriculas do animal, com a comprovacao de saude de cada uma",
         "tags" : [ "animal-enrollment-controller" ]
+      }
+    },
+    "/animals/{animalId}/merge-requests" : {
+      "get" : {
+        "operationId" : "pendingMerges",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AnimalMergeRequestResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Os pedidos de uniao esperando decisao sobre este animal",
+        "tags" : [ "animal-merge-controller" ]
+      },
+      "post" : {
+        "description" : "O animal do caminho e o que SOBREVIVE — e dele o dono que decide, e e na tela dele que o pedido aparece. Quem pede so precisa alcancar os dois cadastros: exigir custodia trancaria o pedido para a unica pessoa que tem como perceber a duplicata.",
+        "operationId" : "requestMerge",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AnimalMergeRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimalMergeRequestResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Pede a uniao a quem responde pelo animal",
+        "tags" : [ "animal-merge-controller" ]
+      }
+    },
+    "/animals/{animalId}/merge-requests/history" : {
+      "get" : {
+        "description" : "A recusa importa tanto quanto o aceite: ela e a afirmacao de que os dois sao animais diferentes, e o motivo original fica ao lado — informacao util na proxima vez que os dois aparecerem parecidos.",
+        "operationId" : "mergeHistory",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AnimalMergeRequestResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Tudo que ja envolveu este cadastro, inclusive o recusado",
+        "tags" : [ "animal-merge-controller" ]
       }
     },
     "/animals/{animalId}/observations" : {
@@ -5149,6 +5395,64 @@
         },
         "summary" : "Em nome de quem estou agindo, e em nome de quem eu poderia",
         "tags" : [ "active-context-controller" ]
+      }
+    },
+    "/merge-requests/{animalMergeRequestId}/accept" : {
+      "post" : {
+        "description" : "Os eventos do cadastro absorvido passam para o sobrevivente, cada um mantendo quem o registrou e a data de lancamento original. O absorvido vira apontador e nao e apagado. Unir NAO transfere custodia nem concede acesso a ninguem. So quem responde pelo animal sobrevivente pode.",
+        "operationId" : "acceptMerge",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalMergeRequestId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimalMergeRequestResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Aceita a uniao — irreversivel",
+        "tags" : [ "animal-merge-controller" ]
+      }
+    },
+    "/merge-requests/{animalMergeRequestId}/reject" : {
+      "post" : {
+        "description" : "Marca o microchip em conflito nos DOIS cadastros — provavelmente ha um erro de digitacao em algum lugar, e alguem vai precisar saber disso. O produto nao adivinha qual dos dois esta errado.",
+        "operationId" : "rejectMerge",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalMergeRequestId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimalMergeRequestResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Recusa: sao animais diferentes",
+        "tags" : [ "animal-merge-controller" ]
       }
     },
     "/organizations" : {

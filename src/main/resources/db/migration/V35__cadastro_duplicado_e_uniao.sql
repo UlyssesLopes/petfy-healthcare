@@ -134,3 +134,165 @@ CREATE UNIQUE INDEX ux_amr_pendente_por_par
 CREATE INDEX ix_amr_sobrevivente_pendente
     ON animal_merge_requests (surviving_animal_id)
     WHERE status = 'PENDENTE';
+
+-- --------------------------------------------------- a uniao vira um evento da linha do tempo
+--
+-- "A uniao em si vira um evento na linha do tempo, com seu nome e o motivo — quem ler daqui a
+-- cinco anos vai entender por que existem dois nomes no historico."
+--
+-- SEM ISSO A UNIAO SERIA INVISIVEL, e esse e o defeito exato que ela criaria: 147 eventos
+-- assinados por gente de tres organizacoes, mais um lote que apareceu de repente vindo de um
+-- cadastro que nao existe mais em lugar nenhum. Quem lesse concluiria que houve erro de sistema.
+--
+-- O EVENTO NAO E UMA TABELA NOVA: ele E o pedido aceito. Guardar a mesma coisa duas vezes —
+-- linha no `animal_merge_requests` e linha numa tabela de eventos — abriria a porta para as duas
+-- discordarem, e a que aparece na tela seria a que ninguem confere.
+--
+-- Ele entra so quando ACEITO. Pedido pendente nao e fato da vida do animal; e uma pergunta.
+CREATE OR REPLACE VIEW animal_timeline AS
+WITH base AS (
+    SELECT v.vaccine_id                      AS event_id,
+           'VACINA'                          AS event_type,
+           v.animal_id,
+           v.application_date::timestamp     AS occurred_at,
+           v.creation_date                   AS recorded_at,
+           v.recorded_by_person_id,
+           v.organization_id,
+           true                              AS is_health_data,
+           v.vaccine_name                    AS summary
+    FROM vaccines v
+    WHERE v.application_date IS NOT NULL
+
+    UNION ALL
+
+    SELECT a.antiparasitic_id, 'ANTIPARASITARIO', a.animal_id,
+           a.application_date::timestamp, a.creation_date,
+           a.recorded_by_person_id, a.organization_id, true, a.name
+    FROM antiparasitics a
+    WHERE a.application_date IS NOT NULL
+
+    UNION ALL
+
+    SELECT h.health_record_id, 'ATENDIMENTO', h.animal_id,
+           h.event_date::timestamp, h.creation_date,
+           h.recorded_by_person_id, h.organization_id, true,
+           COALESCE(h.diagnosis, h.event_type)
+    FROM health_records h
+
+    UNION ALL
+
+    SELECT w.weight_history_id, 'PESAGEM', w.animal_id,
+           w.measured_at::timestamp, w.creation_date,
+           w.recorded_by_person_id, w.organization_id, true,
+           w.weight::text
+    FROM animal_weight_history w
+
+    UNION ALL
+
+    SELECT c.animal_health_condition_id, 'CONDICAO', c.animal_id,
+           COALESCE(c.since::timestamp, c.creation_date), c.creation_date,
+           c.recorded_by_person_id, c.organization_id, true,
+           c.description
+    FROM animal_health_conditions c
+
+    UNION ALL
+
+    SELECT t.attachment_id, 'ANEXO', t.animal_id,
+           t.creation_date, t.creation_date,
+           t.recorded_by_person_id, t.organization_id, true,
+           COALESCE(t.description, t.original_filename)
+    FROM attachments t
+
+    UNION ALL
+
+    SELECT i.care_instruction_id, 'ORIENTACAO', i.animal_id,
+           i.starts_on::timestamp, i.creation_date,
+           i.recorded_by_person_id, i.organization_id, true,
+           i.description
+    FROM care_instructions i
+
+    UNION ALL
+
+    -- O cumprimento herda a organizacao de quem EMITIU a orientacao, e nao de quem
+    -- cumpriu: quem da o remedio em casa e o tutor, e ele nao age por organizacao
+    -- nenhuma. O que a linha do tempo precisa dizer e de qual tratamento aquele
+    -- cumprimento faz parte.
+    SELECT f.care_instruction_fulfillment_id, 'CUMPRIMENTO', i.animal_id,
+           f.fulfilled_at, f.recorded_at,
+           f.confirmed_by_person_id, i.organization_id, true,
+           i.description
+    FROM care_instruction_fulfillments f
+    JOIN care_instructions i ON i.care_instruction_id = f.care_instruction_id
+
+    UNION ALL
+
+    SELECT ob.observation_id, 'OBSERVACAO', ob.animal_id,
+           ob.observed_at, ob.recorded_at,
+           ob.recorded_by_person_id, ob.organization_id, true,
+           ob.description
+    FROM observations ob
+
+    UNION ALL
+
+    -- A uniao, no cadastro que SOBREVIVEU.
+    --
+    -- Ela nao aparece no absorvido de proposito: aquele cadastro parou de ter vida propria no
+    -- instante da uniao, e a linha do tempo dele agora e a do outro.
+    --
+    -- `occurred_at` e `recorded_at` sao os dois a data da DECISAO, e nao a do pedido: o que
+    -- aconteceu com o animal foi a uniao, e ela aconteceu quando alguem disse sim. O pedido e
+    -- anterior e nao e fato — e uma pergunta que ficou em aberto.
+    --
+    -- `is_health_data` e FALSE: unir cadastros e ato administrativo, e nao dado de saude. Quem
+    -- tem escopo restrito ve que houve uniao sem ver o prontuario, que e o certo — a uniao muda
+    -- o que ele esta lendo, e esconde-la faria o historico parecer inventado.
+    SELECT m.animal_merge_request_id, 'UNIAO', m.surviving_animal_id,
+           m.decided_at, m.decided_at,
+           m.decided_by_person_id, m.organization_id, false,
+           m.reason
+    FROM animal_merge_requests m
+    WHERE m.status = 'ACEITO'
+)
+SELECT b.event_id,
+       b.event_type,
+       b.animal_id,
+       b.occurred_at,
+       b.recorded_at,
+       b.recorded_by_person_id,
+       b.organization_id,
+       b.is_health_data,
+       b.summary,
+       p.name                                    AS recorded_by_name,
+       o.name                                    AS organization_name,
+       cred.label                                AS credential_label,
+       cred.status                               AS credential_status,
+       CASE b.event_type
+           WHEN 'VACINA' THEN (SELECT count(*) FROM vaccine_corrections vc
+                               WHERE vc.vaccine_id = b.event_id)
+           WHEN 'ATENDIMENTO' THEN (SELECT count(*) FROM health_record_corrections hc
+                                    WHERE hc.health_record_id = b.event_id)
+           ELSE 0
+       END                                       AS correction_count,
+
+       -- Nulo em tudo que nao e pesagem, e nulo tambem na primeira pesagem do animal:
+       -- nao ha anterior, e zero seria mentira - diria "nao variou".
+       CASE WHEN b.event_type = 'PESAGEM' THEN (
+           SELECT w2.weight
+           FROM animal_weight_history w2
+           WHERE w2.animal_id = b.animal_id
+             AND w2.measured_at < b.occurred_at::date
+           ORDER BY w2.measured_at DESC, w2.creation_date DESC NULLS LAST
+           LIMIT 1
+       ) END                                     AS previous_weight
+
+FROM base b
+LEFT JOIN persons p ON p.person_id = b.recorded_by_person_id
+LEFT JOIN organizations o ON o.organization_id = b.organization_id
+LEFT JOIN LATERAL (
+    SELECT pc.council || '-' || pc.uf || ' ' || pc.number AS label,
+           pc.status
+    FROM professional_credentials pc
+    WHERE pc.person_id = b.recorded_by_person_id
+    ORDER BY (pc.status <> 'SUSPENSO') DESC, pc.creation_date DESC NULLS LAST
+    LIMIT 1
+) cred ON true;
