@@ -98,6 +98,11 @@ public enum ErrorMessageEnum {
     // handler generico e voltava 500, dizendo que o servidor falhou quando quem errou foi quem
     // chamou — e o contrato declara a parte como obrigatoria.
     MISSING_FILE_PART(148, "Request is missing the file part"),
+    // Dose ja registrada para o mesmo animal, no mesmo dia, da mesma vacina. O cenario nao e
+    // hipotetico: a clinica registra a aplicacao e o tutor registra a mesma dose minutos depois,
+    // cada um achando que o outro nao registrou. Sem recusa, as duas passam e o historico conta
+    // dose dobrada — e o dano e silencioso, porque ninguem e avisado.
+    DOSE_ALREADY_REGISTERED(149, "This dose is already registered for this animal on this date"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

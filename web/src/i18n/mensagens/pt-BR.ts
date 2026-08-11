@@ -106,6 +106,13 @@ export const mensagens = {
   "erro.146": "A comprovação de saúde deste animal está aberta — ele não pode entrar hoje. A matrícula se completa sozinha quando a dose for registrada.",
   "erro.147": "Este animal não tem entrada marcada hoje.",
 
+  // ------------------------------------------------------------------ a dose duplicada
+  //
+  // O 149 chega para quem acabou de fazer a coisa certa: a clínica registrou a dose, e o tutor
+  // está registrando a mesma minutos depois. A frase não pode soar como erro dele — o que ela
+  // precisa dizer é que o registro JÁ EXISTE, e que por isso não há nada a fazer.
+  "erro.149": "Esta dose já está registrada nesta data. Ela aparece no histórico do animal.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -260,6 +267,8 @@ export const mensagens = {
   "dose.confirmando": "Registrando…",
   "dose.cancelar": "Cancelar",
   "dose.carregando": "Buscando a dose anterior…",
+  // A saída do conflito é fechar, e não tentar de novo: a dose já está lá.
+  "dose.conflito.fechar": "Fechar",
 
   // A validacao e nossa e antes de enviar. As frases dizem o que falta, sem culpar.
   "dose.erro.semData": "Informe o dia em que a dose foi aplicada.",
@@ -774,6 +783,9 @@ export const mensagens = {
   "estado.carregando": "Carregando {o_que}…",
   "estado.carregando.quantos": "Carregando {quantos} {o_que}…",
   "estado.erroAoGravar": "Não conseguimos gravar {o_que}. O que você escreveu está aqui, intacto.",
+  // O título do conflito afirma o fato e não acusa ninguém: quem chega nele acabou de fazer a
+  // coisa certa, e o registro que importa já existe.
+  "estado.conflito.titulo": "Já foi feito.",
   // O "o que" de cada tela, para a frase do erro dizer o nome da coisa e não "os dados".
   "acesso.oQue": "quem alcança o {nome}",
   "conceder.oQue": "a lista de organizações",

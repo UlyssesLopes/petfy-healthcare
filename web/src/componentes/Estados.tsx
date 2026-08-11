@@ -13,18 +13,17 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
  * cada um vive — senao cada tela inventa o seu, que e exatamente o que ela existe para
  * impedir.
  *
- * <b>OS DOIS ESTADOS QUE ESTE ARQUIVO NAO TEM, e o motivo de cada um:</b>
+ * <b>O ESTADO QUE ESTE ARQUIVO AINDA NAO TEM:</b>
  *
  * <ul>
- *   <li><b>Conflito ("Ja foi feito").</b> O desenho mostra duas pessoas registrando a mesma
- *       dose com tres minutos de diferenca, e o produto recusando a segunda: "dois registros
- *       da mesma dose viram dose dobrada no historico". <b>O servidor nao detecta isso</b> —
- *       nao ha codigo de conflito para dose repetida no `error-codes.json`, e as duas
- *       gravacoes passam. Escrever a tela do conflito seria desenhar a recusa de algo que
- *       ninguem recusa.</li>
  *   <li><b>Cartao expirado.</b> Depende da tela de cartao compartilhado (`/share/{token}`),
  *       que ainda nao existe.</li>
  * </ul>
+ *
+ * <b>O conflito ("Ja foi feito") entrou, e o que mudou foi o servidor.</b> Ele faltava aqui
+ * por um motivo escrito: "o servidor nao detecta isso — as duas gravacoes passam", e desenhar
+ * a recusa de algo que ninguem recusa seria mentir. Agora a recusa existe (codigo 149, 409, na
+ * fabrica de vacina, por onde passam as duas rotas de criacao), e a tela pode dize-la.
  */
 
 /**
@@ -123,6 +122,35 @@ export function ErroAoGravar({ erro, oQue }: { erro: unknown; oQue: string }) {
       <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.42 0.015 150)" }}>
         {intl.formatMessage({ id: chaveDoErro(erro) })}
       </div>
+    </div>
+  );
+}
+
+/**
+ * "Ja foi feito." O estado de conflito do desenho: duas pessoas registrando a mesma dose com
+ * tres minutos de diferenca, e a segunda sendo recusada.
+ *
+ * <b>Nao e vermelho, e a razao e a frase inteira deste componente:</b> quem chega aqui acabou
+ * de fazer a coisa certa. A clinica registrou a dose, o tutor esta registrando a mesma minutos
+ * depois — ninguem errou, e o registro que importa existe. Pintar de erro faria a pessoa
+ * procurar o que ela fez de errado, que e nada.
+ *
+ * Por isso a saida nao e "tente de novo": tentar de novo da o mesmo resultado, e deve dar. O
+ * que resolve e ver que ja esta la, e fechar.
+ */
+export function Conflito({ oQue, saida }: { oQue: string; saida?: ReactNode }) {
+  const intl = useIntl();
+
+  return (
+    <div
+      role="status"
+      style={{ border: "1px solid oklch(0.88 0.008 150)", background: "oklch(0.985 0.004 150)", borderRadius: "8px", padding: "14px 16px" }}
+    >
+      <div style={{ fontSize: "15px", lineHeight: 1.55, color: "oklch(0.35 0.018 150)", marginBottom: "4px" }}>
+        {intl.formatMessage({ id: "estado.conflito.titulo" })}
+      </div>
+      <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.42 0.015 150)" }}>{oQue}</div>
+      {saida !== undefined && <div style={{ marginTop: "10px" }}>{saida}</div>}
     </div>
   );
 }

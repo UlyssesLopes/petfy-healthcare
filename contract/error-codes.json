@@ -191,6 +191,10 @@
   "codigo" : 148,
   "mensagemDaApi" : "Request is missing the file part"
 }, {
+  "nome" : "DOSE_ALREADY_REGISTERED",
+  "codigo" : 149,
+  "mensagemDaApi" : "This dose is already registered for this animal on this date"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

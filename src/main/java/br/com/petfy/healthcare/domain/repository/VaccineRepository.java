@@ -49,6 +49,15 @@ public interface VaccineRepository extends JpaRepository<Vaccine, UUID> {
      */
     List<Vaccine> findByNextDoseDateLessThanEqual(LocalDate limite);
 
+    /**
+     * As doses do animal naquele dia — a lista curta em que a recusa de dose duplicada procura.
+     *
+     * A comparacao de QUAL vacina e (catalogo, com queda para nome) fica em Java de proposito: e
+     * a mesma regra da comprovacao da creche, e escreve-la em duas linguagens seria a garantia de
+     * as duas divergirem. Aqui o banco so faz o recorte barato.
+     */
+    List<Vaccine> findByAnimalAnimalIdAndApplicationDate(UUID animalId, LocalDate applicationDate);
+
     List<Vaccine> findByAnimalAnimalIdOrderByApplicationDateDesc(UUID animalId);
 
     void deleteByAnimalAnimalIdIn(List<UUID> animalIds);

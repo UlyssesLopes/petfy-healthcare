@@ -106,7 +106,7 @@ class VetPetServiceImplTest {
         // factory real: o que interessa aqui e que a vacina saia carimbada com a
         // clinica certa, e nao repetir a regra de montagem num mock
         service = new VetPetServiceImpl(grantRepository, custodyRepository, vaccineRepository,
-                currentProfessionalProvider, new VaccineFactory(vaccineCatalogRepository),
+                currentProfessionalProvider, new VaccineFactory(vaccineCatalogRepository, vaccineRepository),
                 organizationActivityNotifier, vaccineCorrectionLog,
                 healthRecordRepository, healthRecordCorrectionLog, sensitiveAccessLogger);
         ReflectionTestUtils.setField(service, "correctionWindowDays", 7);
