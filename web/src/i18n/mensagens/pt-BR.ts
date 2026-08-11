@@ -113,6 +113,14 @@ export const mensagens = {
   // precisa dizer é que o registro JÁ EXISTE, e que por isso não há nada a fazer.
   "erro.149": "Esta dose já está registrada nesta data. Ela aparece no histórico do animal.",
 
+  // ---------------------------------------------------------------------------- a equipe
+  //
+  // O 152 é o único dos três que precisa dizer a SAÍDA, e não só o impedimento: quem tenta
+  // rebaixar ou desligar o último administrador quase sempre está se organizando, e não errando.
+  "erro.150": "Não encontramos esta pessoa na equipe.",
+  "erro.151": "Só quem administra a organização pode ajustar funções e desligar.",
+  "erro.152": "A organização ficaria sem ninguém para administrá-la. Promova outra pessoa a administradora antes.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com

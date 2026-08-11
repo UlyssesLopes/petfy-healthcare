@@ -931,6 +931,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A equipe da organizacao
+         * @description Quem esta na equipe agora, com funcao, desde quando e o registro profissional de quem tem. Qualquer membro ve - esconder a lista da propria equipe nao protege ninguem.
+         */
+        get: operations["listMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/members/{membershipId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Desliga a pessoa da equipe
+         * @description Marca a saida e nao apaga o vinculo - o que ela registrou continua no historico dos animais. Idempotente.
+         */
+        delete: operations["removeMember"];
+        options?: never;
+        head?: never;
+        /**
+         * Ajusta a funcao de quem e da equipe
+         * @description So administrador. Rebaixar o ultimo administrador e recusado: sem ele ninguem convida, ajusta nem desliga.
+         */
+        patch: operations["changeMemberRole"];
+        trace?: never;
+    };
     "/organizations/{organizationId}": {
         parameters: {
             query?: never;
@@ -2107,6 +2151,23 @@ export interface components {
             token?: string;
             tokenType?: string;
         };
+        MembershipResponseDTO: {
+            /** Format: date-time */
+            joinedAt?: string;
+            /** Format: uuid */
+            membershipId?: string;
+            personEmail?: string;
+            /** Format: uuid */
+            personId?: string;
+            personName?: string;
+            professionalCredential?: string;
+            /** @enum {string} */
+            role?: "VETERINARIO" | "MONITOR" | "VOLUNTARIO" | "ADMINISTRADOR";
+        };
+        MembershipRoleRequestDTO: {
+            /** @enum {string} */
+            role: "VETERINARIO" | "MONITOR" | "VOLUNTARIO" | "ADMINISTRADOR";
+        };
         ObservationRequestDTO: {
             description: string;
             /** Format: date-time */
@@ -2155,6 +2216,8 @@ export interface components {
             email?: string;
             /** Format: int32 */
             expiresInDays?: number;
+            /** @enum {string} */
+            role?: "VETERINARIO" | "MONITOR" | "VOLUNTARIO" | "ADMINISTRADOR";
         };
         OrganizationInviteResponseDTO: {
             /** Format: date-time */
@@ -2170,6 +2233,8 @@ export interface components {
             organizationName?: string;
             /** Format: date-time */
             revokedAt?: string;
+            /** @enum {string} */
+            role?: "VETERINARIO" | "MONITOR" | "VOLUNTARIO" | "ADMINISTRADOR";
             token?: string;
             usable?: boolean;
         };
@@ -4245,6 +4310,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MembershipResponseDTO"][];
+                };
+            };
+        };
+    };
+    removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    changeMemberRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipRoleRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MembershipResponseDTO"];
+                };
             };
         };
     };

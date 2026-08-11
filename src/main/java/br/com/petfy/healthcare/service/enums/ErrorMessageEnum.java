@@ -103,6 +103,14 @@ public enum ErrorMessageEnum {
     // cada um achando que o outro nao registrou. Sem recusa, as duas passam e o historico conta
     // dose dobrada — e o dano e silencioso, porque ninguem e avisado.
     DOSE_ALREADY_REGISTERED(149, "This dose is already registered for this animal on this date"),
+    // A equipe: ajustar funcao e desligar sao atos de administracao, e o alvo pode nao ser desta
+    // organizacao — 404 nesse caso, pela mesma razao de sempre (403 confirmaria que aquele
+    // vinculo existe).
+    MEMBERSHIP_NOT_FOUND(150, "Membership not found"),
+    ADMINISTRATOR_ROLE_REQUIRED(151, "Only an administrator of this organization can do that"),
+    // A organizacao nao pode ficar sem quem a administre: sem administrador ninguem convida,
+    // ajusta funcao nem desliga, e ela vira um cadastro que so o suporte destrava.
+    LAST_ADMINISTRATOR(152, "This organization would be left without an administrator"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

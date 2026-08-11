@@ -8,6 +8,7 @@ import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.OrganizationInviteRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import br.com.petfy.healthcare.service.OrganizationInviteService;
@@ -29,6 +30,7 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
     private final OrganizationInviteRepository organizationInviteRepository;
     private final PersonRepository personRepository;
     private final CurrentProfessionalProvider currentProfessionalProvider;
+    private final CurrentPersonProvider currentPersonProvider;
     private final OpaqueTokenService opaqueTokenService;
 
     @Value("${petfy.organization-invite.default-expiration-days:7}")
@@ -36,7 +38,7 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
 
     @Override
     public OrganizationInviteResponseDTO create(OrganizationInviteRequestDTO request) {
-        Person emissor = currentProfessionalProvider.require();
+        Person emissor = currentPersonProvider.require();
 
         int validade = request != null && request.getExpiresInDays() != null
                 ? request.getExpiresInDays()
@@ -49,6 +51,7 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
                 .createdBy(emissor)
                 .tokenHash(opaqueTokenService.hash(token))
                 .email(request != null ? request.getEmail() : null)
+                .role(request != null ? request.getRole() : null)
                 .expiresAt(LocalDateTime.now().plusDays(validade))
                 .creationDate(LocalDateTime.now())
                 .build());
@@ -125,6 +128,7 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
                 .organizationName(invite.getOrganization().getName())
                 .token(token)
                 .email(invite.getEmail())
+                .role(invite.getRole())
                 .createdByVetName(invite.getCreatedBy().getName())
                 .expiresAt(invite.getExpiresAt())
                 .acceptedAt(invite.getAcceptedAt())
@@ -140,9 +144,16 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
      * pessoa: quem atua por si nao tem organizacao para convidar ninguem, e a resposta
      * certa e dizer isso, nao um NullPointerException onde antes havia um campo sempre
      * preenchido.
+     *
+     * <b>`organizacaoDeclarada`, e nao `requireContext` — a mesma correcao que a creche cobrou.</b>
+     * O `requireContext` exige credencial profissional ativa, e a administradora de um abrigo nao
+     * tem CRMV nem deveria ter. Enquanto foi assim, quem monta a equipe da organizacao que a Tela
+     * 16 serve nao conseguia convidar ninguem: recebia "an active professional credential is
+     * required" para um ato que nao tem nada a ver com credencial. O que autoriza aqui e o
+     * VINCULO, e o `organizacaoDeclarada` ja o confere.
      */
     private Organization organizacaoDoContextoOuFalha() {
-        return currentProfessionalProvider.requireContext().organizacao()
+        return currentProfessionalProvider.organizacaoDeclarada(currentPersonProvider.require())
                 .orElseThrow(() -> new PetfyHealthcareException(
                         ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getMessage(),
                         ErrorMessageEnum.ORGANIZATION_CONTEXT_REQUIRED.getCode(),

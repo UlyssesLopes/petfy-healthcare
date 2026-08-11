@@ -1448,6 +1448,46 @@
         },
         "type" : "object"
       },
+      "MembershipResponseDTO" : {
+        "properties" : {
+          "joinedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "membershipId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "personEmail" : {
+            "type" : "string"
+          },
+          "personId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "personName" : {
+            "type" : "string"
+          },
+          "professionalCredential" : {
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "VETERINARIO", "MONITOR", "VOLUNTARIO", "ADMINISTRADOR" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MembershipRoleRequestDTO" : {
+        "properties" : {
+          "role" : {
+            "enum" : [ "VETERINARIO", "MONITOR", "VOLUNTARIO", "ADMINISTRADOR" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "role" ],
+        "type" : "object"
+      },
       "ObservationRequestDTO" : {
         "properties" : {
           "description" : {
@@ -1574,6 +1614,10 @@
             "maximum" : 30,
             "minimum" : 1,
             "type" : "integer"
+          },
+          "role" : {
+            "enum" : [ "VETERINARIO", "MONITOR", "VOLUNTARIO", "ADMINISTRADOR" ],
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -1607,6 +1651,10 @@
           },
           "revokedAt" : {
             "format" : "date-time",
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "VETERINARIO", "MONITOR", "VOLUNTARIO", "ADMINISTRADOR" ],
             "type" : "string"
           },
           "token" : {
@@ -5163,6 +5211,88 @@
         },
         "summary" : "Revoga o convite de membro",
         "tags" : [ "organization-invite-controller" ]
+      }
+    },
+    "/organizations/members" : {
+      "get" : {
+        "description" : "Quem esta na equipe agora, com funcao, desde quando e o registro profissional de quem tem. Qualquer membro ve - esconder a lista da propria equipe nao protege ninguem.",
+        "operationId" : "listMembers",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/MembershipResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A equipe da organizacao",
+        "tags" : [ "organization-member-controller" ]
+      }
+    },
+    "/organizations/members/{membershipId}" : {
+      "delete" : {
+        "description" : "Marca a saida e nao apaga o vinculo - o que ela registrou continua no historico dos animais. Idempotente.",
+        "operationId" : "removeMember",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "membershipId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Desliga a pessoa da equipe",
+        "tags" : [ "organization-member-controller" ]
+      },
+      "patch" : {
+        "description" : "So administrador. Rebaixar o ultimo administrador e recusado: sem ele ninguem convida, ajusta nem desliga.",
+        "operationId" : "changeMemberRole",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "membershipId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MembershipRoleRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MembershipResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Ajusta a funcao de quem e da equipe",
+        "tags" : [ "organization-member-controller" ]
       }
     },
     "/organizations/{organizationId}" : {

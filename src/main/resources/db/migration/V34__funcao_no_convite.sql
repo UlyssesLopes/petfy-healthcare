@@ -1,0 +1,15 @@
+-- A funcao que a pessoa tera na organizacao, escolhida por quem CONVIDA.
+--
+-- Ate aqui o papel do novo membro era deduzido no cadastro: quem informou registro
+-- profissional entrava como VETERINARIO, quem nao informou entrava como ADMINISTRADOR. A regra
+-- servia para quem cria a propria organizacao, e erra para quem e convidado — a monitora da
+-- creche nao tem CRMV e virava ADMINISTRADORA da organizacao que a convidou.
+--
+-- O papel continua NAO vindo do request de quem se cadastra, e isso e o ponto: deixar o
+-- cliente escolher a funcao seria deixa-lo escolher a propria permissao. Ele vem do convite,
+-- que e escrito por quem ja e da organizacao.
+--
+-- NULO e um estado legitimo, e nao um campo por preencher: convite emitido antes desta
+-- migration nao tem funcao declarada, e para eles vale a regra antiga. Escolher um default
+-- aqui inventaria uma decisao que ninguem tomou.
+ALTER TABLE organization_invites ADD COLUMN role varchar(20);

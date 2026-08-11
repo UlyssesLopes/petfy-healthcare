@@ -195,6 +195,18 @@
   "codigo" : 149,
   "mensagemDaApi" : "This dose is already registered for this animal on this date"
 }, {
+  "nome" : "MEMBERSHIP_NOT_FOUND",
+  "codigo" : 150,
+  "mensagemDaApi" : "Membership not found"
+}, {
+  "nome" : "ADMINISTRATOR_ROLE_REQUIRED",
+  "codigo" : 151,
+  "mensagemDaApi" : "Only an administrator of this organization can do that"
+}, {
+  "nome" : "LAST_ADMINISTRATOR",
+  "codigo" : 152,
+  "mensagemDaApi" : "This organization would be left without an administrator"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

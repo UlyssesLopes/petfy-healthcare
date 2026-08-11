@@ -54,6 +54,15 @@ public class OrganizationInvite {
 
     private LocalDateTime revokedAt;
 
+    /**
+     * A funcao que a pessoa tera ao aceitar, escolhida por quem convida.
+     *
+     * <b>Nulo e legitimo</b>: convite emitido antes da V34 nao declara funcao, e para ele vale a
+     * regra antiga (credencial informada entra como VETERINARIO, o resto como ADMINISTRADOR).
+     */
+    @Enumerated(EnumType.STRING)
+    private MembershipRole role;
+
     private LocalDateTime creationDate;
 
     /** Convite e de uso unico: aceitar consome. */
