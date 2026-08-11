@@ -4,16 +4,18 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-11, com o backend da Tela 32 fechado e a tela dela por construir.
+> Escrito em 2026-08-11, com o **bloco 2 (núcleo clínico) fechado por inteiro**.
 
 ## Onde o trabalho está agora
 
-**Branch `feat/cadastro-duplicado`, dois commits, sem PR aberto ainda.**
+**Branch `feat/cadastro-duplicado`, quatro commits, sem PR aberto ainda.**
 
-Backend da Tela 32 completo e verde: **855 casos, 0 falhas, `Skipped: 0`** contra Postgres real.
-Contrato regenerado — 306 inserções, zero remoções, nenhuma operação renomeada.
+**O bloco 2 está completo: Telas 30, 31 e 32.** Verde: **855 casos, 0 falhas, `Skipped: 0`**
+contra Postgres real; front com `tsc` limpo, 43 testes e build verde. Contrato sem nenhuma
+operação renomeada.
 
-**O que falta neste bloco: a tela da 32.** O backend inteiro está de pé e testado.
+**Próximo passo: abrir o PR desta branch, e começar o bloco 3** (Por onde o valor entra —
+Telas 40, 41, 42).
 
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 
@@ -37,7 +39,7 @@ telas. Eles estão versionados (entraram no PR #53).
 | # | Bloco | Estado |
 |---|---|---|
 | 1 | A faixa sai de dentro do cabeçalho sticky | **Fechado** — PR #54 |
-| 2 | Núcleo clínico — Telas 30, 31, 32 | **30 e 31 fechadas** (PR #54); **32: backend fechado, tela pendente** |
+| 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado.** 30 e 31 no PR #54; 32 nesta branch |
 | 3 | Por onde o valor entra — 40, 41, 42 | pendente |
 | 4 | Custo do cuidado — 37, 38, 39 | pendente |
 | 5 | Fim e reencontro — 33, 34 | pendente |
@@ -118,15 +120,31 @@ que um 500 — **silencioso**: a união terminaria "com sucesso" deixando evento
 
 ## Primeiro passo da próxima sessão
 
-**A tela da 32**, em `web/src/rotas/`. O backend está pronto e o desenho é
-`design/IdentidadeVisual/Telas Petfy - Núcleo clínico.dc.html`, seção "Tela 32".
+**Abrir o PR desta branch** (`feat/cadastro-duplicado`, quatro commits) e conferir o CI.
 
-As cinco rotas: `GET /animals/{id}/duplicates`, `POST /animals/{id}/merge-requests`,
-`GET /animals/{id}/merge-requests`, `POST /merge-requests/{id}/accept` e `.../reject`.
+Depois, **o bloco 3: Por onde o valor entra (Telas 40, 41, 42)**, de
+`design/IdentidadeVisual/Telas Petfy - Por onde o valor entra.dc.html`.
 
-O que a tela precisa dizer, e que o backend já entrega: a comparação lado a lado com o tamanho de
-cada linha do tempo, "o que acontece se forem unidos", "onde os dois discordam", e — o mais
-importante — **"você não pode unir sozinha"**, com o pedido indo para quem responde pelo animal.
+- **Tela 40** é literalmente "dentro da tela 31": o campo de custo no registro de atendimento.
+  A Tela 31 já existe (`web/src/rotas/pacientes.$animalId.atendimento.tsx`), então é ali que ele
+  entra — e o `HealthRecordRequestDTO` **não tem campo de custo**, então há backend.
+- **Tela 41** é a mensalidade da creche, dentro da matrícula.
+- **Tela 42** é o que o tutor compra por fora.
+
+O levantamento de backend ainda não foi feito para nenhuma das três.
+
+## O que a Tela 32 deixou pronto, e vale saber antes de mexer
+
+Cinco rotas: `GET /animals/{id}/duplicates`, `POST /animals/{id}/merge-requests`,
+`GET /animals/{id}/merge-requests`, `POST /merge-requests/{id}/accept`, `.../reject`, e
+`POST /animals/{id}/duplicates/{outro}/distinct`.
+
+**O desenho tinha um botão que o backend não cobria:** "são animais diferentes" aparece na tela da
+clínica, sem pedido nenhum no meio. Virou rota própria — pedir a união mexe na vida registrada e
+precisa de quem responde; dizer "são outros bichos" só acende uma marca.
+
+**A tela não adivinha quem pode decidir.** Mostra os botões e deixa o servidor responder 403.
+Esconder o botão exigiria o cliente recalcular custódia — uma segunda verdade sobre quem manda.
 
 ## Como subir, e como regenerar
 
