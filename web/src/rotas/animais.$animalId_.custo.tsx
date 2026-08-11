@@ -157,7 +157,16 @@ function CustoDoAnimal() {
           </div>
         )}
 
-        <div style={{ marginTop: "28px" }}>
+        {/*
+         * O caminho para a Tela 38 fica DEPOIS dos numeros, e nao antes: "quanto custou" e a
+         * pergunta que a pessoa veio fazer, e "o que vem pela frente" e a que ela passa a ter
+         * depois de ler a resposta.
+         */}
+        <div style={{ marginTop: "28px", display: "flex", gap: "24px", flexWrap: "wrap" }}>
+          <Link to="/animais/$animalId/previsao" params={{ animalId }} style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
+            {intl.formatMessage({ id: "custo.verPrevisao" }, { nome })}
+          </Link>
+
           <Link to="/animais/$animalId" params={{ animalId }} style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
             {intl.formatMessage({ id: "custo.voltar" }, { nome })}
           </Link>

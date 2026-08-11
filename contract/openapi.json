@@ -1395,6 +1395,10 @@
           "overdue" : {
             "type" : "boolean"
           },
+          "sourceId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "timesInTwelveMonths" : {
             "format" : "int32",
             "type" : "integer"

@@ -1274,6 +1274,7 @@ export const mensagens = {
   "custo.oQue": "o custo",
   "custo.oQue.lista": "os valores",
   "custo.voltar": "Voltar para o {nome}",
+  "custo.verPrevisao": "O que vem pela frente para o {nome}",
 
   "custo.janela": "O período",
   "custo.janela.dozeMeses": "Últimos 12 meses",
@@ -1320,6 +1321,63 @@ export const mensagens = {
   "custo.quemPagou.semNome.detalhe": "O que a clínica e a creche registraram",
   "custo.quemPagou.soMostra":
     "Dois co-tutores dividem o cuidado e quase sempre perdem a conta de quem pagou o quê. O Petfy só mostra o que alguém informou — não cobra ninguém, não faz acerto, e não vai pedir que você preencha o resto depois.",
+
+  // -------------------------------------- Tela 38 · o que vem pela frente, e o custo de adiar
+  //
+  // "Isto não é previsão de gasto: é o que já está marcado no registro dele." Nenhuma frase
+  // aqui projeta, estima ou aconselha clinicamente — o limite está escrito no cartão do lado.
+  "previsao.titulo": "Os próximos 12 meses do {nome}",
+  "previsao.apoio":
+    "Isto não é previsão de gasto: é o que já está marcado no registro dele. Vacinas com data de reforço, a mensalidade que se repete e o que você disse que dura um mês.",
+  "previsao.oQue": "o que vem pela frente",
+  "previsao.vazia":
+    "Não há nada marcado para os próximos 12 meses do {nome} — nenhuma dose com data de reforço, nenhuma mensalidade e nenhuma compra que se repete. Não é uma pendência.",
+  "previsao.verOQueCustou": "Ver quanto o {nome} já custou",
+
+  "previsao.quando.esteMes": "este mês",
+  "previsao.quando.todoMes": "todo mês",
+  "previsao.linha.vencida": "{nome} · vencida há {dias, plural, one {# dia} other {# dias}}",
+  "previsao.linha.proxima": "{nome} · próxima dose em {data}",
+  "previsao.linha.mensalidade": "{onde} · mensalidade",
+  "previsao.marcador.vencida": "Vencida",
+  "previsao.marcador.chegando": "Chegando",
+  "previsao.marcador.distante": "Mais adiante",
+  "previsao.marcador.todoMes": "Todo mês",
+
+  "previsao.total": "Total previsto em 12 meses",
+  // Um total que fingisse cobrir tudo seria um número autoritário e menor que a verdade.
+  "previsao.total.parcial":
+    "{quantas, plural, one {Uma linha ainda não tem valor informado e não entrou nesta conta} other {{quantas} linhas ainda não têm valor informado e não entraram nesta conta}}.",
+
+  "previsao.leitura": "Uma leitura do Petfy",
+  "previsao.leitura.comPreco":
+    "A {dose} do {nome} custa {valor} hoje. Enquanto ela estiver vencida, a {creche} não pode recebê-lo.",
+  "previsao.leitura.semPreco":
+    "A {dose} do {nome} está vencida, e enquanto estiver a {creche} não pode recebê-lo.",
+  // A aritmética é sobre o que este tutor já pode ver: o valor de um dia combinado do próprio
+  // animal. O número do desenho — o que aconteceu com outro animal da turma — é custo de outro
+  // animal, e ler custo exige custódia dele.
+  "previsao.leitura.diaPerdido":
+    "Cada dia combinado que ele perder custa {valor} da mensalidade que você já paga.",
+  "previsao.leitura.oQueGerou": "O que gerou esta leitura",
+  "previsao.leitura.fonte.dose": "{dose} vencida em {data}",
+  "previsao.leitura.fonte.exigencia": "exigência de vacinação da {creche}",
+  "previsao.leitura.fonte.combinado": "mensalidade de {valor} para {dias} dias por semana",
+  "previsao.leitura.registrar": "Registrar a dose",
+  // No lugar do "Dispensar" do desenho: guardar a dispensa pediria uma tabela que não existe, e
+  // um botão que esquece no recarregamento é pior do que nenhum botão. O gesto existe no feed.
+  "previsao.leitura.semDispensar":
+    "Para parar de ser cobrado por esta dose, silencie a pendência no seu feed — aqui a leitura só reflete o que está registrado.",
+
+  "previsao.diferente.titulo": "Por que isto é diferente de um app de gastos",
+  "previsao.diferente.texto":
+    "Um aplicativo de finanças pede que você digite tudo, e por isso ninguém mantém. Aqui o valor entra de carona no evento que a clínica já ia registrar de qualquer jeito. E a previsão não é estatística: é a data de reforço que já está escrita na carteirinha do animal.",
+  "previsao.limite.titulo": "O limite da leitura de custo",
+  "previsao.limite.texto":
+    "Ela pode dizer que adiar a vacina custa dias de creche perdidos, porque isso é aritmética sobre fatos registrados. Nunca vai dizer que tratar a displasia agora sai mais barato que operar depois — isso é prognóstico clínico, e o Petfy não faz prognóstico.",
+  "previsao.paraQuemRegistra.titulo": "Para a clínica e a creche",
+  "previsao.paraQuemRegistra.texto":
+    "Informar o valor é opcional e leva um campo. Em troca, elas param de ser cobradas por telefone sobre o que já foi pago, e o tutor chega sabendo o que vem pela frente. Abrigo não informa valor nenhum — o produto é grátis para eles.",
 
   // O valor da dose, dentro do registro que já estava sendo feito. Opcional como em toda
   // tela que o oferece: "um evento sem valor é normal — nunca um erro, nunca um alerta".

@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 /**
  * Uma linha de "o que vem pela frente" (Tela 38).
@@ -21,6 +22,15 @@ public class CostForecastItemDTO {
 
     /** {@code DOSE_DE_VACINA}, {@code ANTIPARASITARIO}, {@code CRECHE_MENSALIDADE} ou {@code COMPRA_MENSAL}. */
     private String kind;
+
+    /**
+     * O id do registro que gerou a linha — a dose, o antiparasitario, a matricula, a compra.
+     *
+     * <b>Existe para a linha ter um GESTO, e nao so um numero.</b> O desenho poe "registrar a dose"
+     * dentro da leitura do Petfy, e a acao mora na propria pendencia (DESIGN 5.3): sem o id, a tela
+     * mostraria "a antirrabica venceu" e mandaria a pessoa procurar onde registrar.
+     */
+    private UUID sourceId;
 
     private String description;
 

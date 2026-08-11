@@ -10,6 +10,7 @@ export type CategoriaDeCusto = NonNullable<
   components["schemas"]["AnimalCostRequestDTO"]["category"]
 >;
 export type ResumoDeCusto = components["schemas"]["AnimalCostSummaryResponseDTO"];
+export type PrevisaoDeCusto = components["schemas"]["CostForecastResponseDTO"];
 export type FatiaDeCusto = components["schemas"]["AnimalCostSliceDTO"];
 export type PagadorDeCusto = components["schemas"]["AnimalCostPayerDTO"];
 

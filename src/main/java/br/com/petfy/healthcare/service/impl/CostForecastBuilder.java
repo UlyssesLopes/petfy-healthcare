@@ -111,8 +111,8 @@ public class CostForecastBuilder {
                 continue;
             }
 
-            itens.add(linha("DOSE_DE_VACINA", dose.getVaccineName(), AnimalCostCategory.SAUDE,
-                    quando, hoje, 1, precos.get(serieDaVacina(dose))));
+            itens.add(linha("DOSE_DE_VACINA", dose.getVaccineId(), dose.getVaccineName(),
+                    AnimalCostCategory.SAUDE, quando, hoje, 1, precos.get(serieDaVacina(dose))));
         }
 
         return itens;
@@ -131,8 +131,9 @@ public class CostForecastBuilder {
                 continue;
             }
 
-            itens.add(linha("ANTIPARASITARIO", registro.getName(), AnimalCostCategory.SAUDE,
-                    quando, hoje, 1, precos.get(serieDoAntiparasitario(registro))));
+            itens.add(linha("ANTIPARASITARIO", registro.getAntiparasiticId(), registro.getName(),
+                    AnimalCostCategory.SAUDE, quando, hoje, 1,
+                    precos.get(serieDoAntiparasitario(registro))));
         }
 
         return itens;
@@ -150,6 +151,7 @@ public class CostForecastBuilder {
                 .filter(matricula -> matricula.getMonthlyFee() != null)
                 .map(matricula -> CostForecastItemDTO.builder()
                         .kind("CRECHE_MENSALIDADE")
+                        .sourceId(matricula.getEnrollmentId())
                         .description(matricula.getClassGroup().getOrganization().getName())
                         .category(AnimalCostCategory.CRECHE)
                         .timesInTwelveMonths(MESES)
@@ -183,6 +185,7 @@ public class CostForecastBuilder {
         return maisRecentePorDescricao.values().stream()
                 .map(custo -> CostForecastItemDTO.builder()
                         .kind("COMPRA_MENSAL")
+                        .sourceId(custo.getAnimalCostId())
                         .description(custo.getDescription())
                         .category(custo.getCategory())
                         .timesInTwelveMonths(MESES)
@@ -266,11 +269,12 @@ public class CostForecastBuilder {
 
     /* -------------------------------------------------------------------------- bastidores */
 
-    private CostForecastItemDTO linha(String kind, String descricao, AnimalCostCategory categoria,
-                                      LocalDate quando, LocalDate hoje, int vezes,
-                                      PrecoAnterior preco) {
+    private CostForecastItemDTO linha(String kind, UUID sourceId, String descricao,
+                                      AnimalCostCategory categoria, LocalDate quando, LocalDate hoje,
+                                      int vezes, PrecoAnterior preco) {
         return CostForecastItemDTO.builder()
                 .kind(kind)
+                .sourceId(sourceId)
                 .description(descricao)
                 .category(categoria)
                 .dueOn(quando)

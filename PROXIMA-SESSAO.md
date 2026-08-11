@@ -4,17 +4,20 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-11, com o **bloco 3 fechado** e o **bloco 4 na Tela 37**.
+> Escrito em 2026-08-11, com o **bloco 3 mergeado** e o **bloco 4 faltando só a Tela 39**.
 
 ## Onde o trabalho está agora
 
-**Branch `feat/por-onde-o-valor-entra`, no PR #56 — CI verde nos dois workflows, aguardando
-o merge, que é comando do Ulysses.** A `main` está em `931dac0`.
+**Branch `feat/custo-do-cuidado`, no PR #57 — em RASCUNHO, porque falta a Tela 39.**
+A `main` está em `818333f`: o **bloco 3 foi mergeado** pelo PR #56, com CI verde.
 
-**Decidido em sessão: o bloco 4 continua nesta mesma branch e neste mesmo PR**, porque um PR
-empilhado ficaria sem CI (os workflows filtram `branches: [main]`). O PR cresce para seis telas.
+**Uma armadilha de fluxo que custou tempo:** o bloco 4 começou na branch do bloco 3 (decisão de
+sessão: PR empilhado não roda CI). Mas o #56 foi mergeado **antes** de os commits do bloco 4 serem
+empurrados — e aí eles ficaram numa branch cujo PR estava fechado, **sem CI nenhum**, sem aviso.
+O sintoma era mudo: `git push` funciona, e `gh pr view` mostra o `headRefOid` antigo para sempre.
+Daí a branch nova. **Regra: commit numa branch cujo PR já mergeou não roda check nenhum.**
 
-**880 casos no backend, 43 no front, tudo verde, `Skipped: 0`.** Contrato regenerado, nenhuma
+**892 casos no backend, 43 no front, tudo verde, `Skipped: 0`.** Contrato regenerado, nenhuma
 operação renomeada. `npm run build` limpo.
 
 ### O bloco 3, inteiro
@@ -77,9 +80,13 @@ dizer "a ração do Teco custa R$ 190 por mês, todo mês".
 
 - `V38__onde_o_dinheiro_foi.sql` — `AnimalCostCategory` (SAUDE, ALIMENTACAO, CRECHE, HIGIENE,
   OUTRO), retroativa pelo `kind` e `NOT NULL` só **depois** do retroativo
+- `V39__o_valor_da_dose.sql` — `source_vaccine_id` e `source_antiparasitic_id`, sem os quais a
+  previsão não teria preço
 - `GET /animals/{id}/costs/summary?window=DOZE_MESES|SEMPRE` — os três números, as fatias e os
   pagadores num payload só
+- `GET /animals/{id}/costs/forecast` — as quatro fontes do que vem pela frente
 - **Tela 37** — `/animais/{id}/custo`
+- **Tela 38** — `/animais/{id}/previsao`
 
 ### Duas decisões desta parte
 
@@ -116,18 +123,43 @@ reforço; a identidade é o rótulo.
 fixa, ela mentiria no mês em que a saúde fosse o maior gasto — que é justamente o mês em que o
 animal está doente.
 
+### A Tela 38, e o preço que não tinha de onde sair
+
+O desenho põe "antirrábica R$ 90" em cada linha, e **nenhum desses valores tinha fonte**. A
+`animal_costs` ligava-se a atendimento e a matrícula; uma dose de vacina não é nenhum dos dois.
+Precificar pelo último custo de `SAUDE` cobraria a antirrábica com o preço de uma consulta
+dermatológica — pior que não ter preço.
+
+**V39: `source_vaccine_id` e `source_antiparasitic_id`.** O reforço do ano que vem é precificado
+pela dose **do mesmo item de catálogo daquele animal**. O campo de valor entrou no `RegistrarDose`,
+opcional; se o lançamento falhar, **a dose fica registrada**. Tipo novo `AnimalCostKind.VACINA` —
+uma dose não é um atendimento, e o `kind` existe para ler agrupado.
+
+**A conta mora no `CostForecastBuilder`, sem repositório e sem mock**, com 12 casos: um erro ali não
+aparece como exceção, aparece como número plausível e errado, e número plausível ninguém confere.
+
+**O total não finge ser tudo:** `itemsWithoutAmount` diz quantas linhas ficaram de fora.
+
+**Dois números do desenho não existem, e por razões diferentes:**
+
+1. *"foram R$ 176 (...) com **outro animal da turma**"* — é custo de outro animal, e ler custo exige
+   custódia dele. No lugar entrou aritmética sobre o que este tutor já vê: **o valor de um dia
+   combinado** (mensalidade ÷ dias combinados ÷ 4,348). Não é a diária avulsa — essa é o que se paga
+   por um dia *extra*, e o que se perde ao ser barrado é um dia que a mensalidade já cobriu.
+2. **O botão "Dispensar" não existe.** Guardar a dispensa pediria uma tabela, e um botão que esquece
+   no recarregamento é pior que nenhum. No lugar, a tela diz onde o gesto existe: silenciar a
+   pendência no feed.
+
+**A leitura só aparece quando os fatos a sustentam** — dose atrasada **e** matrícula viva cuja
+comprovação impede a entrada. Genérica, ela viraria conselho, e conselho genérico é o que faz a
+pessoa parar de ler.
+
 ### O que falta no bloco 4
 
-1. **Tela 38** — "o que vem pela frente, e o custo de adiar". Não tem endpoint ainda. As linhas saem
-   de fatos já registrados: reforço de vacina com data, antiparasitário, tratamento em curso, e a
-   mensalidade que se repete. **O valor de um reforço futuro sai do último custo da mesma categoria
-   deste animal** — se nunca houve, a linha vem sem valor, e isso não é erro.
-2. **Tela 39** — a conversa antes da adoção, pelo lado do abrigo. Não precisa de regra de acesso
-   nova: `requireCustodia` já conta custódia de organização.
-
-**Um número do desenho da Tela 38 não pode existir:** *"foram R$ 176 no mês passado, quando isso
-aconteceu com **outro animal da turma**"* é o custo de outro animal, e ler custo exige custódia
-daquele animal. Vai ser a diária do próprio Code × os dias que ele perderia.
+1. **Tela 39** — a conversa antes da adoção, pelo lado do abrigo. Não precisa de regra de acesso
+   nova: `requireCustodia` já conta custódia de organização, então o abrigo lê o custo do Teco.
+   Reusa `GET /costs/summary` e `GET /costs/forecast`; o "o que o Teco precisa todo mês" é a
+   previsão filtrada pelo que se repete.
 
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 
@@ -153,7 +185,7 @@ telas. Eles estão versionados (entraram no PR #53).
 | 1 | A faixa sai de dentro do cabeçalho sticky | **Fechado** — PR #54 |
 | 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado e mergeado** (PRs #54 e #55) |
 | 3 | Por onde o valor entra — 40, 41, 42 | **Fechado**, sem PR aberto |
-| 4 | Custo do cuidado — 37, 38, 39 | **Tela 37 fechada**; faltam 38 e 39 |
+| 4 | Custo do cuidado — 37, 38, 39 | **37 e 38 fechadas**; falta a 39 |
 | 5 | Fim e reencontro — 33, 34 | pendente |
 | 6 | Animal comunitário — 43, 44, 45 | pendente |
 | 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
