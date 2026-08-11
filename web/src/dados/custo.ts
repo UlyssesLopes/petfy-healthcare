@@ -6,6 +6,12 @@ import { corpoDe } from "./resposta.ts";
 
 export type Custo = components["schemas"]["AnimalCostResponseDTO"];
 export type TipoDeCusto = NonNullable<components["schemas"]["AnimalCostRequestDTO"]["kind"]>;
+export type CategoriaDeCusto = NonNullable<
+  components["schemas"]["AnimalCostRequestDTO"]["category"]
+>;
+export type ResumoDeCusto = components["schemas"]["AnimalCostSummaryResponseDTO"];
+export type FatiaDeCusto = components["schemas"]["AnimalCostSliceDTO"];
+export type PagadorDeCusto = components["schemas"]["AnimalCostPayerDTO"];
 
 /**
  * Por onde o valor entra (Telas 40, 41 e 42), pelo lado da tela.
@@ -50,6 +56,9 @@ export function useLancarCusto() {
       descricao: string;
       valor: number;
       tipo?: TipoDeCusto;
+      /* Só a COMPRA precisa mandar: no atendimento e na creche o servidor já sabe a fatia, e
+         recusa ser contrariado. Ver `categoriaDe` no AnimalCostServiceImpl. */
+      categoria?: CategoriaDeCusto;
       pago?: boolean;
       mensal?: boolean;
       atendimentoId?: string;
@@ -61,6 +70,7 @@ export function useLancarCusto() {
           description: lancamento.descricao,
           amount: lancamento.valor,
           ...(lancamento.tipo === undefined ? {} : { kind: lancamento.tipo }),
+          ...(lancamento.categoria === undefined ? {} : { category: lancamento.categoria }),
           /* `pago` so viaja quando alguem marcou: nulo e "ninguem disse", e mandar `false`
              afirmaria "nao foi pago" sobre algo que ninguem afirmou. */
           ...(lancamento.pago === true ? { paid: true } : {}),
@@ -81,8 +91,40 @@ export function useLancarCusto() {
       return data;
     },
     onSuccess: async (_dados, lancamento) => {
-      await consultas.invalidateQueries({ queryKey: ["custos", lancamento.animalId] });
+      await Promise.all([
+        consultas.invalidateQueries({ queryKey: ["custos", lancamento.animalId] }),
+        /* O resumo envelhece junto: lançar uma compra muda o total, a média e a fatia de
+           alimentação, e uma tela que atualizasse só a lista mostraria o gráfico velho ao lado
+           do valor novo. */
+        consultas.invalidateQueries({ queryKey: ["resumo-de-custo", lancamento.animalId] }),
+      ]);
     },
+  });
+}
+
+/**
+ * "Quanto o Code custou" (Tela 37).
+ *
+ * <b>As duas janelas do desenho, e nada entre elas:</b> `DOZE_MESES` e `SEMPRE`. O servidor soma
+ * tudo — total, média por mês, total de sempre, as fatias e quem pagou — num payload só, porque a
+ * soma das fatias precisa fechar com o total, e dois pedidos separados são como os dois números
+ * divergem.
+ *
+ * <b>O percentual não vem do servidor, e é de propósito:</b> a fatia é `amount` sobre `total`, e os
+ * dois já estão aqui. Mandar a razão junto criaria uma segunda fonte para o mesmo número, e o dia
+ * em que ela divergisse da largura da barra desenhada seria o dia em que o tutor veria "38%" ao
+ * lado de uma barra de outro tamanho.
+ */
+export function useResumoDeCusto(animalId: string | undefined, janela: "DOZE_MESES" | "SEMPRE") {
+  return useQuery({
+    queryKey: ["resumo-de-custo", animalId, janela],
+    enabled: animalId !== undefined,
+    queryFn: async () =>
+      corpoDe(
+        await cliente.GET("/animals/{animalId}/costs/summary", {
+          params: { path: { animalId: animalId! }, query: { window: janela } },
+        }),
+      ),
   });
 }
 

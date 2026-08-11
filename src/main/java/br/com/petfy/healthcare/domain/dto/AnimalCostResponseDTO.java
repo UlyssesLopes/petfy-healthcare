@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.dto;
 
+import br.com.petfy.healthcare.domain.entity.AnimalCostCategory;
 import br.com.petfy.healthcare.domain.entity.AnimalCostKind;
 import br.com.petfy.healthcare.domain.entity.CostRecurrence;
 import lombok.*;
@@ -33,6 +34,9 @@ public class AnimalCostResponseDTO {
     private BigDecimal amount;
 
     private AnimalCostKind kind;
+
+    /** Onde o dinheiro foi: SAUDE, ALIMENTACAO, CRECHE, HIGIENE ou OUTRO (Tela 37). */
+    private AnimalCostCategory category;
 
     private Boolean paid;
 

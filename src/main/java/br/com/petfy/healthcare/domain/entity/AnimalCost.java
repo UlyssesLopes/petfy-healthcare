@@ -56,6 +56,21 @@ public class AnimalCost extends AnimalEvent {
     private AnimalCostKind kind;
 
     /**
+     * Onde o dinheiro foi (Tela 37).
+     *
+     * <b>Nao e o {@link AnimalCostKind} com outro nome.</b> O `kind` diz de que evento o valor saiu;
+     * a categoria diz em que ele foi gasto. As duas divergem no caso que decide o grafico: racao e
+     * remedio saem os dois de uma {@code COMPRA}, e o desenho os poe em fatias diferentes.
+     *
+     * <b>Nunca nula</b>, e o banco tambem recusa: uma linha sem fatia apareceria na Tela 37 como
+     * dinheiro que sumiu do grafico, e a soma das fatias nao fecharia com o total. O tutor nao teria
+     * como saber qual dos dois numeros acreditar.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private AnimalCostCategory category;
+
+    /**
      * "Ja foi pago."
      *
      * <b>Nulo em quem nao respondeu, e nao {@code false}</b>: o desenho oferece a caixa e nao a

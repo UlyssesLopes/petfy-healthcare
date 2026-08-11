@@ -260,6 +260,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/costs/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quanto o animal custou, somado (Tela 37)
+         * @description Os tres numeros do topo, o 'onde foi' por categoria e o 'quem pagou o que'. EXIGE CUSTODIA, como toda leitura de custo — e aqui com mais razao: o total e exatamente o numero que alguem de fora gostaria de saber sem ver os itens. `window` aceita DOZE_MESES (padrao) ou SEMPRE; qualquer outro valor e lido como DOZE_MESES. O total de sempre e o ano do primeiro valor viajam nas duas janelas, porque o cartao 'desde 2019' do desenho nao muda quando o recorte muda. NAO HA comparacao com outros tutores nem com outras organizacoes, e nao havera: 'quem cuida de um animal doente ja tem o suficiente na cabeca'.
+         */
+        get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}/duplicates": {
         parameters: {
             query?: never;
@@ -1855,8 +1875,15 @@ export interface components {
             /** Format: int64 */
             sizeBytes?: number;
         };
+        AnimalCostPayerDTO: {
+            amount?: number;
+            categories?: ("SAUDE" | "ALIMENTACAO" | "CRECHE" | "HIGIENE" | "OUTRO")[];
+            personName?: string;
+        };
         AnimalCostRequestDTO: {
             amount: number;
+            /** @enum {string} */
+            category?: "SAUDE" | "ALIMENTACAO" | "CRECHE" | "HIGIENE" | "OUTRO";
             description: string;
             /** @enum {string} */
             kind?: "ATENDIMENTO" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";
@@ -1874,6 +1901,8 @@ export interface components {
             amount?: number;
             /** Format: uuid */
             animalCostId?: string;
+            /** @enum {string} */
+            category?: "SAUDE" | "ALIMENTACAO" | "CRECHE" | "HIGIENE" | "OUTRO";
             description?: string;
             /** @enum {string} */
             kind?: "ATENDIMENTO" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";
@@ -1888,6 +1917,21 @@ export interface components {
             sourceEnrollmentId?: string;
             /** Format: uuid */
             sourceHealthRecordId?: string;
+        };
+        AnimalCostSliceDTO: {
+            amount?: number;
+            /** @enum {string} */
+            category?: "SAUDE" | "ALIMENTACAO" | "CRECHE" | "HIGIENE" | "OUTRO";
+        };
+        AnimalCostSummaryResponseDTO: {
+            byCategory?: components["schemas"]["AnimalCostSliceDTO"][];
+            byPayer?: components["schemas"]["AnimalCostPayerDTO"][];
+            /** Format: int32 */
+            firstYear?: number;
+            monthlyAverage?: number;
+            total?: number;
+            totalEver?: number;
+            window?: string;
         };
         AnimalExportDTO: {
             acessosDeClinica?: components["schemas"]["AcessoDeClinicaDTO"][];
@@ -3583,6 +3627,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AnimalCostResponseDTO"];
+                };
+            };
+        };
+    };
+    summary: {
+        parameters: {
+            query?: {
+                window?: string;
+            };
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalCostSummaryResponseDTO"];
                 };
             };
         };

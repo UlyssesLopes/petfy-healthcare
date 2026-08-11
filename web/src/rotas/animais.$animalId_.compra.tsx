@@ -4,7 +4,7 @@ import { useIntl } from "react-intl";
 
 import { ErroAoGravar } from "../componentes/Estados.tsx";
 import { useAnimal } from "../dados/carteira.ts";
-import { useLancarCusto } from "../dados/custo.ts";
+import { useLancarCusto, type CategoriaDeCusto } from "../dados/custo.ts";
 import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
@@ -45,13 +45,22 @@ export const Route = createFileRoute("/animais/$animalId_/compra")({
 /**
  * "O que foi": tres botoes, e nao um campo de texto.
  *
- * A chave e o que a tela mostra; a descricao que vai para o custo e a mesma palavra. Nao ha
- * catalogo atras disso, e nao deve haver: um catalogo pediria manutencao e daria ao tutor uma
- * lista para ler antes de tocar.
+ * <b>Cada botao carrega a CATEGORIA, e nao so o texto.</b> Foi o bloco 4 que mostrou por que isso
+ * importa: o "onde foi" da Tela 37 poe racao e remedio em fatias diferentes, e os dois saem do
+ * mesmo `kind` COMPRA — entao a fatia so pode vir de quem tocou no botao. Guardar apenas a palavra
+ * obrigaria a leitura a casar texto para decidir o grafico, que e o LIKE que este projeto recusa
+ * desde os dias da semana.
+ *
+ * Nao ha catalogo atras disso, e nao deve haver: um catalogo pediria manutencao e daria ao tutor
+ * uma lista para ler antes de tocar.
  */
-const O_QUE_FOI = ["racao", "remedio", "outro"] as const;
+const O_QUE_FOI = [
+  { chave: "racao", categoria: "ALIMENTACAO" },
+  { chave: "remedio", categoria: "SAUDE" },
+  { chave: "outro", categoria: "OUTRO" },
+] as const satisfies readonly { chave: string; categoria: CategoriaDeCusto }[];
 
-type OQueFoi = (typeof O_QUE_FOI)[number];
+type OQueFoi = (typeof O_QUE_FOI)[number]["chave"];
 
 function Compra() {
   const { animalId } = Route.useParams();
@@ -84,6 +93,7 @@ function Compra() {
         /* COMPRA e o unico tipo que nasce de um gesto do tutor: os outros tres saem de eventos
            que uma organizacao ja estava registrando. */
         tipo: "COMPRA",
+        categoria: O_QUE_FOI.find((opcao) => opcao.chave === oQueFoi)!.categoria,
         mensal: duraUmMes,
       },
       {
@@ -122,17 +132,17 @@ function Compra() {
 
               <div role="group" aria-label={intl.formatMessage({ id: "compra.oQue" })} style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {O_QUE_FOI.map((opcao) => {
-                  const marcada = opcao === oQueFoi;
+                  const marcada = opcao.chave === oQueFoi;
 
                   return (
                     <button
-                      key={opcao}
+                      key={opcao.chave}
                       type="button"
                       aria-pressed={marcada}
-                      onClick={() => setOQueFoi(opcao)}
+                      onClick={() => setOQueFoi(opcao.chave)}
                       style={{ fontFamily: "inherit", fontSize: "16px", fontWeight: marcada ? 500 : 400, height: "48px", padding: "0 16px", display: "flex", alignItems: "center", borderRadius: "8px", cursor: "pointer", border: `1px solid ${marcada ? "oklch(0.46 0.085 150)" : "oklch(0.82 0.012 150)"}`, background: marcada ? "oklch(0.96 0.02 150)" : "oklch(1 0 0)", color: marcada ? "oklch(0.38 0.07 150)" : "oklch(0.25 0.02 150)" }}
                     >
-                      {intl.formatMessage({ id: `compra.oQue.${opcao}` })}
+                      {intl.formatMessage({ id: `compra.oQue.${opcao.chave}` })}
                     </button>
                   );
                 })}

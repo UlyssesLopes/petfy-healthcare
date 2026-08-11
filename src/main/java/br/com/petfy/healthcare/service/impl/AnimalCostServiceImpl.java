@@ -1,9 +1,13 @@
 package br.com.petfy.healthcare.service.impl;
 
+import br.com.petfy.healthcare.domain.dto.AnimalCostPayerDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalCostRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalCostResponseDTO;
+import br.com.petfy.healthcare.domain.dto.AnimalCostSliceDTO;
+import br.com.petfy.healthcare.domain.dto.AnimalCostSummaryResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalCost;
+import br.com.petfy.healthcare.domain.entity.AnimalCostCategory;
 import br.com.petfy.healthcare.domain.entity.AnimalCostKind;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.AnimalCostRepository;
@@ -15,8 +19,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -42,6 +55,17 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AnimalCostServiceImpl implements AnimalCostService {
+
+    /**
+     * As duas janelas do desenho: "ultimos 12 meses" e "desde 2019".
+     *
+     * <b>Sao duas e nao um numero livre de meses</b>, porque o desenho oferece dois botoes. Um
+     * parametro aberto convidaria uma tela a pedir 90 dias, e ai a media mensal passaria a comparar
+     * recortes que ninguem desenhou.
+     */
+    private static final String JANELA_DOZE_MESES = "DOZE_MESES";
+    private static final String JANELA_SEMPRE = "SEMPRE";
+    private static final int MESES_DA_JANELA = 12;
 
     private final AnimalCostRepository animalCostRepository;
     private final AnimalAccessGuard animalAccessGuard;
@@ -78,11 +102,14 @@ public class AnimalCostServiceImpl implements AnimalCostService {
         Animal animal = animalAccessGuard.requireEscrita(animalId);
         Person eu = currentPersonProvider.require();
 
+        AnimalCostKind tipo = request.getKind() == null ? AnimalCostKind.COMPRA : request.getKind();
+
         AnimalCost custo = animalCostRepository.save(AnimalCost.builder()
                 .animal(animal)
                 .description(request.getDescription().trim())
                 .amount(request.getAmount())
-                .kind(request.getKind() == null ? AnimalCostKind.COMPRA : request.getKind())
+                .kind(tipo)
+                .category(categoriaDe(tipo, request.getCategory()))
                 .paid(request.getPaid())
                 .recurrence(request.getRecurrence())
                 .occurredAt(request.getOccurredAt() == null ? LocalDateTime.now() : request.getOccurredAt())
@@ -96,12 +123,172 @@ public class AnimalCostServiceImpl implements AnimalCostService {
         return toResponse(custo);
     }
 
+    /**
+     * "Quanto o Code custou" (Tela 37).
+     *
+     * <b>Soma em memoria, e nao em quatro consultas agregadas.</b> Os totais, as fatias e os
+     * pagadores saem todos do MESMO recorte, e uma consulta por painel abriria a porta para os
+     * numeros divergirem — a soma das fatias deixando de fechar com o total e o defeito que faz o
+     * tutor nao saber em qual dos dois acreditar. O recorte e por animal e cabe em memoria: a
+     * propria tela lista "cada valor veio de um evento", entao a lista inteira ja atravessa a
+     * fronteira de qualquer forma.
+     *
+     * <b>Le TUDO e recorta depois</b>, porque o cartao "desde 2019" nao muda quando a janela muda:
+     * ele precisa do total de sempre e do ano do primeiro valor, que uma consulta limitada a 12
+     * meses nao teria como devolver.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public AnimalCostSummaryResponseDTO resumo(UUID animalId, String window) {
+        animalAccessGuard.requireCustodia(animalId);
+
+        List<AnimalCost> tudo = animalCostRepository.findByAnimalAnimalIdOrderByOccurredAtDesc(animalId);
+
+        boolean sempre = JANELA_SEMPRE.equalsIgnoreCase(window);
+        LocalDateTime agora = LocalDateTime.now();
+        LocalDateTime desde = sempre ? null : agora.minusMonths(MESES_DA_JANELA);
+
+        List<AnimalCost> recorte = desde == null
+                ? tudo
+                : tudo.stream().filter(custo -> !custo.getOccurredAt().isBefore(desde)).toList();
+
+        BigDecimal total = somar(recorte);
+
+        Optional<LocalDateTime> primeiro = tudo.stream()
+                .map(AnimalCost::getOccurredAt)
+                .min(LocalDateTime::compareTo);
+
+        return AnimalCostSummaryResponseDTO.builder()
+                .window(sempre ? JANELA_SEMPRE : JANELA_DOZE_MESES)
+                .total(total)
+                .monthlyAverage(mediaMensal(total, sempre ? mesesDesde(primeiro, agora) : MESES_DA_JANELA))
+                .totalEver(somar(tudo))
+                .firstYear(primeiro.map(LocalDateTime::getYear).orElse(null))
+                .byCategory(fatias(recorte))
+                .byPayer(pagadores(recorte))
+                .build();
+    }
+
+    /**
+     * "Onde foi", fatia por fatia.
+     *
+     * <b>Categoria sem valor no recorte nao aparece</b>, e nao aparece com zero: uma fatia de R$ 0
+     * na legenda de um grafico e uma linha que a pessoa le, tenta entender e nao ganha nada com. E
+     * o mesmo criterio do "nenhum losango" da Tela 40 — ausencia nao e pendencia.
+     *
+     * Ordenado do maior para o menor porque e assim que a barra e lida, e porque a frase do desenho
+     * depende da ordem: "saude e o MENOR pedaco do gasto do Code".
+     */
+    private static List<AnimalCostSliceDTO> fatias(List<AnimalCost> recorte) {
+        Map<AnimalCostCategory, BigDecimal> porCategoria = new EnumMap<>(AnimalCostCategory.class);
+
+        for (AnimalCost custo : recorte) {
+            porCategoria.merge(custo.getCategory(), custo.getAmount(), BigDecimal::add);
+        }
+
+        return porCategoria.entrySet().stream()
+                .sorted(Map.Entry.<AnimalCostCategory, BigDecimal>comparingByValue().reversed())
+                .map(fatia -> AnimalCostSliceDTO.builder()
+                        .category(fatia.getKey())
+                        .amount(fatia.getValue())
+                        .build())
+                .toList();
+    }
+
+    /**
+     * "Quem pagou o que."
+     *
+     * <b>O CRITERIO E `organization == null`, e nao o `kind`.</b> Quem lancou em nome proprio pagou;
+     * quem registrou em nome de uma organizacao informou o valor, e nao disse quem o pagou. Num
+     * atendimento o autor e a veterinaria — chama-la de pagadora seria inventar um fato.
+     *
+     * Por isso a linha sem nome existe: e onde entra tudo que veio de organizacao. Escondida, a soma
+     * das linhas nao fecharia com o total logo acima, e o cartao pareceria dizer que o resto do
+     * dinheiro nao existiu.
+     */
+    private static List<AnimalCostPayerDTO> pagadores(List<AnimalCost> recorte) {
+        Map<String, BigDecimal> porPessoa = new LinkedHashMap<>();
+        Map<String, Set<AnimalCostCategory>> categoriasDaPessoa = new LinkedHashMap<>();
+
+        for (AnimalCost custo : recorte) {
+            // a chave vazia e a linha sem nome: LinkedHashMap nao aceita nula, e o DTO devolve nulo
+            String quem = custo.getOrganization() != null || custo.getRecordedBy() == null
+                    ? ""
+                    : custo.getRecordedBy().getName();
+
+            porPessoa.merge(quem, custo.getAmount(), BigDecimal::add);
+            categoriasDaPessoa
+                    .computeIfAbsent(quem, chave -> EnumSet.noneOf(AnimalCostCategory.class))
+                    .add(custo.getCategory());
+        }
+
+        return porPessoa.entrySet().stream()
+                .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
+                .map(linha -> AnimalCostPayerDTO.builder()
+                        .personName(linha.getKey().isEmpty() ? null : linha.getKey())
+                        .amount(linha.getValue())
+                        .categories(List.copyOf(categoriasDaPessoa.get(linha.getKey())))
+                        .build())
+                .toList();
+    }
+
+    private static BigDecimal somar(List<AnimalCost> custos) {
+        return custos.stream()
+                .map(AnimalCost::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * A media por mes.
+     *
+     * <b>Divide pelos meses do RECORTE, e nao pelos meses em que houve gasto.</b> Um animal que
+     * custou R$ 1.200 em dois meses do ano custou R$ 100 por mes no ano; dividir por dois daria
+     * R$ 600 e diria ao tutor que o animal custa seis vezes mais do que custa.
+     *
+     * HALF_UP e duas casas porque o resultado e dinheiro na tela, e nao um numero intermediario.
+     */
+    private static BigDecimal mediaMensal(BigDecimal total, long meses) {
+        if (meses <= 0) {
+            return total.setScale(2, RoundingMode.HALF_UP);
+        }
+
+        return total.divide(BigDecimal.valueOf(meses), 2, RoundingMode.HALF_UP);
+    }
+
+    /** Quantos meses o "desde sempre" cobre. Pelo menos um: um animal de um dia nao divide por zero. */
+    private static long mesesDesde(Optional<LocalDateTime> primeiro, LocalDateTime agora) {
+        return primeiro
+                .map(inicio -> Math.max(1, ChronoUnit.MONTHS.between(inicio, agora) + 1))
+                .orElse(1L);
+    }
+
+    /**
+     * Onde o dinheiro foi (Tela 37).
+     *
+     * <b>O SERVIDOR DECIDE ONDE O `kind` JA RESPONDE, e nao aceita ser contrariado ali.</b>
+     * Atendimento e SAUDE e mensalidade e CRECHE por definicao — deixar o cliente mandar outra coisa
+     * criaria duas verdades sobre a mesma linha, e a que estivesse errada apareceria como uma fatia
+     * torta no grafico do tutor, sem ninguem saber de onde veio.
+     *
+     * <b>A COMPRA e a unica que o cliente classifica</b>, e ela precisa: racao e remedio saem do
+     * mesmo `kind` e vao para fatias diferentes, e so quem tocou no botao da Tela 42 sabe qual.
+     * Nulo ali vira OUTRO, que e o terceiro botao — e nao uma falta a corrigir.
+     */
+    private static AnimalCostCategory categoriaDe(AnimalCostKind tipo, AnimalCostCategory pedida) {
+        return switch (tipo) {
+            case ATENDIMENTO -> AnimalCostCategory.SAUDE;
+            case CRECHE_MENSALIDADE, CRECHE_DIARIA -> AnimalCostCategory.CRECHE;
+            case COMPRA -> pedida == null ? AnimalCostCategory.OUTRO : pedida;
+        };
+    }
+
     private static AnimalCostResponseDTO toResponse(AnimalCost custo) {
         return AnimalCostResponseDTO.builder()
                 .animalCostId(custo.getAnimalCostId())
                 .description(custo.getDescription())
                 .amount(custo.getAmount())
                 .kind(custo.getKind())
+                .category(custo.getCategory())
                 .paid(custo.getPaid())
                 .recurrence(custo.getRecurrence())
                 .occurredAt(custo.getOccurredAt())

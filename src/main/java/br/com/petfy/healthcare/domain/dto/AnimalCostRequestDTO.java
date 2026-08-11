@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.dto;
 
+import br.com.petfy.healthcare.domain.entity.AnimalCostCategory;
 import br.com.petfy.healthcare.domain.entity.AnimalCostKind;
 import br.com.petfy.healthcare.domain.entity.CostRecurrence;
 import jakarta.validation.constraints.DecimalMin;
@@ -37,6 +38,16 @@ public class AnimalCostRequestDTO {
 
     /** Nulo vira COMPRA — o lancamento do tutor, que e o unico manual. */
     private AnimalCostKind kind;
+
+    /**
+     * Onde o dinheiro foi (Tela 37).
+     *
+     * <b>Opcional, e o servidor decide quando o `kind` ja responde:</b> atendimento e SAUDE,
+     * mensalidade e diaria sao CRECHE. Quem precisa mandar e a compra do tutor, porque ali racao e
+     * remedio saem do mesmo `kind` e vao para fatias diferentes — e so quem tocou no botao sabe
+     * qual. Nulo numa compra vira OUTRO, que e o terceiro botao da Tela 42.
+     */
+    private AnimalCostCategory category;
 
     /** "Ja foi pago". Nulo e "ninguem disse", e nao "nao foi pago". */
     private Boolean paid;
