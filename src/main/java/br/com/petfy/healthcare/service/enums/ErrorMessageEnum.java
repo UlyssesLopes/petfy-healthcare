@@ -131,6 +131,13 @@ public enum ErrorMessageEnum {
     // O mesmo par, pedido duas vezes. Quem responde receberia a mesma pergunta em duplicata e
     // aceitaria as duas — e a segunda tentaria absorver um cadastro que ja foi absorvido.
     MERGE_REQUEST_ALREADY_PENDING(157, "There is already a pending merge request for these two records"),
+    // ---------------------------------------------------- o combinado da creche (Tela 41)
+    //
+    // CODIGO PROPRIO, e nao INVALID_REQUEST: um dia da semana escrito errado — "SEGUNDA", "MON",
+    // "1" — nao e um formulario mal preenchido pelo tutor, e um cliente falando outra lingua. A
+    // tela precisa poder dizer isso ao desenvolvedor em vez de mandar a creche "conferir os
+    // campos marcados", que aqui nao ajudaria ninguem.
+    INVALID_WEEKDAY(158, "Weekday must be one of MONDAY..SUNDAY"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

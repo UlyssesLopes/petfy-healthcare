@@ -1359,6 +1359,33 @@
         "required" : [ "email" ],
         "type" : "object"
       },
+      "EnrollmentAgreementRequestDTO" : {
+        "properties" : {
+          "dailyRate" : {
+            "exclusiveMinimum" : false,
+            "minimum" : 0.0,
+            "type" : "number"
+          },
+          "dueDay" : {
+            "format" : "int32",
+            "maximum" : 28,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "monthlyFee" : {
+            "exclusiveMinimum" : false,
+            "minimum" : 0.0,
+            "type" : "number"
+          },
+          "weekdays" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "EnrollmentResponseDTO" : {
         "properties" : {
           "activatedAt" : {
@@ -1382,6 +1409,13 @@
           "createdByName" : {
             "type" : "string"
           },
+          "dailyRate" : {
+            "type" : "number"
+          },
+          "dueDay" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "endedAt" : {
             "format" : "date-time",
             "type" : "string"
@@ -1396,6 +1430,9 @@
             },
             "type" : "array"
           },
+          "monthlyFee" : {
+            "type" : "number"
+          },
           "organizationName" : {
             "type" : "string"
           },
@@ -1405,6 +1442,12 @@
           },
           "status" : {
             "type" : "string"
+          },
+          "weekdays" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -6835,6 +6878,45 @@
           }
         },
         "summary" : "Marca falta de hoje",
+        "tags" : [ "creche-controller" ]
+      }
+    },
+    "/professional/creche/enrollments/{enrollmentId}/agreement" : {
+      "put" : {
+        "description" : "SUBSTITUI o combinado inteiro — campo omitido passa a ser nulo, porque quem renegocia diz de novo o que vale. Todos os campos sao opcionais: a propria caixa do desenho se chama 'Combinado com o tutor · opcional'. Nada aqui cobra nem lanca valor: o Petfy guarda o que foi combinado. Os DIAS decidem, sozinhos, se o check-in de um dia fora da combinacao lanca a diaria avulsa; sem dias declarados a diaria nunca entra, porque o silencio da creche nao pode virar cobranca ao tutor.",
+        "operationId" : "setAgreement",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "enrollmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EnrollmentAgreementRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EnrollmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Grava o combinado da matricula: mensalidade, vencimento, diaria e os dias",
         "tags" : [ "creche-controller" ]
       }
     },

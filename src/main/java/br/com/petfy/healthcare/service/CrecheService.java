@@ -4,6 +4,7 @@ import br.com.petfy.healthcare.domain.dto.AttendanceRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AttendanceResponseDTO;
 import br.com.petfy.healthcare.domain.dto.ClassGroupRequestDTO;
 import br.com.petfy.healthcare.domain.dto.ClassGroupResponseDTO;
+import br.com.petfy.healthcare.domain.dto.EnrollmentAgreementRequestDTO;
 import br.com.petfy.healthcare.domain.dto.EnrollmentResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequirementRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequirementResponseDTO;
@@ -47,6 +48,18 @@ public interface CrecheService {
 
     /** As matriculas da turma, com a comprovacao de cada uma reavaliada agora. */
     List<EnrollmentResponseDTO> listEnrollments(UUID classGroupId);
+
+    /**
+     * Grava "o combinado com o tutor" (Tela 41): mensalidade, vencimento, diaria e os dias.
+     *
+     * <b>Substitui o combinado inteiro.</b> Combinar e um ato unico, e quem renegocia diz de novo o
+     * que passou a valer — o que ele nao repetir deixou de valer.
+     *
+     * <b>Nao lanca cobranca nenhuma.</b> "O Petfy nao cobra, nao emite boleto e nao processa
+     * pagamento. Ele guarda o que foi combinado." A mensalidade e um valor guardado; a unica coisa
+     * que vira lancamento sozinha e a diaria, e ela nasce do check-in.
+     */
+    EnrollmentResponseDTO setAgreement(UUID enrollmentId, EnrollmentAgreementRequestDTO request);
 
     /** A matricula de um animal, do lado do tutor: e a Tela 10 vista por quem concedeu acesso. */
     List<EnrollmentResponseDTO> listEnrollmentsOfAnimal(UUID animalId);

@@ -88,6 +88,10 @@ class AnimalMergerCoverageContainerTest extends PostgresContainerTest {
             "health_record_corrections",
             "care_instruction_fulfillments",
             "attendances",
+            // O dia combinado e do combinado, que e da matricula — e a matricula FICA. Mover os
+            // dias sem mover a matricula deixaria uma turma esperando um animal na segunda e a
+            // matricula dele em outro cadastro.
+            "enrollment_weekdays",
             "grant_scopes",
             "animal_merge_requests");
 
