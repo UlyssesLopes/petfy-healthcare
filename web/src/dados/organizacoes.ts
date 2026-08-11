@@ -6,6 +6,13 @@ import { corpoDe } from "./resposta.ts";
 
 export type Organizacao = components["schemas"]["OrganizationResponseDTO"];
 export type ConviteDeOrganizacao = components["schemas"]["OrganizationInviteResponseDTO"];
+export type MembroDaEquipe = components["schemas"]["MembershipResponseDTO"];
+
+/**
+ * As quatro funcoes, vindas do contrato e nao escritas a mao aqui: funcao nova no backend tem
+ * de quebrar o `tsc` deste arquivo, e nao aparecer em branco na tela.
+ */
+export type FuncaoNaEquipe = NonNullable<MembroDaEquipe["role"]>;
 
 /**
  * Criar uma organizacao (Tela 15).
@@ -54,34 +61,28 @@ export function useCriarOrganizacao() {
 }
 
 /**
- * Os convites da organizacao — e o unico pedaco da equipe que a API mostra.
+ * A equipe: quem ja entrou, com funcao, desde quando e o registro profissional de quem tem.
  *
- * Nao existe rota que liste MEMBROS: o contrato tem `GET /organizations/invites`,
- * `POST` e `DELETE /organizations/invites/{id}`, e nada que devolva quem ja entrou. Ver a
- * Tela 16.
+ * Enquanto esta rota nao existia, a Tela 16 mostrava so convites e DIZIA que a tabela nao
+ * tinha de onde sair — porque uma tabela de equipe vazia teria sido mentira: os membros
+ * existiam, e o produto e que nao sabia mostra-los.
  */
-export function useConvitesDaOrganizacao() {
+export function useEquipe() {
   return useQuery({
-    queryKey: ["convites-de-organizacao"],
-    queryFn: async () => corpoDe(await cliente.GET("/organizations/invites", {})),
+    queryKey: ["equipe"],
+    queryFn: async () => corpoDe(await cliente.GET("/organizations/members", {})),
   });
 }
 
-/**
- * Convidar alguem para a equipe.
- *
- * <b>Sem funcao.</b> O `OrganizationInviteRequestDTO` tem e-mail e prazo, e mais nada — a
- * funcao (`VETERINARIO`, `MONITOR`, `VOLUNTARIO`, `ADMINISTRADOR`) existe no
- * `ContextOptionDTO` mas nao ha por onde escolhe-la ao convidar. Quem entra, entra sem papel
- * declarado.
- */
-export function useConvidarParaEquipe() {
+/** O "ajustar" do desenho. So administrador — o servidor recusa o resto com 151. */
+export function useAjustarFuncao() {
   const consultas = useQueryClient();
 
   return useMutation({
-    mutationFn: async (email: string) => {
-      const { data, error } = await cliente.POST("/organizations/invites", {
-        body: { email },
+    mutationFn: async (ajuste: { membershipId: string; funcao: FuncaoNaEquipe }) => {
+      const { data, error } = await cliente.PATCH("/organizations/members/{membershipId}", {
+        params: { path: { membershipId: ajuste.membershipId } },
+        body: { role: ajuste.funcao },
       });
 
       if (error !== undefined) {
@@ -91,7 +92,70 @@ export function useConvidarParaEquipe() {
       return data;
     },
     onSuccess: async () => {
-      await consultas.invalidateQueries({ queryKey: ["convites-de-organizacao"] });
+      await consultas.invalidateQueries({ queryKey: ["equipe"] });
+    },
+  });
+}
+
+/**
+ * O desligamento. O servidor marca a saida e nao apaga o vinculo — o que a pessoa registrou
+ * continua no historico dos animais.
+ */
+export function useDesligarDaEquipe() {
+  const consultas = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (membershipId: string) => {
+      const { error } = await cliente.DELETE("/organizations/members/{membershipId}", {
+        params: { path: { membershipId } },
+      });
+
+      if (error !== undefined) {
+        throw error;
+      }
+    },
+    onSuccess: async () => {
+      await consultas.invalidateQueries({ queryKey: ["equipe"] });
+    },
+  });
+}
+
+/** Os convites em aberto. A outra metade da equipe: quem foi chamado e ainda nao entrou. */
+export function useConvitesDaOrganizacao() {
+  return useQuery({
+    queryKey: ["convites-de-organizacao"],
+    queryFn: async () => corpoDe(await cliente.GET("/organizations/invites", {})),
+  });
+}
+
+/**
+ * Convidar alguem para a equipe, <b>com a funcao que ela tera</b>.
+ *
+ * A funcao viaja no CONVITE, e nao no cadastro de quem aceita: deixar quem se cadastra
+ * escolher a propria funcao seria deixa-lo escolher a propria permissao. Quem convida ja e da
+ * organizacao, e e dele a decisao.
+ */
+export function useConvidarParaEquipe() {
+  const consultas = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (convite: { email: string; funcao: FuncaoNaEquipe }) => {
+      const { data, error } = await cliente.POST("/organizations/invites", {
+        body: { email: convite.email, role: convite.funcao },
+      });
+
+      if (error !== undefined) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: async () => {
+      /* O convite aceito vira membro, entao a equipe tambem envelhece quando um convite muda. */
+      await Promise.all([
+        consultas.invalidateQueries({ queryKey: ["convites-de-organizacao"] }),
+        consultas.invalidateQueries({ queryKey: ["equipe"] }),
+      ]);
     },
   });
 }

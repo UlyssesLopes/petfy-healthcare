@@ -40,7 +40,7 @@ public class AttachmentController {
     @PostMapping(value = "/animals/{animalId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AttachmentResponseDTO> upload(
             @PathVariable UUID animalId,
-            @RequestParam("file") MultipartFile file,
+            @RequestPart("file") MultipartFile file,
             @RequestParam(required = false) UUID vaccineId,
             @RequestParam(required = false) UUID healthRecordId,
             @RequestParam(required = false) String description) {

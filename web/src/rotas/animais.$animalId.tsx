@@ -163,6 +163,19 @@ function VidaDoAnimal() {
             >
               {intl.formatMessage({ id: "animal.acao.compartilhar" })}
             </button>
+
+            {/*
+             * A Tela 10 vista pelo tutor: o que cada creche esta esperando dele. Fica aqui, no
+             * cabecalho do animal, porque a pergunta e sobre ESTE animal — e a resposta pode ser
+             * "falta a antirrabica em dia", que e coisa de agir hoje.
+             */}
+            <Link
+              to="/animais/$animalId/matricula"
+              params={{ animalId }}
+              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "12px 20px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+            >
+              {intl.formatMessage({ id: "animal.acao.creches" })}
+            </Link>
           </div>
         </div>
 

@@ -81,6 +81,36 @@ public enum ErrorMessageEnum {
     // quando nao ha campo marcado nenhum. Quem manda corpo ilegivel raramente e o usuario:
     // e o cliente que montou a requisicao errado
     MALFORMED_REQUEST_BODY(143, "Request body is not readable JSON"),
+
+    // ------------------------------------------------------ a operacao da creche (V33)
+    //
+    // Os tres sao 404/409 de negocio, e nenhum e falta de permissao: a turma que nao e desta
+    // organizacao responde 404 pela mesma razao do animal — 403 confirmaria que aquele id
+    // existe. Vaga cheia e comprovacao faltando sao conflito de estado, e as duas telas da
+    // creche precisam distinguir uma da outra para dizer o que fazer em seguida.
+    CLASS_GROUP_NOT_FOUND(144, "Class group not found"),
+    CLASS_GROUP_FULL(145, "Class group has no free spot"),
+    ENROLLMENT_HEALTH_PROOF_MISSING(146, "Enrollment health proof is incomplete"),
+    ATTENDANCE_NOT_CHECKED_IN(147, "Attendance has no check-in for today"),
+    // Requisicao multipart que chegou sem a parte do arquivo. E diferente de ATTACHMENT_EMPTY,
+    // que e arquivo escolhido e vazio: aqui nao houve arquivo nenhum, e o conselho da tela muda
+    // de "esse arquivo esta vazio" para "escolha um arquivo". Sem este codigo a excecao caia no
+    // handler generico e voltava 500, dizendo que o servidor falhou quando quem errou foi quem
+    // chamou — e o contrato declara a parte como obrigatoria.
+    MISSING_FILE_PART(148, "Request is missing the file part"),
+    // Dose ja registrada para o mesmo animal, no mesmo dia, da mesma vacina. O cenario nao e
+    // hipotetico: a clinica registra a aplicacao e o tutor registra a mesma dose minutos depois,
+    // cada um achando que o outro nao registrou. Sem recusa, as duas passam e o historico conta
+    // dose dobrada — e o dano e silencioso, porque ninguem e avisado.
+    DOSE_ALREADY_REGISTERED(149, "This dose is already registered for this animal on this date"),
+    // A equipe: ajustar funcao e desligar sao atos de administracao, e o alvo pode nao ser desta
+    // organizacao — 404 nesse caso, pela mesma razao de sempre (403 confirmaria que aquele
+    // vinculo existe).
+    MEMBERSHIP_NOT_FOUND(150, "Membership not found"),
+    ADMINISTRATOR_ROLE_REQUIRED(151, "Only an administrator of this organization can do that"),
+    // A organizacao nao pode ficar sem quem a administre: sem administrador ninguem convida,
+    // ajusta funcao nem desliga, e ela vira um cadastro que so o suporte destrava.
+    LAST_ADMINISTRATOR(152, "This organization would be left without an administrator"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

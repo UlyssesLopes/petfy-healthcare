@@ -6,7 +6,9 @@ import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
+import br.com.petfy.healthcare.domain.dto.OrganizationPatientsSummaryDTO;
 import br.com.petfy.healthcare.domain.dto.VetPetDTO;
+import br.com.petfy.healthcare.service.PatientSituationReader;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.AccessedResource;
@@ -56,6 +58,7 @@ public class VetPetServiceImpl implements VetPetService {
     private final HealthRecordRepository healthRecordRepository;
     private final HealthRecordCorrectionLog healthRecordCorrectionLog;
     private final SensitiveAccessLogger sensitiveAccessLogger;
+    private final PatientSituationReader patientSituationReader;
 
     /**
      * Janela de correcao em dias. Curta de proposito: cobre o erro percebido
@@ -79,7 +82,52 @@ public class VetPetServiceImpl implements VetPetService {
                 ? grantRepository.buscarVigentesDaClinica(organizationId, agora, termo, pageable)
                 : grantRepository.buscarVigentesDaPessoa(contexto.person().getPersonId(), agora, termo, pageable);
 
-        return pagina.map(this::toVetPet);
+        return comSituacao(pagina.map(this::toVetPet));
+    }
+
+    /**
+     * Preenche situacao, ultima visita e "em tratamento" da PAGINA inteira de uma vez.
+     *
+     * Enriquecer dentro do `map` faria uma leitura por animal — e foi exatamente por isso que a
+     * Tela 03 dizia que a coluna nao dava para montar: 318 requisicoes para desenhar uma tabela.
+     * Mudar o laco de lugar nao resolveria nada.
+     */
+    private Page<VetPetDTO> comSituacao(Page<VetPetDTO> pagina) {
+        List<UUID> ids = pagina.getContent().stream().map(VetPetDTO::getAnimalId).toList();
+        var situacoes = patientSituationReader.de(ids);
+
+        pagina.getContent().forEach(paciente -> {
+            var situacao = situacoes.get(paciente.getAnimalId());
+            if (situacao == null) {
+                return;
+            }
+
+            paciente.setHealthStatus(situacao.status());
+            paciente.setLastVisitAt(situacao.ultimaVisita());
+            paciente.setUnderTreatment(situacao.emTratamento());
+        });
+
+        return pagina;
+    }
+
+    /**
+     * O cabecalho da Tela 03, sobre a organizacao inteira.
+     *
+     * Vale para quem atua por organizacao E para o autonomo — a area de organizacao nao exige
+     * organizacao nenhuma para funcionar (PRODUTO 9.3), e o resumo dele e sobre os animais que
+     * ele proprio alcanca.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public OrganizationPatientsSummaryDTO summarizeAccessibleAnimals() {
+        ProfessionalContext contexto = currentProfessionalProvider.requireContext();
+        LocalDateTime agora = LocalDateTime.now();
+
+        List<UUID> ids = contexto.atuaPorOrganizacao()
+                ? grantRepository.idsDosAnimaisDaClinica(contexto.organization().getOrganizationId(), agora)
+                : grantRepository.idsDosAnimaisDaPessoa(contexto.person().getPersonId(), agora);
+
+        return patientSituationReader.resumo(ids);
     }
 
     /**
@@ -107,10 +155,10 @@ public class VetPetServiceImpl implements VetPetService {
                     HttpStatus.CONFLICT);
         }
 
-        return custodyRepository
+        return comSituacao(custodyRepository
                 .buscarEmCursoDaOrganizacao(contexto.organization().getOrganizationId(),
                         termoDeBusca(busca), pageable)
-                .map(this::toVetPet);
+                .map(this::toVetPet));
     }
 
     /**

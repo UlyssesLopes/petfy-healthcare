@@ -253,10 +253,35 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
             assertThat(novoVinculo.getRelacao()).isEqualTo("CUSTODIA");
             assertThat(custodiasEmCursoDoRex()).isEqualTo(1);
 
-            // quem transferiu continua enxergando a carteira, agora como EDITOR
+            // quem transferiu continua enxergando a carteira, agora como LEITOR: acessos nao sao
+            // herdados, e decidir sobre o animal e de quem responde por ele
             assertThat(grantRepository.findVigenteDaPessoaNoAnimal(rex.getAnimalId(), ulysses.getPersonId(), LocalDateTime.now()))
                     .get()
-                    .satisfies(antigo -> assertThat(antigo.getLevel()).isEqualTo(GrantLevel.EDITOR));
+                    .satisfies(antigo -> assertThat(antigo.getLevel()).isEqualTo(GrantLevel.VIEWER));
+        }
+
+        /**
+         * <b>A revogacao conferida contra o banco, e nao contra o mock.</b> A concessao da co-tutora
+         * existe de verdade antes do aceite, e o que este caso prova e que ela nao sobrevive a ele —
+         * "acessos nao sao herdados", a tese que o desenho da Tela 11 escreve.
+         */
+        @Test
+        @DisplayName("o aceite de HOLDER derruba a concessao que existia antes")
+        void aceiteDeHolderDerrubaOsAcessosAnteriores() {
+            // a concessao e da co-tutora que FICA para tras. Dar uma a maria tambem faria o
+            // aceite recusa-la antes de chegar na regra: quem ja alcanca o animal nao aceita
+            // convite dele
+            Person joana = person("joana");
+            concessaoPara(joana, GrantLevel.EDITOR);
+
+            String token = convidar(ulysses, maria, PetTutorRole.HOLDER);
+            autenticar(maria);
+            petTutorService.accept(token);
+            grantRepository.flush();
+
+            assertThat(grantRepository.findVigenteDaPessoaNoAnimal(
+                    rex.getAnimalId(), joana.getPersonId(), LocalDateTime.now()))
+                    .isEmpty();
         }
 
         @Test
@@ -273,7 +298,7 @@ class PetTutorFlowContainerTest extends PostgresContainerTest {
             assertThat(custodiasEmCursoDoRex()).isEqualTo(1);
             assertThat(grantRepository.findVigenteDaPessoaNoAnimal(rex.getAnimalId(), ulysses.getPersonId(), LocalDateTime.now()))
                     .get()
-                    .satisfies(antigo -> assertThat(antigo.getLevel()).isEqualTo(GrantLevel.EDITOR));
+                    .satisfies(antigo -> assertThat(antigo.getLevel()).isEqualTo(GrantLevel.VIEWER));
         }
 
         /**

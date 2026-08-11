@@ -1,6 +1,8 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
+import br.com.petfy.healthcare.domain.repository.AttendanceRepository;
+import br.com.petfy.healthcare.domain.repository.EnrollmentRepository;
 import br.com.petfy.healthcare.domain.repository.AttachmentRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionFulfillmentRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
@@ -60,6 +62,8 @@ class AnimalPurgerTest {
     @Mock private HealthRecordCorrectionRepository healthRecordCorrectionRepository;
     @Mock private AnimalWeightHistoryRepository animalWeightHistoryRepository;
     @Mock private AntiparasiticRepository antiparasiticRepository;
+    @Mock private AttendanceRepository attendanceRepository;
+    @Mock private EnrollmentRepository enrollmentRepository;
     @Mock private GrantRepository grantRepository;
     @Mock private SensitiveAccessLogRepository sensitiveAccessLogRepository;
     @Mock private AnimalHealthConditionRepository animalHealthConditionRepository;

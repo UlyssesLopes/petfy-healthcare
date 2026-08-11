@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,6 +22,13 @@ import java.util.UUID;
 public class AnimalController {
 
     private final AnimalService animalService;
+
+    /*
+     * A rota de matriculas do animal saiu daqui e virou o `AnimalEnrollmentController`. Nao foi
+     * organizacao: o `CorsConfigTest` — um slice que monta so alguns beans — quebrou os sete casos
+     * dele quando este controller passou a depender do CrecheService. Pendurar a creche no
+     * controller de animal faz todo mundo que monta o AnimalController carregar a creche junto.
+     */
 
     @Operation(summary = "Cadastra um animal", description = "Quem cadastra passa a deter a custodia dele. Especie e obrigatoria porque o catalogo de vacina depende dela; identificacao - microchip, tatuagem, RGA - e toda opcional, porque metade dos animais do Brasil nao tem nenhuma.")
     @PostMapping

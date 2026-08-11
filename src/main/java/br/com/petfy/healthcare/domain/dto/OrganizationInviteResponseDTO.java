@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.dto;
 
+import br.com.petfy.healthcare.domain.entity.MembershipRole;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,12 @@ public class OrganizationInviteResponseDTO {
     private String token;
 
     private String email;
+
+    /**
+     * A funcao que a pessoa tera ao aceitar. Nula nos convites emitidos antes de a funcao
+     * existir no convite — e nulo aqui significa "nao declarada", e nao "sem funcao".
+     */
+    private MembershipRole role;
 
     private String createdByVetName;
 

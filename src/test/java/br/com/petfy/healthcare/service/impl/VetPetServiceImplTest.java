@@ -23,6 +23,9 @@ import br.com.petfy.healthcare.service.HealthRecordCorrectionLog;
 import br.com.petfy.healthcare.service.VaccineCorrectionLog;
 import br.com.petfy.healthcare.service.SensitiveAccessLogger;
 import br.com.petfy.healthcare.service.VaccineFactory;
+import br.com.petfy.healthcare.service.PatientSituationReader;
+import br.com.petfy.healthcare.service.VaccineStatusCalculator;
+import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -73,6 +76,9 @@ class VetPetServiceImplTest {
     private VaccineRepository vaccineRepository;
 
     @Mock
+    private AnimalHealthConditionRepository animalHealthConditionRepository;
+
+    @Mock
     private CurrentProfessionalProvider currentProfessionalProvider;
 
     @Mock
@@ -106,9 +112,13 @@ class VetPetServiceImplTest {
         // factory real: o que interessa aqui e que a vacina saia carimbada com a
         // clinica certa, e nao repetir a regra de montagem num mock
         service = new VetPetServiceImpl(grantRepository, custodyRepository, vaccineRepository,
-                currentProfessionalProvider, new VaccineFactory(vaccineCatalogRepository),
+                currentProfessionalProvider, new VaccineFactory(vaccineCatalogRepository, vaccineRepository),
                 organizationActivityNotifier, vaccineCorrectionLog,
-                healthRecordRepository, healthRecordCorrectionLog, sensitiveAccessLogger);
+                healthRecordRepository, healthRecordCorrectionLog, sensitiveAccessLogger,
+                // leitor real, como a factory: a situacao da pagina e regra, e mocka-la aqui
+                // faria a listagem afirmar o que o mock mandasse
+                new PatientSituationReader(vaccineRepository, healthRecordRepository,
+                        animalHealthConditionRepository, new VaccineStatusCalculator()));
         ReflectionTestUtils.setField(service, "correctionWindowDays", 7);
     }
 

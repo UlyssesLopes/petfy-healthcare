@@ -76,6 +76,10 @@ export const mensagens = {
   "erro.127": "Este arquivo passa do tamanho máximo.",
   "erro.128": "Não conseguimos guardar o anexo agora. Tente de novo em instantes.",
   "erro.129": "Este arquivo está vazio.",
+  // O 148 é vizinho do 129 e diz outra coisa: lá havia um arquivo, e ele estava vazio; aqui não
+  // veio arquivo nenhum. Por isso a frase é um pedido, e não um diagnóstico — o que resolve é
+  // escolher o arquivo.
+  "erro.148": "Escolha um arquivo para enviar.",
 
   // ---------------------------------------------------------- pendencia e orientacao
   "erro.140": "Esta orientação não estava valendo na data informada.",
@@ -90,6 +94,32 @@ export const mensagens = {
   // manda recarregar, que e a unica saida que as vezes funciona (versao velha da tela).
   "erro.143":
     "Algo saiu errado no envio, e não foi você. Recarregue a página e tente de novo.",
+
+  // ------------------------------------------------------------ a operação da creche
+  //
+  // O 146 é o mais importante da tabela inteira do ponto de vista de quem lê: ele aparece na
+  // porta da creche, às 7h30, para uma monitora com quinze cachorros esperando. Diz o fato e
+  // a saída, sem culpar o tutor e sem pedir para "tentar de novo" — tentar de novo não
+  // resolve; registrar a dose resolve.
+  "erro.144": "Não encontramos esta turma.",
+  "erro.145": "Esta turma não tem vaga livre. Matrículas guardadas também ocupam vaga.",
+  "erro.146": "A comprovação de saúde deste animal está aberta — ele não pode entrar hoje. A matrícula se completa sozinha quando a dose for registrada.",
+  "erro.147": "Este animal não tem entrada marcada hoje.",
+
+  // ------------------------------------------------------------------ a dose duplicada
+  //
+  // O 149 chega para quem acabou de fazer a coisa certa: a clínica registrou a dose, e o tutor
+  // está registrando a mesma minutos depois. A frase não pode soar como erro dele — o que ela
+  // precisa dizer é que o registro JÁ EXISTE, e que por isso não há nada a fazer.
+  "erro.149": "Esta dose já está registrada nesta data. Ela aparece no histórico do animal.",
+
+  // ---------------------------------------------------------------------------- a equipe
+  //
+  // O 152 é o único dos três que precisa dizer a SAÍDA, e não só o impedimento: quem tenta
+  // rebaixar ou desligar o último administrador quase sempre está se organizando, e não errando.
+  "erro.150": "Não encontramos esta pessoa na equipe.",
+  "erro.151": "Só quem administra a organização pode ajustar funções e desligar.",
+  "erro.152": "A organização ficaria sem ninguém para administrá-la. Promova outra pessoa a administradora antes.",
 
   // -------------------------------------------------------------------- os tres gerais
   //
@@ -245,6 +275,8 @@ export const mensagens = {
   "dose.confirmando": "Registrando…",
   "dose.cancelar": "Cancelar",
   "dose.carregando": "Buscando a dose anterior…",
+  // A saída do conflito é fechar, e não tentar de novo: a dose já está lá.
+  "dose.conflito.fechar": "Fechar",
 
   // A validacao e nossa e antes de enviar. As frases dizem o que falta, sem culpar.
   "dose.erro.semData": "Informe o dia em que a dose foi aplicada.",
@@ -564,13 +596,15 @@ export const mensagens = {
   "transferir.junto.condicoes": "{condicoes, plural, =0 {Nenhuma condição registrada} one {# condição registrada} other {# condições registradas}} e {anexos, plural, =0 {nenhum anexo} one {# anexo} other {# anexos}}",
   // O desenho escreveu "quem deixa de ver o Code". O backend não revoga nada de ninguém
   // na transferência, então a tela diz o que acontece de fato — com o mesmo peso de alerta.
-  "transferir.continua.rotulo": "Quem continua alcançando o {nome}",
+  // O painel virou "quem deixa de ver", como o desenho pede. A mudança é do backend, e não de
+  // texto: no aceite, toda concessão do animal é revogada e você fica com leitura.
+  "transferir.continua.rotulo": "O que muda no acesso ao {nome}",
   "transferir.continua.voce": "Você",
-  "transferir.continua.voce.texto": "Deixa de responder pelo {nome} e continua alcançando ele como co-tutor, com permissão de registrar. Quem recebe pode revogar isso.",
+  "transferir.continua.voce.texto": "Deixa de responder pelo {nome} e passa a apenas ver o histórico dele. Registrar, conceder e transferir passam a ser de quem recebe.",
   "transferir.continua.coTutor": "{quem}, co-tutor",
-  "transferir.continua.coTutor.texto": "Continua com o mesmo acesso. Quem recebe pode revogar.",
-  "transferir.continua.organizacao.texto": "Continua com o acesso que você concedeu. Quem recebe pode revogar.",
-  "transferir.continua.tese": "Hoje os acessos são herdados: quem recebe o animal recebe também quem já alcançava ele, e decide o que fica.",
+  "transferir.continua.coTutor.texto": "Perde o acesso no aceite. Quem recebe concede de novo, se quiser.",
+  "transferir.continua.organizacao.texto": "Perde o acesso no aceite — inclusive o link compartilhado. Quem recebe concede de novo, se quiser.",
+  "transferir.continua.tese": "Acessos não são herdados: quem autorizou foi você, e quem passa a responder pelo animal decide do zero quem alcança ele.",
   "transferir.acao": "Enviar transferência",
   "transferir.acao.enviando": "Enviando…",
   "transferir.acao.cancelar": "Cancelar",
@@ -578,6 +612,65 @@ export const mensagens = {
   "transferir.enviado.apoio": "Enquanto a pessoa não aceitar, o {nome} continua sob sua responsabilidade e nada mudou.",
   "transferir.enviado.prazo": "O convite vale até {data}.",
   "transferir.enviado.voltar": "Voltar para a vida do {nome}",
+
+  // ------------------------------------------------- a matrícula na creche (Tela 10)
+  //
+  // "O produto responde pela saúde": a creche não julga e o tutor não prova nada. O servidor cruza
+  // o que a organização exige com o que a carteira tem, e esta tela só mostra.
+  "animal.acao.creches": "Creches",
+  "matricula.titulo": "As creches do {nome}",
+  "matricula.apoio": "A comprovação de saúde é do produto, e não da creche: o Petfy compara o que cada organização exige com o que a carteira tem, e refaz essa conta a cada vez que alguém olha.",
+  "matricula.oQue": "as matrículas",
+  "matricula.vazio": "O {nome} não está matriculado em nenhuma creche.",
+  "matricula.turma": "Turma {turma}",
+  "matricula.status.PENDENTE": "Matrícula pendente",
+  "matricula.status.ATIVA": "Matrícula ativa",
+  "matricula.status.ENCERRADA": "Matrícula encerrada",
+  "matricula.comprovacao": "Comprovação de saúde",
+  "matricula.comprovacao.semExigencia": "Esta organização não exige vacina nenhuma para matricular.",
+  "matricula.linha.emDia": "Em dia até {data}",
+  "matricula.linha.emDiaSemPrazo": "Em dia — a dose está registrada e não tem prazo declarado",
+  "matricula.linha.vencida": "Venceu em {data} — impede a matrícula",
+  "matricula.linha.semRegistro": "Sem registro — impede a matrícula, porque não dá para afirmar o que ninguém viu",
+  "matricula.linha.porNome": "Casada pelo nome da vacina, e não pelo catálogo: a prova é mais fraca.",
+  "matricula.pendente.titulo": "A matrícula está guardada",
+  "matricula.pendente.texto": "Ela se completa sozinha assim que a dose que falta for registrada na carteira. Ninguém precisa refazer o cadastro.",
+  "matricula.pendente.semAviso": "Ainda não há como avisar a creche daqui — não existe canal de aviso para matrícula. O que existe é isto: registre a dose, e ela ativa.",
+  "matricula.precisaSaber": "O que a creche precisa saber",
+  "matricula.precisaSaber.vazio": "Nada registrado sobre o {nome} que a creche precise saber.",
+  // A única linha do produto que ensina a diferença entre ausência de dado e ausência de acesso.
+  "matricula.naoCompartilhado": "O histórico completo de atendimentos do {nome} existe e não foi compartilhado com a {organizacao}. Isso é diferente de não existir.",
+  "matricula.voltar": "Voltar para a vida do {nome}",
+
+  // ------------------------------------------ a operação do dia da creche (Tela 17)
+  //
+  // A única tela em que a pressa é parte do contexto: 7h34, catorze esperados, quem opera com um
+  // cachorro em cada mão. O topo conta em vez de listar, e cada linha tem um gesto só.
+  "creche.contagem": "{esperados, plural, one {# esperado} other {# esperados}} · {chegaram, plural, one {# já chegou} other {# já chegaram}}",
+  "creche.turma.comLimite": "{nome} · {ocupadas} de {vagas} vagas",
+  "creche.turma.semLimite": "{nome} · {ocupadas, plural, one {# animal} other {# animais}}",
+  "creche.oQue.turmas": "as turmas",
+  "creche.oQue.dia": "o dia da turma",
+  "creche.semTurma": "Nenhuma turma criada ainda. A turma é o que dá vaga e organiza o dia.",
+  "creche.turmaVazia": "Ninguém matriculado nesta turma.",
+  "creche.coluna.animal": "Animal",
+  "creche.coluna.hojePrecisa": "Hoje precisa",
+  "creche.coluna.entrada": "Entrada",
+  "creche.nada": "Nada",
+  "creche.impedido": "{motivo} — não pode entrar hoje",
+  // O desenho põe "Avisar tutor" aqui. Avisar não existe no backend, e um botão que não avisa
+  // ninguém seria pior: o que fica é a frase e o caminho real, que é registrar a dose.
+  "creche.avisarNaoDa": "Ainda não dá para avisar o tutor daqui. A entrada libera sozinha quando a dose for registrada na carteira.",
+  "creche.estado.PRESENTE": "Chegou",
+  "creche.estado.SAIU": "Saiu {hora}",
+  "creche.estado.FALTA": "Falta",
+  "creche.acao.entrada": "Marcar entrada",
+  "creche.acao.saida": "Marcar saída",
+  "creche.acao.falta": "Falta",
+  // Os três estados da comprovação. "Não sabemos" não é "está ruim" — e as duas impedem.
+  "creche.comprovacao.EM_DIA": "Em dia",
+  "creche.comprovacao.VENCIDA": "Vencida",
+  "creche.comprovacao.SEM_REGISTRO": "Sem registro",
 
   // ----------------------------------------------------- a adoção (Tela 13)
   //
@@ -614,6 +707,7 @@ export const mensagens = {
   // O que sobra é dito com o nome certo, e a ausência é declarada em vez de disfarçada.
   "pacientes.titulo": "Pacientes",
   "pacientes.meusAnimais": "Meus animais",
+  "pacientes.hoje": "Hoje na creche",
   "pacientes.busca": "Buscar por nome, microchip ou RGA",
   // Os dois recortes que uma consulta responde. "Vencendo", "em tratamento" e "atendidos este
   // mês" continuam sem agregação — a nota ao lado diz isso.
@@ -624,10 +718,25 @@ export const mensagens = {
   "pacientes.semTutor": "sem tutor humano",
   "pacientes.adotar": "Adoção",
   "pacientes.abrir": "Abrir",
-  "pacientes.recortes.indisponiveis": "Vencendo, em tratamento e atendidos este mês dependem de uma consulta por organização que ainda não existe",
+  // Os três recortes que o resumo responde. Eles contam sobre a organização inteira, e por isso
+  // não mudam quando a busca filtra a lista.
+  "pacientes.recorte.vencendo": "vencendo em 30 dias · {quantos}",
+  "pacientes.recorte.tratamento": "em tratamento · {quantos}",
+  "pacientes.recorte.atendidos": "atendidos este mês · {quantos}",
+
   "pacientes.coluna.animal": "Animal",
   "pacientes.coluna.tutor": "Tutor",
-  "pacientes.coluna.acessoDesde": "Acesso desde",
+  "pacientes.coluna.situacao": "Situação",
+  "pacientes.coluna.ultimaVisita": "Última visita",
+
+  // "Sem prazo" não é "em dia": pode ser dose única e pode ser carteira que ninguém registrou.
+  // A frase diz o que o produto sabe, e não o que ele gostaria de afirmar.
+  "pacientes.situacao.OVERDUE": "Vencida",
+  "pacientes.situacao.DUE_SOON": "Vencendo",
+  "pacientes.situacao.UP_TO_DATE": "Em dia",
+  "pacientes.situacao.NO_NEXT_DOSE": "Sem prazo registrado",
+  "pacientes.emTratamento": "Em tratamento",
+  "pacientes.semVisita": "sem visita",
   "pacientes.atender": "Atender",
   "pacientes.oQue": "os pacientes",
   "pacientes.vazio": "Nenhum tutor concedeu acesso a esta organização ainda.",
@@ -636,8 +745,10 @@ export const mensagens = {
   "pacientes.idade.anos": "{anos, plural, one {# ano} other {# anos}}",
   "pacientes.idade.meses": "{meses, plural, =0 {recém-nascido} one {# mês} other {# meses}}",
   "pacientes.vencendo.titulo": "Quem está vencendo",
-  "pacientes.vencendo.falta": "Esta lista não existe ainda: a pendência é sempre da pessoa logada, e não há consulta de quem está vencendo por organização. Montar no cliente exigiria uma leitura por animal — centenas de requisições para desenhar uma coluna.",
-  "pacientes.vencendo.aviso": "Quando ela existir, o aviso fala só da dose: acesso concedido não é lista de marketing.",
+  "pacientes.vencendo.titulo.contados": "Quem está vencendo · {quantos} no total",
+  // O gesto do desenho — avisar os tutores — continua não existindo, e a frase diz por quê sem
+  // prometer data. Um botão que não avisa ninguém seria pior que a ausência dele.
+  "pacientes.vencendo.aviso": "Avisar o tutor daqui ainda não existe: o produto não tem canal de aviso. Quando tiver, o aviso fala só da dose — acesso concedido não é lista de marketing.",
 
   // ------------------------------------------------- criar a organização (Tela 15)
   //
@@ -674,7 +785,14 @@ export const mensagens = {
   "equipe.convidar.campo": "e-mail",
   "equipe.convidar.acao": "Convidar",
   "equipe.convidando": "Convidando…",
-  "equipe.convidar.semFuncao": "Ainda não dá para escolher a função de quem entra: o convite guarda o e-mail e o prazo, e mais nada. Veterinária, monitora e recepção existem no modelo, mas não há por onde atribuí-las.",
+  // A frase diz por que a função é escolhida AQUI, e não por quem aceita: sem isso o campo
+  // parece burocracia. Com isso, ele é a decisão de quem responde pela organização.
+  "equipe.convidar.apoio": "A função é escolhida por você, no convite — quem aceita não escolhe o próprio papel. Dá para ajustar depois.",
+  "equipe.funcao.rotulo": "Função",
+  "equipe.funcao.VOLUNTARIO": "Voluntária",
+  "equipe.funcao.MONITOR": "Monitora",
+  "equipe.funcao.VETERINARIO": "Veterinária",
+  "equipe.funcao.ADMINISTRADOR": "Administradora",
   "equipe.aguardando": "{quantos, plural, =0 {Nenhum convite aguardando} one {# convite aguardando} other {# convites aguardando}}",
   "equipe.aguardando.vazio": "Ninguém foi convidado ainda.",
   "equipe.carregando": "Carregando os convites…",
@@ -683,8 +801,21 @@ export const mensagens = {
   "equipe.encerrados": "{quantos, plural, one {# convite já encerrado} other {# convites já encerrados}} — aceitos, vencidos ou revogados.",
   "equipe.oQue": "os convites da equipe",
   "equipe.oQue.convite": "o convite",
-  "equipe.falta.titulo": "A tabela da equipe não existe ainda",
-  "equipe.falta.texto": "Nenhuma rota devolve quem já entrou na organização, então não há como listar a equipe, mostrar a função de cada um nem desligar alguém. Mostrar uma tabela vazia seria pior: os membros existem, e é o produto que ainda não sabe mostrá-los.",
+  "equipe.oQue.equipe": "a equipe",
+  "equipe.oQue.funcao": "a função",
+  "equipe.oQue.desligamento": "o desligamento",
+
+  // A tabela da equipe. O "desde" é mês e ano: dia exato não ajuda ninguém a decidir nada, e
+  // sugere uma precisão que a pergunta ("faz tempo que ela está aqui?") não pede.
+  "equipe.tabela": "{quantos, plural, =0 {Ninguém na equipe ainda} one {# pessoa na equipe} other {# pessoas na equipe}}",
+  "equipe.carregando.membros": "Carregando a equipe…",
+  "equipe.membro.desde": "Desde {data}",
+  "equipe.membro.ajustar": "Função de {pessoa}",
+  "equipe.membro.desligar": "Desligar",
+
+  // O que ainda falta, e continua sendo dito em vez de desenhado.
+  "equipe.falta.titulo": "Quem já tem conta ainda não consegue aceitar",
+  "equipe.falta.texto": "O convite só é aceito na criação da conta. Quem já é do Petfy e recebe um convite de organização não tem por onde entrar — e essa é a única parte desta tela que ainda depende de backend.",
   "equipe.comoAceita": "Quem recebe o convite entra criando a conta com ele. Quem já tem conta no Petfy ainda não tem por onde aceitar.",
 
   // ------------------------------------------------- os estados (Tela 14)
@@ -699,6 +830,9 @@ export const mensagens = {
   "estado.carregando": "Carregando {o_que}…",
   "estado.carregando.quantos": "Carregando {quantos} {o_que}…",
   "estado.erroAoGravar": "Não conseguimos gravar {o_que}. O que você escreveu está aqui, intacto.",
+  // O título do conflito afirma o fato e não acusa ninguém: quem chega nele acabou de fazer a
+  // coisa certa, e o registro que importa já existe.
+  "estado.conflito.titulo": "Já foi feito.",
   // O "o que" de cada tela, para a frase do erro dizer o nome da coisa e não "os dados".
   "acesso.oQue": "quem alcança o {nome}",
   "conceder.oQue": "a lista de organizações",

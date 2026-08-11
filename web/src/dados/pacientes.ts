@@ -5,6 +5,21 @@ import type { components } from "./gerado/api";
 import { corpoDe } from "./resposta.ts";
 
 export type Paciente = components["schemas"]["VetPetDTO"];
+export type ResumoDosPacientes = components["schemas"]["OrganizationPatientsSummaryDTO"];
+
+/**
+ * Os quatro numeros do cabecalho, sobre a organizacao INTEIRA.
+ *
+ * <b>Nao depende da busca nem da pagina, e isso e proposital.</b> Um numero que muda ao filtrar
+ * a lista nao e um resumo — a decisao que ele apoia, a quem ligar hoje, e sobre todo mundo. Por
+ * isso a `queryKey` nao leva o termo de busca.
+ */
+export function useResumoDosPacientes() {
+  return useQuery({
+    queryKey: ["resumo-pacientes"],
+    queryFn: async () => corpoDe(await cliente.GET("/professional/animals/summary", {})),
+  });
+}
 
 /**
  * Os animais que o contexto ativo alcanca — a lista da veterinaria (Tela 03).
@@ -12,9 +27,10 @@ export type Paciente = components["schemas"]["VetPetDTO"];
  * <b>A busca e do SERVIDOR aqui</b>, ao contrario da lista de organizacoes da Tela 09: a rota
  * tem `q`, e uma clinica com 318 pacientes nao caberia numa pagina para filtrar no cliente.
  *
- * <b>O que ela NAO devolve, e e o que a tela mais precisa:</b> o `VetPetDTO` tem nome, tutor,
- * raca, sexo, nascimento, peso e desde quando o acesso existe — e nada sobre saude. Nao ha
- * situacao de vacina, nao ha ultima visita, nao ha tratamento em curso. Ver a tela.
+ * <b>A saude entrou no DTO</b>: `healthStatus` (a dose mais urgente da carteira), `lastVisitAt`
+ * e `underTreatment`. Ate entao o `VetPetDTO` tinha nome, tutor, raca, sexo, nascimento e peso —
+ * nada sobre saude —, e a coluna mais importante do desenho nao tinha de onde sair. O servidor
+ * responde em lote; montar isso no cliente seria uma leitura por animal.
  */
 export function usePacientes(busca: string) {
   const alvo = busca.trim();

@@ -3,6 +3,7 @@ package br.com.petfy.healthcare.controller;
 import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
+import br.com.petfy.healthcare.domain.dto.OrganizationPatientsSummaryDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineResponseDTO;
@@ -50,6 +51,22 @@ public class ProfessionalAnimalController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20, sort = "animal.name") Pageable pageable) {
         return ResponseEntity.ok(vetPetService.listAccessibleAnimals(q, pageable));
+    }
+
+    /**
+     * O cabecalho da Tela 03: "vencendo em 30 dias · 12", "em tratamento · 7", "atendidos este
+     * mes · 41", "todos · 318".
+     *
+     * <b>Rota propria, e o segmento literal vem antes de qualquer {@code {animalId}}</b> na
+     * resolucao do Spring — "summary" nunca e lido como id.
+     */
+    @GetMapping("/summary")
+    @Operation(summary = "Os numeros do conjunto de pacientes do contexto ativo",
+               description = "Conta sobre a organizacao inteira, e nao sobre a pagina aberta: um "
+                             + "numero que muda ao virar a pagina nao e um resumo. Vencidas entram "
+                             + "no 'vencendo em 30 dias' — quem passou do prazo e mais urgente.")
+    public ResponseEntity<OrganizationPatientsSummaryDTO> summarizeAccessibleAnimals() {
+        return ResponseEntity.ok(vetPetService.summarizeAccessibleAnimals());
     }
 
     /**

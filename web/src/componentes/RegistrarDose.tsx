@@ -1,8 +1,17 @@
 import { useState, type FormEvent } from "react";
 import { useIntl } from "react-intl";
 
+import { ehRespostaDeErro } from "../dados/RespostaDeErro.ts";
 import { useDoseAnterior, useRegistrarDose } from "../dados/vacinas.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
+import { Conflito } from "./Estados.tsx";
+
+/** O 149 do `error-codes.json`: mesma dose, mesmo animal, mesma data. */
+const DOSE_JA_REGISTRADA = 149;
+
+function ehDoseDuplicada(erro: unknown): boolean {
+  return ehRespostaDeErro(erro) && erro.code === DOSE_JA_REGISTRADA;
+}
 
 /**
  * Registrar a dose que estava vencendo.
@@ -111,7 +120,28 @@ export function RegistrarDose({
         </p>
       ) : null}
 
-      {registrar.isError ? (
+      {/*
+        O conflito nao entra na linha de erro. A dose duplicada e o unico caso em que a
+        gravacao falha e nao ha nada de errado: a clinica registrou primeiro, e o registro que
+        importa existe. A saida e ver e fechar — nao "tentar de novo", que daria o mesmo
+        resultado e deve dar.
+      */}
+      {registrar.isError && ehDoseDuplicada(registrar.error) ? (
+        <div className="mt-2">
+          <Conflito
+            oQue={intl.formatMessage({ id: chaveDoErro(registrar.error) })}
+            saida={
+              <button
+                type="button"
+                onClick={aoFechar}
+                className="text-corpo-denso inline-flex min-h-toque items-center text-tinta-secundaria hover:underline"
+              >
+                {intl.formatMessage({ id: "dose.conflito.fechar" })}
+              </button>
+            }
+          />
+        </div>
+      ) : registrar.isError ? (
         <p role="alert" className="text-rotulo mt-2 text-telha-texto">
           {intl.formatMessage({ id: chaveDoErro(registrar.error) })}
         </p>

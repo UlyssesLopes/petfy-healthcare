@@ -98,7 +98,7 @@ public class PersonServiceImpl implements PersonService {
         Person salvo = personRepository.save(person);
 
         registrarCredencial(salvo, request);
-        registrarVinculo(salvo, organization, request);
+        registrarVinculo(salvo, organization, request, invite);
 
         // consome o convite: e de uso unico, senao o mesmo link serviria a
         // qualquer numero de pessoas
@@ -404,23 +404,34 @@ public class PersonServiceImpl implements PersonService {
      * pessoa pertence a uma organizacao, no singular e para sempre; o vinculo diz que
      * ela esta numa, agora, com funcao - e admite N.
      *
-     * <b>A funcao sai da credencial, e nao de um campo do request.</b> Quem informou
-     * registro profissional entra como VETERINARIO; quem nao informou e criou a
-     * organizacao entra como ADMINISTRADOR, porque foi quem a cadastrou. Deixar o
-     * cliente escolher a funcao seria deixa-lo escolher a propria permissao, que e a
-     * mesma razao pela qual o papel nunca veio do request.
+     * <b>A funcao nunca vem do request, e continua nao vindo.</b> Deixar o cliente escolher a
+     * funcao seria deixa-lo escolher a propria permissao.
+     *
+     * <b>Quando ha convite, ela vem do convite</b> — escrito por quem ja e da organizacao. Isso
+     * corrige um caso que a deducao errava: a monitora da creche nao tem CRMV, e a regra antiga
+     * a fazia ADMINISTRADORA da organizacao que a convidou.
+     *
+     * <b>Sem convite, a deducao continua valendo</b>, e ela e sobre quem CRIA a propria
+     * organizacao: quem informou registro profissional entra como VETERINARIO; quem nao informou
+     * entra como ADMINISTRADOR, porque foi quem a cadastrou. Convite antigo, emitido antes de a
+     * funcao existir, cai no mesmo caminho.
      */
-    private void registrarVinculo(Person person, Organization organization, PersonRequestDTO request) {
+    private void registrarVinculo(Person person, Organization organization, PersonRequestDTO request,
+                                  OrganizationInvite invite) {
         if (organization == null) {
             // sem organizacao e um estado legitimo: e o veterinario autonomo, e nao um
             // cadastro incompleto
             return;
         }
 
+        MembershipRole funcao = invite != null && invite.getRole() != null
+                ? invite.getRole()
+                : (temTexto(request.getCrmv()) ? MembershipRole.VETERINARIO : MembershipRole.ADMINISTRADOR);
+
         membershipRepository.save(Membership.builder()
                 .person(person)
                 .organization(organization)
-                .role(temTexto(request.getCrmv()) ? MembershipRole.VETERINARIO : MembershipRole.ADMINISTRADOR)
+                .role(funcao)
                 .joinedAt(LocalDateTime.now())
                 .build());
     }

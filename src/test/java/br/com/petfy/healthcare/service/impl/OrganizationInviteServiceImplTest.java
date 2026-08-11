@@ -7,6 +7,7 @@ import br.com.petfy.healthcare.domain.entity.OrganizationInvite;
 import br.com.petfy.healthcare.domain.repository.OrganizationInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,9 @@ class OrganizationInviteServiceImplTest {
     @Mock
     private CurrentProfessionalProvider currentProfessionalProvider;
 
+    @Mock
+    private CurrentPersonProvider currentPersonProvider;
+
     private OrganizationInviteServiceImpl service;
 
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
@@ -57,7 +61,7 @@ class OrganizationInviteServiceImplTest {
         // token service real: o valor do teste esta em conferir que o token nao e
         // guardado em claro, e nao em repetir o hash num mock
         service = new OrganizationInviteServiceImpl(organizationInviteRepository, personRepository,
-                currentProfessionalProvider, new OpaqueTokenService());
+                currentProfessionalProvider, currentPersonProvider, new OpaqueTokenService());
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 7);
     }
 
@@ -74,10 +78,19 @@ class OrganizationInviteServiceImplTest {
         return br.com.petfy.healthcare.Contextos.por(vetDa(organizationId), organization(organizationId));
     }
 
+    /**
+     * <b>Convidar deixou de exigir credencial profissional.</b> A administradora do abrigo e a da
+     * creche nao tem CRMV, e o `requireContext` as barrava com "an active professional credential
+     * is required" num ato que nao tem nada a ver com credencial. Agora quem autoriza e o
+     * VINCULO, e por isso o duble aqui e `organizacaoDeclarada` e nao mais `requireContext`.
+     */
     private void autenticadoComoVetDa(UUID organizationId) {
         org.mockito.Mockito.lenient()
+                .when(currentPersonProvider.require()).thenReturn(vetDa(organizationId));
+        org.mockito.Mockito.lenient()
                 .when(currentProfessionalProvider.require()).thenReturn(vetDa(organizationId));
-        when(currentProfessionalProvider.requireContext()).thenReturn(contextoDa(organizationId));
+        when(currentProfessionalProvider.organizacaoDeclarada(any()))
+                .thenReturn(java.util.Optional.of(organization(organizationId)));
     }
 
     private OrganizationInvite convite(String email, LocalDateTime expiresAt,

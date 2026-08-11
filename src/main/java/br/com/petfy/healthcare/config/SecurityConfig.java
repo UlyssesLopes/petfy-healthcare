@@ -67,7 +67,12 @@ public class SecurityConfig {
                         // ativa, conferida no banco a cada requisicao. O
                         // CurrentProfessionalProvider repete a checagem mais adiante, e as
                         // duas camadas seguem sendo deliberadas
-                        .requestMatchers("/professional/**", "/organizations/invites/**").access(professionalAccessManager)
+                        // O convite SAIU daqui: convidar membro nao e ato clinico, e exigir
+                        // credencial trancava a Tela 16 para quem ela serve — a administradora do
+                        // abrigo e a da creche nao tem CRMV. Quem confere o vinculo agora e o
+                        // servico, com `organizacaoDeclarada`. A equipe (`/organizations/members`)
+                        // nunca esteve aqui pela mesma razao.
+                        .requestMatchers("/professional/**").access(professionalAccessManager)
                         .anyRequest().authenticated();
                 })
                 // sem entry point explicito o Spring Security devolve 403 para

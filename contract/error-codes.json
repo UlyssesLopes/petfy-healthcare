@@ -171,6 +171,42 @@
   "codigo" : 143,
   "mensagemDaApi" : "Request body is not readable JSON"
 }, {
+  "nome" : "CLASS_GROUP_NOT_FOUND",
+  "codigo" : 144,
+  "mensagemDaApi" : "Class group not found"
+}, {
+  "nome" : "CLASS_GROUP_FULL",
+  "codigo" : 145,
+  "mensagemDaApi" : "Class group has no free spot"
+}, {
+  "nome" : "ENROLLMENT_HEALTH_PROOF_MISSING",
+  "codigo" : 146,
+  "mensagemDaApi" : "Enrollment health proof is incomplete"
+}, {
+  "nome" : "ATTENDANCE_NOT_CHECKED_IN",
+  "codigo" : 147,
+  "mensagemDaApi" : "Attendance has no check-in for today"
+}, {
+  "nome" : "MISSING_FILE_PART",
+  "codigo" : 148,
+  "mensagemDaApi" : "Request is missing the file part"
+}, {
+  "nome" : "DOSE_ALREADY_REGISTERED",
+  "codigo" : 149,
+  "mensagemDaApi" : "This dose is already registered for this animal on this date"
+}, {
+  "nome" : "MEMBERSHIP_NOT_FOUND",
+  "codigo" : 150,
+  "mensagemDaApi" : "Membership not found"
+}, {
+  "nome" : "ADMINISTRATOR_ROLE_REQUIRED",
+  "codigo" : 151,
+  "mensagemDaApi" : "Only an administrator of this organization can do that"
+}, {
+  "nome" : "LAST_ADMINISTRATOR",
+  "codigo" : 152,
+  "mensagemDaApi" : "This organization would be left without an administrator"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

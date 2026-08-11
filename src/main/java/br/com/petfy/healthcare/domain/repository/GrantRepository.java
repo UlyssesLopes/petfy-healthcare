@@ -69,6 +69,19 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
                                               @Param("agora") LocalDateTime agora);
 
     /**
+     * TODAS as concessoes vigentes do animal — pessoa, organizacao e link.
+     *
+     * Existe para a transferencia de titularidade, e o "todas" e a regra: <b>acessos nao sao
+     * herdados</b>. Quem recebe a responsabilidade recebe um animal cujos acessos ele proprio
+     * concedera, e nao a lista que o titular anterior montou — inclusive o link compartilhado,
+     * que continua valendo na mao de quem tiver a URL.
+     */
+    @Query("select g from Grant g where g.animal.animalId = :animalId "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
+    List<Grant> findTodasVigentesNoAnimal(@Param("animalId") UUID animalId,
+                                          @Param("agora") LocalDateTime agora);
+
+    /**
      * Toda concessao que toca esta pessoa - recebida ou concedida por ela.
      *
      * Usada na exclusao de conta. As duas pontas entram: a concessao que ela recebeu
@@ -114,6 +127,29 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
                                         @Param("agora") LocalDateTime agora,
                                         @Param("termo") String termo,
                                         Pageable pageable);
+
+    /**
+     * Os ids de TODOS os animais que a organizacao alcanca agora — sem busca e sem pagina.
+     *
+     * O cabecalho da Tela 03 conta sobre a organizacao inteira ("vencendo em 30 dias · 12"), e
+     * nao sobre a pagina aberta: um numero que muda ao virar a pagina nao e um resumo, e a
+     * decisao que ele apoia — a quem ligar hoje — e sobre todo mundo.
+     *
+     * {@code distinct} porque a mesma organizacao pode ter mais de uma concessao vigente para o
+     * mesmo animal (escopos concedidos em momentos diferentes), e o animal continua sendo um.
+     */
+    @Query("select distinct g.animal.animalId from Grant g "
+            + "where g.granteeOrganization.organizationId = :organizationId "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
+    List<UUID> idsDosAnimaisDaClinica(@Param("organizationId") UUID organizationId,
+                                      @Param("agora") LocalDateTime agora);
+
+    /** O mesmo para quem atua por si: o autonomo tambem tem area de organizacao (PRODUTO 9.3). */
+    @Query("select distinct g.animal.animalId from Grant g "
+            + "where g.granteePerson.personId = :personId "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
+    List<UUID> idsDosAnimaisDaPessoa(@Param("personId") UUID personId,
+                                     @Param("agora") LocalDateTime agora);
 
     @Query("select g from Grant g where g.granteePerson.personId = :personId "
             + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora) "

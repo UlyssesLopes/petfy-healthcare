@@ -76,7 +76,7 @@ class VaccineServiceImplTest {
         // @InjectMocks, porque a factory depende de um mock que so existe agora
         vaccineService = new VaccineServiceImpl(vaccineRepository, organizationRepository,
                 currentPersonProvider, animalAccessGuard, new VaccineStatusCalculator(),
-                new VaccineFactory(vaccineCatalogRepository), vaccineCorrectionLog);
+                new VaccineFactory(vaccineCatalogRepository, vaccineRepository), vaccineCorrectionLog);
     }
 
     private static final UUID CATALOG_ID = UUID.fromString("a1000000-0000-4000-8000-000000000002");

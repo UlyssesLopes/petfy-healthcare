@@ -3,8 +3,10 @@ package br.com.petfy.healthcare.domain.repository;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthCondition;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +28,17 @@ public interface AnimalHealthConditionRepository extends JpaRepository<AnimalHea
     @Query("select c from AnimalHealthCondition c where c.animal.animalId = :animalId "
             + "order by c.resolvedAt asc nulls first, c.creationDate desc")
     List<AnimalHealthCondition> findByAnimalOrdenadasPorRelevancia(UUID animalId);
+
+    /**
+     * Quais dos animais informados tem condicao ABERTA — o "em tratamento" da Tela 03.
+     *
+     * <b>Em tratamento e condicao sem `resolvedAt`</b>, e nao um campo proprio: o produto ja diz
+     * "o que vale para este animal hoje" por essa ausencia, e criar um segundo lugar para a mesma
+     * verdade e criar a chance de os dois divergirem.
+     */
+    @Query("select distinct c.animal.animalId from AnimalHealthCondition c "
+            + "where c.animal.animalId in :animalIds and c.resolvedAt is null")
+    List<UUID> idsComCondicaoAberta(@Param("animalIds") Collection<UUID> animalIds);
 
     /** Usado ao apagar o animal - ver {@code AnimalPurger}. */
     void deleteByAnimalAnimalIdIn(List<UUID> animalIds);

@@ -6,10 +6,11 @@ import br.com.petfy.healthcare.service.PetIdService;
 import lombok.RequiredArgsConstructor;
 import net.sourceforge.tess4j.TesseractException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,8 +30,8 @@ public class PetIdController {
                              + "de comecar. O resultado e um ponto de partida para revisao, e nao um "
                              + "registro conferido - OCR erra, e o que ele produz nao carrega assinatura "
                              + "de quem afirmou nada.")
-    @PostMapping("/import-pet-id-card")
-    public ResponseEntity<AnimalResponseDTO> importPetIdCard(@RequestParam MultipartFile file) throws IOException, TesseractException {
+    @PostMapping(value = "/import-pet-id-card", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AnimalResponseDTO> importPetIdCard(@RequestPart("file") MultipartFile file) throws IOException, TesseractException {
         AnimalResponseDTO dto = petIdService.importAnimalFromIdCard(file);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }

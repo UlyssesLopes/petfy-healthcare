@@ -54,6 +54,11 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             "health_record_corrections",
             "animal_weight_history",
             "antiparasitics",
+            // A matricula aponta para animals, e a presenca aponta para a matricula. As duas
+            // entraram no purger junto com a V33: sem elas, apagar o animal e apagar a conta
+            // responderiam 500 no primeiro animal com matricula.
+            "enrollments",
+            "attendances",
             // as duas anteriores - animal_shares e pet_organization_access - se dissolveram
             // em grants no P2a. grant_scopes entra porque alcanca animals pela neta:
             // aponta para grants, que aponta para animals

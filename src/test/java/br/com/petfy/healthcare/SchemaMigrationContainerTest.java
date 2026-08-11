@@ -94,10 +94,23 @@ class SchemaMigrationContainerTest extends PostgresContainerTest {
         assertThat(tipos).isNotEmpty().containsOnly("uuid");
     }
 
+    /**
+     * <b>A contagem e das linhas DA MIGRATION, e nao da tabela.</b> O container do Postgres e
+     * compartilhado entre as classes de teste e ninguem limpa a tabela entre elas — o
+     * CrecheContainerTest cria um item de catalogo por caso. Contar a tabela inteira fazia a
+     * ORDEM DE EXECUCAO decidir o resultado: aqui esta classe rodava antes da creche e via 11, no
+     * CI rodava depois e via 23. O teste falhava sem nada estar errado no schema.
+     *
+     * O filtro e o id: os itens semeados nascem com id fixo prefixado `a1000000-`, para o mesmo
+     * codigo de vacina ter o mesmo id em todo ambiente. E o que distingue "veio da migration" de
+     * "algum teste inseriu".
+     */
     @Test
     @DisplayName("o catalogo de vacinas deve vir semeado pela migration")
     void catalogoDeveVirSemeado() {
-        var catalogo = vaccineCatalogRepository.findAllByOrderBySpeciesAscNameAsc();
+        var catalogo = vaccineCatalogRepository.findAllByOrderBySpeciesAscNameAsc().stream()
+                .filter(entrada -> entrada.getVaccineCatalogId().toString().startsWith("a1000000-"))
+                .toList();
 
         assertThat(catalogo).hasSize(11);
         assertThat(catalogo).extracting("code").contains("V10", "ANTIRRABICA_C", "V3_FELINA");
