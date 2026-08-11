@@ -49,10 +49,21 @@ aprovado em sessão.
 **Conjunto vazio é "não sei", e nunca "nenhum dia"** — sem dias declarados a diária nunca entra.
 O silêncio da creche não vira cobrança.
 
+### Tela 41, e o cartão que ela NÃO pode mostrar
+
+O desenho põe, à direita, "o que o Marcelo passa a ver": a mensalidade **e** a diária de 22/07 já
+lançada. **A creche não pode mostrar isso** — ler custo exige custódia. Então a tela da creche
+mostra o que o combinado *vai produzir*, derivado dos campos ao lado, e diz com todas as letras que
+aquela é a parte dela e não a conta do animal. A conta mora na tela do tutor, onde a caixa "O que
+foi combinado" **some sozinha** para quem alcança o animal só por concessão: os quatro campos vêm
+nulos do servidor.
+
+Rota nova: `/creche/matricula/{classGroupId}/{enrollmentId}`, alcançada pelo **nome do animal** na
+Tela 17 — um nome não disputa com o gesto das 7h30, um botão disputaria.
+
 ### O que falta no bloco 3
 
-1. **Tela 41** — o combinado, dentro da tela de matrícula (creche escreve, tutor lê).
-2. **Tela 42** — "o que você compra por fora": três toques, na área do tutor.
+1. **Tela 42** — "o que você compra por fora": três toques, na área do tutor.
 
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 

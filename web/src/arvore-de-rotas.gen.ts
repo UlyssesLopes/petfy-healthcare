@@ -29,6 +29,7 @@ import { Route as OrganizacoesOrganizationIdEquipeRouteImport } from './rotas/or
 import { Route as PacientesAnimalIdAtendimentoRouteImport } from './rotas/pacientes.$animalId.atendimento'
 import { Route as PacientesAnimalIdDuplicadoRouteImport } from './rotas/pacientes.$animalId.duplicado'
 import { Route as AnimaisAnimalIdDiscordarRegistroIdRouteImport } from './rotas/animais.$animalId_.discordar.$registroId'
+import { Route as CrecheMatriculaClassGroupIdEnrollmentIdRouteImport } from './rotas/creche_.matricula.$classGroupId.$enrollmentId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -138,6 +139,12 @@ const AnimaisAnimalIdDiscordarRegistroIdRoute =
     path: '/animais/$animalId/discordar/$registroId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const CrecheMatriculaClassGroupIdEnrollmentIdRoute =
+  CrecheMatriculaClassGroupIdEnrollmentIdRouteImport.update({
+    id: '/creche_/matricula/$classGroupId/$enrollmentId',
+    path: '/creche/matricula/$classGroupId/$enrollmentId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/pacientes/$animalId/atendimento': typeof PacientesAnimalIdAtendimentoRoute
   '/pacientes/$animalId/duplicado': typeof PacientesAnimalIdDuplicadoRoute
   '/animais/$animalId/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
+  '/creche/matricula/$classGroupId/$enrollmentId': typeof CrecheMatriculaClassGroupIdEnrollmentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -182,6 +190,7 @@ export interface FileRoutesByTo {
   '/pacientes/$animalId/atendimento': typeof PacientesAnimalIdAtendimentoRoute
   '/pacientes/$animalId/duplicado': typeof PacientesAnimalIdDuplicadoRoute
   '/animais/$animalId/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
+  '/creche/matricula/$classGroupId/$enrollmentId': typeof CrecheMatriculaClassGroupIdEnrollmentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -205,6 +214,7 @@ export interface FileRoutesById {
   '/pacientes/$animalId/atendimento': typeof PacientesAnimalIdAtendimentoRoute
   '/pacientes/$animalId/duplicado': typeof PacientesAnimalIdDuplicadoRoute
   '/animais/$animalId_/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
+  '/creche_/matricula/$classGroupId/$enrollmentId': typeof CrecheMatriculaClassGroupIdEnrollmentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/pacientes/$animalId/atendimento'
     | '/pacientes/$animalId/duplicado'
     | '/animais/$animalId/discordar/$registroId'
+    | '/creche/matricula/$classGroupId/$enrollmentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/pacientes/$animalId/atendimento'
     | '/pacientes/$animalId/duplicado'
     | '/animais/$animalId/discordar/$registroId'
+    | '/creche/matricula/$classGroupId/$enrollmentId'
   id:
     | '__root__'
     | '/'
@@ -273,6 +285,7 @@ export interface FileRouteTypes {
     | '/pacientes/$animalId/atendimento'
     | '/pacientes/$animalId/duplicado'
     | '/animais/$animalId_/discordar/$registroId'
+    | '/creche_/matricula/$classGroupId/$enrollmentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -293,6 +306,7 @@ export interface RootRouteChildren {
   AnimaisAnimalIdTransferirRoute: typeof AnimaisAnimalIdTransferirRoute
   OrganizacoesOrganizationIdEquipeRoute: typeof OrganizacoesOrganizationIdEquipeRoute
   AnimaisAnimalIdDiscordarRegistroIdRoute: typeof AnimaisAnimalIdDiscordarRegistroIdRoute
+  CrecheMatriculaClassGroupIdEnrollmentIdRoute: typeof CrecheMatriculaClassGroupIdEnrollmentIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -437,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnimaisAnimalIdDiscordarRegistroIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creche_/matricula/$classGroupId/$enrollmentId': {
+      id: '/creche_/matricula/$classGroupId/$enrollmentId'
+      path: '/creche/matricula/$classGroupId/$enrollmentId'
+      fullPath: '/creche/matricula/$classGroupId/$enrollmentId'
+      preLoaderRoute: typeof CrecheMatriculaClassGroupIdEnrollmentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -484,6 +505,8 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizacoesOrganizationIdEquipeRoute: OrganizacoesOrganizationIdEquipeRoute,
   AnimaisAnimalIdDiscordarRegistroIdRoute:
     AnimaisAnimalIdDiscordarRegistroIdRoute,
+  CrecheMatriculaClassGroupIdEnrollmentIdRoute:
+    CrecheMatriculaClassGroupIdEnrollmentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

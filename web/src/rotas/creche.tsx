@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
@@ -137,7 +137,7 @@ function Creche() {
                   </div>
 
                   {doDia.map((linha) => (
-                    <LinhaDoDia key={linha.enrollmentId} linha={linha} />
+                    <LinhaDoDia key={linha.enrollmentId} linha={linha} turma={turmaAtual} />
                   ))}
                 </div>
               )}
@@ -152,7 +152,7 @@ function Creche() {
 /* ------------------------------------------------------------------------------ pedacos */
 
 /** Linha de 56 px, um gesto por animal. A pressa e parte do contexto de uso. */
-function LinhaDoDia({ linha }: { linha: Presenca }) {
+function LinhaDoDia({ linha, turma }: { linha: Presenca; turma: string | undefined }) {
   const intl = useIntl();
   const entrada = useMarcarEntrada();
   const saida = useMarcarSaida();
@@ -166,10 +166,28 @@ function LinhaDoDia({ linha }: { linha: Presenca }) {
     <div style={{ borderTop: "1px solid oklch(0.95 0.005 150)" }}>
       <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1.6fr auto auto", gap: "16px", alignItems: "center", padding: "8px 22px", minHeight: "56px" }}>
         <div>
-          <span style={{ fontSize: "16px", fontWeight: 500 }}>{linha.animalName}</span>
+          {/*
+           * O NOME E O CAMINHO PARA A MATRICULA, e nao um botao a mais.
+           *
+           * A Tela 17 e a unica do produto em que a pressa e parte do contexto — um gesto por
+           * animal, e nada disputando com "marcar entrada". Um nome que leva ao combinado nao
+           * compete com o gesto das 7h30: ninguem clica num nome por engano com um cachorro em
+           * cada mao, e quem vai ajustar mensalidade nao esta na porta.
+           */}
+          {turma === undefined || linha.enrollmentId === undefined ? (
+            <span style={{ fontSize: "16px", fontWeight: 500 }}>{linha.animalName}</span>
+          ) : (
+            <Link
+              to="/creche/matricula/$classGroupId/$enrollmentId"
+              params={{ classGroupId: turma, enrollmentId: linha.enrollmentId }}
+              style={{ fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", textDecoration: "none" }}
+            >
+              {linha.animalName}
+            </Link>
+          )}
           {linha.species !== undefined && (
             <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
-              {" Â· "}
+              {" · "}
               {intl.formatMessage({ id: `animal.especie.${linha.species}` })}
             </span>
           )}
@@ -184,12 +202,12 @@ function LinhaDoDia({ linha }: { linha: Presenca }) {
             ? intl.formatMessage({ id: "creche.impedido" }, { motivo: linha.blockedReason ?? "" })
             : (linha.todayNeeds ?? []).length === 0
               ? intl.formatMessage({ id: "creche.nada" })
-              : (linha.todayNeeds ?? []).join(" Â· ")}
+              : (linha.todayNeeds ?? []).join(" · ")}
         </div>
 
         <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
           {linha.checkedInAt === undefined
-            ? "â€”"
+            ? "—"
             : intl.formatTime(new Date(linha.checkedInAt), { hour: "2-digit", minute: "2-digit" })}
         </div>
 

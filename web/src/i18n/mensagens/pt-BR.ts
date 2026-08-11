@@ -1154,6 +1154,75 @@ export const mensagens = {
   "valor.emBranco":
     "Deixe em branco se o valor não faz parte do que você quer registrar. O atendimento fica igual, e o custo do {nome} simplesmente não conta este evento.",
 
+  // ------------------------------------------------- Tela 41 · o combinado com o tutor
+  //
+  // "O Petfy não cobra, não emite boleto e não processa pagamento. Ele guarda o que foi
+  // combinado" — e nenhuma frase daqui pode sugerir o contrário. Gravar a mensalidade não
+  // lança mensalidade nenhuma; o único valor que entra sozinho é a diária, e ela nasce da
+  // entrada do animal, e não deste formulário.
+  "combinado.oQue": "o combinado",
+  "combinado.semMatricula":
+    "Não encontramos esta matrícula nesta turma. Ela pode ter sido encerrada — volte ao dia da creche para ver as que estão valendo.",
+  "combinado.voltar": "Voltar ao dia da creche",
+  "combinado.titulo": "Matrícula do {nome} · turma {turma}",
+  "combinado.assinatura": "{quem}, pela {onde}",
+  "combinado.caixa": "Combinado com o tutor",
+  "combinado.opcional": " · opcional",
+  "combinado.mensalidade": "Mensalidade",
+  "combinado.vencimento": "Vence todo dia",
+  "combinado.diaria": "Diária avulsa",
+  "combinado.diaria.nota": "Usada quando o {nome} vem fora dos dias combinados.",
+  "combinado.dias": "Dias combinados",
+  // As iniciais, como se lê um calendário. Segunda a domingo, na ordem da semana.
+  "combinado.dia.MONDAY": "Seg",
+  "combinado.dia.TUESDAY": "Ter",
+  "combinado.dia.WEDNESDAY": "Qua",
+  "combinado.dia.THURSDAY": "Qui",
+  "combinado.dia.FRIDAY": "Sex",
+  "combinado.dia.SATURDAY": "Sáb",
+  "combinado.dia.SUNDAY": "Dom",
+  // Não é um erro: não declarar dia é comum. O aviso existe só quando há diária combinada
+  // sem dia nenhum — o único caso em que o combinado não faz o que parece fazer.
+  "combinado.semDias":
+    "Sem dias combinados, a diária nunca entra sozinha: não há como saber que o {nome} veio fora do combinado. Marque os dias em que ele é esperado.",
+  "combinado.naoCobra":
+    "O Petfy não cobra, não emite boleto e não processa pagamento. Ele guarda o que foi combinado, para que o tutor veja o custo real do {nome} e ninguém precise perguntar por telefone.",
+  "combinado.gravar": "Gravar o combinado",
+  "combinado.gravando": "Gravando…",
+  "combinado.gravado": "Combinado gravado.",
+
+  "combinado.oQueOTutorVe": "O que o tutor passa a ver, sem perguntar",
+  "combinado.linha.mensalidade": "{onde} · mensalidade",
+  // Duas mensagens e nao um `select` sobre string vazia: chave vazia nao é ICU válido, e o
+  // erro só apareceria em tela, no dia em que alguém combinasse mensalidade sem vencimento.
+  "combinado.linha.mensalidade.detalhe":
+    "{dias, plural, =0 {Nenhum dia combinado} one {# dia por semana} other {# dias por semana}}",
+  "combinado.linha.mensalidade.vence": ", vence dia {vence}",
+  "combinado.porMes": "{valor}/mês",
+  "combinado.linha.diaria": "Diária avulsa",
+  "combinado.linha.diaria.detalhe": "Registrada pela creche no dia, sem ninguém digitar",
+  "combinado.sozinha":
+    "A diária avulsa entra sozinha: quando a creche marca a entrada do {nome} num dia fora da combinação, o evento de entrada carrega o valor. Ninguém digita nada.",
+  "combinado.contestavel":
+    "Cada valor tem um evento por trás, com autor e data — e por isso pode ser contestado como qualquer outro registro.",
+  // A creche não lê custo: ler exige custódia, e nenhum escopo de acesso substitui.
+  "combinado.naoLemos":
+    "Esta é a sua parte do combinado, e não a conta do {nome}. O que outras organizações cobram, e o que o tutor lança por fora, só quem responde pelo animal lê.",
+
+  // O mesmo combinado, lido por quem responde pelo animal. Vem nulo para quem só alcança o
+  // animal por concessão, e aí a caixa nem existe.
+  "matricula.combinado": "O que foi combinado",
+  "matricula.combinado.mensalidade": "Mensalidade",
+  "matricula.combinado.detalhe":
+    "{dias, plural, =0 {Sem dias combinados} one {# dia por semana} other {# dias por semana}}",
+  "matricula.combinado.vence": ", vence dia {vence}",
+  "matricula.combinado.porMes": "{valor}/mês",
+  "matricula.combinado.diaria": "Diária avulsa",
+  "matricula.combinado.diaria.detalhe":
+    "Entra sozinha quando a creche marca a entrada num dia fora do combinado",
+  "matricula.combinado.naoCobra":
+    "O Petfy não cobra e não processa pagamento — ele guarda o que foi combinado, para você não precisar perguntar por telefone.",
+
   // ------------------------------- o mesmo animal, cadastrado duas vezes (Tela 32)
   //
   // Uma tela, dois lados: quem percebe a duplicata é quase sempre a clínica, e quem decide é quem

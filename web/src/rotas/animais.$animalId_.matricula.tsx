@@ -204,7 +204,89 @@ function CartaoDaMatricula({
               { nome, organizacao: matricula.organizationName ?? "" },
             )}
           </div>
+
+          {/* -------------------------------------- Tela 41 · o que o tutor ve sem perguntar
+           *
+           * <b>Ele so aparece para quem responde pelo animal.</b> Os quatro campos do combinado
+           * vem NULOS do servidor para quem alcanca o animal por concessao — "nenhum escopo de
+           * acesso concede preco junto com saude" —, entao esta caixa some sozinha para o petshop
+           * que tem acesso a carteira. A tela nao decide isso; ela so nao tem o que mostrar.
+           *
+           * <b>Nada aqui e cobranca.</b> "O Petfy nao cobra, nao emite boleto e nao processa
+           * pagamento. Ele guarda o que foi combinado, para que o tutor veja o custo real do Code
+           * e ninguem precise perguntar por telefone."
+           */}
+          {temCombinado(matricula) && <OCombinado matricula={matricula} />}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Ha combinado para mostrar? Sem nenhum dos quatro, a caixa nao existe — e nao fica vazia. */
+function temCombinado(matricula: Matricula): boolean {
+  return (
+    matricula.monthlyFee !== undefined ||
+    matricula.dailyRate !== undefined ||
+    matricula.dueDay !== undefined ||
+    (matricula.weekdays ?? []).length > 0
+  );
+}
+
+function OCombinado({ matricula }: { matricula: Matricula }) {
+  const intl = useIntl();
+  const dias = matricula.weekdays ?? [];
+
+  return (
+    <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", marginTop: "18px", overflow: "hidden" }}>
+      <div style={{ padding: "12px 16px", background: "oklch(0.975 0.004 150)", borderBottom: "1px solid oklch(0.95 0.005 150)", fontSize: "12px", letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)" }}>
+        {intl.formatMessage({ id: "matricula.combinado" })}
+      </div>
+
+      {matricula.monthlyFee !== undefined && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "16px", alignItems: "center", padding: "14px 16px", minHeight: "56px", borderBottom: "1px solid oklch(0.95 0.005 150)" }}>
+          <div>
+            <div style={{ fontSize: "15px" }}>
+              {intl.formatMessage({ id: "matricula.combinado.mensalidade" })}
+            </div>
+            <div style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)", marginTop: "2px" }}>
+              {intl.formatMessage({ id: "matricula.combinado.detalhe" }, { dias: dias.length })}
+              {matricula.dueDay !== undefined &&
+                intl.formatMessage(
+                  { id: "matricula.combinado.vence" },
+                  { vence: String(matricula.dueDay) },
+                )}
+            </div>
+          </div>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "15px" }}>
+            {intl.formatMessage(
+              { id: "matricula.combinado.porMes" },
+              {
+                valor: intl.formatNumber(matricula.monthlyFee, { style: "currency", currency: "BRL" }),
+              },
+            )}
+          </div>
+        </div>
+      )}
+
+      {matricula.dailyRate !== undefined && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "16px", alignItems: "center", padding: "14px 16px", minHeight: "56px", borderBottom: "1px solid oklch(0.95 0.005 150)" }}>
+          <div>
+            <div style={{ fontSize: "15px" }}>
+              {intl.formatMessage({ id: "matricula.combinado.diaria" })}
+            </div>
+            <div style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)", marginTop: "2px" }}>
+              {intl.formatMessage({ id: "matricula.combinado.diaria.detalhe" })}
+            </div>
+          </div>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "15px" }}>
+            {intl.formatNumber(matricula.dailyRate, { style: "currency", currency: "BRL" })}
+          </div>
+        </div>
+      )}
+
+      <div style={{ padding: "14px 16px", fontSize: "14px", lineHeight: 1.6, color: "oklch(0.5 0.015 150)" }}>
+        {intl.formatMessage({ id: "matricula.combinado.naoCobra" })}
       </div>
     </div>
   );
