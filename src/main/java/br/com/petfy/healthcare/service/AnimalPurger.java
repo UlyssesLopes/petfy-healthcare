@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.repository.AnimalCostRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalMergeRequestRepository;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.AttendanceRepository;
@@ -54,6 +55,7 @@ import java.util.UUID;
 public class AnimalPurger {
 
     private final AnimalRepository animalRepository;
+    private final AnimalCostRepository animalCostRepository;
     private final AnimalMergeRequestRepository animalMergeRequestRepository;
     private final AttachmentRepository attachmentRepository;
     private final AttachmentStorage attachmentStorage;
@@ -143,6 +145,10 @@ public class AnimalPurger {
         // lista que pode citar um animal que NAO esta sendo apagado.
         animalMergeRequestRepository.deleteAll(
                 animalMergeRequestRepository.findEnvolvendoQualquer(animalIds));
+
+        // O custo aponta para o animal, e tambem para o atendimento e para a matricula de onde
+        // saiu — entao sai ANTES das duas, senao o delete delas esbarra nesta chave estrangeira.
+        animalCostRepository.deleteByAnimalAnimalIdIn(animalIds);
 
         // filhas: apontam para o animal
         vaccineRepository.deleteByAnimalAnimalIdIn(animalIds);

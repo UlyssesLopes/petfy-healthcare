@@ -11,6 +11,7 @@ import br.com.petfy.healthcare.domain.repository.HealthRecordRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.ObservationRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalCostRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalMergeRequestRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
@@ -55,6 +56,8 @@ class AnimalPurgerTest {
     @Mock private AnimalRepository animalRepository;
     /* O pedido de uniao (V35) aponta para dois animals, e some com qualquer um deles. */
     @Mock private AnimalMergeRequestRepository animalMergeRequestRepository;
+    /* O custo (V36) aponta para o animal, para o atendimento e para a matricula. */
+    @Mock private AnimalCostRepository animalCostRepository;
     @Mock private AttachmentRepository attachmentRepository;
     @Mock private AttachmentStorage attachmentStorage;
     @Mock private CustodyRepository custodyRepository;

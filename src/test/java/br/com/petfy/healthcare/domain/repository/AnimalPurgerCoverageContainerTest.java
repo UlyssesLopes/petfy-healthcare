@@ -51,6 +51,9 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             // um deles. Entrou aqui porque este teste o acusou assim que a tabela nasceu — a
             // quarta vez que ele pega a mesma classe de defeito.
             "animal_merge_requests",
+            // O custo (V36) aponta para o animal, e tambem para o atendimento e para a matricula
+            // de onde saiu — por isso sai antes das duas no purger.
+            "animal_costs",
             "attachments",
             "vaccines",
             "vaccine_corrections",

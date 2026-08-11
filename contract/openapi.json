@@ -132,6 +132,89 @@
         },
         "type" : "object"
       },
+      "AnimalCostRequestDTO" : {
+        "properties" : {
+          "amount" : {
+            "exclusiveMinimum" : false,
+            "minimum" : 0.0,
+            "type" : "number"
+          },
+          "description" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "ATENDIMENTO", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "paid" : {
+            "type" : "boolean"
+          },
+          "recurrence" : {
+            "enum" : [ "MENSAL" ],
+            "type" : "string"
+          },
+          "sourceEnrollmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sourceHealthRecordId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "amount", "description" ],
+        "type" : "object"
+      },
+      "AnimalCostResponseDTO" : {
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "animalCostId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "ATENDIMENTO", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "paid" : {
+            "type" : "boolean"
+          },
+          "recordedByName" : {
+            "type" : "string"
+          },
+          "recurrence" : {
+            "enum" : [ "MENSAL" ],
+            "type" : "string"
+          },
+          "sourceEnrollmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sourceHealthRecordId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AnimalExportDTO" : {
         "properties" : {
           "acessosDeClinica" : {
@@ -3866,6 +3949,75 @@
         },
         "summary" : "Atualiza a condicao",
         "tags" : [ "animal-health-condition-controller" ]
+      }
+    },
+    "/animals/{animalId}/costs" : {
+      "get" : {
+        "description" : "EXIGE CUSTODIA, e nenhum escopo de concessao substitui: o que uma clinica cobra do tutor nao e assunto da creche, do petshop nem de outra clinica. E a unica leitura deste produto que pede responder pelo animal em vez de alcanca-lo — e por isso o custo nao entra na linha do tempo, onde quem governa a leitura e o escopo.",
+        "operationId" : "costs",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AnimalCostResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que se gastou com este animal",
+        "tags" : [ "animal-cost-controller" ]
+      },
+      "post" : {
+        "description" : "Exige o mesmo alcance de escrita que registrar qualquer evento: a clinica lanca o valor do atendimento que ela mesma fez, a creche a mensalidade que combinou, e o tutor a racao que comprou. Pedir custodia aqui faria o valor ficar de fora justamente de quem tem o dado na mao. O campo e opcional em toda tela — evento sem valor e normal, nunca um erro e nunca um alerta.",
+        "operationId" : "addCost",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AnimalCostRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimalCostResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Lanca um valor gasto com o animal",
+        "tags" : [ "animal-cost-controller" ]
       }
     },
     "/animals/{animalId}/duplicates" : {
