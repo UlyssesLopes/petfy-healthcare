@@ -1156,6 +1156,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/professional/animals/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Os numeros do conjunto de pacientes do contexto ativo
+         * @description Conta sobre a organizacao inteira, e nao sobre a pagina aberta: um numero que muda ao virar a pagina nao e um resumo. Vencidas entram no 'vencendo em 30 dias' — quem passou do prazo e mais urgente.
+         */
+        get: operations["summarizeAccessibleAnimals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/professional/animals/{animalId}/health-records": {
         parameters: {
             query?: never;
@@ -2238,6 +2258,16 @@ export interface components {
             token?: string;
             usable?: boolean;
         };
+        OrganizationPatientsSummaryDTO: {
+            /** Format: int64 */
+            dueIn30Days?: number;
+            /** Format: int64 */
+            seenThisMonth?: number;
+            /** Format: int64 */
+            total?: number;
+            /** Format: int64 */
+            underTreatment?: number;
+        };
         OrganizationRequestDTO: {
             address?: string;
             cep?: string;
@@ -2732,9 +2762,14 @@ export interface components {
             bornDate?: string;
             breed?: string;
             gender?: string;
+            /** @enum {string} */
+            healthStatus?: "OVERDUE" | "DUE_SOON" | "UP_TO_DATE" | "NO_NEXT_DOSE";
+            /** Format: date */
+            lastVisitAt?: string;
             name?: string;
             personName?: string;
             type?: string;
+            underTreatment?: boolean;
             /** Format: double */
             weight?: number;
         };
@@ -4676,6 +4711,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageVetPetDTO"];
+                };
+            };
+        };
+    };
+    summarizeAccessibleAnimals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrganizationPatientsSummaryDTO"];
                 };
             };
         };

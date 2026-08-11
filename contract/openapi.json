@@ -1666,6 +1666,27 @@
         },
         "type" : "object"
       },
+      "OrganizationPatientsSummaryDTO" : {
+        "properties" : {
+          "dueIn30Days" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "seenThisMonth" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "underTreatment" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "OrganizationRequestDTO" : {
         "properties" : {
           "address" : {
@@ -2941,6 +2962,14 @@
           "gender" : {
             "type" : "string"
           },
+          "healthStatus" : {
+            "enum" : [ "OVERDUE", "DUE_SOON", "UP_TO_DATE", "NO_NEXT_DOSE" ],
+            "type" : "string"
+          },
+          "lastVisitAt" : {
+            "format" : "date",
+            "type" : "string"
+          },
           "name" : {
             "type" : "string"
           },
@@ -2949,6 +2978,9 @@
           },
           "type" : {
             "type" : "string"
+          },
+          "underTreatment" : {
+            "type" : "boolean"
           },
           "weight" : {
             "format" : "double",
@@ -5690,6 +5722,26 @@
           }
         },
         "summary" : "Os animais sob custodia da organizacao ativa",
+        "tags" : [ "professional-animal-controller" ]
+      }
+    },
+    "/professional/animals/summary" : {
+      "get" : {
+        "description" : "Conta sobre a organizacao inteira, e nao sobre a pagina aberta: um numero que muda ao virar a pagina nao e um resumo. Vencidas entram no 'vencendo em 30 dias' — quem passou do prazo e mais urgente.",
+        "operationId" : "summarizeAccessibleAnimals",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizationPatientsSummaryDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Os numeros do conjunto de pacientes do contexto ativo",
         "tags" : [ "professional-animal-controller" ]
       }
     },

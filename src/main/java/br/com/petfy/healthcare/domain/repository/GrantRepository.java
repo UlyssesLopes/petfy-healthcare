@@ -115,6 +115,29 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
                                         @Param("termo") String termo,
                                         Pageable pageable);
 
+    /**
+     * Os ids de TODOS os animais que a organizacao alcanca agora — sem busca e sem pagina.
+     *
+     * O cabecalho da Tela 03 conta sobre a organizacao inteira ("vencendo em 30 dias · 12"), e
+     * nao sobre a pagina aberta: um numero que muda ao virar a pagina nao e um resumo, e a
+     * decisao que ele apoia — a quem ligar hoje — e sobre todo mundo.
+     *
+     * {@code distinct} porque a mesma organizacao pode ter mais de uma concessao vigente para o
+     * mesmo animal (escopos concedidos em momentos diferentes), e o animal continua sendo um.
+     */
+    @Query("select distinct g.animal.animalId from Grant g "
+            + "where g.granteeOrganization.organizationId = :organizationId "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
+    List<UUID> idsDosAnimaisDaClinica(@Param("organizationId") UUID organizationId,
+                                      @Param("agora") LocalDateTime agora);
+
+    /** O mesmo para quem atua por si: o autonomo tambem tem area de organizacao (PRODUTO 9.3). */
+    @Query("select distinct g.animal.animalId from Grant g "
+            + "where g.granteePerson.personId = :personId "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
+    List<UUID> idsDosAnimaisDaPessoa(@Param("personId") UUID personId,
+                                     @Param("agora") LocalDateTime agora);
+
     @Query("select g from Grant g where g.granteePerson.personId = :personId "
             + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora) "
             + "and (lower(g.animal.name) like :termo "

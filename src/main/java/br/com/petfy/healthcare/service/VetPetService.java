@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.dto.HealthRecordCorrectionResponseDTO;
+import br.com.petfy.healthcare.domain.dto.OrganizationPatientsSummaryDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordRequestDTO;
 import br.com.petfy.healthcare.domain.dto.HealthRecordResponseDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineCorrectionResponseDTO;
@@ -28,6 +29,14 @@ public interface VetPetService {
      *              filtra nada
      */
     Page<VetPetDTO> listAccessibleAnimals(String busca, Pageable pageable);
+
+    /**
+     * Os quatro numeros do cabecalho da Tela 03, sobre o conjunto inteiro de pacientes.
+     *
+     * Separado da listagem porque a lista e uma pagina e o resumo e o todo: enfiar as agregacoes
+     * na resposta da pagina faria cada virada recalcular quatro contas que nao mudaram.
+     */
+    OrganizationPatientsSummaryDTO summarizeAccessibleAnimals();
 
     /**
      * Os animais sob custodia da organizacao ativa — o abrigo, e nao a clinica.

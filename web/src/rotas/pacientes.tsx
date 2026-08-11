@@ -4,7 +4,12 @@ import { useIntl } from "react-intl";
 
 import { Carregando, ErroDeCarga } from "../componentes/Estados.tsx";
 import { useMeuContexto } from "../dados/contexto.ts";
-import { usePacientes, useSobCustodia, type Paciente } from "../dados/pacientes.ts";
+import {
+  usePacientes,
+  useResumoDosPacientes,
+  useSobCustodia,
+  type Paciente,
+} from "../dados/pacientes.ts";
 import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
@@ -12,23 +17,23 @@ import { lerSessao } from "../dados/sessao.ts";
  * A "Tela 03 · web, tela grande — Area de organizacao, a segunda-feira da veterinaria", de
  * `design/IdentidadeVisual/Telas Petfy.dc.html`.
  *
- * <b>O QUE ESTA TELA PERDE E A COLUNA MAIS IMPORTANTE DELA.</b> O desenho mostra uma tabela
- * de pacientes com quatro colunas — animal, tutor, <b>situacao</b> e <b>ultima visita</b> —,
- * quatro recortes contados no topo ("vencendo em 30 dias · 12", "em tratamento · 7",
- * "atendidos este mes · 41", "todos · 318") e um painel "quem esta vencendo" com o gesto de
- * avisar os doze tutores. <b>Nada disso existe no backend.</b>
+ * <b>A COLUNA MAIS IMPORTANTE DELA EXISTE AGORA.</b> O desenho pede quatro colunas — animal,
+ * tutor, <b>situacao</b> e <b>ultima visita</b> —, quatro recortes contados no topo e um painel
+ * "quem esta vencendo". Ate a rodada passada nada disso vinha do backend: o `VetPetDTO` tinha
+ * nome, tutor, raca, sexo, nascimento e peso, e zero sobre saude.
  *
- * O `VetPetDTO` devolve nome, tutor, raca, sexo, nascimento, peso e desde quando o acesso
- * existe. Zero sobre saude. E a pendencia, no modelo de hoje, e SEMPRE da pessoa logada:
- * `/due-items` responde pelo tutor autenticado, e nao existe consulta de "quem esta vencendo"
- * por organizacao. Montar a coluna no cliente exigiria uma leitura por animal — 318
- * requisicoes para desenhar uma tabela — e ainda assim `atendidos este mes` nao sairia de
- * lugar nenhum.
+ * O que destravou foi a agregacao por organizacao: `healthStatus`, `lastVisitAt` e
+ * `underTreatment` viajam por animal, e `/professional/animals/summary` conta o conjunto
+ * inteiro. <b>Tudo em lote, no servidor</b> — era justamente a leitura por animal (318
+ * requisicoes para desenhar uma tabela) que tornava isso impossivel no cliente.
  *
- * Entao a tabela mostra as colunas que existem, o cabecalho diz quantos sao de verdade, e o
- * painel da direita <b>declara a ausencia em vez de fingir uma lista vazia</b>. E o mesmo
- * critério das outras telas: vazio nao e a mesma coisa que nao existe, e aqui os dados
- * existem — o que falta e rota que os agregue.
+ * <b>A TELA NAO RECALCULA NADA.</b> A situacao vem pronta, como na Tela 10: no dia em que o
+ * cliente divergisse do servidor, seria o dia em que um animal com antirrabica vencida
+ * apareceria em dia para quem decide a quem ligar.
+ *
+ * <b>O que AINDA nao existe e o GESTO:</b> "avisar os doze tutores". Nao ha canal de aviso no
+ * produto, e um botao que nao avisa ninguem seria pior que a ausencia dele — entao o painel
+ * lista quem esta vencendo e diz, em vez de desenhar, que avisar dali nao existe.
  *
  * <b>A busca e do servidor</b> (`q`), e nao do cliente: 318 pacientes nao caberiam numa
  * pagina para filtrar em memoria.
@@ -57,12 +62,21 @@ function Pacientes() {
 
   const porAcesso = usePacientes(busca);
   const porCustodia = useSobCustodia(busca);
+  const resumo = useResumoDosPacientes();
   const pacientes = aba === "acesso" ? porAcesso : porCustodia;
 
   const quem = contexto.data?.personName ?? "";
   const ativo = contexto.data?.active;
   const lista = pacientes.data?.content ?? [];
   const total = pacientes.data?.totalElements;
+
+  /*
+   * Quem esta vencendo, na pagina carregada. Vencida vem antes de vencendo: o painel existe
+   * para dizer a quem ligar primeiro, e quem passou do prazo e o primeiro.
+   */
+  const vencendo = lista
+    .filter((paciente) => paciente.healthStatus === "OVERDUE" || paciente.healthStatus === "DUE_SOON")
+    .sort((a, b) => (a.healthStatus === b.healthStatus ? 0 : a.healthStatus === "OVERDUE" ? -1 : 1));
 
   return (
     <div style={{ padding: "40px 24px" }}>
@@ -119,9 +133,10 @@ function Pacientes() {
           </div>
 
           {/*
-           * Os quatro recortes do desenho viram UM: o unico numero que existe e o total, e ele
-           * vem do `totalElements` da pagina. Os outros tres — vencendo, em tratamento,
-           * atendidos este mes — dependem de agregacao que nenhuma rota faz.
+           * Os quatro recortes do desenho. As duas abas contam pelo `totalElements` de cada
+           * lista — sao dois conjuntos diferentes, e nao dois filtros do mesmo. Os outros tres
+           * vem do resumo, que conta sobre a organizacao INTEIRA: numero que muda ao buscar nao
+           * e resumo.
            */}
           <div style={{ display: "flex", gap: "8px", marginBottom: "18px", flexWrap: "wrap" }}>
             <Aba escolhida={aba === "acesso"} aoEscolher={() => setAba("acesso")}>
@@ -141,9 +156,29 @@ function Pacientes() {
                     { quantos: porCustodia.data.totalElements },
                   )}
             </Aba>
-            <div style={{ fontSize: "14px", padding: "8px 14px", minHeight: "40px", display: "flex", alignItems: "center", border: "1px dashed oklch(0.88 0.008 150)", color: "oklch(0.5 0.015 150)", borderRadius: "8px" }}>
-              {intl.formatMessage({ id: "pacientes.recortes.indisponiveis" })}
-            </div>
+            {resumo.data !== undefined && (
+              <>
+                <Recorte
+                  texto={intl.formatMessage(
+                    { id: "pacientes.recorte.vencendo" },
+                    { quantos: resumo.data.dueIn30Days ?? 0 },
+                  )}
+                  atencao={(resumo.data.dueIn30Days ?? 0) > 0}
+                />
+                <Recorte
+                  texto={intl.formatMessage(
+                    { id: "pacientes.recorte.tratamento" },
+                    { quantos: resumo.data.underTreatment ?? 0 },
+                  )}
+                />
+                <Recorte
+                  texto={intl.formatMessage(
+                    { id: "pacientes.recorte.atendidos" },
+                    { quantos: resumo.data.seenThisMonth ?? 0 },
+                  )}
+                />
+              </>
+            )}
           </div>
 
           {pacientes.isError ? (
@@ -163,10 +198,11 @@ function Pacientes() {
             </div>
           ) : (
             <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", background: "oklch(1 0 0)", overflow: "hidden" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr auto", gap: "16px", padding: "12px 22px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(0.975 0.004 150)", fontSize: "12px", letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 0.9fr 0.8fr auto", gap: "16px", padding: "12px 22px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(0.975 0.004 150)", fontSize: "12px", letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)" }}>
                 <div>{intl.formatMessage({ id: "pacientes.coluna.animal" })}</div>
                 <div>{intl.formatMessage({ id: "pacientes.coluna.tutor" })}</div>
-                <div>{intl.formatMessage({ id: "pacientes.coluna.acessoDesde" })}</div>
+                <div>{intl.formatMessage({ id: "pacientes.coluna.situacao" })}</div>
+                <div>{intl.formatMessage({ id: "pacientes.coluna.ultimaVisita" })}</div>
                 <div></div>
               </div>
 
@@ -185,18 +221,43 @@ function Pacientes() {
             </div>
           )}
 
-          {/* --------------------------------------------- o painel que nao da para montar */}
-          <div style={{ border: "1px solid oklch(0.86 0.03 70)", background: "oklch(0.985 0.012 70)", borderRadius: "12px", padding: "22px 24px", marginTop: "20px", maxWidth: "640px" }}>
-            <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "18px", fontWeight: 500, marginBottom: "8px" }}>
-              {intl.formatMessage({ id: "pacientes.vencendo.titulo" })}
+          {/*
+            "QUEM ESTA VENCENDO". A lista existe agora; o GESTO do desenho — "avisar os doze
+            tutores" — continua nao existindo, e por isso continua escrito em vez de desenhado:
+            nao ha canal de aviso no produto, e um botao que nao avisa ninguem seria pior que a
+            ausencia dele.
+
+            A lista mostra quem esta vencendo NA PAGINA CARREGADA, e o numero ao lado e o da
+            organizacao inteira. Os dois juntos, porque um deles sozinho mente: so a pagina
+            esconderia o tamanho do problema, e so o numero nao diria a quem ligar.
+          */}
+          {vencendo.length > 0 && (
+            <div style={{ border: "1px solid oklch(0.86 0.03 70)", background: "oklch(0.985 0.012 70)", borderRadius: "12px", padding: "22px 24px", marginTop: "20px", maxWidth: "640px" }}>
+              <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "18px", fontWeight: 500, marginBottom: "8px" }}>
+                {intl.formatMessage(
+                  { id: "pacientes.vencendo.titulo.contados" },
+                  { quantos: resumo.data?.dueIn30Days ?? vencendo.length },
+                )}
+              </div>
+
+              <ul style={{ listStyle: "none", margin: "0 0 12px", padding: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
+                {vencendo.map((paciente) => (
+                  <li key={paciente.animalId} style={{ fontSize: "15px", color: "oklch(0.35 0.018 150)" }}>
+                    <b style={{ fontWeight: 500 }}>{paciente.name}</b>
+                    {paciente.personName === undefined
+                      ? ""
+                      : ` · ${paciente.personName}`}
+                    {" · "}
+                    <Situacao status={paciente.healthStatus} />
+                  </li>
+                ))}
+              </ul>
+
+              <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.42 0.015 150)" }}>
+                {intl.formatMessage({ id: "pacientes.vencendo.aviso" })}
+              </div>
             </div>
-            <div style={{ fontSize: "15px", lineHeight: 1.6, color: "oklch(0.35 0.018 150)", marginBottom: "10px" }}>
-              {intl.formatMessage({ id: "pacientes.vencendo.falta" })}
-            </div>
-            <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.42 0.015 150)" }}>
-              {intl.formatMessage({ id: "pacientes.vencendo.aviso" })}
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -217,7 +278,7 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
     .join(", ");
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr auto", gap: "16px", alignItems: "center", padding: "8px 22px", minHeight: "56px", borderTop: "1px solid oklch(0.95 0.005 150)" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 0.9fr 0.8fr auto", gap: "16px", alignItems: "center", padding: "8px 22px", minHeight: "56px", borderTop: "1px solid oklch(0.95 0.005 150)" }}>
       <div>
         <span style={{ fontSize: "16px", fontWeight: 500 }}>{paciente.name}</span>
         {identidade !== "" && (
@@ -234,10 +295,32 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
         {paciente.personName ?? intl.formatMessage({ id: "pacientes.semTutor" })}
       </div>
 
+      {/*
+        A COLUNA QUE A TELA NAO TINHA. O servidor manda a dose mais urgente da carteira pronta —
+        vencida vence vencendo, que vence em dia. A tela nao recalcula nada: no dia em que ela
+        divergisse do servidor, seria o dia em que um animal com antirrabica vencida apareceria
+        em dia para quem decide a quem ligar.
+
+        "Em tratamento" viaja junto do estado da carteira porque sao coisas diferentes: um animal
+        pode estar em dia de vacina E em tratamento, e a linha precisa dizer as duas.
+      */}
+      <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", gap: "2px" }}>
+        <Situacao status={paciente.healthStatus} />
+        {paciente.underTreatment === true && (
+          <span style={{ fontSize: "13px", color: "oklch(0.45 0.09 250)" }}>
+            {intl.formatMessage({ id: "pacientes.emTratamento" })}
+          </span>
+        )}
+      </div>
+
+      {/*
+        Nunca visitou NAO e "—": e "sem visita registrada", e a diferenca importa para quem le.
+        O tracinho diz "nao sei"; a frase diz o que o produto sabe.
+      */}
       <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", fontFamily: "'DM Mono', monospace" }}>
-        {paciente.accessGrantedAt === undefined
-          ? "—"
-          : intl.formatDate(new Date(paciente.accessGrantedAt), { dateStyle: "short" })}
+        {paciente.lastVisitAt === undefined
+          ? intl.formatMessage({ id: "pacientes.semVisita" })
+          : intl.formatDate(new Date(paciente.lastVisitAt), { dateStyle: "short" })}
       </div>
 
       {/*
@@ -269,6 +352,53 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
           </Link>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * A situacao da carteira, em palavra e cor.
+ *
+ * <b>`NO_NEXT_DOSE` nao e "em dia", e por isso tem frase propria.</b> Pode ser dose unica e pode
+ * ser carteira que ninguem registrou — dizer "em dia" ali seria o produto afirmando saude a
+ * partir de ausencia de dado, que e exatamente o que ele existe para nao fazer.
+ */
+function Situacao({ status }: { status: Paciente["healthStatus"] }) {
+  const intl = useIntl();
+
+  const cor =
+    status === "OVERDUE"
+      ? "oklch(0.42 0.13 30)"
+      : status === "DUE_SOON"
+        ? "oklch(0.45 0.10 70)"
+        : status === "UP_TO_DATE"
+          ? "oklch(0.42 0.06 150)"
+          : "oklch(0.5 0.015 150)";
+
+  return (
+    <span style={{ color: cor, fontWeight: status === "OVERDUE" ? 500 : 400 }}>
+      {intl.formatMessage({ id: `pacientes.situacao.${status ?? "NO_NEXT_DOSE"}` })}
+    </span>
+  );
+}
+
+/** Um numero do cabecalho. */
+function Recorte({ texto, atencao = false }: { texto: string; atencao?: boolean }) {
+  return (
+    <div
+      style={{
+        fontSize: "14px",
+        padding: "8px 14px",
+        minHeight: "40px",
+        display: "flex",
+        alignItems: "center",
+        border: `1px solid ${atencao ? "oklch(0.86 0.03 70)" : "oklch(0.88 0.008 150)"}`,
+        background: atencao ? "oklch(0.985 0.012 70)" : "oklch(1 0 0)",
+        color: "oklch(0.35 0.018 150)",
+        borderRadius: "8px",
+      }}
+    >
+      {texto}
     </div>
   );
 }

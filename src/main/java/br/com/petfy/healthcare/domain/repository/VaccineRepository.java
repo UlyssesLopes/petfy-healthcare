@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,6 +60,15 @@ public interface VaccineRepository extends JpaRepository<Vaccine, UUID> {
     List<Vaccine> findByAnimalAnimalIdAndApplicationDate(UUID animalId, LocalDate applicationDate);
 
     List<Vaccine> findByAnimalAnimalIdOrderByApplicationDateDesc(UUID animalId);
+
+    /**
+     * As vacinas de VARIOS animais de uma vez — a consulta que faz a coluna "situacao" da Tela 03
+     * caber numa requisicao.
+     *
+     * Montar a coluna no cliente exigiria uma leitura por animal: 318 requisicoes para desenhar
+     * uma tabela. Fazer o mesmo no servidor, num laco, seria o mesmo defeito escondido.
+     */
+    List<Vaccine> findByAnimalAnimalIdIn(Collection<UUID> animalIds);
 
     void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 

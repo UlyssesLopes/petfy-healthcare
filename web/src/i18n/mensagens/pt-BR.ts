@@ -716,10 +716,25 @@ export const mensagens = {
   "pacientes.semTutor": "sem tutor humano",
   "pacientes.adotar": "Adoção",
   "pacientes.abrir": "Abrir",
-  "pacientes.recortes.indisponiveis": "Vencendo, em tratamento e atendidos este mês dependem de uma consulta por organização que ainda não existe",
+  // Os três recortes que o resumo responde. Eles contam sobre a organização inteira, e por isso
+  // não mudam quando a busca filtra a lista.
+  "pacientes.recorte.vencendo": "vencendo em 30 dias · {quantos}",
+  "pacientes.recorte.tratamento": "em tratamento · {quantos}",
+  "pacientes.recorte.atendidos": "atendidos este mês · {quantos}",
+
   "pacientes.coluna.animal": "Animal",
   "pacientes.coluna.tutor": "Tutor",
-  "pacientes.coluna.acessoDesde": "Acesso desde",
+  "pacientes.coluna.situacao": "Situação",
+  "pacientes.coluna.ultimaVisita": "Última visita",
+
+  // "Sem prazo" não é "em dia": pode ser dose única e pode ser carteira que ninguém registrou.
+  // A frase diz o que o produto sabe, e não o que ele gostaria de afirmar.
+  "pacientes.situacao.OVERDUE": "Vencida",
+  "pacientes.situacao.DUE_SOON": "Vencendo",
+  "pacientes.situacao.UP_TO_DATE": "Em dia",
+  "pacientes.situacao.NO_NEXT_DOSE": "Sem prazo registrado",
+  "pacientes.emTratamento": "Em tratamento",
+  "pacientes.semVisita": "sem visita",
   "pacientes.atender": "Atender",
   "pacientes.oQue": "os pacientes",
   "pacientes.vazio": "Nenhum tutor concedeu acesso a esta organização ainda.",
@@ -728,8 +743,10 @@ export const mensagens = {
   "pacientes.idade.anos": "{anos, plural, one {# ano} other {# anos}}",
   "pacientes.idade.meses": "{meses, plural, =0 {recém-nascido} one {# mês} other {# meses}}",
   "pacientes.vencendo.titulo": "Quem está vencendo",
-  "pacientes.vencendo.falta": "Esta lista não existe ainda: a pendência é sempre da pessoa logada, e não há consulta de quem está vencendo por organização. Montar no cliente exigiria uma leitura por animal — centenas de requisições para desenhar uma coluna.",
-  "pacientes.vencendo.aviso": "Quando ela existir, o aviso fala só da dose: acesso concedido não é lista de marketing.",
+  "pacientes.vencendo.titulo.contados": "Quem está vencendo · {quantos} no total",
+  // O gesto do desenho — avisar os tutores — continua não existindo, e a frase diz por quê sem
+  // prometer data. Um botão que não avisa ninguém seria pior que a ausência dele.
+  "pacientes.vencendo.aviso": "Avisar o tutor daqui ainda não existe: o produto não tem canal de aviso. Quando tiver, o aviso fala só da dose — acesso concedido não é lista de marketing.",
 
   // ------------------------------------------------- criar a organização (Tela 15)
   //
