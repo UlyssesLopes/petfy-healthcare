@@ -1,9 +1,8 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
 import { ErroAoGravar, ErroDeCarga } from "../componentes/Estados.tsx";
-import { useMeuContexto } from "../dados/contexto.ts";
 import {
   useAjustarFuncao,
   useConvidarParaEquipe,
@@ -17,16 +16,16 @@ import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
- * A "Tela 16 · administracao — Equipe, funcoes e desligamento", de
+ * A "Tela 16 Â· administracao â€” Equipe, funcoes e desligamento", de
  * `design/IdentidadeVisual/Telas Petfy - Organizacao.dc.html`.
  *
  * <b>A TELA ESTAVA A UM QUARTO DO DESENHO, e o que faltava era backend.</b> Ela dizia isso em
- * vez de desenhar uma tabela vazia — a armadilha que a secao 06 nomeia: <b>vazio nao e a mesma
+ * vez de desenhar uma tabela vazia â€” a armadilha que a secao 06 nomeia: <b>vazio nao e a mesma
  * coisa que nao existe</b>. Uma tabela de equipe com "nenhum membro" seria mentira, porque os
  * membros existiam e o produto e que nao sabia mostra-los.
  *
  * As tres coisas que faltavam entraram, e por isso a tela tem agora as quatro colunas do
- * desenho — pessoa, funcao, o que ela registra e "ajustar" — mais o desligamento:
+ * desenho â€” pessoa, funcao, o que ela registra e "ajustar" â€” mais o desligamento:
  *
  * <ul>
  *   <li><b>`GET /organizations/members`</b> devolve quem ja entrou, com funcao, "desde" e o
@@ -40,7 +39,7 @@ import { lerSessao } from "../dados/sessao.ts";
  *
  * <b>A ultima parte que dependia de backend fechou.</b> Quem JA tem conta no Petfy agora aceita
  * o convite pela tela `/convites/aceitar`, sem precisar criar uma segunda conta com outro e-mail
- * — que era o que o `inviteToken` do `PersonRequestDTO`, unico caminho de aceite ate aqui, na
+ * â€” que era o que o `inviteToken` do `PersonRequestDTO`, unico caminho de aceite ate aqui, na
  * pratica exigia da veterinaria que ja usava o produto.
  */
 
@@ -78,7 +77,6 @@ function Equipe() {
   const { organizationId } = Route.useParams();
   const intl = useIntl();
 
-  const contexto = useMeuContexto();
   const convites = useConvitesDaOrganizacao();
   const convidar = useConvidarParaEquipe();
   const revogar = useRevogarConvite();
@@ -92,42 +90,17 @@ function Equipe() {
      acontece quando ninguem mexe no campo. VOLUNTARIO e a funcao que pode menos. */
   const [funcao, setFuncao] = useState<FuncaoNaEquipe>("VOLUNTARIO");
 
-  const quem = contexto.data?.personName ?? "";
   const daOrganizacao = (convites.data ?? []).filter(
     (convite) => convite.organizationId === organizationId,
   );
   const aguardando = daOrganizacao.filter((convite) => convite.usable !== false);
   const encerrados = daOrganizacao.filter((convite) => convite.usable === false);
-  const nomeDaOrganizacao = daOrganizacao[0]?.organizationName ?? "";
 
   return (
     <div style={{ padding: "40px 24px" }}>
       <div style={{ maxWidth: "1100px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div aria-hidden style={{ width: "26px", height: "26px", borderRadius: "999px", border: "2.5px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
-              </div>
-              <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
-            </div>
-            <Link to="/" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
-              {intl.formatMessage({ id: "acesso.voltar" })}
-            </Link>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "8px", padding: "8px 14px", minHeight: "44px", background: "oklch(0.975 0.004 150)" }}>
-            <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-              {intl.formatMessage({ id: "comecar.agindoComo" })}
-            </span>
-            <span style={{ fontSize: "15px", fontWeight: 500 }}>{quem}</span>
-            {nomeDaOrganizacao !== "" && (
-              <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-                {intl.formatMessage({ id: "equipe.pela" }, { organizacao: nomeDaOrganizacao })}
-              </span>
-            )}
-          </div>
-        </div>
+        {/* A marca, o "voltar" e o "Agindo como" viraram a moldura do produto: o "Hoje" dela
+            leva ao mesmo lugar que o voltar levava, e o contexto ativo ja vive no cabecalho. */}
 
         <div style={{ padding: "32px 40px 44px" }}>
           <h1 style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "30px", fontWeight: 500, margin: "0 0 8px", letterSpacing: "-0.02em" }}>
@@ -227,7 +200,7 @@ function Equipe() {
                               nisso. Dizer o vazio aqui inventaria uma cobranca.
                             */}
                             {membro.professionalCredential !== undefined
-                              ? ` · ${membro.professionalCredential}`
+                              ? ` Â· ${membro.professionalCredential}`
                               : ""}
                           </div>
                         </div>
@@ -346,7 +319,7 @@ function Equipe() {
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {/* O aviso ambar que morava aqui dizia que quem ja tem conta nao conseguia aceitar.
                   Ele saiu junto com o defeito: agora os dois caminhos existem, e o que resta e
-                  explicar QUAL deles cada pessoa vai usar — que e informacao util, e nao desculpa. */}
+                  explicar QUAL deles cada pessoa vai usar â€” que e informacao util, e nao desculpa. */}
               <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", background: "oklch(0.975 0.004 150)", padding: "22px 24px", fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
                 {intl.formatMessage({ id: "equipe.comoAceita" })}
               </div>

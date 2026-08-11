@@ -3,7 +3,6 @@ import { useState, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
 import { Carregando, ErroAoGravar } from "../componentes/Estados.tsx";
-import { useMeuContexto } from "../dados/contexto.ts";
 import { useAceitarConvite, usePreviaDoConvite } from "../dados/organizacoes.ts";
 import { lerSessao } from "../dados/sessao.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
@@ -64,12 +63,10 @@ function AceitarConvite() {
   const intl = useIntl();
   const navegar = useNavigate();
 
-  const contexto = useMeuContexto();
   const previa = usePreviaDoConvite(token);
   const aceitar = useAceitarConvite();
   const acao = useHover();
 
-  const quem = contexto.data?.personName ?? "";
   const convite = previa.data;
 
   /* O 153 nao e falha de gravacao: quem chega nele ja esta onde queria estar, e a tela diz
@@ -79,20 +76,9 @@ function AceitarConvite() {
   return (
     <div style={{ padding: "40px 24px" }}>
       <div style={{ maxWidth: "760px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div aria-hidden style={{ width: "26px", height: "26px", borderRadius: "999px", border: "2.5px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: "8px", height: "8px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
-            </div>
-            <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "8px", padding: "8px 14px", minHeight: "44px", background: "oklch(0.975 0.004 150)" }}>
-            <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-              {intl.formatMessage({ id: "comecar.agindoComo" })}
-            </span>
-            <span style={{ fontSize: "15px", fontWeight: 500 }}>{quem}</span>
-          </div>
-        </div>
+        {/* A marca e o "Agindo como" viraram a moldura do produto. Aqui eles faziam ainda menos
+            sentido do que nas outras: quem le esta tela esta decidindo entrar numa equipe, e o
+            cabecalho global ja diz em nome de quem ela age hoje. */}
 
         <div style={{ padding: "40px 48px 44px" }}>
           <h1 style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "30px", fontWeight: 500, margin: "0 0 24px", letterSpacing: "-0.02em" }}>

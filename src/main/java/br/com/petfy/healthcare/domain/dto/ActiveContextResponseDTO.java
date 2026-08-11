@@ -40,6 +40,22 @@ public class ActiveContextResponseDTO {
     private boolean professional;
 
     /**
+     * Se a pessoa ja confirmou o proprio e-mail.
+     *
+     * <b>Existe para a faixa do cabecalho</b> — "confirme seu e-mail para receber avisos de
+     * vacina", que a moldura do produto pede logo abaixo dos 64 px. Sem este campo a faixa so
+     * teria dois desfechos, e os dois errados: aparecer sempre, mentindo para quem ja
+     * confirmou, ou nao existir, calando quem nao recebe aviso nenhum e nao sabe por que.
+     *
+     * <b>Mora aqui e nao no {@code /persons/me} porque quem a desenha e o cabecalho</b>, e o
+     * cabecalho ja le esta rota em toda tela. Uma segunda chamada, em toda tela, para um
+     * booleano seria a moldura cobrando do servidor o dobro para dizer a mesma coisa.
+     *
+     * O nome diz o estado, e nao o instante: a tela pergunta "confirmou?", nao "quando".
+     */
+    private boolean emailVerified;
+
+    /**
      * O contexto que valeria agora, se a pessoa fizesse uma requisicao sem declarar
      * organizacao. <b>Nulo quando ambiguo</b> - e ai o cliente tem de perguntar.
      */

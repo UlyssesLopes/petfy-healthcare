@@ -216,4 +216,58 @@ class ActiveContextServiceImplTest {
         }
     }
 
+    /**
+     * A faixa "confirme seu e-mail" da moldura do produto.
+     *
+     * <b>Ela so tem tres desfechos, e dois deles sao errados:</b> aparecer sempre, mentindo para
+     * quem ja confirmou; nao existir, calando quem nao recebe aviso nenhum e nao sabe por que; ou
+     * este campo. O cabecalho ja le esta rota em toda tela, entao a informacao chega sem uma
+     * segunda chamada.
+     */
+    @Nested
+    @DisplayName("a faixa de e-mail nao confirmado")
+    class EmailVerificado {
+
+        private void euSou(Person quem) {
+            when(currentPersonProvider.require()).thenReturn(quem);
+            when(membershipRepository.findAtivosDaPessoa(quem.getPersonId())).thenReturn(List.of());
+            when(currentProfessionalProvider.organizacaoDeclarada(any(), any())).thenReturn(Optional.empty());
+            when(credentialRepository.existsAtivaPorEmail(eq(quem.getEmail()), eq(CredentialStatus.SUSPENSO)))
+                    .thenReturn(false);
+        }
+
+        @Test
+        @DisplayName("quem nunca confirmou deve chegar marcado como nao verificado")
+        void naoConfirmado() {
+            euSou(Person.builder().personId(UUID.randomUUID()).name("Vera").email("vera@petfy.com").build());
+
+            assertThat(service.contextoAtivo(null).isEmailVerified()).isFalse();
+        }
+
+        @Test
+        @DisplayName("quem ja confirmou nao deve ver a faixa")
+        void confirmado() {
+            euSou(Person.builder().personId(UUID.randomUUID()).name("Vera").email("vera@petfy.com")
+                    .emailVerifiedAt(java.time.LocalDateTime.now().minusDays(3)).build());
+
+            assertThat(service.contextoAtivo(null).isEmailVerified()).isTrue();
+        }
+
+        /**
+         * O campo espelha {@code podeReceberNotificacao()}, e nao uma segunda leitura do instante:
+         * se a regra de "pode receber" mudar, a faixa muda com ela em vez de continuar dizendo o
+         * que era verdade antes.
+         */
+        @Test
+        @DisplayName("deve dizer o mesmo que a regra de quem pode receber notificacao")
+        void espelhaARegraDeNotificacao() {
+            var confirmada = Person.builder().personId(UUID.randomUUID()).name("Vera")
+                    .email("vera@petfy.com").emailVerifiedAt(java.time.LocalDateTime.now()).build();
+            euSou(confirmada);
+
+            assertThat(service.contextoAtivo(null).isEmailVerified())
+                    .isEqualTo(confirmada.podeReceberNotificacao());
+        }
+    }
+
 }

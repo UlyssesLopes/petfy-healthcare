@@ -1671,6 +1671,7 @@ export interface components {
             active?: components["schemas"]["ContextOptionDTO"];
             ambiguous?: boolean;
             available?: components["schemas"]["ContextOptionDTO"][];
+            emailVerified?: boolean;
             /** Format: uuid */
             personId?: string;
             personName?: string;

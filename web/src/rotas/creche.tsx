@@ -1,9 +1,8 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
 import { Carregando, ErroDeCarga } from "../componentes/Estados.tsx";
-import { useMeuContexto } from "../dados/contexto.ts";
 import {
   useDiaDaTurma,
   useMarcarEntrada,
@@ -17,16 +16,16 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
- * A "Tela 17 · a tela mais usada da creche — Segunda-feira, 7h30, a operacao do dia", de
+ * A "Tela 17 Â· a tela mais usada da creche â€” Segunda-feira, 7h30, a operacao do dia", de
  * `design/IdentidadeVisual/Telas Petfy - Organizacao.dc.html`.
  *
  * <b>Ela e a unica tela do produto em que a pressa e parte do contexto.</b> Sao 7h34, ha catorze
  * animais esperados e seis chegaram, e quem opera tem um cachorro em cada mao. Por isso a linha e
  * de 56 px com um gesto so por animal, e por isso o topo conta em vez de listar.
  *
- * <b>A RECUSA NAO E DESTA TELA, e isso e o mais importante daqui.</b> "V10 venceu ontem — nao pode
+ * <b>A RECUSA NAO E DESTA TELA, e isso e o mais importante daqui.</b> "V10 venceu ontem â€” nao pode
  * entrar. A turma inteira depende disso": o servidor recusa a entrada, e a tela mostra o motivo. Uma
- * tela que apenas avisasse deixaria a decisao para quem esta com quinze cachorros na porta — e a lei
+ * tela que apenas avisasse deixaria a decisao para quem esta com quinze cachorros na porta â€” e a lei
  * nao cobra a tela.
  *
  * <b>ESPERADO nao e um registro.</b> Quem tem matricula ativa e nao tem nada gravado do dia nasce
@@ -45,7 +44,6 @@ export const Route = createFileRoute("/creche")({
 
 function Creche() {
   const intl = useIntl();
-  const contexto = useMeuContexto();
   const turmas = useTurmas();
 
   const [turmaEscolhida, setTurmaEscolhida] = useState<string | undefined>(undefined);
@@ -59,37 +57,10 @@ function Creche() {
     (linha) => linha.status === "PRESENTE" || linha.status === "SAIU",
   ).length;
 
-  const quem = contexto.data?.personName ?? "";
-  const organizacao = contexto.data?.active?.organizationName ?? "";
 
   return (
     <div style={{ padding: "40px 24px" }}>
       <div style={{ maxWidth: "1360px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div aria-hidden style={{ width: "26px", height: "26px", borderRadius: "999px", border: "2.5px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
-              </div>
-              <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
-            </div>
-            <Link to="/pacientes" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
-              {intl.formatMessage({ id: "pacientes.titulo" })}
-            </Link>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "8px", padding: "8px 14px", minHeight: "44px", background: "oklch(0.975 0.004 150)" }}>
-            <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-              {intl.formatMessage({ id: "comecar.agindoComo" })}
-            </span>
-            <span style={{ fontSize: "15px", fontWeight: 500 }}>{quem}</span>
-            {organizacao !== "" && (
-              <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-                {intl.formatMessage({ id: "equipe.pela" }, { organizacao })}
-              </span>
-            )}
-          </div>
-        </div>
 
         <div style={{ padding: "28px 32px 36px" }}>
           {/* O topo CONTA, e nao lista: as 7h34 o numero e a informacao. */}
@@ -108,7 +79,7 @@ function Creche() {
             </div>
           </div>
 
-          {/* As turmas como abas — "Turma Tarde", "Turma Manha", "Hospedagem". */}
+          {/* As turmas como abas â€” "Turma Tarde", "Turma Manha", "Hospedagem". */}
           {turmas.isError ? (
             <ErroDeCarga
               oQue={intl.formatMessage({ id: "creche.oQue.turmas" })}
@@ -198,7 +169,7 @@ function LinhaDoDia({ linha }: { linha: Presenca }) {
           <span style={{ fontSize: "16px", fontWeight: 500 }}>{linha.animalName}</span>
           {linha.species !== undefined && (
             <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
-              {" · "}
+              {" Â· "}
               {intl.formatMessage({ id: `animal.especie.${linha.species}` })}
             </span>
           )}
@@ -206,19 +177,19 @@ function LinhaDoDia({ linha }: { linha: Presenca }) {
 
         {/*
          * "Hoje precisa": o que a creche tem de saber sobre este animal hoje. Quando o animal esta
-         * impedido, o motivo GANHA da lista — e a unica informacao que muda o que fazer agora.
+         * impedido, o motivo GANHA da lista â€” e a unica informacao que muda o que fazer agora.
          */}
         <div style={{ fontSize: "15px", lineHeight: 1.5, color: linha.blocked === true ? "oklch(0.45 0.13 30)" : "oklch(0.35 0.018 150)" }}>
           {linha.blocked === true
             ? intl.formatMessage({ id: "creche.impedido" }, { motivo: linha.blockedReason ?? "" })
             : (linha.todayNeeds ?? []).length === 0
               ? intl.formatMessage({ id: "creche.nada" })
-              : (linha.todayNeeds ?? []).join(" · ")}
+              : (linha.todayNeeds ?? []).join(" Â· ")}
         </div>
 
         <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
           {linha.checkedInAt === undefined
-            ? "—"
+            ? "â€”"
             : intl.formatTime(new Date(linha.checkedInAt), { hour: "2-digit", minute: "2-digit" })}
         </div>
 
@@ -249,7 +220,7 @@ function LinhaDoDia({ linha }: { linha: Presenca }) {
           ) : linha.blocked === true ? (
             /*
              * Nao ha "marcar entrada" para animal impedido, e nao e o botao desabilitado de sempre:
-             * o gesto que resta e outro. O desenho poe "Avisar tutor" aqui — e avisar nao existe no
+             * o gesto que resta e outro. O desenho poe "Avisar tutor" aqui â€” e avisar nao existe no
              * backend, entao o que fica e a frase e o caminho para a carteira, onde a dose entra.
              */
             <div style={{ fontSize: "14px", color: "oklch(0.42 0.015 150)", lineHeight: 1.5, maxWidth: "26ch" }}>

@@ -5,7 +5,6 @@ import { useIntl } from "react-intl";
 import { DeRelance } from "../componentes/DeRelance.tsx";
 import { RegistrarDose } from "../componentes/RegistrarDose.tsx";
 import { useAnimais, type Animal } from "../dados/animais.ts";
-import { useSair } from "../dados/autenticacao.ts";
 import { useRedeDeCuidado } from "../dados/carteira.ts";
 import { useMeuContexto } from "../dados/contexto.ts";
 import {
@@ -96,7 +95,6 @@ function Inicio() {
   const intl = useIntl();
   const contexto = useMeuContexto();
   const animais = useAnimais();
-  const sair = useSair();
 
   const [incluirSilenciadas, setIncluirSilenciadas] = useState(false);
   const [animalEscolhido, setAnimalEscolhido] = useState<string | undefined>(undefined);
@@ -117,77 +115,54 @@ function Inicio() {
     <div style={{ padding: "40px 24px" }}>
       <div style={{ maxWidth: "1360px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
 
-        {/* ------------------------------------------------------------------------ topo */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div style={{ width: "26px", height: "26px", borderRadius: "999px", border: "2.5px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
-              </div>
-              {/* Nome de marca nao se traduz: e o unico texto literal da tela. */}
-              <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
-            </div>
+        {/* ------------------------------------------------------------------------ topo
+         *
+         * <b>A MARCA, O "AGINDO COMO" E O SAIR SAIRAM DAQUI.</b> Eles viraram a moldura do
+         * produto (`componentes/Moldura.tsx`), que veste toda tela autenticada — e era
+         * justamente esta barra, repetida com medidas diferentes em onze rotas, que fazia cada
+         * tela parecer solta no meio da pagina em vez de parte de uma plataforma.
+         *
+         * <b>O que ficou nao e navegacao de produto, e navegacao DESTE animal.</b> A moldura
+         * recusa destinos que dependem de um animal escolhido, e com razao: "Meus animais" e
+         * "Quem cuida" precisam de um `animalId`, e um item de cabecalho global que as vezes
+         * leva a lugar nenhum e pior que a ausencia dele. Aqui eles tem o animal ativo.
+         *
+         * Sem eles a vida do animal fica inalcancavel: nada mais nesta tela leva a Tela 02, e
+         * colar a URL cai no /entrar e volta para ca porque o token vive em memoria.
+         */}
+        {ativo?.animalId !== undefined && (
+          <div style={{ display: "flex", alignItems: "center", gap: "20px", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)", fontSize: "15px" }}>
+            <Link
+              to="/animais/$animalId"
+              params={{ animalId: ativo.animalId }}
+              style={{ color: "oklch(0.46 0.085 150)" }}
+            >
+              {intl.formatMessage({ id: "home.nav.meusAnimais" })}
+            </Link>
+
+            <Link
+              to="/animais/$animalId/quem-cuida"
+              params={{ animalId: ativo.animalId }}
+              style={{ color: "oklch(0.46 0.085 150)" }}
+            >
+              {intl.formatMessage({ id: "home.nav.quemCuida" })}
+            </Link>
 
             {/*
-             * A porta da area de organizacao (Tela 03), e ela so aparece para quem tem o que
-             * ver do outro lado. Nao e condicional de PAPEL — e do que a pessoa tem: o
-             * `professional` do `/me/context` sai de vinculo e credencial, nao de um campo de
-             * cadastro (PRODUTO.md 9.3).
+             * A porta da area de organizacao (Tela 03) fica aqui, e nao na moldura, por uma
+             * diferenca de condicao que importa: a moldura mostra "Pacientes" quando o CONTEXTO
+             * ATIVO e uma organizacao que registra ato clinico. O autonomo — pessoa com
+             * credencial e sem vinculo (PRODUTO.md 9.3) — nunca satisfaz isso e ficaria sem
+             * porta nenhuma. O `professional` sai de vinculo e credencial, nao de um campo de
+             * cadastro.
              */}
-            {contexto.data?.professional === true && (
-              <Link to="/pacientes" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
+            {contexto.data?.professional === true && contexto.data.active?.kind !== "ORGANIZACAO" && (
+              <Link to="/pacientes" style={{ color: "oklch(0.46 0.085 150)" }}>
                 {intl.formatMessage({ id: "pacientes.titulo" })}
               </Link>
             )}
-
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "8px", padding: "8px 14px", minHeight: "44px", background: "oklch(0.975 0.004 150)" }}>
-              <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-                {intl.formatMessage({ id: "home.agindoComo" })}
-              </span>
-              <span style={{ fontSize: "15px", fontWeight: 500 }}>
-                {contexto.data?.personName ?? ""}
-              </span>
-              <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-                {contexto.data?.active?.organizationName === undefined
-                  ? intl.formatMessage({ id: "home.contexto.voce" })
-                  : intl.formatMessage(
-                      { id: "home.contexto.pela" },
-                      { org: contexto.data.active.organizationName },
-                    )}
-              </span>
-            </div>
           </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "20px", fontSize: "15px" }}>
-            {/* "Meus animais" e o `href="#carteira"` do desenho: ele leva a Tela 02. Sem
-                ele a vida do animal fica inalcancavel — o token vive em memoria, entao
-                colar a URL cai no /entrar e volta para ca. */}
-            {ativo?.animalId !== undefined ? (
-              <Link
-                to="/animais/$animalId"
-                params={{ animalId: ativo.animalId }}
-                style={{ color: "oklch(0.46 0.085 150)" }}
-              >
-                {intl.formatMessage({ id: "home.nav.meusAnimais" })}
-              </Link>
-            ) : null}
-
-            {ativo?.animalId !== undefined ? (
-              <Link
-                to="/animais/$animalId/quem-cuida"
-                params={{ animalId: ativo.animalId }}
-                style={{ color: "oklch(0.46 0.085 150)" }}
-              >
-                {intl.formatMessage({ id: "home.nav.quemCuida" })}
-              </Link>
-            ) : null}
-
-            <button type="button" onClick={sair} style={{ fontFamily: "inherit", background: "none", border: "none", cursor: "pointer", fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
-              {intl.formatMessage({ id: "home.sair" })}
-            </button>
-            <div aria-hidden style={{ width: "34px", height: "34px", borderRadius: "999px", background: "oklch(0.90 0.03 150)" }}></div>
-          </div>
-        </div>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "264px 1fr 320px", minHeight: "720px" }}>
 

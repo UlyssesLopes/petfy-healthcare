@@ -94,20 +94,8 @@ function NovaOrganizacao() {
   return (
     <div style={{ padding: "40px 24px" }}>
       <div style={{ maxWidth: "1000px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div aria-hidden style={{ width: "26px", height: "26px", borderRadius: "999px", border: "2.5px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: "8px", height: "8px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
-            </div>
-            <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "8px", padding: "8px 14px", minHeight: "44px", background: "oklch(0.975 0.004 150)" }}>
-            <span style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)" }}>
-              {intl.formatMessage({ id: "comecar.agindoComo" })}
-            </span>
-            <span style={{ fontSize: "15px", fontWeight: 500 }}>{quem}</span>
-          </div>
-        </div>
+        {/* A marca e o "Agindo como" que moravam aqui viraram a moldura do produto
+            (`componentes/Moldura.tsx`), que veste toda tela autenticada. */}
 
         <div style={{ padding: "40px 56px 44px" }}>
           <h1 style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "32px", fontWeight: 500, margin: "0 0 10px", letterSpacing: "-0.02em" }}>

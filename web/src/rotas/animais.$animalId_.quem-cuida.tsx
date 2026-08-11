@@ -78,18 +78,10 @@ function QuemCuida() {
     <div style={{ padding: "40px 24px" }}>
       <div style={{ maxWidth: "1360px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div style={{ width: "26px", height: "26px", borderRadius: "999px", border: "2.5px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
-              </div>
-              <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
-            </div>
-            <Link to="/" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
-              {intl.formatMessage({ id: "acesso.voltar" })}
-            </Link>
-          </div>
+        {/* A marca e o "voltar" viraram a moldura do produto — o "Hoje" dela leva ao mesmo lugar.
+            O que ficou e navegacao DESTE animal, que a moldura recusa de proposito: um destino
+            global que depende de um animal escolhido as vezes levaria a lugar nenhum. */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
           <Link to="/animais/$animalId" params={{ animalId }} style={{ fontSize: "15px", color: "oklch(0.42 0.015 150)" }}>
             {nome}
           </Link>

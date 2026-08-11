@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Bitter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: oklch(0.94 0.006 150); }
+  * { box-sizing: border-box; }
+  a { color: oklch(0.46 0.085 150); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: oklch(0.36 0.085 150); }
+</style>
+</helmet>
+
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: oklch(0.25 0.02 150); padding: 72px 56px 120px; display: flex; flex-direction: column; gap: 88px; align-items: flex-start;">
+
+  <div style="max-width: 900px;">
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 40px;">
+      <div style="width: 34px; height: 34px; border-radius: 999px; border: 3px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;">
+        <div style="width: 10px; height: 10px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div>
+      </div>
+      <div style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 600;">Petfy</div>
+    </div>
+    <h1 style="font-family: Bitter, Georgia, serif; font-size: 48px; line-height: 1.1; font-weight: 500; letter-spacing: -0.025em; margin: 0 0 20px; max-width: 20ch;">Quanto custa cuidar dele.</h1>
+    <p style="font-size: 18px; line-height: 1.6; color: oklch(0.42 0.015 150); margin: 0 0 24px; max-width: 64ch; text-wrap: pretty;">Ninguém sabe quanto custa um animal antes de ter um, e é assim que animal acaba devolvido ou abandonado. O Petfy já registra tudo que acontece com ele — falta dizer quanto custou, quanto vem pela frente e quanto custa adiar.</p>
+    <div style="border-left: 3px solid oklch(0.46 0.085 150); padding: 4px 0 4px 20px; font-size: 16px; line-height: 1.65; color: oklch(0.35 0.018 150); max-width: 64ch;">Três regras que sustentam esta parte do produto: o valor entra junto com o evento, nunca digitado de novo; o Petfy não julga o quanto você gasta; e preço nunca aparece ao lado de uma decisão clínica sendo tomada.</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 37 · área do tutor</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">O custo do Code</span>
+    </div>
+
+    <div style="width: 1360px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+      <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 32px; align-items: center; padding: 0 28px; height: 64px; background: #fff; border-bottom: 1px solid oklch(0.90 0.008 150);">
+        <div style="display: flex; align-items: center; gap: 28px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 26px; height: 26px; border-radius: 999px; border: 2.5px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+            <span style="font-family: Bitter, Georgia, serif; font-size: 17px; font-weight: 600;">Petfy</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; border: 1px solid oklch(0.86 0.008 150); border-radius: 8px; padding: 0 14px; height: 44px; background: oklch(0.975 0.004 150);">
+            <span style="font-size: 13px; color: oklch(0.5 0.015 150);">Agindo como</span>
+            <span style="font-size: 15px; font-weight: 500;">Marcelo Dias</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; justify-self: center;">
+          <div style="display: flex; align-items: center; padding: 0 14px; height: 44px; border-radius: 8px; font-size: 15px; color: oklch(0.42 0.015 150);">Hoje</div>
+          <div style="display: flex; align-items: center; padding: 0 14px; height: 44px; border-radius: 8px; background: oklch(0.94 0.02 150); font-size: 15px; font-weight: 500; color: oklch(0.38 0.07 150);">Meus animais</div>
+          <div style="display: flex; align-items: center; padding: 0 14px; height: 44px; border-radius: 8px; font-size: 15px; color: oklch(0.42 0.015 150);">Quem cuida</div>
+        </div>
+        <div style="width: 36px; height: 36px; border-radius: 999px; background: oklch(0.90 0.03 150);"></div>
+      </div>
+
+      <div style="padding: 32px 40px 44px;">
+        <div style="display: flex; align-items: baseline; gap: 16px; margin-bottom: 8px;">
+          <h2 style="font-family: Bitter, Georgia, serif; font-size: 30px; font-weight: 500; margin: 0; letter-spacing: -0.02em;">Quanto o Code custou</h2>
+          <div style="display: flex; gap: 8px;">
+            <div style="font-size: 14px; padding: 8px 14px; min-height: 40px; display: flex; align-items: center; border: 1px solid oklch(0.46 0.085 150); color: oklch(0.46 0.085 150); border-radius: 8px;">Últimos 12 meses</div>
+            <div style="font-size: 14px; padding: 8px 14px; min-height: 40px; display: flex; align-items: center; border: 1px solid oklch(0.86 0.012 150); border-radius: 8px; color: oklch(0.42 0.015 150);">Desde 2019</div>
+          </div>
+        </div>
+        <p style="font-size: 15px; line-height: 1.6; color: oklch(0.45 0.015 150); margin: 0 0 28px; max-width: 70ch;">Montado a partir do que já está registrado. Você não digitou nada disto duas vezes — cada valor veio junto com o evento que o gerou.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 400px; gap: 32px; align-items: start;">
+          <div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+              <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 22px 24px;">
+                <div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-bottom: 8px;">Nos últimos 12 meses</div>
+                <div style="font-family: Bitter, Georgia, serif; font-size: 30px; font-weight: 500; letter-spacing: -0.02em;">R$ 4.180</div>
+              </div>
+              <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 22px 24px;">
+                <div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-bottom: 8px;">Por mês, em média</div>
+                <div style="font-family: Bitter, Georgia, serif; font-size: 30px; font-weight: 500; letter-spacing: -0.02em;">R$ 348</div>
+              </div>
+              <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 22px 24px;">
+                <div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-bottom: 8px;">Desde 2019</div>
+                <div style="font-family: Bitter, Georgia, serif; font-size: 30px; font-weight: 500; letter-spacing: -0.02em;">R$ 26.940</div>
+              </div>
+            </div>
+
+            <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; overflow: hidden; margin-bottom: 24px;">
+              <div style="padding: 20px 24px 16px; border-bottom: 1px solid oklch(0.94 0.006 150);">
+                <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 16px;">Onde foi</div>
+                <div style="display: flex; height: 14px; border-radius: 4px; overflow: hidden; gap: 2px; margin-bottom: 16px;">
+                  <div style="width: 38%; background: oklch(0.46 0.085 150);"></div>
+                  <div style="width: 27%; background: oklch(0.60 0.07 150);"></div>
+                  <div style="width: 19%; background: oklch(0.72 0.05 150);"></div>
+                  <div style="width: 16%; background: oklch(0.84 0.03 150);"></div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 11px; font-size: 15px;">
+                  <div style="display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center;">
+                    <span style="width: 11px; height: 11px; border-radius: 3px; background: oklch(0.46 0.085 150);"></span>
+                    <span>Creche Quintal · 3 dias por semana</span>
+                    <span style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">38%</span>
+                    <span style="font-family: 'DM Mono', monospace; font-size: 15px; min-width: 90px; text-align: right;">R$ 1.590</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center;">
+                    <span style="width: 11px; height: 11px; border-radius: 3px; background: oklch(0.60 0.07 150);"></span>
+                    <span>Alimentação</span>
+                    <span style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">27%</span>
+                    <span style="font-family: 'DM Mono', monospace; font-size: 15px; min-width: 90px; text-align: right;">R$ 1.130</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center;">
+                    <span style="width: 11px; height: 11px; border-radius: 3px; background: oklch(0.72 0.05 150);"></span>
+                    <span>Saúde · consultas, vacinas e remédios</span>
+                    <span style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">19%</span>
+                    <span style="font-family: 'DM Mono', monospace; font-size: 15px; min-width: 90px; text-align: right;">R$ 800</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center;">
+                    <span style="width: 11px; height: 11px; border-radius: 3px; background: oklch(0.84 0.03 150);"></span>
+                    <span>Banho e tosa</span>
+                    <span style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">16%</span>
+                    <span style="font-family: 'DM Mono', monospace; font-size: 15px; min-width: 90px; text-align: right;">R$ 660</span>
+                  </div>
+                </div>
+              </div>
+              <div style="padding: 16px 24px; font-size: 14px; line-height: 1.6; color: oklch(0.5 0.015 150);">
+                Saúde é o menor pedaço do gasto do Code — e é o único que cresce sozinho quando é adiado. Os outros três são escolha sua.
+              </div>
+            </div>
+
+            <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; overflow: hidden;">
+              <div style="padding: 16px 24px; border-bottom: 1px solid oklch(0.94 0.006 150); font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150);">Cada valor veio de um evento</div>
+              <div style="display: grid; grid-template-columns: 110px 1fr auto 130px; gap: 16px; padding: 13px 24px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 58px;">
+                <div style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">10/08/2026</div>
+                <div>Consulta · dermatite<div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-top: 2px;">Ana Ferreira, pela Clínica Vet Norte</div></div>
+                <div style="width: 11px; height: 11px; border-radius: 3px; background: oklch(0.72 0.05 150);"></div>
+                <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 180</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 110px 1fr auto 130px; gap: 16px; padding: 13px 24px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 58px;">
+                <div style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">10/08/2026</div>
+                <div>Banho e tosa higiênica<div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-top: 2px;">Tiago Moreira, pelo Banho do Tiago</div></div>
+                <div style="width: 11px; height: 11px; border-radius: 3px; background: oklch(0.84 0.03 150);"></div>
+                <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 70</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 110px 1fr auto 130px; gap: 16px; padding: 13px 24px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 58px;">
+                <div style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">01/08/2026</div>
+                <div>Mensalidade da creche<div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-top: 2px;">Creche Quintal · turma Tarde</div></div>
+                <div style="width: 11px; height: 11px; border-radius: 3px; background: oklch(0.46 0.085 150);"></div>
+                <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 530</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 110px 1fr auto 130px; gap: 16px; padding: 13px 24px; align-items: center; font-size: 15px; min-height: 58px;">
+                <div style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">28/07/2026</div>
+                <div>Ração 15 kg<div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-top: 2px;">Lançado por você</div></div>
+                <div style="width: 11px; height: 11px; border-radius: 3px; background: oklch(0.60 0.07 150);"></div>
+                <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 289</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 22px 24px;">
+              <div style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 14px;">Quem pagou o quê</div>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 32px; height: 32px; border-radius: 999px; background: oklch(0.90 0.03 150); flex: none;"></div>
+                  <div style="flex: 1;"><div style="font-size: 15px; font-weight: 500;">Você</div><div style="font-size: 13px; color: oklch(0.5 0.015 150);">Creche, ração e banho</div></div>
+                  <div style="font-family: 'DM Mono', monospace; font-size: 15px;">R$ 2.870</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 32px; height: 32px; border-radius: 999px; background: oklch(0.90 0.012 150); flex: none;"></div>
+                  <div style="flex: 1;"><div style="font-size: 15px; font-weight: 500;">Juliana Dias</div><div style="font-size: 13px; color: oklch(0.5 0.015 150);">Consultas e remédios</div></div>
+                  <div style="font-family: 'DM Mono', monospace; font-size: 15px;">R$ 1.310</div>
+                </div>
+              </div>
+              <div style="font-size: 14px; line-height: 1.6; color: oklch(0.5 0.015 150); margin-top: 14px; border-top: 1px solid oklch(0.94 0.006 150); padding-top: 14px;">Dois co-tutores dividem o cuidado e quase sempre perdem a conta de quem pagou o quê. O Petfy só mostra — não cobra ninguém, não faz acerto.</div>
+            </div>
+
+            <div style="border: 1px solid oklch(0.88 0.02 150); background: oklch(0.98 0.008 150); border-radius: 12px; padding: 22px 24px;">
+              <div style="font-family: Bitter, Georgia, serif; font-size: 18px; font-weight: 500; margin-bottom: 10px;">Sem comparação, sem julgamento</div>
+              <div style="font-size: 15px; line-height: 1.65; color: oklch(0.35 0.018 150);">Nenhuma tela aqui diz que você gasta mais ou menos que outros tutores, nem sugere trocar de clínica por preço. Quem cuida de um animal doente já tem o suficiente na cabeça.</div>
+            </div>
+
+            <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; padding: 22px 24px;">
+              <div style="font-family: Bitter, Georgia, serif; font-size: 18px; font-weight: 500; margin-bottom: 10px;">De onde vêm os valores</div>
+              <div style="font-size: 15px; line-height: 1.65; color: oklch(0.42 0.015 150);">A clínica e a creche informam o valor junto com o que registram — é a mesma tela de sempre, com um campo a mais. O que você compra por fora, como ração, você lança quando quiser. Se ninguém informou, o evento aparece sem valor, e isso não é erro.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 38 · o que só o Petfy consegue dizer</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">O que vem pela frente, e o custo de adiar</span>
+    </div>
+
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+      <div style="width: 820px; background: oklch(0.985 0.004 120); border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 36px 40px 40px;">
+        <h2 style="font-family: Bitter, Georgia, serif; font-size: 28px; font-weight: 500; margin: 0 0 10px; letter-spacing: -0.02em;">Os próximos 12 meses do Code</h2>
+        <p style="font-size: 16px; line-height: 1.6; color: oklch(0.45 0.015 150); margin: 0 0 28px; max-width: 60ch;">Isto não é previsão de gasto: é o que já está marcado no registro dele. Vacinas com data de reforço, tratamento em curso e a mensalidade que se repete.</p>
+
+        <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; background: #fff; overflow: hidden; margin-bottom: 24px;">
+          <div style="display: grid; grid-template-columns: 130px 1fr 130px; gap: 16px; padding: 13px 24px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 60px;">
+            <div style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">este mês</div>
+            <div style="display: flex; align-items: center; gap: 10px;"><span style="width: 12px; height: 12px; background: oklch(0.55 0.14 30); transform: rotate(45deg); flex: none;"></span>Antirrábica · vencida há 23 dias</div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 90</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 130px 1fr 130px; gap: 16px; padding: 13px 24px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 60px;">
+            <div style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">set 2026</div>
+            <div style="display: flex; align-items: center; gap: 10px;"><span style="width: 12px; height: 12px; border-radius: 999px; border: 3px solid oklch(0.62 0.11 70); flex: none;"></span>Antiparasitário · próxima dose em 20/09</div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 65</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 130px 1fr 130px; gap: 16px; padding: 13px 24px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 60px;">
+            <div style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">mar 2027</div>
+            <div style="display: flex; align-items: center; gap: 10px;"><span style="width: 12px; height: 12px; border-radius: 999px; background: oklch(0.46 0.085 150); flex: none;"></span>V10 · reforço anual</div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 120</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 130px 1fr 130px; gap: 16px; padding: 13px 24px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 60px;">
+            <div style="font-family: 'DM Mono', monospace; font-size: 14px; color: oklch(0.5 0.015 150);">todo mês</div>
+            <div style="display: flex; align-items: center; gap: 10px;"><span style="width: 11px; height: 11px; border-radius: 3px; background: oklch(0.46 0.085 150); flex: none;"></span>Creche Quintal · 3 dias por semana</div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 530</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 130px 1fr 130px; gap: 16px; padding: 16px 24px; align-items: center; font-size: 16px; min-height: 60px; background: oklch(0.975 0.004 150);">
+            <div></div>
+            <div style="font-weight: 500;">Total previsto em 12 meses</div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; text-align: right;">R$ 6.635</div>
+          </div>
+        </div>
+
+        <div style="border: 1px solid oklch(0.46 0.085 150); border-radius: 12px; background: #fff; padding: 26px 28px;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+            <div style="width: 18px; height: 18px; border-radius: 999px; border: 2px solid oklch(0.46 0.085 150); display: flex; align-items: center; justify-content: center;"><div style="width: 5px; height: 5px; border-radius: 999px; background: oklch(0.46 0.085 150);"></div></div>
+            <span style="font-size: 13px; font-weight: 500; letter-spacing: 0.03em; text-transform: uppercase; color: oklch(0.46 0.085 150);">Uma leitura do Petfy</span>
+          </div>
+          <div style="font-size: 18px; line-height: 1.55; margin-bottom: 18px; max-width: 60ch;">A antirrábica do Code custa R$ 90 hoje. Se ele for barrado na creche por estar irregular, você perde os dias pagos — foram R$ 176 no mês passado, quando isso aconteceu com outro animal da turma.</div>
+          <div style="border-left: 2px solid oklch(0.85 0.012 150); padding-left: 16px; font-size: 15px; line-height: 1.6; color: oklch(0.45 0.015 150); margin-bottom: 20px;">
+            <div style="font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: oklch(0.5 0.015 150); margin-bottom: 6px;">O que gerou esta leitura</div>
+            Antirrábica vencida em 18/07 · exigência de vacinação da Creche Quintal · valor da diária informado pela creche
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button style="font-family: inherit; font-size: 15px; font-weight: 500; color: #fff; background: oklch(0.46 0.085 150); border: none; border-radius: 8px; padding: 13px 20px; min-height: 48px; cursor: pointer;">Registrar a dose</button>
+            <button style="font-family: inherit; font-size: 15px; color: oklch(0.45 0.015 150); background: transparent; border: none; padding: 13px 10px; min-height: 48px; cursor: pointer;">Dispensar</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="width: 480px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 24px 26px;">
+          <div style="font-family: Bitter, Georgia, serif; font-size: 19px; font-weight: 500; margin-bottom: 12px;">Por que isto é diferente de um app de gastos</div>
+          <div style="font-size: 15px; line-height: 1.7; color: oklch(0.42 0.015 150);">Um aplicativo de finanças pede que você digite tudo, e por isso ninguém mantém. Aqui o valor entra de carona no evento que a clínica já ia registrar de qualquer jeito. E a previsão não é estatística: é a data de reforço que já está escrita na carteirinha do animal.</div>
+        </div>
+
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 24px 26px;">
+          <div style="font-family: Bitter, Georgia, serif; font-size: 19px; font-weight: 500; margin-bottom: 12px;">O limite da leitura de custo</div>
+          <div style="font-size: 15px; line-height: 1.7; color: oklch(0.42 0.015 150);">Ela pode dizer que adiar a vacina custa dias de creche perdidos, porque isso é aritmética sobre fatos registrados. Nunca vai dizer que tratar a displasia agora sai mais barato que operar depois — isso é prognóstico clínico, e o Petfy não faz prognóstico.</div>
+        </div>
+
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 24px 26px;">
+          <div style="font-family: Bitter, Georgia, serif; font-size: 19px; font-weight: 500; margin-bottom: 12px;">Para a clínica e a creche</div>
+          <div style="font-size: 15px; line-height: 1.7; color: oklch(0.42 0.015 150);">Informar o valor é opcional e leva um campo. Em troca, elas param de ser cobradas por telefone sobre o que já foi pago, e o tutor chega sabendo o que vem pela frente. Abrigo não informa valor nenhum — o produto é grátis para eles.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <span style="font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.48 0.06 150);">Tela 39 · onde isto muda uma vida</span>
+      <span style="font-family: Bitter, Georgia, serif; font-size: 22px; font-weight: 500;">A conversa honesta antes da adoção</span>
+    </div>
+
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+      <div style="width: 700px; background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; overflow: hidden;">
+        <div style="padding: 28px 32px 24px; border-bottom: 1px solid oklch(0.92 0.006 150); background: oklch(0.975 0.008 150);">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 60px; height: 60px; border-radius: 999px; background: repeating-linear-gradient(135deg, oklch(0.92 0.02 150) 0 8px, oklch(0.95 0.014 150) 8px 16px); flex: none;"></div>
+            <div>
+              <div style="font-family: Bitter, Georgia, serif; font-size: 26px; font-weight: 500; letter-spacing: -0.02em;">Teco</div>
+              <div style="font-size: 15px; color: oklch(0.5 0.015 150);">Cão · SRD · 11 anos · Abrigo Lar dos Focinhos</div>
+            </div>
+          </div>
+          <div style="font-size: 16px; line-height: 1.6; color: oklch(0.35 0.018 150);">Antes de você decidir, o abrigo quer que você saiba quanto o Teco custou nos últimos doze meses. Não para desanimar — para que ele não volte para cá.</div>
+        </div>
+
+        <div style="padding: 26px 32px 30px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; padding: 20px 22px;">
+              <div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-bottom: 8px;">Custou nos últimos 12 meses</div>
+              <div style="font-family: Bitter, Georgia, serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em;">R$ 3.240</div>
+              <div style="font-size: 14px; color: oklch(0.5 0.015 150); margin-top: 6px;">R$ 270 por mês</div>
+            </div>
+            <div style="border: 1px solid oklch(0.86 0.03 70); background: oklch(0.985 0.012 70); border-radius: 12px; padding: 20px 22px;">
+              <div style="font-size: 13px; color: oklch(0.5 0.09 70); margin-bottom: 8px;">Previsto para os próximos 12</div>
+              <div style="font-family: Bitter, Georgia, serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em;">R$ 3.900</div>
+              <div style="font-size: 14px; color: oklch(0.42 0.015 150); margin-top: 6px; line-height: 1.5;">Tende a subir: ele tem 11 anos</div>
+            </div>
+          </div>
+
+          <div style="border: 1px solid oklch(0.90 0.008 150); border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+            <div style="padding: 14px 20px; border-bottom: 1px solid oklch(0.94 0.006 150); font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: oklch(0.5 0.015 150);">O que o Teco precisa todo mês</div>
+            <div style="display: grid; grid-template-columns: 1fr 120px; gap: 16px; padding: 13px 20px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 54px;">
+              <div>Ração de manutenção para idosos</div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 190</div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 120px; gap: 16px; padding: 13px 20px; border-bottom: 1px solid oklch(0.95 0.005 150); align-items: center; font-size: 15px; min-height: 54px;">
+              <div>Condroprotetor · uso contínuo pela artrose<div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-top: 2px;">Prescrito em 2024, sem previsão de parar</div></div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 80</div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 120px; gap: 16px; padding: 13px 20px; align-items: center; font-size: 15px; min-height: 54px;">
+              <div>Consulta de acompanhamento · a cada 4 meses<div style="font-size: 13px; color: oklch(0.5 0.015 150); margin-top: 2px;">Leishmaniose tratada em 2021, controle anual</div></div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 15px; text-align: right;">R$ 45</div>
+            </div>
+          </div>
+
+          <div style="border: 1px solid oklch(0.88 0.02 150); background: oklch(0.98 0.008 150); border-radius: 12px; padding: 20px 22px; font-size: 15px; line-height: 1.65; color: oklch(0.35 0.018 150);">
+            Estes valores são o que o abrigo realmente pagou, evento por evento, e não uma estimativa de mercado. Onde você mora e onde você trata podem mudar tudo.
+          </div>
+        </div>
+      </div>
+
+      <div style="width: 600px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+          <div style="font-family: Bitter, Georgia, serif; font-size: 20px; font-weight: 500; margin-bottom: 14px;">Por que esta é a tela mais valiosa do conjunto</div>
+          <div style="font-size: 15px; line-height: 1.7; color: oklch(0.35 0.018 150);">
+            <p style="margin: 0 0 14px;">O abrigo tem um problema que custa vidas: o animal volta. Quase sempre porque alguém adotou sem saber que um cão de 11 anos com artrose custa R$ 270 por mês, todo mês, até o fim.</p>
+            <p style="margin: 0 0 14px;">Nenhum questionário de adoção resolve isso, porque o abrigo também não tinha o número. Você tem — está em cada evento registrado desde 2015.</p>
+            <p style="margin: 0;">Dizer isso antes é o oposto de dificultar a adoção. É o que faz a adoção durar, e é a mesma tese do produto: o que interessa é o animal, não a transação.</p>
+          </div>
+        </div>
+
+        <div style="background: #fff; border: 1px solid oklch(0.86 0.008 150); border-radius: 12px; padding: 26px 28px;">
+          <div style="font-family: Bitter, Georgia, serif; font-size: 20px; font-weight: 500; margin-bottom: 14px;">O que fica de fora, de propósito</div>
+          <div style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.6; color: oklch(0.42 0.015 150);">
+            <div style="display: flex; gap: 12px;"><span style="width: 12px; height: 12px; border-radius: 999px; border: 2px dashed oklch(0.6 0.015 150); flex: none; margin-top: 5px;"></span><span>Nenhuma triagem por renda. O abrigo mostra o custo; quem decide se dá conta é o adotante.</span></div>
+            <div style="display: flex; gap: 12px;"><span style="width: 12px; height: 12px; border-radius: 999px; border: 2px dashed oklch(0.6 0.015 150); flex: none; margin-top: 5px;"></span><span>Nenhum “animais dentro do seu orçamento”. Isso transformaria um ser vivo em item de catálogo por faixa de preço.</span></div>
+            <div style="display: flex; gap: 12px;"><span style="width: 12px; height: 12px; border-radius: 999px; border: 2px dashed oklch(0.6 0.015 150); flex: none; margin-top: 5px;"></span><span>Nenhuma oferta de plano de saúde animal nesta tela. O produto não vende no momento em que alguém está decidindo adotar.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
