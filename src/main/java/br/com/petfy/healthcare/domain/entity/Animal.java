@@ -115,4 +115,35 @@ public class Animal {
 
     private LocalDateTime updateDate;
 
+    /**
+     * O cadastro que absorveu este, quando houve uniao (Tela 32).
+     *
+     * <b>Este registro NAO e apagado na uniao</b>, e e a mesma escolha que o vinculo desligado e
+     * a orientacao encerrada ja fizeram: encerra-se, nao se apaga. Alguem tem o link do cadastro
+     * antigo — a clinica que pediu a uniao guardou o id —, e um 404 diria que o animal nunca
+     * existiu quando o que aconteceu foi o oposto: ele virou parte de outro.
+     *
+     * Nulo e o normal. Nao-nulo significa "eu sou um apontador: a vida deste animal esta la".
+     */
+    @Column(name = "merged_into_animal_id")
+    private UUID mergedIntoAnimalId;
+
+    /**
+     * Este microchip aparece em outro cadastro que <b>alguem afirmou ser outro animal</b>.
+     *
+     * <b>E uma marca, e nao um erro.</b> "Se forem diferentes, o microchip repetido fica marcado
+     * nos dois cadastros — provavelmente ha um erro de digitacao em algum lugar, e alguem vai
+     * precisar saber disso." O produto nao sabe qual dos dois esta errado, e adivinhar apagaria
+     * o numero certo metade das vezes: quem sabe e quem tem o animal na frente e o leitor de
+     * microchip na mao.
+     */
+    @Column(name = "microchip_conflict", nullable = false)
+    @Builder.Default
+    private boolean microchipConflict = false;
+
+    /** Um cadastro absorvido nao recebe registro novo: ele so aponta para quem o absorveu. */
+    public boolean foiAbsorvido() {
+        return mergedIntoAnimalId != null;
+    }
+
 }

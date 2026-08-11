@@ -47,6 +47,10 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
      * faz o que o purger faz.
      */
     private static final Set<String> COBERTAS_PELO_PURGER = Set.of(
+            // O pedido de uniao de cadastros (V35) aponta para DOIS animals, e some com qualquer
+            // um deles. Entrou aqui porque este teste o acusou assim que a tabela nasceu — a
+            // quarta vez que ele pega a mesma classe de defeito.
+            "animal_merge_requests",
             "attachments",
             "vaccines",
             "vaccine_corrections",

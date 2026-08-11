@@ -1,6 +1,7 @@
 package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.repository.AnimalMergeRequestRepository;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.AttendanceRepository;
 import br.com.petfy.healthcare.domain.repository.EnrollmentRepository;
@@ -53,6 +54,7 @@ import java.util.UUID;
 public class AnimalPurger {
 
     private final AnimalRepository animalRepository;
+    private final AnimalMergeRequestRepository animalMergeRequestRepository;
     private final AttachmentRepository attachmentRepository;
     private final AttachmentStorage attachmentStorage;
     private final CustodyRepository custodyRepository;
@@ -130,6 +132,17 @@ public class AnimalPurger {
         vaccineCorrectionRepository.deleteByVaccineAnimalAnimalIdIn(animalIds);
         healthRecordCorrectionRepository.deleteByHealthRecordAnimalAnimalIdIn(animalIds);
         careInstructionFulfillmentRepository.deleteByAnimalIdIn(animalIds);
+
+        // O PEDIDO DE UNIAO APONTA PARA DOIS ANIMALS, e some com qualquer um deles.
+        //
+        // Entrou porque o `AnimalPurgerCoverageContainerTest` acusou a tabela recem-criada — a
+        // quarta vez que essa guarda pega a mesma classe de defeito. Sem ela, apagar um animal que
+        // tenha pedido de uniao em qualquer dos lados responderia 500 por chave estrangeira.
+        //
+        // Sai antes das filhas por clareza: ele nao depende de nenhuma delas, mas e o unico da
+        // lista que pode citar um animal que NAO esta sendo apagado.
+        animalMergeRequestRepository.deleteAll(
+                animalMergeRequestRepository.findEnvolvendoQualquer(animalIds));
 
         // filhas: apontam para o animal
         vaccineRepository.deleteByAnimalAnimalIdIn(animalIds);
