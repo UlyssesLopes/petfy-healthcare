@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -405,6 +406,30 @@ class AnimalCostServiceImplTest {
                 .as("a soma das fatias tambem: dois numeros que nao fecham fazem o tutor "
                         + "nao saber em qual acreditar")
                 .isEqualByComparingTo(resumo.getTotal());
+    }
+
+    /**
+     * <b>O inicio do recorte viaja, e e o que faz a LISTA fechar com o total.</b>
+     *
+     * A Tela 37 mostra "cada valor veio de um evento" logo abaixo dos tres numeros. Se a tela
+     * calculasse "hoje menos 12 meses" por conta propria, as duas contas divergiriam na virada do
+     * mes e no dia 31 — e o tutor veria uma lista que nao soma o numero em cima dela.
+     */
+    @Test
+    @DisplayName("o resumo deve devolver o inicio do recorte, e nulo em SEMPRE")
+    void devolveOInicioDoRecorte() {
+        when(animalAccessGuard.requireCustodia(ANIMAL)).thenReturn(code);
+        when(animalCostRepository.findByAnimalAnimalIdOrderByOccurredAtDesc(ANIMAL))
+                .thenReturn(List.of(custo("Racao", "289.00", AnimalCostCategory.ALIMENTACAO, 5)));
+
+        assertThat(service.resumo(ANIMAL, "DOZE_MESES").getFrom())
+                .as("doze meses atras, decidido no servidor")
+                .isCloseTo(LocalDateTime.now().minusMonths(12),
+                        within(1, java.time.temporal.ChronoUnit.MINUTES));
+
+        assertThat(service.resumo(ANIMAL, "SEMPRE").getFrom())
+                .as("sem corte: a lista e a vida inteira, e o total tambem")
+                .isNull();
     }
 
     /** Um custo do recorte, lancado por Marcelo em nome proprio, ha `diasAtras` dias. */

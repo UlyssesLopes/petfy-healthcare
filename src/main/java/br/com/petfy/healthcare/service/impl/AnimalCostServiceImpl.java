@@ -160,6 +160,7 @@ public class AnimalCostServiceImpl implements AnimalCostService {
 
         return AnimalCostSummaryResponseDTO.builder()
                 .window(sempre ? JANELA_SEMPRE : JANELA_DOZE_MESES)
+                .from(desde)
                 .total(total)
                 .monthlyAverage(mediaMensal(total, sempre ? mesesDesde(primeiro, agora) : MESES_DA_JANELA))
                 .totalEver(somar(tudo))

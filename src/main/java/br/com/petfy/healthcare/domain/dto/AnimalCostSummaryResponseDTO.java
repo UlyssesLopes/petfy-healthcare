@@ -3,6 +3,7 @@ package br.com.petfy.healthcare.domain.dto;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -35,6 +36,19 @@ public class AnimalCostSummaryResponseDTO {
 
     /** O recorte pedido: {@code DOZE_MESES} ou {@code SEMPRE}. */
     private String window;
+
+    /**
+     * O instante em que o recorte comeca. Nulo em {@code SEMPRE}.
+     *
+     * <b>Viaja para a tela poder recortar a LISTA pelo mesmo corte que gerou o total.</b> A Tela 37
+     * mostra "cada valor veio de um evento" logo abaixo dos tres numeros: se a lista fosse a vida
+     * inteira e o total fossem 12 meses, a soma visivel na tela nao fecharia com o numero em cima
+     * dela — e o tutor teria dois numeros e nenhuma forma de saber em qual acreditar.
+     *
+     * <b>E vem do servidor em vez de o cliente calcular "hoje menos 12 meses"</b>, porque duas
+     * contas do mesmo corte divergem na virada do mes, no fuso e no dia 31.
+     */
+    private LocalDateTime from;
 
     /** O total do recorte. Zero quando nao ha custo nenhum — e nao nulo. */
     private BigDecimal total;

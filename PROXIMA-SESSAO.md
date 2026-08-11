@@ -4,14 +4,17 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-11, com o **bloco 3 fechado** — as três telas de pé, sem PR aberto.
+> Escrito em 2026-08-11, com o **bloco 3 fechado** e o **bloco 4 na Tela 37**.
 
 ## Onde o trabalho está agora
 
-**Branch `feat/por-onde-o-valor-entra`, cinco commits, sem PR aberto.**
-A `main` está em `931dac0` — os PRs #53, #54 e #55 já foram mergeados.
+**Branch `feat/por-onde-o-valor-entra`, no PR #56 — CI verde nos dois workflows, aguardando
+o merge, que é comando do Ulysses.** A `main` está em `931dac0`.
 
-**868 casos no backend, 43 no front, tudo verde, `Skipped: 0`.** Contrato regenerado, nenhuma
+**Decidido em sessão: o bloco 4 continua nesta mesma branch e neste mesmo PR**, porque um PR
+empilhado ficaria sem CI (os workflows filtram `branches: [main]`). O PR cresce para seis telas.
+
+**880 casos no backend, 43 no front, tudo verde, `Skipped: 0`.** Contrato regenerado, nenhuma
 operação renomeada. `npm run build` limpo.
 
 ### O bloco 3, inteiro
@@ -70,6 +73,62 @@ custo"*. Uma compra lançada vale mais do que uma compra bem descrita que ningu�
 transforma compra avulsa em custo mensal previsível — e é dela que o bloco 4 vai depender para
 dizer "a ração do Teco custa R$ 190 por mês, todo mês".
 
+## O bloco 4, e o que ele já tem
+
+- `V38__onde_o_dinheiro_foi.sql` — `AnimalCostCategory` (SAUDE, ALIMENTACAO, CRECHE, HIGIENE,
+  OUTRO), retroativa pelo `kind` e `NOT NULL` só **depois** do retroativo
+- `GET /animals/{id}/costs/summary?window=DOZE_MESES|SEMPRE` — os três números, as fatias e os
+  pagadores num payload só
+- **Tela 37** — `/animais/{id}/custo`
+
+### Duas decisões desta parte
+
+**A categoria não é o `kind` com outro nome.** O `kind` diz de que evento o valor saiu; a categoria
+diz em que ele foi gasto. Divergem no caso que decide o gráfico: **ração e remédio saem os dois de
+uma `COMPRA`**. Os três botões da Tela 42 passaram a carregar a categoria — o que também conserta o
+"Outro" que o bloco 3 tinha aceito como preço.
+
+**"Quem pagou" é `organization == null`, e não o `kind`.** Num atendimento o autor é a veterinária:
+ela informou o valor e não disse quem o pagou. Há a linha **sem nome** para a conta fechar, e o
+produto não vai pedir que o tutor atribua depois.
+
+### A paleta do desenho falha no validador, e eu mantive
+
+Os quatro tons de fatia do desenho são uma **rampa de luminosidade na mesma matiz**. Rodados no
+validador de paleta: **passam** em separação para daltonismo (ΔE 11,5), mas **falham** o piso de
+visão normal — `#8fae94` ↔ `#bdd0c0` a ΔE 12, abaixo de 15 —, e os dois tons mais claros ficam
+abaixo de 3:1 de contraste contra o branco.
+
+**Mantive a paleta** (é o FE aprovado) e paguei o alívio que o validador exige: **o nome de cada
+fatia aparece sempre ao lado da cor**, e no lista de eventos o quadradinho tem `title`. A cor é
+reforço; a identidade é o rótulo.
+
+**Dois defeitos que o mockup não podia mostrar:**
+
+1. **A cor seguia a posição, e agora segue a categoria.** As fatias são ordenadas por valor, e a
+   ordem muda ao trocar a janela — pintar por posição faria a creche sair do verde-escuro e a saúde
+   entrar nele **entre dois cliques da mesma tela**.
+2. **`OUTRO` não pode ser um quinto tom plano.** A rampa está cheia em quatro: minha primeira
+   tentativa (um cinza) ficou a **ΔE 3,5** de Alimentação em deuteranopia. Virou **hachura** — canal
+   que sobrevive a daltonismo e a impressão, e que já é vocabulário do desenho.
+
+**E a frase "saúde é o menor pedaço" só aparece quando saúde é de fato a menor fatia.** Escrita
+fixa, ela mentiria no mês em que a saúde fosse o maior gasto — que é justamente o mês em que o
+animal está doente.
+
+### O que falta no bloco 4
+
+1. **Tela 38** — "o que vem pela frente, e o custo de adiar". Não tem endpoint ainda. As linhas saem
+   de fatos já registrados: reforço de vacina com data, antiparasitário, tratamento em curso, e a
+   mensalidade que se repete. **O valor de um reforço futuro sai do último custo da mesma categoria
+   deste animal** — se nunca houve, a linha vem sem valor, e isso não é erro.
+2. **Tela 39** — a conversa antes da adoção, pelo lado do abrigo. Não precisa de regra de acesso
+   nova: `requireCustodia` já conta custódia de organização.
+
+**Um número do desenho da Tela 38 não pode existir:** *"foram R$ 176 no mês passado, quando isso
+aconteceu com **outro animal da turma**"* é o custo de outro animal, e ler custo exige custódia
+daquele animal. Vai ser a diária do próprio Code × os dias que ele perderia.
+
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 
 A versão anterior deste arquivo afirmava:
@@ -94,7 +153,7 @@ telas. Eles estão versionados (entraram no PR #53).
 | 1 | A faixa sai de dentro do cabeçalho sticky | **Fechado** — PR #54 |
 | 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado e mergeado** (PRs #54 e #55) |
 | 3 | Por onde o valor entra — 40, 41, 42 | **Fechado**, sem PR aberto |
-| 4 | Custo do cuidado — 37, 38, 39 | pendente |
+| 4 | Custo do cuidado — 37, 38, 39 | **Tela 37 fechada**; faltam 38 e 39 |
 | 5 | Fim e reencontro — 33, 34 | pendente |
 | 6 | Animal comunitário — 43, 44, 45 | pendente |
 | 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |

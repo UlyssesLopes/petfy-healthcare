@@ -23,6 +23,7 @@ import { Route as PacientesAnimalIdRouteImport } from './rotas/pacientes.$animal
 import { Route as AnimaisAnimalIdAdocaoRouteImport } from './rotas/animais.$animalId_.adocao'
 import { Route as AnimaisAnimalIdCompraRouteImport } from './rotas/animais.$animalId_.compra'
 import { Route as AnimaisAnimalIdConcederAcessoRouteImport } from './rotas/animais.$animalId_.conceder-acesso'
+import { Route as AnimaisAnimalIdCustoRouteImport } from './rotas/animais.$animalId_.custo'
 import { Route as AnimaisAnimalIdMatriculaRouteImport } from './rotas/animais.$animalId_.matricula'
 import { Route as AnimaisAnimalIdQuemCuidaRouteImport } from './rotas/animais.$animalId_.quem-cuida'
 import { Route as AnimaisAnimalIdTransferirRouteImport } from './rotas/animais.$animalId_.transferir'
@@ -103,6 +104,11 @@ const AnimaisAnimalIdConcederAcessoRoute =
     path: '/animais/$animalId/conceder-acesso',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AnimaisAnimalIdCustoRoute = AnimaisAnimalIdCustoRouteImport.update({
+  id: '/animais/$animalId_/custo',
+  path: '/animais/$animalId/custo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnimaisAnimalIdMatriculaRoute =
   AnimaisAnimalIdMatriculaRouteImport.update({
     id: '/animais/$animalId_/matricula',
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/animais/$animalId/adocao': typeof AnimaisAnimalIdAdocaoRoute
   '/animais/$animalId/compra': typeof AnimaisAnimalIdCompraRoute
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
+  '/animais/$animalId/custo': typeof AnimaisAnimalIdCustoRoute
   '/animais/$animalId/matricula': typeof AnimaisAnimalIdMatriculaRoute
   '/animais/$animalId/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
   '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/animais/$animalId/adocao': typeof AnimaisAnimalIdAdocaoRoute
   '/animais/$animalId/compra': typeof AnimaisAnimalIdCompraRoute
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
+  '/animais/$animalId/custo': typeof AnimaisAnimalIdCustoRoute
   '/animais/$animalId/matricula': typeof AnimaisAnimalIdMatriculaRoute
   '/animais/$animalId/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
   '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/animais/$animalId_/adocao': typeof AnimaisAnimalIdAdocaoRoute
   '/animais/$animalId_/compra': typeof AnimaisAnimalIdCompraRoute
   '/animais/$animalId_/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
+  '/animais/$animalId_/custo': typeof AnimaisAnimalIdCustoRoute
   '/animais/$animalId_/matricula': typeof AnimaisAnimalIdMatriculaRoute
   '/animais/$animalId_/quem-cuida': typeof AnimaisAnimalIdQuemCuidaRoute
   '/animais/$animalId_/transferir': typeof AnimaisAnimalIdTransferirRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId/adocao'
     | '/animais/$animalId/compra'
     | '/animais/$animalId/conceder-acesso'
+    | '/animais/$animalId/custo'
     | '/animais/$animalId/matricula'
     | '/animais/$animalId/quem-cuida'
     | '/animais/$animalId/transferir'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId/adocao'
     | '/animais/$animalId/compra'
     | '/animais/$animalId/conceder-acesso'
+    | '/animais/$animalId/custo'
     | '/animais/$animalId/matricula'
     | '/animais/$animalId/quem-cuida'
     | '/animais/$animalId/transferir'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId_/adocao'
     | '/animais/$animalId_/compra'
     | '/animais/$animalId_/conceder-acesso'
+    | '/animais/$animalId_/custo'
     | '/animais/$animalId_/matricula'
     | '/animais/$animalId_/quem-cuida'
     | '/animais/$animalId_/transferir'
@@ -314,6 +326,7 @@ export interface RootRouteChildren {
   AnimaisAnimalIdAdocaoRoute: typeof AnimaisAnimalIdAdocaoRoute
   AnimaisAnimalIdCompraRoute: typeof AnimaisAnimalIdCompraRoute
   AnimaisAnimalIdConcederAcessoRoute: typeof AnimaisAnimalIdConcederAcessoRoute
+  AnimaisAnimalIdCustoRoute: typeof AnimaisAnimalIdCustoRoute
   AnimaisAnimalIdMatriculaRoute: typeof AnimaisAnimalIdMatriculaRoute
   AnimaisAnimalIdQuemCuidaRoute: typeof AnimaisAnimalIdQuemCuidaRoute
   AnimaisAnimalIdTransferirRoute: typeof AnimaisAnimalIdTransferirRoute
@@ -422,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnimaisAnimalIdConcederAcessoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/animais/$animalId_/custo': {
+      id: '/animais/$animalId_/custo'
+      path: '/animais/$animalId/custo'
+      fullPath: '/animais/$animalId/custo'
+      preLoaderRoute: typeof AnimaisAnimalIdCustoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/animais/$animalId_/matricula': {
       id: '/animais/$animalId_/matricula'
       path: '/animais/$animalId/matricula'
@@ -520,6 +540,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnimaisAnimalIdAdocaoRoute: AnimaisAnimalIdAdocaoRoute,
   AnimaisAnimalIdCompraRoute: AnimaisAnimalIdCompraRoute,
   AnimaisAnimalIdConcederAcessoRoute: AnimaisAnimalIdConcederAcessoRoute,
+  AnimaisAnimalIdCustoRoute: AnimaisAnimalIdCustoRoute,
   AnimaisAnimalIdMatriculaRoute: AnimaisAnimalIdMatriculaRoute,
   AnimaisAnimalIdQuemCuidaRoute: AnimaisAnimalIdQuemCuidaRoute,
   AnimaisAnimalIdTransferirRoute: AnimaisAnimalIdTransferirRoute,

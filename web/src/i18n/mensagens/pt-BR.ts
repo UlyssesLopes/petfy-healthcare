@@ -646,6 +646,7 @@ export const mensagens = {
   // o que a organização exige com o que a carteira tem, e esta tela só mostra.
   "animal.acao.creches": "Creches",
   "animal.acao.compra": "Lançar uma compra",
+  "animal.acao.custo": "Quanto custou",
   "matricula.titulo": "As creches do {nome}",
   "matricula.apoio": "A comprovação de saúde é do produto, e não da creche: o Petfy compara o que cada organização exige com o que a carteira tem, e refaz essa conta a cada vez que alguém olha.",
   "matricula.oQue": "as matrículas",
@@ -1261,6 +1262,72 @@ export const mensagens = {
     "Nenhum orçamento mensal, nenhuma meta, nenhum aviso de que você passou do limite.",
   "compra.naoExiste.loja":
     "Nenhuma loja, nenhum link de compra, nenhuma sugestão de ração mais barata.",
+  // ------------------------------------------------------- Tela 37 · o custo do animal
+  //
+  // "Montado a partir do que já está registrado. Você não digitou nada disto duas vezes."
+  // Nenhuma frase daqui compara com ninguém, e isso é decisão: "nenhuma tela aqui diz que
+  // você gasta mais ou menos que outros tutores, nem sugere trocar de clínica por preço.
+  // Quem cuida de um animal doente já tem o suficiente na cabeça."
+  "custo.titulo": "Quanto o {nome} custou",
+  "custo.apoio":
+    "Montado a partir do que já está registrado. Você não digitou nada disto duas vezes — cada valor veio junto com o evento que o gerou.",
+  "custo.oQue": "o custo",
+  "custo.oQue.lista": "os valores",
+  "custo.voltar": "Voltar para o {nome}",
+
+  "custo.janela": "O período",
+  "custo.janela.dozeMeses": "Últimos 12 meses",
+  "custo.janela.desde": "Desde {ano}",
+  "custo.janela.sempre": "Desde sempre",
+
+  "custo.indicador.dozeMeses": "Nos últimos 12 meses",
+  "custo.indicador.noPeriodo": "No período todo",
+  "custo.indicador.porMes": "Por mês, em média",
+  "custo.indicador.desde": "Desde {ano}",
+  "custo.indicador.sempre": "Desde sempre",
+
+  "custo.ondeFoi": "Onde foi",
+  // Não é erro nem pendência: um animal sem valor registrado é um animal cuidado por gente
+  // que não informou preço, e o produto não cobra isso de ninguém.
+  "custo.ondeFoi.vazio":
+    "Nenhum valor foi informado para o {nome} neste período. Não é uma pendência: a clínica e a creche informam se quiserem, e você lança o que compra por fora quando quiser.",
+  // A frase depende da ordem, e só aparece quando saúde é de fato a menor fatia — escrita
+  // fixa, ela mentiria no mês em que a saúde fosse o maior gasto, que é justamente o mês em
+  // que o animal está doente.
+  "custo.saudeEMenor":
+    "Saúde é o menor pedaço do gasto do {nome} — e é o único que cresce sozinho quando é adiado. {quantos, plural, one {O outro é escolha sua} other {Os outros {quantos} são escolha sua}}.",
+
+  "custo.categoria.SAUDE": "Saúde · consultas, vacinas e remédios",
+  "custo.categoria.ALIMENTACAO": "Alimentação",
+  "custo.categoria.CRECHE": "Creche",
+  "custo.categoria.HIGIENE": "Banho e tosa",
+  "custo.categoria.OUTRO": "Outro",
+  // A versão curta, para caber na linha de "quem pagou o quê"
+  "custo.categoria.curta.SAUDE": "saúde",
+  "custo.categoria.curta.ALIMENTACAO": "alimentação",
+  "custo.categoria.curta.CRECHE": "creche",
+  "custo.categoria.curta.HIGIENE": "banho e tosa",
+  "custo.categoria.curta.OUTRO": "outros",
+
+  "custo.cadaValor": "Cada valor veio de um evento",
+  "custo.cadaValor.vazio": "Nenhum valor registrado neste período.",
+  "custo.origem.voce": "Lançado por você",
+
+  "custo.quemPagou": "Quem pagou o quê",
+  // O produto não sabe quem pagou uma consulta: quem registrou foi a veterinária, e ela
+  // informou o valor, não o pagador. A linha existe para a conta fechar com o total.
+  "custo.quemPagou.semNome": "Não informado",
+  "custo.quemPagou.semNome.detalhe": "O que a clínica e a creche registraram",
+  "custo.quemPagou.soMostra":
+    "Dois co-tutores dividem o cuidado e quase sempre perdem a conta de quem pagou o quê. O Petfy só mostra o que alguém informou — não cobra ninguém, não faz acerto, e não vai pedir que você preencha o resto depois.",
+
+  "custo.semJulgamento.titulo": "Sem comparação, sem julgamento",
+  "custo.semJulgamento.texto":
+    "Nenhuma tela aqui diz que você gasta mais ou menos que outros tutores, nem sugere trocar de clínica por preço. Quem cuida de um animal doente já tem o suficiente na cabeça.",
+  "custo.deOndeVem.titulo": "De onde vêm os valores",
+  "custo.deOndeVem.texto":
+    "A clínica e a creche informam o valor junto com o que registram — é a mesma tela de sempre, com um campo a mais. O que você compra por fora, como ração, você lança quando quiser. Se ninguém informou, o evento aparece sem valor, e isso não é erro.",
+
   "compra.naoExiste.fecho":
     "O custo existe para responder “o que vem pela frente” e “quanto este animal realmente custa”. Tudo além disso seria outro produto morando dentro deste.",
 

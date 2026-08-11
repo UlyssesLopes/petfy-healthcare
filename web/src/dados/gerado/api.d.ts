@@ -1928,6 +1928,8 @@ export interface components {
             byPayer?: components["schemas"]["AnimalCostPayerDTO"][];
             /** Format: int32 */
             firstYear?: number;
+            /** Format: date-time */
+            from?: string;
             monthlyAverage?: number;
             total?: number;
             totalEver?: number;
