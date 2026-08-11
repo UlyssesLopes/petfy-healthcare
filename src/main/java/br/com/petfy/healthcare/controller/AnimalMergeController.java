@@ -80,6 +80,20 @@ public class AnimalMergeController {
         return ResponseEntity.ok(animalMergeService.aceitar(animalMergeRequestId));
     }
 
+    @Operation(summary = "Sao animais diferentes — dito por quem percebeu, sem pedido nenhum",
+               description = "Marca o microchip em conflito nos dois cadastros. NAO passa por quem "
+                             + "responde pelo animal, e nao deveria: pedir a uniao mexe na vida "
+                             + "registrada e por isso precisa dele; dizer 'sao outros bichos' nao "
+                             + "mexe em nada — so acende uma marca. Basta alcancar os dois. Nao "
+                             + "cancela pedido pendente, se houver: a marca e uma observacao sobre "
+                             + "o microchip, e o pedido e uma pergunta feita a outra pessoa.")
+    @PostMapping("/animals/{animalId}/duplicates/{otherAnimalId}/distinct")
+    public ResponseEntity<Void> markAsDistinct(@PathVariable UUID animalId,
+                                               @PathVariable UUID otherAnimalId) {
+        animalMergeService.marcarComoDiferentes(animalId, otherAnimalId);
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "Recusa: sao animais diferentes",
                description = "Marca o microchip em conflito nos DOIS cadastros — provavelmente ha "
                              + "um erro de digitacao em algum lugar, e alguem vai precisar saber "

@@ -27,6 +27,7 @@ import { Route as AnimaisAnimalIdQuemCuidaRouteImport } from './rotas/animais.$a
 import { Route as AnimaisAnimalIdTransferirRouteImport } from './rotas/animais.$animalId_.transferir'
 import { Route as OrganizacoesOrganizationIdEquipeRouteImport } from './rotas/organizacoes.$organizationId.equipe'
 import { Route as PacientesAnimalIdAtendimentoRouteImport } from './rotas/pacientes.$animalId.atendimento'
+import { Route as PacientesAnimalIdDuplicadoRouteImport } from './rotas/pacientes.$animalId.duplicado'
 import { Route as AnimaisAnimalIdDiscordarRegistroIdRouteImport } from './rotas/animais.$animalId_.discordar.$registroId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -125,6 +126,12 @@ const PacientesAnimalIdAtendimentoRoute =
     path: '/atendimento',
     getParentRoute: () => PacientesAnimalIdRoute,
   } as any)
+const PacientesAnimalIdDuplicadoRoute =
+  PacientesAnimalIdDuplicadoRouteImport.update({
+    id: '/duplicado',
+    path: '/duplicado',
+    getParentRoute: () => PacientesAnimalIdRoute,
+  } as any)
 const AnimaisAnimalIdDiscordarRegistroIdRoute =
   AnimaisAnimalIdDiscordarRegistroIdRouteImport.update({
     id: '/animais/$animalId_/discordar/$registroId',
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
   '/organizacoes/$organizationId/equipe': typeof OrganizacoesOrganizationIdEquipeRoute
   '/pacientes/$animalId/atendimento': typeof PacientesAnimalIdAtendimentoRoute
+  '/pacientes/$animalId/duplicado': typeof PacientesAnimalIdDuplicadoRoute
   '/animais/$animalId/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 export interface FileRoutesByTo {
@@ -172,6 +180,7 @@ export interface FileRoutesByTo {
   '/animais/$animalId/transferir': typeof AnimaisAnimalIdTransferirRoute
   '/organizacoes/$organizationId/equipe': typeof OrganizacoesOrganizationIdEquipeRoute
   '/pacientes/$animalId/atendimento': typeof PacientesAnimalIdAtendimentoRoute
+  '/pacientes/$animalId/duplicado': typeof PacientesAnimalIdDuplicadoRoute
   '/animais/$animalId/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 export interface FileRoutesById {
@@ -194,6 +203,7 @@ export interface FileRoutesById {
   '/animais/$animalId_/transferir': typeof AnimaisAnimalIdTransferirRoute
   '/organizacoes/$organizationId/equipe': typeof OrganizacoesOrganizationIdEquipeRoute
   '/pacientes/$animalId/atendimento': typeof PacientesAnimalIdAtendimentoRoute
+  '/pacientes/$animalId/duplicado': typeof PacientesAnimalIdDuplicadoRoute
   '/animais/$animalId_/discordar/$registroId': typeof AnimaisAnimalIdDiscordarRegistroIdRoute
 }
 export interface FileRouteTypes {
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId/transferir'
     | '/organizacoes/$organizationId/equipe'
     | '/pacientes/$animalId/atendimento'
+    | '/pacientes/$animalId/duplicado'
     | '/animais/$animalId/discordar/$registroId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId/transferir'
     | '/organizacoes/$organizationId/equipe'
     | '/pacientes/$animalId/atendimento'
+    | '/pacientes/$animalId/duplicado'
     | '/animais/$animalId/discordar/$registroId'
   id:
     | '__root__'
@@ -259,6 +271,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId_/transferir'
     | '/organizacoes/$organizationId/equipe'
     | '/pacientes/$animalId/atendimento'
+    | '/pacientes/$animalId/duplicado'
     | '/animais/$animalId_/discordar/$registroId'
   fileRoutesById: FileRoutesById
 }
@@ -410,6 +423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PacientesAnimalIdAtendimentoRouteImport
       parentRoute: typeof PacientesAnimalIdRoute
     }
+    '/pacientes/$animalId/duplicado': {
+      id: '/pacientes/$animalId/duplicado'
+      path: '/duplicado'
+      fullPath: '/pacientes/$animalId/duplicado'
+      preLoaderRoute: typeof PacientesAnimalIdDuplicadoRouteImport
+      parentRoute: typeof PacientesAnimalIdRoute
+    }
     '/animais/$animalId_/discordar/$registroId': {
       id: '/animais/$animalId_/discordar/$registroId'
       path: '/animais/$animalId/discordar/$registroId'
@@ -422,10 +442,12 @@ declare module '@tanstack/react-router' {
 
 interface PacientesAnimalIdRouteChildren {
   PacientesAnimalIdAtendimentoRoute: typeof PacientesAnimalIdAtendimentoRoute
+  PacientesAnimalIdDuplicadoRoute: typeof PacientesAnimalIdDuplicadoRoute
 }
 
 const PacientesAnimalIdRouteChildren: PacientesAnimalIdRouteChildren = {
   PacientesAnimalIdAtendimentoRoute: PacientesAnimalIdAtendimentoRoute,
+  PacientesAnimalIdDuplicadoRoute: PacientesAnimalIdDuplicadoRoute,
 }
 
 const PacientesAnimalIdRouteWithChildren =

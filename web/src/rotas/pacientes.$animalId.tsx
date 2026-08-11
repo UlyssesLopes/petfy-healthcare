@@ -5,6 +5,7 @@ import { useIntl } from "react-intl";
 import { Carregando, ErroDeCarga } from "../componentes/Estados.tsx";
 import { Marcador, legendaDaDose } from "../componentes/Vacinacao.tsx";
 import { useHistoricoClinico, useOrientacoes, useTutores, type RecorteDoHistorico } from "../dados/animal.ts";
+import { useDuplicatas, usePedidosDeUniao } from "../dados/uniao.ts";
 import { useAnimal, useCarteira, useCondicoes, usePesagens } from "../dados/carteira.ts";
 import { lerSessao } from "../dados/sessao.ts";
 
@@ -59,6 +60,11 @@ function Paciente() {
 
   const animal = useAnimal(animalId);
   const tutores = useTutores(animalId);
+  /* A duplicata e um caso raro e caro de descobrir tarde: quem prescreve sem saber que existe
+     outro cadastro prescreve contra metade do historico. A leitura e barata e o aviso e mudo
+     quando nao ha nada. */
+  const duplicatas = useDuplicatas(animalId);
+  const pedidosDeUniao = usePedidosDeUniao(animalId);
   const condicoes = useCondicoes(animalId);
   const orientacoes = useOrientacoes(animalId);
   const pesagens = usePesagens(animalId);
@@ -85,6 +91,34 @@ function Paciente() {
 
   return (
     <div style={{ padding: "40px 24px" }}>
+      {/* ---------------------------------------------------- o mesmo animal, duas vezes
+       *
+       * <b>Fica no topo, acima de tudo, e nao numa caixa lateral.</b> Quem prescreve sem saber
+       * que existe outro cadastro prescreve contra metade do historico — e a Tela 30 inteira e
+       * sobre ter a informacao certa ANTES de prescrever. Um aviso que exige rolar seria um aviso
+       * que chega depois da decisao.
+       */}
+      {((duplicatas.data ?? []).length > 0 || (pedidosDeUniao.data ?? []).length > 0) && (
+        <div style={{ maxWidth: "1360px", margin: "0 auto 20px" }}>
+          <Link
+            to="/pacientes/$animalId/duplicado"
+            params={{ animalId }}
+            style={{ display: "block", textDecoration: "none", border: "1px solid oklch(0.86 0.03 70)", background: "oklch(0.985 0.012 70)", borderRadius: "12px", padding: "20px 24px" }}
+          >
+            <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "18px", fontWeight: 500, color: "oklch(0.25 0.02 150)", marginBottom: "6px" }}>
+              {intl.formatMessage({
+                id: (pedidosDeUniao.data ?? []).length > 0
+                  ? "paciente.duplicado.pedido"
+                  : "paciente.duplicado.titulo",
+              })}
+            </div>
+            <div style={{ fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
+              {intl.formatMessage({ id: "paciente.duplicado.texto" })}
+            </div>
+          </Link>
+        </div>
+      )}
+
       <div style={{ maxWidth: "1360px", margin: "0 auto", display: "grid", gridTemplateColumns: "380px 1fr", gap: "24px", alignItems: "start" }}>
 
         {/* ============================================================ a coluna do animal */}

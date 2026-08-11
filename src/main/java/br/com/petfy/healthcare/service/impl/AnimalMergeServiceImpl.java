@@ -230,6 +230,35 @@ public class AnimalMergeServiceImpl implements AnimalMergeService {
         return toResponse(mergeRequestRepository.save(pedido));
     }
 
+    /**
+     * "Sao animais diferentes", dito por quem percebeu e sem pedido nenhum.
+     *
+     * <b>Basta alcancar os dois.</b> Nao passa por quem responde pelo animal porque nao mexe na
+     * vida registrada de ninguem — so acende uma marca dizendo "alguem afirmou que sao outros
+     * bichos". Exigir custodia aqui faria a clinica ter de pedir permissao para relatar o que ela
+     * acabou de constatar com o leitor na mao.
+     *
+     * <b>Nao mexe em pedido pendente, se houver.</b> Sao coisas diferentes: a marca e uma
+     * observacao sobre o microchip, e o pedido e uma pergunta feita a quem responde — e cancelar a
+     * pergunta dele a partir daqui seria decidir por ele que ela nao importava.
+     */
+    @Override
+    @Transactional
+    public void marcarComoDiferentes(UUID animalId, UUID outroAnimalId) {
+        Animal um = animalAccessGuard.requireLeitura(animalId);
+        Animal outro = animalAccessGuard.requireLeitura(outroAnimalId);
+
+        if (um.getAnimalId().equals(outro.getAnimalId())) {
+            throw new PetfyHealthcareException(
+                    "um cadastro nao pode ser marcado como diferente dele mesmo",
+                    ErrorMessageEnum.INVALID_REQUEST.getCode(),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        marcarConflito(um);
+        marcarConflito(outro);
+    }
+
     private void marcarConflito(Animal animal) {
         if (!animal.isMicrochipConflict()) {
             animal.setMicrochipConflict(true);

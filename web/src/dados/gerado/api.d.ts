@@ -236,6 +236,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Outros cadastros com o mesmo microchip deste animal
+         * @description A deteccao da duplicata. Devolve o minimo para a comparacao — nome, especie, raca, quem responde e o TAMANHO da linha do tempo —, e nenhum evento: o prontuario do outro cadastro continua protegido pelo escopo. Nao filtra pelo que quem pergunta alcanca, porque a clinica que acabou de cadastrar quase nunca alcanca o cadastro antigo — e e por isso que ela nao sabia que ele existia.
+         */
+        get: operations["duplicates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/duplicates/{otherAnimalId}/distinct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sao animais diferentes — dito por quem percebeu, sem pedido nenhum
+         * @description Marca o microchip em conflito nos dois cadastros. NAO passa por quem responde pelo animal, e nao deveria: pedir a uniao mexe na vida registrada e por isso precisa dele; dizer 'sao outros bichos' nao mexe em nada — so acende uma marca. Basta alcancar os dois. Nao cancela pedido pendente, se houver: a marca e uma observacao sobre o microchip, e o pedido e uma pergunta feita a outra pessoa.
+         */
+        post: operations["markAsDistinct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}/enrollments": {
         parameters: {
             query?: never;
@@ -245,6 +285,47 @@ export interface paths {
         };
         /** As matriculas do animal, com a comprovacao de saude de cada uma */
         get: operations["listEnrollments_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/merge-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Os pedidos de uniao esperando decisao sobre este animal */
+        get: operations["pendingMerges"];
+        put?: never;
+        /**
+         * Pede a uniao a quem responde pelo animal
+         * @description O animal do caminho e o que SOBREVIVE — e dele o dono que decide, e e na tela dele que o pedido aparece. Quem pede so precisa alcancar os dois cadastros: exigir custodia trancaria o pedido para a unica pessoa que tem como perceber a duplicata.
+         */
+        post: operations["requestMerge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/merge-requests/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tudo que ja envolveu este cadastro, inclusive o recusado
+         * @description A recusa importa tanto quanto o aceite: ela e a afirmacao de que os dois sao animais diferentes, e o motivo original fica ao lado — informacao util na proxima vez que os dois aparecerem parecidos.
+         */
+        get: operations["mergeHistory"];
         put?: never;
         post?: never;
         delete?: never;
@@ -860,6 +941,46 @@ export interface paths {
         get: operations["contextoAtivo"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/merge-requests/{animalMergeRequestId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aceita a uniao — irreversivel
+         * @description Os eventos do cadastro absorvido passam para o sobrevivente, cada um mantendo quem o registrou e a data de lancamento original. O absorvido vira apontador e nao e apagado. Unir NAO transfere custodia nem concede acesso a ninguem. So quem responde pelo animal sobrevivente pode.
+         */
+        post: operations["acceptMerge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/merge-requests/{animalMergeRequestId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recusa: sao animais diferentes
+         * @description Marca o microchip em conflito nos DOIS cadastros — provavelmente ha um erro de digitacao em algum lugar, e alguem vai precisar saber disso. O produto nao adivinha qual dos dois esta errado.
+         */
+        post: operations["rejectMerge"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1757,6 +1878,28 @@ export interface components {
             /** Format: date-time */
             updateDate?: string;
         };
+        AnimalMergeRequestDTO: {
+            /** Format: uuid */
+            absorbedAnimalId: string;
+            reason: string;
+        };
+        AnimalMergeRequestResponseDTO: {
+            absorbed?: components["schemas"]["LadoDaUniao"];
+            /** Format: uuid */
+            animalMergeRequestId?: string;
+            /** Format: date-time */
+            creationDate?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            decidedByName?: string;
+            divergences?: components["schemas"]["Divergencia"][];
+            organizationName?: string;
+            reason?: string;
+            requestedByName?: string;
+            /** @enum {string} */
+            status?: "PENDENTE" | "ACEITO" | "RECUSADO";
+            surviving?: components["schemas"]["LadoDaUniao"];
+        };
         AnimalRequestDTO: {
             /** Format: date */
             bornDate?: string;
@@ -2088,6 +2231,11 @@ export interface components {
             corrigidoPor?: string;
             valorAnterior?: string;
         };
+        Divergencia: {
+            absorbedValue?: string;
+            field?: string;
+            survivingValue?: string;
+        };
         DueItemResponseDTO: {
             /** Format: uuid */
             animalId?: string;
@@ -2186,6 +2334,23 @@ export interface components {
             organizationId?: string;
             /** Format: date-time */
             updateDate?: string;
+        };
+        LadoDaUniao: {
+            /** Format: uuid */
+            animalId?: string;
+            breed?: string;
+            /** Format: int64 */
+            eventCount?: number;
+            /** Format: date-time */
+            firstEventAt?: string;
+            holderName?: string;
+            microchipNumber?: string;
+            name?: string;
+            /** Format: int64 */
+            organizationCount?: number;
+            /** Format: int64 */
+            peopleCount?: number;
+            species?: string;
         };
         LinkCompartilhadoDTO: {
             active?: boolean;
@@ -2662,7 +2827,7 @@ export interface components {
             /** Format: uuid */
             eventId?: string;
             /** @enum {string} */
-            eventType?: "VACINA" | "ANTIPARASITARIO" | "ATENDIMENTO" | "OBSERVACAO" | "PESAGEM" | "CONDICAO" | "ANEXO" | "ORIENTACAO" | "CUMPRIMENTO";
+            eventType?: "VACINA" | "ANTIPARASITARIO" | "ATENDIMENTO" | "OBSERVACAO" | "PESAGEM" | "CONDICAO" | "ANEXO" | "ORIENTACAO" | "CUMPRIMENTO" | "UNIAO";
             healthData?: boolean;
             /** Format: date-time */
             occurredAt?: string;
@@ -3284,6 +3449,49 @@ export interface operations {
             };
         };
     };
+    duplicates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LadoDaUniao"][];
+                };
+            };
+        };
+    };
+    markAsDistinct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+                otherAnimalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     listEnrollments_1: {
         parameters: {
             query?: never;
@@ -3302,6 +3510,76 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["EnrollmentResponseDTO"][];
+                };
+            };
+        };
+    };
+    pendingMerges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalMergeRequestResponseDTO"][];
+                };
+            };
+        };
+    };
+    requestMerge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnimalMergeRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalMergeRequestResponseDTO"];
+                };
+            };
+        };
+    };
+    mergeHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalMergeRequestResponseDTO"][];
                 };
             };
         };
@@ -4288,6 +4566,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ActiveContextResponseDTO"];
+                };
+            };
+        };
+    };
+    acceptMerge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalMergeRequestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalMergeRequestResponseDTO"];
+                };
+            };
+        };
+    };
+    rejectMerge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalMergeRequestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalMergeRequestResponseDTO"];
                 };
             };
         };

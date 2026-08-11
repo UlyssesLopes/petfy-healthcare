@@ -55,4 +55,19 @@ public interface AnimalMergeService {
      */
     AnimalMergeRequestResponseDTO recusar(UUID animalMergeRequestId);
 
+    /**
+     * "Sao animais diferentes" — dito por quem PERCEBEU, e sem pedido nenhum.
+     *
+     * <b>Este caminho existe porque o desenho poe os dois botoes lado a lado na tela da clinica</b>,
+     * e nao ha por que passar pelo tutor para afirmar o que a clinica ja sabe: ela tem o animal na
+     * frente e o leitor na mao. Pedir a uniao mexe na vida registrada de um animal e por isso
+     * precisa de quem responde; dizer "sao outros bichos" nao mexe em nada — so acende uma marca.
+     *
+     * <b>E a marca e o unico desfecho possivel.</b> O produto nao sabe qual dos dois microchips
+     * esta errado, e adivinhar apagaria o numero certo metade das vezes. Quem sabe e quem tem o
+     * animal na frente, e o que este metodo faz e garantir que a proxima pessoa a olhar veja que
+     * alguem ja reparou.
+     */
+    void marcarComoDiferentes(UUID animalId, UUID outroAnimalId);
+
 }
