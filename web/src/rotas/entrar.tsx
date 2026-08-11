@@ -403,8 +403,16 @@ function Entrar() {
                 { id: "entrar.criarConta" },
                 {
                   // Deixou de ser desabilitado quando a Tela 07 passou a existir.
+                  //
+                  // O convite atravessa junto: quem chegou aqui por um convite e descobre que
+                  // ainda nao tem conta esta a um clique de perde-lo, e o cadastro sabe usa-lo
+                  // (o `inviteToken` do PersonRequestDTO).
                   acao: (
-                    <Link to="/criar-conta" style={{ fontSize: "16px", color: "oklch(0.46 0.085 150)" }}>
+                    <Link
+                      to="/criar-conta"
+                      search={convite === undefined ? {} : { convite }}
+                      style={{ fontSize: "16px", color: "oklch(0.46 0.085 150)" }}
+                    >
                       {intl.formatMessage({ id: "entrar.criarConta.acao" })}
                     </Link>
                   ),

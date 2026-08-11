@@ -454,7 +454,13 @@ export const mensagens = {
   "criarConta.faltaCampo": "Preencha nome, e-mail e uma senha de ao menos 10 caracteres.",
   "criarConta.acao": "Criar conta",
   "criarConta.acao.criando": "Criando…",
+  "criarConta.acao.comConvite": "Criar conta e entrar na equipe",
   "criarConta.jaTem": "Já tem conta?",
+  // Quem chegou por um convite sem ter conta. A tela diz o que sabe — que há um convite em
+  // vigor — e não afirma o que não sabe: qual organização convidou. Ver o cabeçalho da tela.
+  "criarConta.convite.titulo": "Você está entrando por um convite",
+  "criarConta.convite.texto":
+    "Ele é conferido no momento em que a conta for criada, e a organização que convidou aparece a partir dali. Use o mesmo e-mail para o qual o convite foi enviado — um convite endereçado a outra pessoa não vale.",
   "criarConta.entrar": "Entrar",
   // O painel "declarar credencial · em qualquer momento". Criar a conta é um deles.
   "criarConta.credencial.abrir": "Sou veterinário e quero declarar meu registro",

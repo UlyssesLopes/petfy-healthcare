@@ -31,7 +31,25 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
  * qualquer lugar do produto quando o texto muda.
  */
 
+/**
+ * O convite de organizacao, quando a pessoa chegou por um.
+ *
+ * <b>O `inviteToken` existia no `PersonRequestDTO` desde sempre e nenhuma tela o preenchia</b> —
+ * quem recebia convite sem ter conta dependia de alguem montar a URL na mao. Era a outra metade
+ * do buraco que o aceite com conta existente fechou.
+ *
+ * <b>Nao ha previa aqui, e nao da para fingir que ha.</b> O `/organizations/invites/preview`
+ * exige autenticacao e confere o convite contra o e-mail de quem esta logado — e aqui, por
+ * definicao, ainda nao ha conta nenhuma. Uma rota publica que devolvesse o nome da organizacao
+ * para qualquer portador de token foi considerada e recusada: e superficie publica nova num
+ * produto de saude, para poupar um passo. Entao a tela diz o que sabe (ha um convite em vigor)
+ * e nao afirma o que nao sabe (de quem ele e).
+ */
 export const Route = createFileRoute("/criar-conta")({
+  validateSearch: (search: Record<string, unknown>): { convite?: string } =>
+    typeof search.convite === "string" && search.convite !== ""
+      ? { convite: search.convite }
+      : {},
   component: CriarConta,
 });
 
@@ -54,6 +72,7 @@ function useHover() {
 function CriarConta() {
   const intl = useIntl();
   const navegar = useNavigate();
+  const { convite } = Route.useSearch();
   const criar = useCriarConta();
   const acao = useHover();
 
@@ -83,6 +102,7 @@ function CriarConta() {
       senha,
       crmv: crmv.trim() === "" ? undefined : crmv.trim(),
       crmvUf: crmv.trim() === "" ? undefined : crmvUf.trim().toUpperCase(),
+      convite,
     });
 
     // A Tela 08 e literalmente "depois do login": e para la que a conta nova vai.
@@ -106,6 +126,19 @@ function CriarConta() {
           <p style={{ fontSize: "16px", lineHeight: 1.6, color: "oklch(0.45 0.015 150)", margin: "0 0 30px", maxWidth: "46ch" }}>
             {intl.formatMessage({ id: "criarConta.apoio" })}
           </p>
+
+          {/* Diz o que sabe, e nao afirma o que nao sabe. Qual organizacao convidou so aparece
+              a partir do momento em que a conta existe — ver o cabecalho deste arquivo. */}
+          {convite !== undefined && (
+            <div role="status" style={{ border: "1px solid oklch(0.86 0.008 150)", background: "oklch(0.975 0.004 150)", borderRadius: "12px", padding: "20px 22px", margin: "0 0 28px", maxWidth: "46ch" }}>
+              <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "18px", fontWeight: 500, marginBottom: "8px" }}>
+                {intl.formatMessage({ id: "criarConta.convite.titulo" })}
+              </div>
+              <div style={{ fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
+                {intl.formatMessage({ id: "criarConta.convite.texto" })}
+              </div>
+            </div>
+          )}
 
           <form
             onSubmit={(evento) => {
@@ -252,12 +285,24 @@ function CriarConta() {
               {...acao.props}
               style={{ fontFamily: "inherit", fontSize: "16px", fontWeight: 500, color: "oklch(1 0 0)", background: criar.isPending ? "oklch(0.62 0.05 150)" : acao.sobre ? "oklch(0.40 0.09 150)" : "oklch(0.46 0.085 150)", border: "none", borderRadius: "8px", padding: "15px", minHeight: "52px", cursor: "pointer" }}
             >
-              {intl.formatMessage({ id: criar.isPending ? "criarConta.acao.criando" : "criarConta.acao" })}
+              {intl.formatMessage({
+                id: criar.isPending
+                  ? "criarConta.acao.criando"
+                  : convite === undefined
+                    ? "criarConta.acao"
+                    : "criarConta.acao.comConvite",
+              })}
             </button>
 
+            {/* O convite acompanha quem descobre aqui que ja tinha conta: perde-lo nesta
+                travessia faria a pessoa voltar para uma porta que nao sabe por que ela veio. */}
             <div style={{ fontSize: "15px", color: "oklch(0.45 0.015 150)", textAlign: "center" }}>
               {intl.formatMessage({ id: "criarConta.jaTem" })}{" "}
-              <Link to="/entrar" style={{ color: "oklch(0.46 0.085 150)" }}>
+              <Link
+                to="/entrar"
+                search={convite === undefined ? {} : { convite }}
+                style={{ color: "oklch(0.46 0.085 150)" }}
+              >
                 {intl.formatMessage({ id: "criarConta.entrar" })}
               </Link>
             </div>
