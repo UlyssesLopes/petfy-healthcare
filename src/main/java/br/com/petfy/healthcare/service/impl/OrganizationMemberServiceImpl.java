@@ -5,9 +5,7 @@ import br.com.petfy.healthcare.domain.entity.Membership;
 import br.com.petfy.healthcare.domain.entity.MembershipRole;
 import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
-import br.com.petfy.healthcare.domain.entity.ProfessionalCredential;
 import br.com.petfy.healthcare.domain.repository.MembershipRepository;
-import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
@@ -43,9 +41,9 @@ import java.util.UUID;
 public class OrganizationMemberServiceImpl implements OrganizationMemberService {
 
     private final MembershipRepository membershipRepository;
-    private final ProfessionalCredentialRepository professionalCredentialRepository;
     private final CurrentPersonProvider currentPersonProvider;
     private final CurrentProfessionalProvider currentProfessionalProvider;
+    private final MembershipResponseFactory membershipResponseFactory;
 
     @Override
     @Transactional(readOnly = true)
@@ -176,33 +174,7 @@ public class OrganizationMemberServiceImpl implements OrganizationMemberService 
     }
 
     private MembershipResponseDTO toResponse(Membership vinculo) {
-        Person pessoa = vinculo.getPerson();
-
-        return MembershipResponseDTO.builder()
-                .membershipId(vinculo.getMembershipId())
-                .personId(pessoa.getPersonId())
-                .personName(pessoa.getName())
-                .personEmail(pessoa.getEmail())
-                .role(vinculo.getRole())
-                .joinedAt(vinculo.getJoinedAt())
-                .professionalCredential(credencialDe(pessoa))
-                .build();
-    }
-
-    /**
-     * "CRMV-SP 12345", quando existe. A ausencia e o normal do monitor e do voluntario, e por isso
-     * ela e nula em vez de ser um vazio que a tela teria de explicar.
-     */
-    private String credencialDe(Person pessoa) {
-        return professionalCredentialRepository.findByPersonPersonId(pessoa.getPersonId())
-                .stream()
-                .findFirst()
-                .map(this::formatar)
-                .orElse(null);
-    }
-
-    private String formatar(ProfessionalCredential credencial) {
-        return credencial.getCouncil() + "-" + credencial.getUf() + " " + credencial.getNumber();
+        return membershipResponseFactory.toResponse(vinculo);
     }
 
 }

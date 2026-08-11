@@ -207,6 +207,10 @@
   "codigo" : 152,
   "mensagemDaApi" : "This organization would be left without an administrator"
 }, {
+  "nome" : "ALREADY_ORGANIZATION_MEMBER",
+  "codigo" : 153,
+  "mensagemDaApi" : "You are already an active member of this organization"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

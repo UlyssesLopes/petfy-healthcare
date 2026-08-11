@@ -911,6 +911,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/invites/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aceita o convite com a conta que ja tenho
+         * @description Cria o vinculo com a organizacao e consome o convite. Ate aqui o unico aceite possivel era o inviteToken na criacao da conta, o que obrigava quem ja usa o Petfy a criar uma segunda conta.
+         */
+        post: operations["acceptInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/invites/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Le o convite que esta na minha mao, sem aceitar
+         * @description De qual organizacao, com que funcao e ate quando vale. Nao consome o convite: abrir o link para ler nao pode gastar o direito de entrar.
+         */
+        get: operations["previewInvite"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/invites/{organizationInviteId}": {
         parameters: {
             query?: never;
@@ -2176,6 +2216,9 @@ export interface components {
             joinedAt?: string;
             /** Format: uuid */
             membershipId?: string;
+            /** Format: uuid */
+            organizationId?: string;
+            organizationName?: string;
             personEmail?: string;
             /** Format: uuid */
             personId?: string;
@@ -2231,6 +2274,19 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
             scopes?: ("CARTEIRA" | "CONDICOES" | "PRONTUARIO" | "OBSERVACOES" | "PESO" | "ANEXOS" | "CONTATO")[];
+        };
+        OrganizationInviteAcceptRequestDTO: {
+            token: string;
+        };
+        OrganizationInvitePreviewResponseDTO: {
+            /** Format: date-time */
+            expiresAt?: string;
+            invitedByName?: string;
+            /** Format: uuid */
+            organizationId?: string;
+            organizationName?: string;
+            /** @enum {string} */
+            role?: "VETERINARIO" | "MONITOR" | "VOLUNTARIO" | "ADMINISTRADOR";
         };
         OrganizationInviteRequestDTO: {
             email?: string;
@@ -4324,6 +4380,52 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["OrganizationInviteResponseDTO"];
+                };
+            };
+        };
+    };
+    acceptInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganizationInviteAcceptRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MembershipResponseDTO"];
+                };
+            };
+        };
+    };
+    previewInvite: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrganizationInvitePreviewResponseDTO"];
                 };
             };
         };

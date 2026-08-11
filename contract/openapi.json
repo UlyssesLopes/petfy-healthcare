@@ -1458,6 +1458,13 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "organizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
           "personEmail" : {
             "type" : "string"
           },
@@ -1600,6 +1607,38 @@
             },
             "type" : "array",
             "uniqueItems" : true
+          }
+        },
+        "type" : "object"
+      },
+      "OrganizationInviteAcceptRequestDTO" : {
+        "properties" : {
+          "token" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "token" ],
+        "type" : "object"
+      },
+      "OrganizationInvitePreviewResponseDTO" : {
+        "properties" : {
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "invitedByName" : {
+            "type" : "string"
+          },
+          "organizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "VETERINARIO", "MONITOR", "VOLUNTARIO", "ADMINISTRADOR" ],
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -5220,6 +5259,64 @@
           }
         },
         "summary" : "Convida alguem para ser membro da organizacao",
+        "tags" : [ "organization-invite-controller" ]
+      }
+    },
+    "/organizations/invites/accept" : {
+      "post" : {
+        "description" : "Cria o vinculo com a organizacao e consome o convite. Ate aqui o unico aceite possivel era o inviteToken na criacao da conta, o que obrigava quem ja usa o Petfy a criar uma segunda conta.",
+        "operationId" : "acceptInvite",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/OrganizationInviteAcceptRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MembershipResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Aceita o convite com a conta que ja tenho",
+        "tags" : [ "organization-invite-controller" ]
+      }
+    },
+    "/organizations/invites/preview" : {
+      "get" : {
+        "description" : "De qual organizacao, com que funcao e ate quando vale. Nao consome o convite: abrir o link para ler nao pode gastar o direito de entrar.",
+        "operationId" : "previewInvite",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizationInvitePreviewResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Le o convite que esta na minha mao, sem aceitar",
         "tags" : [ "organization-invite-controller" ]
       }
     },

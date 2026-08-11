@@ -23,6 +23,18 @@ public class MembershipResponseDTO {
 
     private UUID membershipId;
 
+    /**
+     * De qual organizacao e este vinculo.
+     *
+     * <b>Entrou quando o aceite de convite passou a devolver o vinculo recem-criado.</b> Ali a
+     * organizacao e a informacao principal — "voce agora e da Clinica X" —, e um DTO que so
+     * dissesse a funcao obrigaria o cliente a saber de antemao em qual organizacao ele entrou,
+     * que e justamente o que ele nao sabe: o convite e que decide.
+     */
+    private UUID organizationId;
+
+    private String organizationName;
+
     private UUID personId;
 
     private String personName;

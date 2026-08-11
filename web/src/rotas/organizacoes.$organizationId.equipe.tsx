@@ -38,9 +38,10 @@ import { lerSessao } from "../dados/sessao.ts";
  *       apaga o vinculo, porque o que a pessoa registrou continua no historico dos animais.</li>
  * </ul>
  *
- * <b>O que AINDA falta, e continua sendo dito em vez de desenhado:</b> quem JA tem conta no
- * Petfy e recebe convite de organizacao nao tem por onde aceitar — o unico caminho de aceite e
- * o `inviteToken` do `PersonRequestDTO`, na criacao da conta.
+ * <b>A ultima parte que dependia de backend fechou.</b> Quem JA tem conta no Petfy agora aceita
+ * o convite pela tela `/convites/aceitar`, sem precisar criar uma segunda conta com outro e-mail
+ * — que era o que o `inviteToken` do `PersonRequestDTO`, unico caminho de aceite ate aqui, na
+ * pratica exigia da veterinaria que ja usava o produto.
  */
 
 export const Route = createFileRoute("/organizacoes/$organizationId/equipe")({
@@ -343,15 +344,9 @@ function Equipe() {
 
             {/* ---------------------------------------------------------- a direita */}
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ border: "1px solid oklch(0.86 0.03 70)", background: "oklch(0.985 0.012 70)", borderRadius: "12px", padding: "22px 24px" }}>
-                <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "18px", fontWeight: 500, marginBottom: "8px" }}>
-                  {intl.formatMessage({ id: "equipe.falta.titulo" })}
-                </div>
-                <div style={{ fontSize: "15px", lineHeight: 1.6, color: "oklch(0.35 0.018 150)" }}>
-                  {intl.formatMessage({ id: "equipe.falta.texto" })}
-                </div>
-              </div>
-
+              {/* O aviso ambar que morava aqui dizia que quem ja tem conta nao conseguia aceitar.
+                  Ele saiu junto com o defeito: agora os dois caminhos existem, e o que resta e
+                  explicar QUAL deles cada pessoa vai usar — que e informacao util, e nao desculpa. */}
               <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", background: "oklch(0.975 0.004 150)", padding: "22px 24px", fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
                 {intl.formatMessage({ id: "equipe.comoAceita" })}
               </div>

@@ -111,6 +111,12 @@ public enum ErrorMessageEnum {
     // A organizacao nao pode ficar sem quem a administre: sem administrador ninguem convida,
     // ajusta funcao nem desliga, e ela vira um cadastro que so o suporte destrava.
     LAST_ADMINISTRATOR(152, "This organization would be left without an administrator"),
+    // Aceitar convite para uma organizacao de que a pessoa ja e membro ativo. Nao e erro do
+    // usuario e nao e sucesso: recusar sem consumir o convite e o unico desfecho que nao mente.
+    // Aceitar em silencio gastaria um convite de uso unico para nao mudar nada, e criar um
+    // segundo vinculo daria a mesma pessoa duas funcoes na mesma organizacao — e a pergunta
+    // "qual delas vale" nao tem resposta.
+    ALREADY_ORGANIZATION_MEMBER(153, "You are already an active member of this organization"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

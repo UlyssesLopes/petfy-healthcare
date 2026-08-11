@@ -4,8 +4,12 @@ import br.com.petfy.healthcare.domain.dto.OrganizationInviteRequestDTO;
 import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.OrganizationInvite;
+import br.com.petfy.healthcare.domain.entity.Membership;
+import br.com.petfy.healthcare.domain.entity.MembershipRole;
+import br.com.petfy.healthcare.domain.repository.MembershipRepository;
 import br.com.petfy.healthcare.domain.repository.OrganizationInviteRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
+import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
@@ -49,6 +53,12 @@ class OrganizationInviteServiceImplTest {
     @Mock
     private CurrentPersonProvider currentPersonProvider;
 
+    @Mock
+    private MembershipRepository membershipRepository;
+
+    @Mock
+    private ProfessionalCredentialRepository professionalCredentialRepository;
+
     private OrganizationInviteServiceImpl service;
 
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
@@ -61,7 +71,9 @@ class OrganizationInviteServiceImplTest {
         // token service real: o valor do teste esta em conferir que o token nao e
         // guardado em claro, e nao em repetir o hash num mock
         service = new OrganizationInviteServiceImpl(organizationInviteRepository, personRepository,
-                currentProfessionalProvider, currentPersonProvider, new OpaqueTokenService());
+                membershipRepository, professionalCredentialRepository, currentProfessionalProvider,
+                currentPersonProvider, new OpaqueTokenService(),
+                new MembershipResponseFactory(professionalCredentialRepository));
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 7);
     }
 
@@ -338,6 +350,185 @@ class OrganizationInviteServiceImplTest {
 
             assertThat(jaRevogado.getRevokedAt()).isEqualTo(original);
             verify(organizationInviteRepository, never()).save(any());
+        }
+    }
+
+    /**
+     * O aceite de quem JA tem conta — o caminho que faltava.
+     *
+     * Ate aqui o unico aceite era o {@code inviteToken} na CRIACAO da conta, e a consequencia era
+     * absurda: a veterinaria que ja usa o Petfy, convidada pela clinica, so entraria criando uma
+     * segunda conta com outro e-mail.
+     */
+    @Nested
+    @DisplayName("accept: quem ja tem conta entra na equipe")
+    class Accept {
+
+        private Person convidada;
+
+        @BeforeEach
+        void autenticada() {
+            convidada = Person.builder().personId(VET_ID).name("Dra. Marina")
+                    .email("marina@vet.com.br").build();
+            org.mockito.Mockito.lenient().when(currentPersonProvider.require()).thenReturn(convidada);
+            org.mockito.Mockito.lenient().when(personRepository.findById(VET_ID))
+                    .thenReturn(Optional.of(convidada));
+        }
+
+        private void baseTem(OrganizationInvite invite) {
+            when(organizationInviteRepository.findByTokenHash(any())).thenReturn(Optional.ofNullable(invite));
+        }
+
+        private void semVinculoAtivo() {
+            when(membershipRepository.findAtivoDaPessoaNaOrganizacao(VET_ID, CLINIC_ID))
+                    .thenReturn(Optional.empty());
+        }
+
+        private OrganizationInvite conviteCom(MembershipRole funcao) {
+            var invite = conviteAberto();
+            invite.setRole(funcao);
+            return invite;
+        }
+
+        @Test
+        @DisplayName("deve criar o vinculo com a organizacao do convite e consumi-lo")
+        void deveCriarVinculoEConsumir() {
+            baseTem(conviteCom(MembershipRole.MONITOR));
+            semVinculoAtivo();
+            when(membershipRepository.save(any(Membership.class))).thenAnswer(i -> i.getArgument(0));
+
+            var vinculo = service.accept("token-na-mao");
+
+            assertThat(vinculo.getOrganizationId()).isEqualTo(CLINIC_ID);
+            assertThat(vinculo.getOrganizationName()).isEqualTo("Clinica Bicho Feliz");
+            assertThat(vinculo.getPersonId()).isEqualTo(VET_ID);
+            assertThat(vinculo.getRole()).isEqualTo(MembershipRole.MONITOR);
+            assertThat(vinculo.getJoinedAt()).isNotNull();
+
+            verify(organizationInviteRepository).save(any(OrganizationInvite.class));
+        }
+
+        /** A funcao vem do convite, escrita por quem ja e da organizacao — nunca do request. */
+        @Test
+        @DisplayName("a funcao vem do convite, e nao de quem aceita")
+        void funcaoVemDoConvite() {
+            baseTem(conviteCom(MembershipRole.VOLUNTARIO));
+            semVinculoAtivo();
+            when(membershipRepository.save(any(Membership.class))).thenAnswer(i -> i.getArgument(0));
+
+            assertThat(service.accept("token-na-mao").getRole()).isEqualTo(MembershipRole.VOLUNTARIO);
+        }
+
+        /**
+         * <b>A diferenca deliberada em relacao ao cadastro.</b> La, sem CRMV a deducao e
+         * ADMINISTRADOR — mas la a pessoa esta CRIANDO a propria organizacao. Aqui ela esta
+         * entrando numa que ja existe, e um convite que se esqueceu de dizer a funcao nao pode
+         * ser lido como "entregue a administracao da clinica a esta pessoa".
+         */
+        @Test
+        @DisplayName("convite antigo sem funcao nao entrega a administracao a ninguem")
+        void conviteSemFuncaoNaoViraAdministrador() {
+            baseTem(conviteAberto());
+            semVinculoAtivo();
+            when(professionalCredentialRepository.findByPersonPersonId(VET_ID)).thenReturn(List.of());
+            when(membershipRepository.save(any(Membership.class))).thenAnswer(i -> i.getArgument(0));
+
+            assertThat(service.accept("token-na-mao").getRole()).isEqualTo(MembershipRole.VOLUNTARIO);
+        }
+
+        @Test
+        @DisplayName("convite antigo sem funcao, com credencial, entra como VETERINARIO")
+        void conviteSemFuncaoComCredencial() {
+            baseTem(conviteAberto());
+            semVinculoAtivo();
+            when(professionalCredentialRepository.findByPersonPersonId(VET_ID))
+                    .thenReturn(List.of(br.com.petfy.healthcare.domain.entity.ProfessionalCredential.builder()
+                            .council("CRMV").uf("SP").number("12345").build()));
+            when(membershipRepository.save(any(Membership.class))).thenAnswer(i -> i.getArgument(0));
+
+            assertThat(service.accept("token-na-mao").getRole()).isEqualTo(MembershipRole.VETERINARIO);
+        }
+
+        /**
+         * <b>E nao consome o convite ao recusar.</b> Consumir primeiro gastaria um convite de uso
+         * unico para em seguida recusar o aceite, e a pessoa ficaria sem vinculo e sem convite.
+         */
+        @Test
+        @DisplayName("quem ja e membro ativo e recusado, e o convite continua de pe")
+        void jaMembroERecusado() {
+            baseTem(conviteCom(MembershipRole.VETERINARIO));
+            when(membershipRepository.findAtivoDaPessoaNaOrganizacao(VET_ID, CLINIC_ID))
+                    .thenReturn(Optional.of(Membership.builder()
+                            .membershipId(UUID.randomUUID())
+                            .person(convidada).organization(organization(CLINIC_ID))
+                            .role(MembershipRole.VETERINARIO).joinedAt(LocalDateTime.now().minusYears(1))
+                            .build()));
+
+            assertThatThrownBy(() -> service.accept("token-na-mao"))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(153, HttpStatus.CONFLICT);
+
+            verify(membershipRepository, never()).save(any());
+            verify(organizationInviteRepository, never()).save(any());
+        }
+
+        /**
+         * Quem saiu pode voltar: o vinculo desligado tem {@code leftAt} e a busca de ativo nao o
+         * encontra, entao nasce um vinculo novo — com a data de agora e a funcao de agora, que e
+         * o que de fato aconteceu.
+         */
+        @Test
+        @DisplayName("quem foi desligado pode ser convidado de novo")
+        void desligadoPodeVoltar() {
+            baseTem(conviteCom(MembershipRole.MONITOR));
+            semVinculoAtivo();
+            when(membershipRepository.save(any(Membership.class))).thenAnswer(i -> i.getArgument(0));
+
+            var vinculo = service.accept("token-na-mao");
+
+            assertThat(vinculo.getRole()).isEqualTo(MembershipRole.MONITOR);
+            assertThat(vinculo.getJoinedAt()).isAfter(LocalDateTime.now().minusMinutes(1));
+        }
+
+        @Test
+        @DisplayName("convite enderecado a outra pessoa nao pode ser aceito por quem tem o link")
+        void conviteDeOutraPessoa() {
+            baseTem(convite("outra@vet.com.br", LocalDateTime.now().plusDays(7), null, null));
+
+            assertThatThrownBy(() -> service.accept("token-na-mao"))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code")
+                    .isEqualTo(111);
+
+            verify(membershipRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("preview le o convite sem consumir")
+        void previewNaoConsome() {
+            baseTem(conviteCom(MembershipRole.MONITOR));
+
+            var previa = service.preview("token-na-mao");
+
+            assertThat(previa.getOrganizationName()).isEqualTo("Clinica Bicho Feliz");
+            assertThat(previa.getRole()).isEqualTo(MembershipRole.MONITOR);
+            assertThat(previa.getInvitedByName()).isEqualTo("Dra. Marina");
+            assertThat(previa.getExpiresAt()).isNotNull();
+
+            verify(organizationInviteRepository, never()).save(any());
+            verify(membershipRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("preview recusa o mesmo que o aceite recusaria")
+        void previewRecusaOQueOAceiteRecusaria() {
+            baseTem(convite("outra@vet.com.br", LocalDateTime.now().plusDays(7), null, null));
+
+            assertThatThrownBy(() -> service.preview("token-na-mao"))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code")
+                    .isEqualTo(111);
         }
     }
 }
