@@ -23,10 +23,24 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
  * navegacoes para telas que ainda nao existem.
  */
 
+/**
+ * O convite que trouxe a pessoa ate aqui, quando foi ele que a trouxe.
+ *
+ * <b>Viaja o TOKEN, e nao um caminho de destino.</b> Um `?destino=/qualquer/coisa` seria um
+ * redirecionamento aberto disfarcado de conveniencia — a tela de entrar mandaria a pessoa
+ * autenticada para onde o link mandasse. Com o token, o unico destino possivel e o aceite de
+ * convite, e ele esta escrito aqui no codigo.
+ */
 export const Route = createFileRoute("/entrar")({
-  beforeLoad: () => {
+  validateSearch: (search: Record<string, unknown>): { convite?: string } =>
+    typeof search.convite === "string" && search.convite !== ""
+      ? { convite: search.convite }
+      : {},
+  beforeLoad: ({ search }) => {
     if (lerSessao().autenticada) {
-      throw redirect({ to: "/" });
+      throw search.convite === undefined
+        ? redirect({ to: "/" })
+        : redirect({ to: "/convites/aceitar", search: { token: search.convite } });
     }
   },
   component: Entrar,
@@ -98,6 +112,7 @@ function useEstreito() {
 function Entrar() {
   const intl = useIntl();
   const navegar = useNavigate();
+  const { convite } = Route.useSearch();
   const entrar = useEntrar();
   const novaSenha = usePedirNovaSenha();
   const estreito = useEstreito();
@@ -127,7 +142,18 @@ function Entrar() {
       return;
     }
 
-    entrar.mutate({ email: email.trim(), senha }, { onSuccess: () => void navegar({ to: "/" }) });
+    /* Quem chegou por um convite volta para ele, e nao para a home: o link veio de fora do
+       produto e a sessao fechada e o normal, entao perder o token aqui faria o clique morrer
+       na porta — que era exatamente o buraco que o aceite com conta existente veio fechar. */
+    entrar.mutate(
+      { email: email.trim(), senha },
+      {
+        onSuccess: () =>
+          void (convite === undefined
+            ? navegar({ to: "/" })
+            : navegar({ to: "/convites/aceitar", search: { token: convite } })),
+      },
+    );
   }
 
   return (

@@ -7,6 +7,7 @@ import { corpoDe } from "./resposta.ts";
 export type Organizacao = components["schemas"]["OrganizationResponseDTO"];
 export type ConviteDeOrganizacao = components["schemas"]["OrganizationInviteResponseDTO"];
 export type MembroDaEquipe = components["schemas"]["MembershipResponseDTO"];
+export type PreviaDoConvite = components["schemas"]["OrganizationInvitePreviewResponseDTO"];
 
 /**
  * As quatro funcoes, vindas do contrato e nao escritas a mao aqui: funcao nova no backend tem
@@ -155,6 +156,63 @@ export function useConvidarParaEquipe() {
       await Promise.all([
         consultas.invalidateQueries({ queryKey: ["convites-de-organizacao"] }),
         consultas.invalidateQueries({ queryKey: ["equipe"] }),
+      ]);
+    },
+  });
+}
+
+/**
+ * O convite lido por quem o recebeu, antes de aceitar.
+ *
+ * <b>`retry: false` de proposito.</b> A recusa aqui e definitiva — convite expirado, revogado, ja
+ * usado ou de outra pessoa nao passa a valer na segunda tentativa —, e insistir so faria a tela
+ * ficar tres segundos dizendo "carregando" antes de dizer a mesma coisa.
+ */
+export function usePreviaDoConvite(token: string) {
+  return useQuery({
+    queryKey: ["previa-de-convite", token],
+    enabled: token !== "",
+    retry: false,
+    queryFn: async () =>
+      corpoDe(
+        await cliente.GET("/organizations/invites/preview", {
+          params: { query: { token } },
+        }),
+      ),
+  });
+}
+
+/**
+ * Aceitar o convite com a conta que ja existe — <b>o caminho que faltava</b>.
+ *
+ * Ate aqui o unico aceite era o `inviteToken` na CRIACAO da conta, e a consequencia era absurda
+ * na pratica: a veterinaria que ja usa o Petfy, convidada pela clinica, so entraria criando uma
+ * segunda conta com outro e-mail — e sem nenhum dos animais que ja acompanha.
+ *
+ * <b>Invalida `meu-contexto` junto</b>, e nao so a equipe: entrar numa organizacao muda em nome de
+ * quem a pessoa pode agir, e o seletor de contexto continuaria mostrando o mundo de antes.
+ */
+export function useAceitarConvite() {
+  const consultas = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (token: string) => {
+      const { data, error } = await cliente.POST("/organizations/invites/accept", {
+        body: { token },
+      });
+
+      if (error !== undefined) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        consultas.invalidateQueries({ queryKey: ["equipe"] }),
+        consultas.invalidateQueries({ queryKey: ["convites-de-organizacao"] }),
+        consultas.invalidateQueries({ queryKey: ["meu-contexto"] }),
+        consultas.invalidateQueries({ queryKey: ["organizacoes"] }),
       ]);
     },
   });

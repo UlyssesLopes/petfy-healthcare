@@ -120,6 +120,9 @@ export const mensagens = {
   "erro.150": "Não encontramos esta pessoa na equipe.",
   "erro.151": "Só quem administra a organização pode ajustar funções e desligar.",
   "erro.152": "A organização ficaria sem ninguém para administrá-la. Promova outra pessoa a administradora antes.",
+  // O 153 não acusa ninguém: quem chega nele não errou, já está onde queria estar. E ele diz
+  // que o convite continua de pé, porque a pergunta seguinte de quem lê é se acabou de queimá-lo.
+  "erro.153": "Você já é membro desta organização. O convite não foi usado e continua valendo para quem for entrar.",
 
   // -------------------------------------------------------------------- os tres gerais
   //
@@ -813,10 +816,41 @@ export const mensagens = {
   "equipe.membro.ajustar": "Função de {pessoa}",
   "equipe.membro.desligar": "Desligar",
 
-  // O que ainda falta, e continua sendo dito em vez de desenhado.
-  "equipe.falta.titulo": "Quem já tem conta ainda não consegue aceitar",
-  "equipe.falta.texto": "O convite só é aceito na criação da conta. Quem já é do Petfy e recebe um convite de organização não tem por onde entrar — e essa é a única parte desta tela que ainda depende de backend.",
-  "equipe.comoAceita": "Quem recebe o convite entra criando a conta com ele. Quem já tem conta no Petfy ainda não tem por onde aceitar.",
+  // Como o convite é aceito, dos dois lados. Deixou de ser uma ressalva sobre o que falta e
+  // passou a ser instrução: os dois caminhos existem, e quem convida precisa saber o que dizer
+  // a quem convidou.
+  "equipe.comoAceita": "Quem ainda não tem conta entra criando a conta com o convite. Quem já é do Petfy abre o link do convite e aceita com a conta que já tem — sem precisar de um segundo cadastro.",
+
+  // ------------------------------------------------- aceitar o convite (Tela 16, o outro lado)
+  //
+  // A tela de quem RECEBEU. Ela mostra de qual organização é o convite, com que função e até
+  // quando vale, antes de qualquer botão: aceitar às cegas não é aceitar, e o que está em jogo é
+  // entrar numa equipe que enxerga a saúde de animais alheios.
+  "convite.titulo": "Você foi convidada para uma equipe",
+  "convite.carregando": "Lendo o convite…",
+  "convite.organizacao": "{organizacao} convidou você",
+  "convite.porQuem": "O convite foi feito por {quem}.",
+  "convite.funcao": "Você entra como {funcao}.",
+  "convite.funcao.semFuncao": "Este convite foi emitido antes de as funções existirem, então você entra com a função que pode menos — um administrador ajusta depois.",
+  "convite.vale": "Vale até {data}.",
+  "convite.oQueMuda": "Entrar não dá acesso a animal nenhum por si só. Cada tutor concede o que quiser, animal por animal, e pode revogar quando quiser.",
+  "convite.aceitar": "Aceitar e entrar na equipe",
+  "convite.aceitando": "Entrando…",
+  "convite.agora": "Pronto — você agora é da equipe de {organizacao}.",
+  "convite.verEquipe": "Ver a equipe",
+  "convite.oQue": "o convite",
+  "convite.oQue.aceite": "o aceite",
+  // O token não vem na URL: sem ele não há o que ler, e a tela diz isso em vez de mostrar um
+  // erro de servidor para quem apenas digitou o endereço na mão.
+  "convite.semToken.titulo": "Falta o link do convite",
+  "convite.semToken.texto": "Esta tela precisa do link completo que você recebeu. Abra o convite pelo link, ou peça um novo a quem administra a organização.",
+  // Recusado é um estado só, de propósito: o servidor não distingue expirado de revogado, de já
+  // usado, nem de endereçado a outra pessoa — distinguir diria a quem tenta adivinhar qual parte
+  // errou. A tela não pode inventar a distinção que o backend recusa a dar.
+  "convite.invalido.titulo": "Este convite não vale mais",
+  "convite.invalido.texto": "Ele pode ter vencido, sido revogado, já ter sido usado, ou ter sido enviado para outro e-mail. Peça um novo convite a quem administra a organização.",
+  "convite.jaMembro.titulo": "Você já é da equipe",
+  "convite.jaMembro.texto": "Sua conta já é membro ativo desta organização, então não havia nada para aceitar — e o convite continua de pé para quem for usá-lo.",
 
   // ------------------------------------------------- os estados (Tela 14)
   //

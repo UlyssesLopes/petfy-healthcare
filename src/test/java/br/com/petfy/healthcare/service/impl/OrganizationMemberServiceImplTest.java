@@ -58,8 +58,10 @@ class OrganizationMemberServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new OrganizationMemberServiceImpl(membershipRepository,
-                professionalCredentialRepository, currentPersonProvider, currentProfessionalProvider);
+        // A fabrica entra de verdade, e nao mockada: ela e quem le a credencial, e um mock dela
+        // faria as assercoes de credencial deste teste medirem o mock em vez do mapeamento.
+        service = new OrganizationMemberServiceImpl(membershipRepository, currentPersonProvider,
+                currentProfessionalProvider, new MembershipResponseFactory(professionalCredentialRepository));
 
         vera = Person.builder().personId(UUID.randomUUID()).name("Vera Quintal")
                 .email("vera@petfy.com.br").build();

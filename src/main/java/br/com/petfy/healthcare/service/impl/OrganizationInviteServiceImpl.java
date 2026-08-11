@@ -1,12 +1,18 @@
 package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.entity.Organization;
+import br.com.petfy.healthcare.domain.dto.MembershipResponseDTO;
 import br.com.petfy.healthcare.domain.dto.OrganizationInviteRequestDTO;
+import br.com.petfy.healthcare.domain.dto.OrganizationInvitePreviewResponseDTO;
 import br.com.petfy.healthcare.domain.dto.OrganizationInviteResponseDTO;
+import br.com.petfy.healthcare.domain.entity.Membership;
+import br.com.petfy.healthcare.domain.entity.MembershipRole;
 import br.com.petfy.healthcare.domain.entity.OrganizationInvite;
 import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.repository.MembershipRepository;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
 import br.com.petfy.healthcare.domain.repository.OrganizationInviteRepository;
+import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
@@ -17,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,9 +36,12 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
 
     private final OrganizationInviteRepository organizationInviteRepository;
     private final PersonRepository personRepository;
+    private final MembershipRepository membershipRepository;
+    private final ProfessionalCredentialRepository professionalCredentialRepository;
     private final CurrentProfessionalProvider currentProfessionalProvider;
     private final CurrentPersonProvider currentPersonProvider;
     private final OpaqueTokenService opaqueTokenService;
+    private final MembershipResponseFactory membershipResponseFactory;
 
     @Value("${petfy.organization-invite.default-expiration-days:7}")
     private int defaultExpirationDays;
@@ -107,6 +117,90 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
         invite.setAcceptedBy(aceitante);
 
         organizationInviteRepository.save(invite);
+    }
+
+    /**
+     * Ler o convite sem gastar.
+     *
+     * <b>Valida com o e-mail de quem esta autenticado</b>, e nao com um e-mail do request: um
+     * convite enderecado a alguem nao pode ser lido por quem apenas tem o link. E como a
+     * validacao e a mesma do aceite, o preview nunca mostra um convite que o aceite recusaria —
+     * que seria a pior tela possivel, a que oferece um botao condenado.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public OrganizationInvitePreviewResponseDTO preview(String token) {
+        OrganizationInvite invite = validate(token, currentPersonProvider.require().getEmail());
+
+        return OrganizationInvitePreviewResponseDTO.builder()
+                .organizationId(invite.getOrganization().getOrganizationId())
+                .organizationName(invite.getOrganization().getName())
+                .role(invite.getRole())
+                .invitedByName(invite.getCreatedBy().getName())
+                .expiresAt(invite.getExpiresAt())
+                .build();
+    }
+
+    /**
+     * O aceite de quem ja tem conta.
+     *
+     * <b>A ordem importa e nao e a obvia.</b> Confere o vinculo existente ANTES de consumir o
+     * convite: consumir primeiro gastaria um convite de uso unico para em seguida recusar o
+     * aceite, e a pessoa ficaria sem vinculo e sem convite — precisando de um novo para nada.
+     *
+     * <b>Quem saiu pode voltar.</b> O vinculo desligado tem {@code leftAt} e a busca de ativo nao
+     * o encontra, entao o aceite cria um vinculo NOVO em vez de reabrir o antigo. E o desfecho
+     * certo: reabrir devolveria a funcao antiga e a data de entrada antiga, e as duas seriam
+     * mentira — quem volta volta agora, e com a funcao que o convite de agora diz.
+     */
+    @Override
+    @Transactional
+    public MembershipResponseDTO accept(String token) {
+        Person eu = currentPersonProvider.require();
+        OrganizationInvite invite = validate(token, eu.getEmail());
+        Organization organizacao = invite.getOrganization();
+
+        membershipRepository.findAtivoDaPessoaNaOrganizacao(eu.getPersonId(), organizacao.getOrganizationId())
+                .ifPresent(vinculo -> {
+                    throw new PetfyHealthcareException(
+                            ErrorMessageEnum.ALREADY_ORGANIZATION_MEMBER.getMessage(),
+                            ErrorMessageEnum.ALREADY_ORGANIZATION_MEMBER.getCode(),
+                            HttpStatus.CONFLICT);
+                });
+
+        Membership vinculo = membershipRepository.save(Membership.builder()
+                .person(eu)
+                .organization(organizacao)
+                .role(funcaoDoConvite(invite, eu))
+                .joinedAt(LocalDateTime.now())
+                .build());
+
+        markAccepted(invite, eu.getPersonId());
+
+        return membershipResponseFactory.toResponse(vinculo);
+    }
+
+    /**
+     * A funcao vem do convite, escrita por quem ja e da organizacao — nunca do request, que seria
+     * o cliente escolhendo a propria permissao.
+     *
+     * <b>Convite antigo, sem funcao, NAO cai em ADMINISTRADOR aqui</b> — e essa e a diferenca
+     * deliberada em relacao ao cadastro. La a deducao "sem CRMV, logo ADMINISTRADOR" fala de quem
+     * CRIA a propria organizacao, e faz sentido: administra quem a cadastrou. Aqui a pessoa esta
+     * ENTRANDO numa organizacao que ja existe e que nao e dela, e um convite que se esqueceu de
+     * dizer a funcao nao pode ser lido como "entregue a administracao da clinica a esta pessoa".
+     * O piso e VOLUNTARIO, que e a funcao que pode menos; quem tem credencial entra como
+     * VETERINARIO, que e a leitura honesta de um convite antigo, de quando o Petfy so tinha vet.
+     * Um administrador ajusta depois, na Tela 16, e o caminho para isso ja existe.
+     */
+    private MembershipRole funcaoDoConvite(OrganizationInvite invite, Person pessoa) {
+        if (invite.getRole() != null) {
+            return invite.getRole();
+        }
+
+        return professionalCredentialRepository.findByPersonPersonId(pessoa.getPersonId()).isEmpty()
+                ? MembershipRole.VOLUNTARIO
+                : MembershipRole.VETERINARIO;
     }
 
     /** Convite sem email e aberto a quem tiver o link; com email, so aquele. */
