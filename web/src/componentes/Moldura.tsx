@@ -72,6 +72,20 @@ export function Moldura({ children }: { children: ReactNode }) {
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", background: "oklch(0.985 0.004 120)" }}>
       <Cabecalho />
+      {/*
+       * AS FAIXAS FICAM FORA DO CABECALHO, e a diferenca nao e de organizacao de codigo.
+       *
+       * Elas nasceram dentro do `<header>` sticky, e la herdavam o fundo branco e a borda dele —
+       * pareciam parte do chrome e acompanhavam a rolagem, como se fossem estrutura permanente
+       * da tela. Uma faixa nao e estrutura: ela e um recado que sai quando for resolvido, e ficar
+       * grudada no topo enquanto a pessoa rola dava a ela um peso que o recado nao tem.
+       *
+       * <b>Continuam sendo faixas DO CABECALHO no sentido que o desenho da</b> ("faixas do
+       * cabecalho · abaixo dos 64 px, empilhaveis"): logo abaixo dele, empilhaveis, e sempre
+       * aviso de SESSAO — nunca de animal. Pendencia de saude vive no feed, e se subir para ca o
+       * produto vira cobrador. O que mudou foi so onde elas pousam.
+       */}
+      <Faixas />
       <div style={{ flex: 1 }}>{children}</div>
       <Rodape />
       <BarraDeBaixo />
@@ -116,7 +130,6 @@ function Cabecalho() {
   return (
     <header style={{ background: "oklch(1 0 0)", borderBottom: "1px solid oklch(0.90 0.008 150)", position: "sticky", top: 0, zIndex: 20 }}>
       {estreito ? <CabecalhoEstreito contexto={contexto.data} /> : <CabecalhoLargo contexto={contexto.data} />}
-      <Faixas contexto={contexto.data} />
     </header>
   );
 }
@@ -456,16 +469,24 @@ function Voce({ contexto }: { contexto?: MeuContexto }) {
  * subir para o cabecalho, o produto vira cobrador". Por isso a unica faixa aqui e a do e-mail
  * nao confirmado, que e sobre a conta, e nunca uma vacina vencida.
  */
-function Faixas({ contexto }: { contexto?: MeuContexto }) {
+function Faixas() {
   const intl = useIntl();
+  const contexto = useMeuContexto();
   const reenviar = useReenviarVerificacao();
 
-  if (contexto === undefined || contexto.emailVerified !== false) {
+  /* Le o contexto por conta propria em vez de receber do cabecalho: ela deixou de ser filha
+     dele. A consulta e a mesma chave do TanStack, entao nao ha uma segunda ida a rede. */
+  const dados = contexto.data;
+
+  /* Sem sessao nao ha faixa de sessao. E `!== false` e nao `=== false` invertido de proposito:
+     enquanto o contexto nao chegou, `undefined` nao pode acender a faixa e faze-la piscar em
+     toda navegacao para quem ja confirmou o e-mail ha meses. */
+  if (!lerSessao().autenticada || dados === undefined || dados.emailVerified !== false) {
     return null;
   }
 
   return (
-    <div style={{ padding: "0 28px 12px" }}>
+    <div style={{ padding: "12px 28px 0" }}>
       <div style={{ border: "1px solid oklch(0.86 0.03 70)", background: "oklch(0.985 0.012 70)", borderRadius: "8px", padding: "13px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
         <div aria-hidden style={{ width: "12px", height: "12px", borderRadius: "999px", border: "3px solid oklch(0.62 0.11 70)", flex: "none" }}></div>
         <span style={{ fontSize: "15px", flex: 1 }}>
