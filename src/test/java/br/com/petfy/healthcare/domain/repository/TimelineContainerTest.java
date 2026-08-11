@@ -10,6 +10,7 @@ import br.com.petfy.healthcare.domain.entity.HealthEventCategory;
 import br.com.petfy.healthcare.domain.entity.HealthRecord;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.entity.Observation;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.ProfessionalCredential;
 import br.com.petfy.healthcare.domain.entity.Species;
@@ -59,6 +60,7 @@ class TimelineContainerTest extends PostgresContainerTest {
     @Autowired private ProfessionalCredentialRepository professionalCredentialRepository;
     @Autowired private VaccineCorrectionRepository vaccineCorrectionRepository;
     @Autowired private ObservationRepository observationRepository;
+    @Autowired private OrganizationRepository organizationRepository;
 
     private Person ulysses;
     private Animal rex;
@@ -477,6 +479,127 @@ class TimelineContainerTest extends PostgresContainerTest {
         assertThat(TimelineEntry.class.getAnnotation(org.hibernate.annotations.Immutable.class))
                 .as("sem @Immutable o Hibernate tentaria gravar na view")
                 .isNotNull();
+    }
+
+    /* ------------------------------------------------------- os dois recortes da Tela 30
+     *
+     * "So desta clinica" e "o que nos ja sabiamos deste animal antes de hoje"; "so o que eu
+     * registrei" e "o que EU vi com meus olhos", que e o que a veterinaria confere antes de
+     * contradizer um colega. Um filtro de cliente sobre a pagina carregada responderia errado as
+     * duas: a pagina tem vinte itens e a vida do animal tem centenas.
+     */
+
+    /**
+     * Tres registros no mesmo animal: um meu pela clinica, um de colega pela clinica, e um de
+     * terceiro sem organizacao nenhuma.
+     *
+     * O rotulo distintivo vai em {@code eventType} e nao em {@code description} porque e o
+     * {@code event_type} que a view expoe como {@code summary} — ver a V29.
+     */
+    private void tresOrigens(Organization clinica, Person outraDaClinica, Person deFora) {
+        healthRecordRepository.saveAndFlush(HealthRecord.builder()
+                .animal(rex).recordedBy(ulysses).organization(clinica)
+                .category(HealthEventCategory.CONSULTA).eventType("meu, pela clinica")
+                .eventDate(LocalDate.now().minusDays(3)).creationDate(LocalDateTime.now())
+                .build());
+
+        healthRecordRepository.saveAndFlush(HealthRecord.builder()
+                .animal(rex).recordedBy(outraDaClinica).organization(clinica)
+                .category(HealthEventCategory.CONSULTA).eventType("de colega, pela clinica")
+                .eventDate(LocalDate.now().minusDays(2)).creationDate(LocalDateTime.now())
+                .build());
+
+        healthRecordRepository.saveAndFlush(HealthRecord.builder()
+                .animal(rex).recordedBy(deFora)
+                .category(HealthEventCategory.CONSULTA).eventType("de fora, sem organizacao")
+                .eventDate(LocalDate.now().minusDays(1)).creationDate(LocalDateTime.now())
+                .build());
+    }
+
+    private Person pessoa(String nome) {
+        return personRepository.saveAndFlush(Person.builder()
+                .name(nome).email("timeline-" + UUID.randomUUID() + "@petfy.com.br").password("hash")
+                .build());
+    }
+
+    @Test
+    @DisplayName("sem recorte deve devolver a linha inteira, como sempre devolveu")
+    void semRecorteDevolveTudo() {
+        var clinica = organizationRepository.saveAndFlush(
+                Organization.builder().name("Clinica Vet Norte").build());
+        tresOrigens(clinica, pessoa("Colega"), pessoa("De fora"));
+
+        assertThat(timelineRepository.findDoAnimalFiltrada(
+                rex.getAnimalId(), null, null, PageRequest.of(0, 20)))
+                .hasSize(3);
+    }
+
+    @Test
+    @DisplayName("recorte por organizacao deve trazer o que a clinica registrou, de quem quer que seja")
+    void recorteapenasDaOrganizacao() {
+        var clinica = organizationRepository.saveAndFlush(
+                Organization.builder().name("Clinica Vet Norte").build());
+        tresOrigens(clinica, pessoa("Colega"), pessoa("De fora"));
+
+        assertThat(timelineRepository.findDoAnimalFiltrada(
+                rex.getAnimalId(), clinica.getOrganizationId(), null, PageRequest.of(0, 20)))
+                .extracting(TimelineEntry::getSummary)
+                .containsExactlyInAnyOrder("de colega, pela clinica", "meu, pela clinica");
+    }
+
+    @Test
+    @DisplayName("recorte por pessoa deve trazer o que eu registrei, com ou sem organizacao")
+    void recorteApenasMeus() {
+        var clinica = organizationRepository.saveAndFlush(
+                Organization.builder().name("Clinica Vet Norte").build());
+        tresOrigens(clinica, pessoa("Colega"), pessoa("De fora"));
+
+        // um meu, agindo por mim mesmo e nao pela clinica
+        healthRecordRepository.saveAndFlush(HealthRecord.builder()
+                .animal(rex).recordedBy(ulysses)
+                .category(HealthEventCategory.CONSULTA).eventType("meu, por mim")
+                .eventDate(LocalDate.now()).creationDate(LocalDateTime.now())
+                .build());
+
+        assertThat(timelineRepository.findDoAnimalFiltrada(
+                rex.getAnimalId(), null, ulysses.getPersonId(), PageRequest.of(0, 20)))
+                .extracting(TimelineEntry::getSummary)
+                .containsExactlyInAnyOrder("meu, pela clinica", "meu, por mim");
+    }
+
+    /** Os dois marcados ao mesmo tempo — que e o que a tela permite. */
+    @Test
+    @DisplayName("os dois recortes juntos devem trazer so o que eu registrei por aquela clinica")
+    void osDoisRecortesJuntos() {
+        var clinica = organizationRepository.saveAndFlush(
+                Organization.builder().name("Clinica Vet Norte").build());
+        tresOrigens(clinica, pessoa("Colega"), pessoa("De fora"));
+
+        assertThat(timelineRepository.findDoAnimalFiltrada(
+                rex.getAnimalId(), clinica.getOrganizationId(), ulysses.getPersonId(),
+                PageRequest.of(0, 20)))
+                .extracting(TimelineEntry::getSummary)
+                .containsExactly("meu, pela clinica");
+    }
+
+    /**
+     * O caso que o servico traduz como "nenhuma organizacao".
+     *
+     * <b>Um id que nao existe tem de devolver vazio, e nao tudo.</b> E disso que depende a decisao
+     * do servico de mandar um UUID zerado quando a pessoa marca "so desta clinica" agindo por si:
+     * se um id desconhecido devolvesse a linha inteira, o filtro marcado mostraria o mesmo que o
+     * desmarcado, e a pessoa concluiria que a clinica registrou tudo aquilo.
+     */
+    @Test
+    @DisplayName("organizacao que nao registrou nada deve devolver vazio, e nunca a linha inteira")
+    void organizacaoSemNadaDevolveVazio() {
+        var clinica = organizationRepository.saveAndFlush(
+                Organization.builder().name("Clinica Vet Norte").build());
+        tresOrigens(clinica, pessoa("Colega"), pessoa("De fora"));
+
+        assertThat(timelineRepository.findDoAnimalFiltrada(
+                rex.getAnimalId(), new UUID(0L, 0L), null, PageRequest.of(0, 20)))
+                .isEmpty();
     }
 
 }

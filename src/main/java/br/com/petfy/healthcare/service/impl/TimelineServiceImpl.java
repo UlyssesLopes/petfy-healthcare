@@ -3,8 +3,11 @@ package br.com.petfy.healthcare.service.impl;
 import br.com.petfy.healthcare.domain.dto.TimelineEntryResponseDTO;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.entity.TimelineEntry;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.repository.TimelineRepository;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
+import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.service.TimelineService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,6 +36,8 @@ public class TimelineServiceImpl implements TimelineService {
 
     private final TimelineRepository timelineRepository;
     private final AnimalAccessGuard animalAccessGuard;
+    private final CurrentPersonProvider currentPersonProvider;
+    private final CurrentProfessionalProvider currentProfessionalProvider;
 
     /**
      * <b>O escopo filtra o que aparece, e e aqui que ele finalmente vale para leitura.</b>
@@ -53,13 +58,56 @@ public class TimelineServiceImpl implements TimelineService {
     @Override
     @Transactional(readOnly = true)
     public Page<TimelineEntryResponseDTO> doAnimal(UUID animalId, Pageable pageable) {
+        return doAnimal(animalId, false, false, pageable);
+    }
+
+    /**
+     * Os dois recortes da Tela 30.
+     *
+     * <b>"So desta clinica" com a pessoa agindo por si nao devolve nada, e esta certo.</b> Sem
+     * contexto de organizacao nao ha "esta clinica"; devolver a linha inteira faria o filtro
+     * marcado mostrar exatamente o que o filtro desmarcado mostra, e a pessoa concluiria que a
+     * clinica registrou tudo aquilo. Uma lista vazia diz a verdade: nesta organizacao, nada.
+     *
+     * <b>O escopo continua sendo aplicado DEPOIS, e separado do recorte.</b> Recortar e atender
+     * ao que a pessoa pediu; mascarar por escopo e esconder o que ela nao alcanca. Se o escopo
+     * entrasse na consulta, marcar "so desta clinica" faria sumir o evento fora de escopo em vez
+     * de mostra-lo opaco — e sumir diria que o animal nunca foi atendido.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TimelineEntryResponseDTO> doAnimal(UUID animalId, boolean apenasDaMinhaOrganizacao,
+                                                   boolean apenasMeus, Pageable pageable) {
         animalAccessGuard.requireLeitura(animalId);
 
         Set<GrantScope> escopo = animalAccessGuard.escopoDoAutenticado(animalId);
 
-        return timelineRepository.findDoAnimal(animalId, pageable)
+        if (!apenasDaMinhaOrganizacao && !apenasMeus) {
+            return timelineRepository.findDoAnimal(animalId, pageable)
+                    .map(entrada -> toResponse(entrada, escopo));
+        }
+
+        var eu = currentPersonProvider.require();
+
+        UUID organizationId = apenasDaMinhaOrganizacao
+                ? currentProfessionalProvider.organizacaoDeclarada(eu)
+                        .map(Organization::getOrganizationId)
+                        .orElse(NENHUMA_ORGANIZACAO)
+                : null;
+
+        return timelineRepository
+                .findDoAnimalFiltrada(animalId, organizationId, apenasMeus ? eu.getPersonId() : null, pageable)
                 .map(entrada -> toResponse(entrada, escopo));
     }
+
+    /**
+     * O id impossivel, para "so desta clinica" sem clinica nenhuma.
+     *
+     * Nulo nao serviria: na consulta, nulo DESLIGA o filtro — e o filtro desligado devolveria a
+     * linha inteira justamente quando a resposta certa e "nada foi registrado por uma organizacao
+     * em que voce esteja agindo".
+     */
+    private static final UUID NENHUMA_ORGANIZACAO = new UUID(0L, 0L);
 
     /**
      * <b>Tudo que identifica autoria e mascarado fora do escopo, e isso e regra e nao
