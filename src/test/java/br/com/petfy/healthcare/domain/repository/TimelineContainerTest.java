@@ -530,7 +530,7 @@ class TimelineContainerTest extends PostgresContainerTest {
         tresOrigens(clinica, pessoa("Colega"), pessoa("De fora"));
 
         assertThat(timelineRepository.findDoAnimalFiltrada(
-                rex.getAnimalId(), null, null, PageRequest.of(0, 20)))
+                rex.getAnimalId(), null, null, java.time.LocalDateTime.of(1900, 1, 1, 0, 0), PageRequest.of(0, 20)))
                 .hasSize(3);
     }
 
@@ -542,7 +542,7 @@ class TimelineContainerTest extends PostgresContainerTest {
         tresOrigens(clinica, pessoa("Colega"), pessoa("De fora"));
 
         assertThat(timelineRepository.findDoAnimalFiltrada(
-                rex.getAnimalId(), clinica.getOrganizationId(), null, PageRequest.of(0, 20)))
+                rex.getAnimalId(), clinica.getOrganizationId(), null, java.time.LocalDateTime.of(1900, 1, 1, 0, 0), PageRequest.of(0, 20)))
                 .extracting(TimelineEntry::getSummary)
                 .containsExactlyInAnyOrder("de colega, pela clinica", "meu, pela clinica");
     }
@@ -562,7 +562,7 @@ class TimelineContainerTest extends PostgresContainerTest {
                 .build());
 
         assertThat(timelineRepository.findDoAnimalFiltrada(
-                rex.getAnimalId(), null, ulysses.getPersonId(), PageRequest.of(0, 20)))
+                rex.getAnimalId(), null, ulysses.getPersonId(), java.time.LocalDateTime.of(1900, 1, 1, 0, 0), PageRequest.of(0, 20)))
                 .extracting(TimelineEntry::getSummary)
                 .containsExactlyInAnyOrder("meu, pela clinica", "meu, por mim");
     }
@@ -577,7 +577,7 @@ class TimelineContainerTest extends PostgresContainerTest {
 
         assertThat(timelineRepository.findDoAnimalFiltrada(
                 rex.getAnimalId(), clinica.getOrganizationId(), ulysses.getPersonId(),
-                PageRequest.of(0, 20)))
+                LocalDateTime.of(1900, 1, 1, 0, 0), PageRequest.of(0, 20)))
                 .extracting(TimelineEntry::getSummary)
                 .containsExactly("meu, pela clinica");
     }
@@ -598,7 +598,7 @@ class TimelineContainerTest extends PostgresContainerTest {
         tresOrigens(clinica, pessoa("Colega"), pessoa("De fora"));
 
         assertThat(timelineRepository.findDoAnimalFiltrada(
-                rex.getAnimalId(), new UUID(0L, 0L), null, PageRequest.of(0, 20)))
+                rex.getAnimalId(), new UUID(0L, 0L), null, java.time.LocalDateTime.of(1900, 1, 1, 0, 0), PageRequest.of(0, 20)))
                 .isEmpty();
     }
 

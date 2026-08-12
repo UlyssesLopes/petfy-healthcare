@@ -1100,6 +1100,69 @@
         },
         "type" : "object"
       },
+      "BoardingRequestDTO" : {
+        "properties" : {
+          "expectedReturnOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "organizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "expectedReturnOn", "organizationId" ],
+        "type" : "object"
+      },
+      "BoardingResponseDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "boardingId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "canEnd" : {
+            "type" : "boolean"
+          },
+          "dayOfStay" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "endedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "expectedReturnOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "organizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "returnsToName" : {
+            "type" : "string"
+          },
+          "startedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "totalDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "CareInstructionFulfillmentRequestDTO" : {
         "properties" : {
           "fulfilledAt" : {
@@ -4474,6 +4537,101 @@
         "tags" : [ "attachment-controller" ]
       }
     },
+    "/animals/{animalId}/boarding" : {
+      "get" : {
+        "description" : "Onde ele esta, desde quando, ate quando, e em que dia da estadia estamos. O dia e contado no servidor: um calculo no cliente diria 'dia 2' para quem abriu o Petfy em Lisboa.",
+        "operationId" : "emCurso",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardingResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A estadia em curso",
+        "tags" : [ "boarding-controller" ]
+      },
+      "post" : {
+        "description" : "A custodia passa para a organizacao, com prazo, e volta no dia em que alguem registrar a devolucao. Exige RESPONDER pelo animal: passar a custodia adiante e o mesmo ato que transferir titularidade, e nenhum nivel de concessao chega la. Quem entrega ganha uma concessao pelo tempo da estadia — sem ela, perderia o proprio animal de vista.",
+        "operationId" : "hospedar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BoardingRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardingResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Entrega o animal para hospedagem",
+        "tags" : [ "boarding-controller" ]
+      }
+    },
+    "/animals/{animalId}/boarding/end" : {
+      "post" : {
+        "description" : "A custodia retorna a quem entregou, e a concessao da estadia e revogada. Pode ser registrada pela organizacao que esta com o animal OU por quem o entregou — sem o segundo, uma creche que esquecesse de registrar deixaria o animal fora de casa para sempre.",
+        "operationId" : "devolver",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardingResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Registra a volta",
+        "tags" : [ "boarding-controller" ]
+      }
+    },
     "/animals/{animalId}/care-instructions" : {
       "get" : {
         "description" : "Inclui as encerradas: tratamento suspenso e informacao clinica, e quem ler o historico depois precisa saber que houve. O campo vigente diz o que vale hoje.",
@@ -5713,7 +5871,7 @@
     },
     "/animals/{animalId}/timeline" : {
       "get" : {
-        "description" : "Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir.",
+        "description" : "Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir. E `since` recorta por janela: e o que a tela de hospedagem usa para mostrar so o que aconteceu desde que o animal saiu de casa.",
         "operationId" : "timeline",
         "parameters" : [ {
           "in" : "path",
@@ -5738,6 +5896,14 @@
           "schema" : {
             "default" : false,
             "type" : "boolean"
+          }
+        }, {
+          "in" : "query",
+          "name" : "since",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
           }
         }, {
           "description" : "Zero-based page index (0..N)",

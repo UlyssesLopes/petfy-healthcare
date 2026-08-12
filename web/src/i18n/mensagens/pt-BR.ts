@@ -203,6 +203,15 @@ export const mensagens = {
   "erro.180":
     "Sua organização responde por este animal, então ela não pode apadrinhá-lo. Se quiser bancar do seu bolso, saia do contexto da organização primeiro.",
 
+  // ---------------------------------------------------------- a hospedagem (Tela 47)
+  "erro.181": "Este animal não está hospedado agora.",
+  "erro.182": "Este animal já está hospedado. Registre a volta antes de entregá-lo de novo.",
+  "erro.183": "A volta prevista precisa ser depois de hoje.",
+  "erro.184":
+    "Só quem está com o animal ou quem o entregou pode registrar a volta.",
+  "erro.185":
+    "Esta organização não pode responder por um animal. Hospedagem passa a responsabilidade, e não só o acesso.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -1892,6 +1901,41 @@ export const mensagens = {
   // sem decidir quais anexos são públicos, então diz o que faz em vez de simular.
   "apadrinhamentos.semFoto":
     "Aparecem aqui os gastos do que você banca. Fotos do dia a dia não são prometidas — o que o Petfy garante é o registro.",
+
+  // ------------------------------------------------------------ Tela 47: hospedagem
+  "hospedagem.oQueE": "a hospedagem",
+  "hospedagem.entregar.titulo": "Deixar o animal hospedado",
+  "hospedagem.entregar.oQueE":
+    "Hospedagem é custódia temporária: quem recebe passa a responder pelo animal, com prazo, e devolve no dia combinado.",
+  "hospedagem.entregar.onde": "Onde ele fica",
+  "hospedagem.entregar.onde.nota":
+    "Só aparecem organizações que podem responder por um animal. Uma clínica que apenas registra atendimento não passa a responder por ele durante uma semana.",
+  "hospedagem.entregar.volta": "Volta prevista",
+  "hospedagem.entregar.volta.nota":
+    "Prevista, e não automática: a volta acontece quando alguém registra. A data serve para vocês dois combinarem, e ninguém devolve um animal porque o relógio virou.",
+  // O que muda de verdade, dito antes do gesto.
+  "hospedagem.entregar.oQueMuda":
+    "Enquanto ele estiver lá, quem responde por ele é a organização — ela pode levá-lo ao veterinário sem esperar você. Você continua vendo tudo, e a responsabilidade volta para você no dia da devolução.",
+  "hospedagem.entregar": "Entregar para hospedagem",
+  "hospedagem.entregando": "Registrando…",
+  "hospedagem.voltarAoAnimal": "Voltar para o animal",
+  "hospedagem.titulo": "O {animal} está na {onde}",
+  "hospedagem.diaDe": "Dia {dia} de {total}",
+  "hospedagem.periodo": "Entrou em {entrada} · volta prevista para {volta}",
+  "hospedagem.oQueAconteceu": "Isto é o que aconteceu com ele desde que saiu de casa.",
+  "hospedagem.carregando": "Carregando…",
+  // O vazio é comum e não é falha: ninguém registrou nada desde a entrada.
+  "hospedagem.aindaNada":
+    "Nada foi registrado desde a entrada. Quando alguém da {onde} anotar algo, aparece aqui.",
+  // Evento fora do escopo aparece opaco em vez de sumir — sumir diria que nada aconteceu.
+  "hospedagem.evento.opaco": "Um registro que você não alcança",
+  "hospedagem.enquantoEleEstaLa": "Enquanto ele está lá",
+  "hospedagem.regra.responde":
+    "A {onde} responde por ele até {volta}, e pode levá-lo ao veterinário sem esperar você.",
+  "hospedagem.regra.voceContinuaLendo":
+    "A responsabilidade volta para {quem} quando a devolução for registrada. Até lá, você continua vendo tudo que acontece com ele.",
+  "hospedagem.devolver": "Registrar a volta",
+  "hospedagem.devolvendo": "Registrando…",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

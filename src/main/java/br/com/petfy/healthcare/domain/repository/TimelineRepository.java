@@ -47,13 +47,31 @@ public interface TimelineRepository extends JpaRepository<TimelineEntry, UUID> {
      * que ela nao alcanca. Misturar os dois faria um evento fora do escopo desaparecer quando ela
      * marcasse "so desta clinica" — e sumir diria que o animal nunca foi atendido.
      */
+    /*
+     * O TERCEIRO RECORTE, "desde quando", chegou com a hospedagem (Tela 47).
+     *
+     * "Isto e o que aconteceu com ele desde que saiu de casa" — e a pergunta que o tutor em viagem
+     * faz, e ela e de JANELA, nao de autor. Filtrar no cliente seria o erro que o comentario acima
+     * ja nomeia por outro motivo: a pagina tem vinte itens e a estadia pode ter mais.
+     *
+     * <b>Este NAO desliga com nulo, e os outros dois desligam.</b> A diferenca nao e de gosto: o
+     * Postgres recusa a consulta com {@code could not determine data type of parameter} quando o
+     * {@code :desde is null} recebe um nulo sem tipo — os dois de cima escapam porque o Hibernate os
+     * associa a colunas {@code uuid}, e este nao tem a quem se associar dentro do {@code is null}.
+     *
+     * Entao quem chama passa uma DATA-PISO para dizer "sem recorte", como o
+     * {@code NENHUMA_ORGANIZACAO} do servico faz para o outro filtro. O truque e o mesmo, e a razao
+     * tambem: um sentinela explicito e melhor que uma consulta que so quebra em producao.
+     */
     @Query("select t from TimelineEntry t where t.animalId = :animalId "
             + "and (:organizationId is null or t.organizationId = :organizationId) "
             + "and (:recordedByPersonId is null or t.recordedByPersonId = :recordedByPersonId) "
+            + "and t.occurredAt >= :desde "
             + "order by t.occurredAt desc, t.recordedAt desc")
     Page<TimelineEntry> findDoAnimalFiltrada(@Param("animalId") UUID animalId,
                                              @Param("organizationId") UUID organizationId,
                                              @Param("recordedByPersonId") UUID recordedByPersonId,
+                                             @Param("desde") LocalDateTime desde,
                                              Pageable pageable);
 
     /**

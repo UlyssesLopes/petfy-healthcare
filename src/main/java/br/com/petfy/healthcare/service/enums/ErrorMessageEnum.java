@@ -212,6 +212,18 @@ public enum ErrorMessageEnum {
     // O abrigo nao apadrinha o proprio animal: o total de "coberto por padrinhos" passaria a
     // incluir o dinheiro do proprio abrigo.
     CANNOT_SPONSOR_OWN_ANIMAL(180, "You cannot sponsor an animal your organization answers for"),
+    BOARDING_NOT_FOUND(181, "This animal is not boarded right now"),
+    // Um animal ja hospedado nao entra em outra hospedagem: o indice do banco so admite UMA
+    // custodia em curso, e a segunda chamada esbarraria nele com um 500 em vez de uma recusa.
+    ALREADY_BOARDED(182, "This animal is already boarded"),
+    // A volta prevista no passado nao e hospedagem: e um registro retroativo que a tela nao sabe
+    // mostrar — "dia 3 de 7" com total negativo.
+    INVALID_RETURN_DATE(183, "The expected return must be in the future"),
+    // Encerrar e de quem esta com o animal ou de quem o entregou, e de mais ninguem.
+    CANNOT_END_BOARDING(184, "Only the organization holding the animal or whoever handed it over can end this"),
+    // Hospedar exige uma organizacao que possa DETER CUSTODIA. Uma clinica que so registra ato
+    // clinico nao passa a responder pelo animal por uma semana.
+    ORGANIZATION_CANNOT_BOARD(185, "This organization cannot hold custody"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

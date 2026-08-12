@@ -120,6 +120,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/boarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A estadia em curso
+         * @description Onde ele esta, desde quando, ate quando, e em que dia da estadia estamos. O dia e contado no servidor: um calculo no cliente diria 'dia 2' para quem abriu o Petfy em Lisboa.
+         */
+        get: operations["emCurso"];
+        put?: never;
+        /**
+         * Entrega o animal para hospedagem
+         * @description A custodia passa para a organizacao, com prazo, e volta no dia em que alguem registrar a devolucao. Exige RESPONDER pelo animal: passar a custodia adiante e o mesmo ato que transferir titularidade, e nenhum nivel de concessao chega la. Quem entrega ganha uma concessao pelo tempo da estadia — sem ela, perderia o proprio animal de vista.
+         */
+        post: operations["hospedar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/boarding/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registra a volta
+         * @description A custodia retorna a quem entregou, e a concessao da estadia e revogada. Pode ser registrada pela organizacao que esta com o animal OU por quem o entregou — sem o segundo, uma creche que esquecesse de registrar deixaria o animal fora de casa para sempre.
+         */
+        post: operations["devolver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}/care-instructions": {
         parameters: {
             query?: never;
@@ -664,7 +708,7 @@ export interface paths {
         };
         /**
          * A vida do animal em ordem, atravessando custodias e organizacoes
-         * @description Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir.
+         * @description Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir. E `since` recorta por janela: e o que a tela de hospedagem usa para mostrar so o que aconteceu desde que o animal saiu de casa.
          */
         get: operations["timeline"];
         put?: never;
@@ -2704,6 +2748,34 @@ export interface components {
             status?: string;
             todayNeeds?: string[];
         };
+        BoardingRequestDTO: {
+            /** Format: date */
+            expectedReturnOn: string;
+            /** Format: uuid */
+            organizationId: string;
+        };
+        BoardingResponseDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: uuid */
+            boardingId?: string;
+            canEnd?: boolean;
+            /** Format: int32 */
+            dayOfStay?: number;
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: date */
+            expectedReturnOn?: string;
+            /** Format: uuid */
+            organizationId?: string;
+            organizationName?: string;
+            returnsToName?: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: int32 */
+            totalDays?: number;
+        };
         CareInstructionFulfillmentRequestDTO: {
             /** Format: date-time */
             fulfilledAt?: string;
@@ -4108,6 +4180,76 @@ export interface operations {
             };
         };
     };
+    emCurso: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardingResponseDTO"];
+                };
+            };
+        };
+    };
+    hospedar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardingRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardingResponseDTO"];
+                };
+            };
+        };
+    };
+    devolver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardingResponseDTO"];
+                };
+            };
+        };
+    };
     listByAnimal_4: {
         parameters: {
             query?: never;
@@ -4962,6 +5104,7 @@ export interface operations {
             query?: {
                 onlyMyOrganization?: boolean;
                 onlyMine?: boolean;
+                since?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */

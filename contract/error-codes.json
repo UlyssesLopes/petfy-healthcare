@@ -319,6 +319,26 @@
   "codigo" : 180,
   "mensagemDaApi" : "You cannot sponsor an animal your organization answers for"
 }, {
+  "nome" : "BOARDING_NOT_FOUND",
+  "codigo" : 181,
+  "mensagemDaApi" : "This animal is not boarded right now"
+}, {
+  "nome" : "ALREADY_BOARDED",
+  "codigo" : 182,
+  "mensagemDaApi" : "This animal is already boarded"
+}, {
+  "nome" : "INVALID_RETURN_DATE",
+  "codigo" : 183,
+  "mensagemDaApi" : "The expected return must be in the future"
+}, {
+  "nome" : "CANNOT_END_BOARDING",
+  "codigo" : 184,
+  "mensagemDaApi" : "Only the organization holding the animal or whoever handed it over can end this"
+}, {
+  "nome" : "ORGANIZATION_CANNOT_BOARD",
+  "codigo" : 185,
+  "mensagemDaApi" : "This organization cannot hold custody"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"
