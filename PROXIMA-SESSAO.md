@@ -208,11 +208,41 @@ exportação de dados e encerramento de conta, e mexe em autenticação.
 **Decidir o PR #60**, e depois sincronizar a `main` e ramificar dela — branch nova é regra desde a
 armadilha do bloco 4.
 
-O próximo trabalho é o **bloco 6b — Tela 45, encaminhar ao especialista**, cujo desenho já está
-lido (mesmo arquivo do bloco 6). Ele é o menor dos que sobraram e reusa concessão com prazo, que
-já existe: *"o acesso do Roberto vale 90 dias e depois fecha sozinho"*. A regra central dele já
-está escrita no desenho — **encaminhar é indicar o caminho; conceder acesso continua sendo do
-tutor**.
+O próximo trabalho é o **bloco 6b — Tela 45, encaminhar ao especialista**. O levantamento está
+feito, e é o que segue.
+
+## Bloco 6b — a Tela 45, já levantada
+
+**A regra central está no desenho e é o que torna a tela possível:** *"Marcelo Dias precisa
+autorizar. **Encaminhar é você indicando o caminho; conceder acesso continua sendo dele**, como
+sempre foi. O acesso do Roberto vale 90 dias e depois fecha sozinho."*
+
+Ou seja: o encaminhamento **não concede nada**. Ele é um pedido que a clínica faz, o tutor decide,
+e o que o aceite produz é uma **concessão com prazo** — que já existe (`Grant.expiresAt`).
+
+### O que reusa
+
+- `Grant` com `expiresAt` e escopos — o acesso de 90 dias é uma concessão comum
+- `AnimalReach` e o canal de e-mail, para avisar o tutor e o especialista
+- A busca de profissional: **não existe**, e o desenho tem "Buscar outro profissional"
+
+### O que falta, e a peça mais delicada
+
+**Uma entidade de encaminhamento** com: para quem, por quê, o que vai junto, e o estado
+(pendente/autorizado/recusado). Três partes decidem em momentos diferentes — quem encaminha, o
+tutor que autoriza, e o especialista que recebe.
+
+**"O que vai junto" é uma seleção, e é o coração da tela.** O desenho mostra quatro caixas, três
+marcadas e uma desmarcada — *"histórico completo desde 2019 · 147 eventos. Provavelmente mais do
+que ele precisa para este caso."* Isso mapeia bem para `GrantScope`, mas **não perfeitamente**: o
+desenho seleciona *eventos específicos* ("o raio-X de 2023", "4 observações da creche entre 02/06
+e 05/08"), e o escopo concede por *tipo*. Decidir isso é o primeiro passo do bloco — e a saída
+provável é conceder por escopo e listar na mensagem o que motivou, sem prometer um recorte que a
+concessão não sabe fazer.
+
+**O que o desenho promete e não tem backend:** "Ele já registrou o raio-X do Code em 2023" — saber
+que aquele profissional já atendeu o animal exige consultar autoria na linha do tempo, o que a
+`ultimaContribuicaoPorPessoa` já faz.
 
 **Ler o `.dc.html` inteiro antes de planejar, e contar as telas.** O nome do arquivo cobre mais
 do que o bloco declarado — foi assim que as Telas 35 e 36 apareceram.
