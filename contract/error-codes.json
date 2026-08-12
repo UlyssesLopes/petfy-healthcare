@@ -267,6 +267,34 @@
   "codigo" : 167,
   "mensagemDaApi" : "Only an active member of this group can do that"
 }, {
+  "nome" : "REFERRAL_NOT_FOUND",
+  "codigo" : 168,
+  "mensagemDaApi" : "Referral not found"
+}, {
+  "nome" : "REFERRAL_ALREADY_DECIDED",
+  "codigo" : 169,
+  "mensagemDaApi" : "This referral was already decided"
+}, {
+  "nome" : "REFERRAL_ALREADY_PENDING",
+  "codigo" : 170,
+  "mensagemDaApi" : "This animal was already referred to this professional"
+}, {
+  "nome" : "CANNOT_REFER_TO_SELF",
+  "codigo" : 171,
+  "mensagemDaApi" : "You cannot refer a case to yourself"
+}, {
+  "nome" : "NOT_A_PROFESSIONAL",
+  "codigo" : 172,
+  "mensagemDaApi" : "The person you are referring to has no active professional credential"
+}, {
+  "nome" : "CANNOT_REFER_TO_HOLDER",
+  "codigo" : 173,
+  "mensagemDaApi" : "This professional already answers for this animal"
+}, {
+  "nome" : "NO_ONE_CAN_AUTHORIZE",
+  "codigo" : 174,
+  "mensagemDaApi" : "No one answers for this animal right now"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

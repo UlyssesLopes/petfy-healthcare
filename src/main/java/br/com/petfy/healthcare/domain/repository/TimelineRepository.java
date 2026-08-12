@@ -100,6 +100,37 @@ public interface TimelineRepository extends JpaRepository<TimelineEntry, UUID> {
             + "from TimelineEntry t where t.animalId = :animalId")
     Tamanho tamanhoDe(@Param("animalId") UUID animalId);
 
+    /**
+     * Quanto existe de cada tipo de evento, e desde quando — o "o que vai junto" da Tela 45.
+     *
+     * <b>Sobre a linha do tempo, e nao contando cada tabela.</b> A alternativa era uma contagem por
+     * origem — atendimentos em {@code health_records}, pesagens em {@code animal_weight_history},
+     * observacoes em {@code observations} — e seriam seis consultas para responder a mesma pergunta,
+     * com um risco que a agregada nao tem: <b>o numero mostrado na caixa seria de uma fonte, e o
+     * que o especialista abre depois vem da linha do tempo mascarada por escopo.</b> Contar aqui faz
+     * a promessa da tela ("12 atendimentos desde 2019") e a entrega serem literalmente a mesma
+     * consulta, com o mesmo mapeamento de {@link br.com.petfy.healthcare.domain.entity.TimelineEventType}
+     * para escopo.
+     *
+     * Devolve por TIPO e nao por escopo porque o mapeamento vive no enum, onde ja esta documentado —
+     * dobra-lo em JPQL criaria uma segunda tabela de verdade sobre que escopo alcanca o que.
+     */
+    @Query("select t.eventType as tipo, count(t) as eventos, min(t.occurredAt) as primeiro "
+            + "from TimelineEntry t where t.animalId = :animalId "
+            + "group by t.eventType")
+    List<PorTipo> contagemPorTipo(@Param("animalId") UUID animalId);
+
+    /** Projecao da consulta acima. */
+    interface PorTipo {
+
+        br.com.petfy.healthcare.domain.entity.TimelineEventType getTipo();
+
+        long getEventos();
+
+        LocalDateTime getPrimeiro();
+
+    }
+
     /** Projecao da consulta acima. */
     interface Tamanho {
 

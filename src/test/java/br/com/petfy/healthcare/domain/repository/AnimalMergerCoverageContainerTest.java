@@ -106,7 +106,18 @@ class AnimalMergerCoverageContainerTest extends PostgresContainerTest {
             // fato do animal, e uma pergunta feita a um grupo especifico sobre um cadastro
             // especifico. Move-lo faria um pedido de adocao pendente reaparecer apontando para um
             // cadastro que quem pediu nunca viu — e a segunda pessoa concordaria com outra coisa.
-            "group_approvals");
+            "group_approvals",
+            // O ENCAMINHAMENTO FICA, e aqui a razao e mecanica antes de ser de significado: ele
+            // aponta para o animal E para o grant que o aceite produziu — e grants FICA. Mover o
+            // encaminhamento sem mover a concessao deixaria um pedido autorizado apontando para um
+            // acesso de outro cadastro, e a tela do especialista anunciaria um prazo que vale para
+            // um animal diferente do que ela mostra.
+            //
+            // O significado confirma: um encaminhamento e uma pergunta que uma clinica fez a um
+            // tutor sobre AQUELE cadastro — "piora da claudicacao nos ultimos 3 meses" foi escrito
+            // olhando o historico daquele cadastro. Move-lo faria a pergunta reaparecer sobre um
+            // conjunto de eventos que quem a escreveu nunca viu.
+            "referrals");
 
     /**
      * As netas, que seguem o pai.
@@ -126,6 +137,9 @@ class AnimalMergerCoverageContainerTest extends PostgresContainerTest {
             // matricula dele em outro cadastro.
             "enrollment_weekdays",
             "grant_scopes",
+            // O escopo do encaminhamento segue o encaminhamento, como o escopo da concessao segue a
+            // concessao. E ele alcanca `animals` so por transitividade — nao ha coluna de animal ali.
+            "referral_scopes",
             "animal_merge_requests");
 
     @Test

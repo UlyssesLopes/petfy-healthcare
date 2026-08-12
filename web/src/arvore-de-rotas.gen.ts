@@ -14,6 +14,7 @@ import { Route as ColoniaRouteImport } from './rotas/colonia'
 import { Route as ComecarRouteImport } from './rotas/comecar'
 import { Route as CrecheRouteImport } from './rotas/creche'
 import { Route as CriarContaRouteImport } from './rotas/criar-conta'
+import { Route as EncaminhamentosRouteImport } from './rotas/encaminhamentos'
 import { Route as EncontradoRouteImport } from './rotas/encontrado'
 import { Route as EntrarRouteImport } from './rotas/entrar'
 import { Route as PacientesRouteImport } from './rotas/pacientes'
@@ -28,6 +29,7 @@ import { Route as AnimaisAnimalIdCompraRouteImport } from './rotas/animais.$anim
 import { Route as AnimaisAnimalIdConcederAcessoRouteImport } from './rotas/animais.$animalId_.conceder-acesso'
 import { Route as AnimaisAnimalIdCustoRouteImport } from './rotas/animais.$animalId_.custo'
 import { Route as AnimaisAnimalIdCustoDaAdocaoRouteImport } from './rotas/animais.$animalId_.custo-da-adocao'
+import { Route as AnimaisAnimalIdEncaminharRouteImport } from './rotas/animais.$animalId_.encaminhar'
 import { Route as AnimaisAnimalIdFimRouteImport } from './rotas/animais.$animalId_.fim'
 import { Route as AnimaisAnimalIdMatriculaRouteImport } from './rotas/animais.$animalId_.matricula'
 import { Route as AnimaisAnimalIdPrevisaoRouteImport } from './rotas/animais.$animalId_.previsao'
@@ -62,6 +64,11 @@ const CrecheRoute = CrecheRouteImport.update({
 const CriarContaRoute = CriarContaRouteImport.update({
   id: '/criar-conta',
   path: '/criar-conta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EncaminhamentosRoute = EncaminhamentosRouteImport.update({
+  id: '/encaminhamentos',
+  path: '/encaminhamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EncontradoRoute = EncontradoRouteImport.update({
@@ -136,6 +143,12 @@ const AnimaisAnimalIdCustoDaAdocaoRoute =
     path: '/animais/$animalId/custo-da-adocao',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AnimaisAnimalIdEncaminharRoute =
+  AnimaisAnimalIdEncaminharRouteImport.update({
+    id: '/animais/$animalId_/encaminhar',
+    path: '/animais/$animalId/encaminhar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AnimaisAnimalIdFimRoute = AnimaisAnimalIdFimRouteImport.update({
   id: '/animais/$animalId_/fim',
   path: '/animais/$animalId/fim',
@@ -201,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/comecar': typeof ComecarRoute
   '/creche': typeof CrecheRoute
   '/criar-conta': typeof CriarContaRoute
+  '/encaminhamentos': typeof EncaminhamentosRoute
   '/encontrado': typeof EncontradoRoute
   '/entrar': typeof EntrarRoute
   '/pacientes': typeof PacientesRouteWithChildren
@@ -215,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/custo': typeof AnimaisAnimalIdCustoRoute
   '/animais/$animalId/custo-da-adocao': typeof AnimaisAnimalIdCustoDaAdocaoRoute
+  '/animais/$animalId/encaminhar': typeof AnimaisAnimalIdEncaminharRoute
   '/animais/$animalId/fim': typeof AnimaisAnimalIdFimRoute
   '/animais/$animalId/matricula': typeof AnimaisAnimalIdMatriculaRoute
   '/animais/$animalId/previsao': typeof AnimaisAnimalIdPrevisaoRoute
@@ -232,6 +247,7 @@ export interface FileRoutesByTo {
   '/comecar': typeof ComecarRoute
   '/creche': typeof CrecheRoute
   '/criar-conta': typeof CriarContaRoute
+  '/encaminhamentos': typeof EncaminhamentosRoute
   '/encontrado': typeof EncontradoRoute
   '/entrar': typeof EntrarRoute
   '/pacientes': typeof PacientesRouteWithChildren
@@ -246,6 +262,7 @@ export interface FileRoutesByTo {
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/custo': typeof AnimaisAnimalIdCustoRoute
   '/animais/$animalId/custo-da-adocao': typeof AnimaisAnimalIdCustoDaAdocaoRoute
+  '/animais/$animalId/encaminhar': typeof AnimaisAnimalIdEncaminharRoute
   '/animais/$animalId/fim': typeof AnimaisAnimalIdFimRoute
   '/animais/$animalId/matricula': typeof AnimaisAnimalIdMatriculaRoute
   '/animais/$animalId/previsao': typeof AnimaisAnimalIdPrevisaoRoute
@@ -264,6 +281,7 @@ export interface FileRoutesById {
   '/comecar': typeof ComecarRoute
   '/creche': typeof CrecheRoute
   '/criar-conta': typeof CriarContaRoute
+  '/encaminhamentos': typeof EncaminhamentosRoute
   '/encontrado': typeof EncontradoRoute
   '/entrar': typeof EntrarRoute
   '/pacientes': typeof PacientesRouteWithChildren
@@ -278,6 +296,7 @@ export interface FileRoutesById {
   '/animais/$animalId_/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId_/custo': typeof AnimaisAnimalIdCustoRoute
   '/animais/$animalId_/custo-da-adocao': typeof AnimaisAnimalIdCustoDaAdocaoRoute
+  '/animais/$animalId_/encaminhar': typeof AnimaisAnimalIdEncaminharRoute
   '/animais/$animalId_/fim': typeof AnimaisAnimalIdFimRoute
   '/animais/$animalId_/matricula': typeof AnimaisAnimalIdMatriculaRoute
   '/animais/$animalId_/previsao': typeof AnimaisAnimalIdPrevisaoRoute
@@ -297,6 +316,7 @@ export interface FileRouteTypes {
     | '/comecar'
     | '/creche'
     | '/criar-conta'
+    | '/encaminhamentos'
     | '/encontrado'
     | '/entrar'
     | '/pacientes'
@@ -311,6 +331,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId/conceder-acesso'
     | '/animais/$animalId/custo'
     | '/animais/$animalId/custo-da-adocao'
+    | '/animais/$animalId/encaminhar'
     | '/animais/$animalId/fim'
     | '/animais/$animalId/matricula'
     | '/animais/$animalId/previsao'
@@ -328,6 +349,7 @@ export interface FileRouteTypes {
     | '/comecar'
     | '/creche'
     | '/criar-conta'
+    | '/encaminhamentos'
     | '/encontrado'
     | '/entrar'
     | '/pacientes'
@@ -342,6 +364,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId/conceder-acesso'
     | '/animais/$animalId/custo'
     | '/animais/$animalId/custo-da-adocao'
+    | '/animais/$animalId/encaminhar'
     | '/animais/$animalId/fim'
     | '/animais/$animalId/matricula'
     | '/animais/$animalId/previsao'
@@ -359,6 +382,7 @@ export interface FileRouteTypes {
     | '/comecar'
     | '/creche'
     | '/criar-conta'
+    | '/encaminhamentos'
     | '/encontrado'
     | '/entrar'
     | '/pacientes'
@@ -373,6 +397,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId_/conceder-acesso'
     | '/animais/$animalId_/custo'
     | '/animais/$animalId_/custo-da-adocao'
+    | '/animais/$animalId_/encaminhar'
     | '/animais/$animalId_/fim'
     | '/animais/$animalId_/matricula'
     | '/animais/$animalId_/previsao'
@@ -391,6 +416,7 @@ export interface RootRouteChildren {
   ComecarRoute: typeof ComecarRoute
   CrecheRoute: typeof CrecheRoute
   CriarContaRoute: typeof CriarContaRoute
+  EncaminhamentosRoute: typeof EncaminhamentosRoute
   EncontradoRoute: typeof EncontradoRoute
   EntrarRoute: typeof EntrarRoute
   PacientesRoute: typeof PacientesRouteWithChildren
@@ -404,6 +430,7 @@ export interface RootRouteChildren {
   AnimaisAnimalIdConcederAcessoRoute: typeof AnimaisAnimalIdConcederAcessoRoute
   AnimaisAnimalIdCustoRoute: typeof AnimaisAnimalIdCustoRoute
   AnimaisAnimalIdCustoDaAdocaoRoute: typeof AnimaisAnimalIdCustoDaAdocaoRoute
+  AnimaisAnimalIdEncaminharRoute: typeof AnimaisAnimalIdEncaminharRoute
   AnimaisAnimalIdFimRoute: typeof AnimaisAnimalIdFimRoute
   AnimaisAnimalIdMatriculaRoute: typeof AnimaisAnimalIdMatriculaRoute
   AnimaisAnimalIdPrevisaoRoute: typeof AnimaisAnimalIdPrevisaoRoute
@@ -449,6 +476,13 @@ declare module '@tanstack/react-router' {
       path: '/criar-conta'
       fullPath: '/criar-conta'
       preLoaderRoute: typeof CriarContaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/encaminhamentos': {
+      id: '/encaminhamentos'
+      path: '/encaminhamentos'
+      fullPath: '/encaminhamentos'
+      preLoaderRoute: typeof EncaminhamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/encontrado': {
@@ -547,6 +581,13 @@ declare module '@tanstack/react-router' {
       path: '/animais/$animalId/custo-da-adocao'
       fullPath: '/animais/$animalId/custo-da-adocao'
       preLoaderRoute: typeof AnimaisAnimalIdCustoDaAdocaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/animais/$animalId_/encaminhar': {
+      id: '/animais/$animalId_/encaminhar'
+      path: '/animais/$animalId/encaminhar'
+      fullPath: '/animais/$animalId/encaminhar'
+      preLoaderRoute: typeof AnimaisAnimalIdEncaminharRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/animais/$animalId_/fim': {
@@ -653,6 +694,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComecarRoute: ComecarRoute,
   CrecheRoute: CrecheRoute,
   CriarContaRoute: CriarContaRoute,
+  EncaminhamentosRoute: EncaminhamentosRoute,
   EncontradoRoute: EncontradoRoute,
   EntrarRoute: EntrarRoute,
   PacientesRoute: PacientesRouteWithChildren,
@@ -666,6 +708,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnimaisAnimalIdConcederAcessoRoute: AnimaisAnimalIdConcederAcessoRoute,
   AnimaisAnimalIdCustoRoute: AnimaisAnimalIdCustoRoute,
   AnimaisAnimalIdCustoDaAdocaoRoute: AnimaisAnimalIdCustoDaAdocaoRoute,
+  AnimaisAnimalIdEncaminharRoute: AnimaisAnimalIdEncaminharRoute,
   AnimaisAnimalIdFimRoute: AnimaisAnimalIdFimRoute,
   AnimaisAnimalIdMatriculaRoute: AnimaisAnimalIdMatriculaRoute,
   AnimaisAnimalIdPrevisaoRoute: AnimaisAnimalIdPrevisaoRoute,

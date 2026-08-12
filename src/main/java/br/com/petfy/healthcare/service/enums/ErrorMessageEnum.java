@@ -175,6 +175,28 @@ public enum ErrorMessageEnum {
     // a administradora —, e sim sobre pertencer: quem nao cuida daqueles animais nao tem como
     // saber se a adocao faz sentido.
     NOT_A_GROUP_MEMBER(167, "Only an active member of this group can do that"),
+    REFERRAL_NOT_FOUND(168, "Referral not found"),
+    // Decidir duas vezes nao e idempotencia, pela mesma razao do acordo de duas pessoas: a segunda
+    // decisao viria de quem leu o pedido antes de a primeira acontecer. E aqui e mais grave — a
+    // primeira decisao ja criou uma concessao, e a segunda criaria outra.
+    REFERRAL_ALREADY_DECIDED(169, "This referral was already decided"),
+    REFERRAL_ALREADY_PENDING(170, "This animal was already referred to this professional"),
+    // Encaminhar e indicar OUTRO profissional. Um encaminhamento de uma pessoa para ela mesma seria
+    // um pedido de acesso disfarcado de segunda opiniao, e o tutor autorizaria lendo "Ana
+    // encaminhou para a Ana" sem entender o que estava concedendo.
+    CANNOT_REFER_TO_SELF(171, "You cannot refer a case to yourself"),
+    // So se encaminha a quem pode praticar ato clinico: a tela e "entre profissionais", e o que o
+    // aceite produz e acesso de ESCRITA ao prontuario. Sem esta recusa, encaminhar viraria o
+    // caminho mais curto para dar acesso a qualquer pessoa sem passar pela tela de conceder.
+    NOT_A_PROFESSIONAL(172, "The person you are referring to has no active professional credential"),
+    // Encaminhar a quem ja responde pelo animal nao tem efeito nenhum: quem responde alcanca tudo
+    // sem concessao. Aceitar em silencio faria a clinica esperar uma autorizacao que nunca vem, de
+    // alguem que ja podia abrir o caso desde sempre.
+    CANNOT_REFER_TO_HOLDER(173, "This professional already answers for this animal"),
+    // Nao ha quem autorize. Um animal sem custodia em curso — perdido, ou com a linha do tempo
+    // encerrada — deixaria o pedido parado para sempre, e a tela diria "o Marcelo recebe e decide"
+    // sobre um Marcelo que nao existe mais.
+    NO_ONE_CAN_AUTHORIZE(174, "No one answers for this animal right now"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

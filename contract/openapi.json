@@ -3170,6 +3170,187 @@
         "required" : [ "role" ],
         "type" : "object"
       },
+      "ReferralCandidateDTO" : {
+        "properties" : {
+          "credential" : {
+            "type" : "string"
+          },
+          "lastContributionAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "organizations" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "personId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "specialty" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReferralOptionsDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "defaultAccessDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "firstEventAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "scopes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReferralScopeOptionDTO"
+            },
+            "type" : "array"
+          },
+          "totalEvents" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ReferralRequestDTO" : {
+        "properties" : {
+          "accessDays" : {
+            "format" : "int32",
+            "maximum" : 365,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "scopes" : {
+            "items" : {
+              "enum" : [ "CARTEIRA", "CONDICOES", "PRONTUARIO", "OBSERVACOES", "PESO", "ANEXOS", "CONTATO" ],
+              "type" : "string"
+            },
+            "type" : "array",
+            "uniqueItems" : true
+          },
+          "toPersonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "reason", "scopes", "toPersonId" ],
+        "type" : "object"
+      },
+      "ReferralResponseDTO" : {
+        "properties" : {
+          "accessDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "accessExpiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "canDecide" : {
+            "type" : "boolean"
+          },
+          "decidedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "decidedByName" : {
+            "type" : "string"
+          },
+          "fromOrganizationName" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "referralId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "referredByName" : {
+            "type" : "string"
+          },
+          "referredByPersonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "requestedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "scopes" : {
+            "items" : {
+              "enum" : [ "CARTEIRA", "CONDICOES", "PRONTUARIO", "OBSERVACOES", "PESO", "ANEXOS", "CONTATO" ],
+              "type" : "string"
+            },
+            "type" : "array",
+            "uniqueItems" : true
+          },
+          "status" : {
+            "enum" : [ "PENDENTE", "AUTORIZADO", "RECUSADO" ],
+            "type" : "string"
+          },
+          "toPersonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "toPersonName" : {
+            "type" : "string"
+          },
+          "toPersonSpecialty" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReferralScopeOptionDTO" : {
+        "properties" : {
+          "events" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "personalData" : {
+            "type" : "boolean"
+          },
+          "scope" : {
+            "enum" : [ "CARTEIRA", "CONDICOES", "PRONTUARIO", "OBSERVACOES", "PESO", "ANEXOS", "CONTATO" ],
+            "type" : "string"
+          },
+          "since" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "suggested" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
       "SensitiveAccessLogResponseDTO" : {
         "properties" : {
           "accessedAt" : {
@@ -4336,7 +4517,7 @@
     "/animals/{animalId}/care-network" : {
       "get" : {
         "description" : "Quem responde pelo animal vem primeiro. Traz custodia e concessao, de pessoa e de organizacao, com escopo e ultima contribuicao. Nao traz e-mail nem telefone - e quem tem alcance de fato, nao uma lista de contatos. Nao traz link de compartilhamento: link e alcance anonimo, tem rota propria, e o token dele e a credencial. Concessao revogada ou vencida nao aparece.",
-        "operationId" : "doAnimal",
+        "operationId" : "doAnimal_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "animalId",
@@ -5067,6 +5248,143 @@
         },
         "summary" : "Revoga o acesso da organizacao",
         "tags" : [ "organization-access-controller" ]
+      }
+    },
+    "/animals/{animalId}/referral-candidates" : {
+      "get" : {
+        "description" : "Busca parcial por nome ou especialidade, entre quem tem credencial ativa. Menos de tres letras devolve lista vazia. Vive debaixo do animal porque assim responde 'ele ja registrou algo neste animal' e porque a guarda de escrita do animal e o que impede a varredura de dado pessoal.",
+        "operationId" : "candidatos",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "busca",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReferralCandidateDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Buscar outro profissional",
+        "tags" : [ "referral-controller" ]
+      }
+    },
+    "/animals/{animalId}/referral-options" : {
+      "get" : {
+        "description" : "As caixas do 'o que vai junto', cada uma com quantos eventos daquele escopo existem no animal e desde quando. As contagens saem da linha do tempo, com o mesmo mapeamento de tipo para escopo que a guarda aplica ao mascarar — o numero prometido e o que o especialista abre.",
+        "operationId" : "opcoes",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferralOptionsDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que pode ir junto num encaminhamento",
+        "tags" : [ "referral-controller" ]
+      }
+    },
+    "/animals/{animalId}/referrals" : {
+      "get" : {
+        "description" : "Para a clinica acompanhar o que foi autorizado e o que nao foi.",
+        "operationId" : "doAnimal",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReferralResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Os encaminhamentos deste animal",
+        "tags" : [ "referral-controller" ]
+      },
+      "post" : {
+        "description" : "Nao concede nada: cria um pedido que quem responde pelo animal decide. Se quem encaminha JA responde pelo animal, nasce autorizado e a concessao sai na hora — pedir autorizacao a si mesmo seria teatro.",
+        "operationId" : "encaminhar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferralRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferralResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Encaminha o caso a um especialista",
+        "tags" : [ "referral-controller" ]
       }
     },
     "/animals/{animalId}/shares" : {
@@ -6085,7 +6403,7 @@
     "/group-approvals" : {
       "get" : {
         "description" : "Traz tambem o que a propria pessoa pediu, com canDecide=false: esconder o proprio pedido pareceria mais limpo e seria pior — quem pediu precisa ver que ele continua parado.",
-        "operationId" : "pendentes",
+        "operationId" : "pendentes_1",
         "responses" : {
           "200" : {
             "content" : {
@@ -6165,7 +6483,7 @@
     "/group-approvals/{groupApprovalId}/reject" : {
       "post" : {
         "description" : "Nao apaga: quem pediu precisa ver que foi recusado, e nao que o pedido sumiu.",
-        "operationId" : "recusar",
+        "operationId" : "recusar_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "groupApprovalId",
@@ -7908,6 +8226,110 @@
         },
         "summary" : "Deixa de exigir uma vacina",
         "tags" : [ "creche-controller" ]
+      }
+    },
+    "/referrals/pending" : {
+      "get" : {
+        "description" : "Os encaminhamentos pendentes dos animais por que quem esta lendo responde. A pergunta parte da custodia, e nao de um destinatario gravado: a custodia passa de mao em mao, e um pedido enderecado a quem respondia ontem ficaria parado para sempre.",
+        "operationId" : "pendentes",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReferralResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que espera minha decisao",
+        "tags" : [ "referral-controller" ]
+      }
+    },
+    "/referrals/received" : {
+      "get" : {
+        "description" : "A caixa do especialista. O pendente aparece SEM o animal: ele precisa saber que ha um caso esperando autorizacao, e o tutor ainda nao autorizou nada.",
+        "operationId" : "recebidos",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReferralResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que encaminharam para mim",
+        "tags" : [ "referral-controller" ]
+      }
+    },
+    "/referrals/{referralId}/authorize" : {
+      "post" : {
+        "description" : "Autorizar e conceder na mesma transacao: nasce um Grant de 90 dias com granted_by sendo quem autorizou, revogavel por ele como qualquer outro. Exige responder pelo animal — nenhum nivel de concessao chega aqui, porque conceder acesso continua sendo de quem responde.",
+        "operationId" : "autorizar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "referralId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferralResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Autoriza o encaminhamento",
+        "tags" : [ "referral-controller" ]
+      }
+    },
+    "/referrals/{referralId}/reject" : {
+      "post" : {
+        "description" : "Nao apaga, e nao pede justificativa: autorizar acesso ao proprio prontuario e decisao de quem responde pelo animal, e nao ha a quem justificar. Quem encaminhou e avisado; o especialista, que nunca soube do pedido, nao.",
+        "operationId" : "recusar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "referralId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferralResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Recusa o encaminhamento",
+        "tags" : [ "referral-controller" ]
       }
     },
     "/share/{token}" : {
