@@ -4,19 +4,26 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-11, com o **bloco 3 mergeado** e o **bloco 4 fechado**, esperando merge.
+> Escrito em 2026-08-11, no fim de uma sessão que fechou **dois blocos, 3 e 4, os dois mergeados**.
 
 ## Onde o trabalho está agora
 
-**Branch `feat/custo-do-cuidado`, no PR #57 — pronto para revisão, CI verde. O merge é comando
-do Ulysses.**
-A `main` está em `818333f`: o **bloco 3 foi mergeado** pelo PR #56, com CI verde.
+**A `main` está em `05b7b0f`, e não há trabalho pendente.** Os PRs **#56 (bloco 3)** e
+**#57 (bloco 4)** foram mergeados, os dois com CI verde. Nenhuma branch de feature aberta.
 
-**Uma armadilha de fluxo que custou tempo:** o bloco 4 começou na branch do bloco 3 (decisão de
-sessão: PR empilhado não roda CI). Mas o #56 foi mergeado **antes** de os commits do bloco 4 serem
-empurrados — e aí eles ficaram numa branch cujo PR estava fechado, **sem CI nenhum**, sem aviso.
-O sintoma era mudo: `git push` funciona, e `gh pr view` mostra o `headRefOid` antigo para sempre.
-Daí a branch nova. **Regra: commit numa branch cujo PR já mergeou não roda check nenhum.**
+**892 casos no backend, 43 no front, `Skipped: 0`.** Contrato regenerado, nenhuma operação
+renomeada. `npm run build` limpo.
+
+**Seis telas novas no ar:** 40, 41, 42 (por onde o valor entra) e 37, 38, 39 (custo do cuidado).
+
+**Uma armadilha de fluxo que custou tempo, e que vai voltar:** o bloco 4 começou na branch do
+bloco 3 (a decisão da sessão foi essa, porque PR empilhado não roda CI). Mas o **#56 foi mergeado
+antes** de os commits do bloco 4 serem empurrados — e aí eles ficaram numa branch cujo PR estava
+fechado, **sem CI nenhum e sem aviso**. O sintoma é mudo: o `git push` funciona, e o
+`gh pr view` mostra o `headRefOid` antigo para sempre.
+
+**Regra: commit numa branch cujo PR já mergeou não roda check nenhum.** Bloco novo, branch nova,
+tirada de uma `main` recém-sincronizada.
 
 **892 casos no backend, 43 no front, tudo verde, `Skipped: 0`.** Contrato regenerado, nenhuma
 operação renomeada. `npm run build` limpo.
@@ -174,9 +181,7 @@ E **"tende a subir: ele tem 11 anos" o produto não afirma.** Definir a partir d
 é idoso é conhecimento veterinário que este código não tem, e varia por espécie e porte. A idade
 aparece como fato na ficha; o julgamento fica com quem conversa.
 
-## O bloco 4 está fechado
-
-**Telas 37, 38 e 39 de pé. 892 casos no backend, 43 no front, `Skipped: 0`.** PR #57.
+## O bloco 4 está fechado e mergeado (PR #57)
 
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 
@@ -201,8 +206,8 @@ telas. Eles estão versionados (entraram no PR #53).
 |---|---|---|
 | 1 | A faixa sai de dentro do cabeçalho sticky | **Fechado** — PR #54 |
 | 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado e mergeado** (PRs #54 e #55) |
-| 3 | Por onde o valor entra — 40, 41, 42 | **Fechado**, sem PR aberto |
-| 4 | Custo do cuidado — 37, 38, 39 | **Fechado** — PR #57, esperando merge |
+| 3 | Por onde o valor entra — 40, 41, 42 | **Fechado e mergeado** — PR #56 |
+| 4 | Custo do cuidado — 37, 38, 39 | **Fechado e mergeado** — PR #57 |
 | 5 | Fim e reencontro — 33, 34 | pendente |
 | 6 | Animal comunitário — 43, 44, 45 | pendente |
 | 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
@@ -275,6 +280,12 @@ que um 500 — **silencioso**: a união terminaria "com sucesso" deixando evento
 - **Here-string do PowerShell quebra em aspas duplas** dentro da mensagem: escrever a mensagem de
   commit num arquivo e usar `git commit -F`.
 - **`cd` no Bash contamina o cwd do PowerShell** — rodar `mvn -f <pom absoluto>`.
+- **A conta ativa do `gh` é a de trabalho**, e ela não enxerga este repositório. O erro mente:
+  *"Could not resolve to a Repository with the name"*, como se ele não existisse. E só aparece na
+  hora de abrir o PR — o `git push` funciona, porque usa credencial do git e não do `gh`.
+  `gh auth switch --user UlyssesLopes`.
+- **Commit numa branch cujo PR já mergeou não roda check nenhum**, e nada avisa: o `git push`
+  funciona e o `gh pr view` mostra o `headRefOid` antigo para sempre. Bloco novo, branch nova.
 - **O merge de PR é comando do Ulysses, sempre.**
 - **Nenhuma tela foi conferida no navegador** em nenhuma destas entregas: a extensão do Chrome não
   esteve conectada. **E isso já custou um defeito:** o `creche.tsx` estava com texto
@@ -287,9 +298,12 @@ que um 500 — **silencioso**: a união terminaria "com sucesso" deixando evento
 
 ## Primeiro passo da próxima sessão
 
-**Mergear o #57** (comando do Ulysses), e então **o bloco 5 — Fim e reencontro, Telas 33 e 34**. O
-desenho é `design/IdentidadeVisual/Telas Petfy - Fim, reencontro e conta.dc.html`, que **ainda não
-foi lido nesta sessão**.
+**Sincronizar a `main` e ramificar dela** — ela está em `05b7b0f` e não há nada pendente. Depois,
+**o bloco 5 — Fim e reencontro, Telas 33 e 34**. O desenho é
+`design/IdentidadeVisual/Telas Petfy - Fim, reencontro e conta.dc.html`, que **ainda não foi lido**.
+
+E antes de qualquer `gh`: **`gh auth switch --user UlyssesLopes`.** A conta ativa é a de trabalho,
+que não enxerga este repositório — e o erro finge que o repositório não existe.
 
 **Duas coisas para conferir antes de planejar o bloco 5:** o `CustodyEndReason` já traz os motivos
 de fim (a adoção usa `ADOCAO`), e a Tela 34 do índice antigo era "a conta" — vale abrir o arquivo e
