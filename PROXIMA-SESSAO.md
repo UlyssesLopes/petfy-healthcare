@@ -4,147 +4,129 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-12, no fim de uma sessão que fechou o **bloco 5** e deixou o **bloco 6 pela
-> metade** — backend inteiro, frontend nenhum.
+> Escrito em 2026-08-12, no fim de uma sessão que fechou o **bloco 6b inteiro** — backend, frontend
+> e a tela que o desenho não desenha.
 
 ## Onde o trabalho está agora
 
-**O bloco 5 está mergeado** — PR #59, CI verde. A `main` está em `4524050`.
+**O bloco 6 está mergeado** — PR #60. A `main` estava em `08e7ba6` quando esta branch saiu dela.
 
-**O BLOCO 6 ESTÁ FECHADO — Telas 43 e 44, no PR #60**, esperando seu comando. A Tela 45
-(encaminhamento) ficou de fora de propósito e virou o bloco 6b.
+**O BLOCO 6b ESTÁ FECHADO — Tela 45, na branch `feat/encaminhamento`**, esperando seu comando.
 
-**932 casos no backend, 51 no front, `Skipped: 0`.**
+**947 casos no backend, 51 no front, `Skipped: 0`.** A suíte passa também em
+`-Dsurefire.runOrder=reversealphabetical`.
 
-**Duas telas no ar desde o bloco 5:** 33 (encerrar a linha do tempo) e 34 (achei um animal na rua).
+**Quatro telas no ar:** 33, 34, 43, 44 — e agora a 45, mais a tela de decisão que ela exigiu.
 
-**O conflito que os dois PRs produziram, e que vai voltar:** #58 e #59 reescreveram esta página. A
-resolução foi "a versão mais nova vence", nunca mesclando as duas. **Enquanto houver dois PRs
-abertos ao mesmo tempo, este arquivo conflita.**
+## O bloco 6b, e o que ele decidiu
 
-## O bloco 6, e o que falta dele
+**A regra que governa a tela inteira**, e ela está no desenho: *"Marcelo Dias precisa autorizar.
+**Encaminhar é você indicando o caminho; conceder acesso continua sendo dele**, como sempre foi. O
+acesso do Roberto vale 90 dias e depois fecha sozinho."*
 
-**Escopo escolhido: 43 e 44 agora, 45 depois.** O arquivo do desenho traz três telas, e a 45
-(encaminhar ao especialista) **é independente das outras duas** — caiu ali por ser "o caso que
-passa adiante", e vira bloco próprio sem perder nada.
+**O encaminhamento não concede nada.** É um pedido; o que o aceite produz é um `Grant` comum, com
+`grantedBy` sendo o tutor e prazo de 90 dias. **A guarda não aprendeu nada sobre encaminhamento, e
+nem precisa** — um segundo caminho de alcance seria consultado em toda leitura para sempre.
 
-### O que já está pronto (backend, em `347e681`)
+### O que existe agora (backend)
 
-- **`V41__o_animal_que_e_de_todos.sql`** — `animal_sightings`, `group_approvals`,
-  `memberships.contribution` e `animals.neutering_scheduled_for`
-- `POST /animals/{id}/sightings` — idempotente por pessoa, animal e dia
-- `POST /group-approvals`, `GET`, `.../agree`, `.../reject`
-- Os três atos executam de verdade: adoção vira convite de titularidade, óbito reusa o fluxo da
-  Tela 33 inteiro, remoção desliga a `membership`
+- **`V42__o_caso_que_passa_adiante.sql`** — `referrals`, `referral_scopes` e
+  `professional_credentials.specialty`
+- `GET /animals/{id}/referral-options` — as caixas do "o que vai junto", com o número de cada uma
+- `GET /animals/{id}/referral-candidates?busca=` — "Buscar outro profissional"
+- `POST /animals/{id}/referrals`, `GET` — o pedido, e o que a clínica acompanha
+- `GET /referrals/pending`, `GET /referrals/received`
+- `POST /referrals/{id}/authorize`, `.../reject`
+- `ReferralNotifier` — três momentos, não quatro
 
-### O defeito que o teste encontrou, e que é o achado da sessão
+### As seis decisões que valem saber
 
-**O `requireEscrita` não enxergava custódia de organização** — só o `requireCustodia` enxergava,
-desde a Tela 13. O efeito era mudo e grande: um animal cuja custódia é de uma organização, sem
-tutor humano, **não podia receber registro nenhum de quem cuida dele**. O abrigo não lançava peso
-no animal que resgatou.
+**1. "O que vai junto" é ESCOPO, e não evento.** O desenho seleciona *eventos* — "o raio-X de 2023",
+"4 observações da creche entre 02/06 e 05/08" — e a concessão só sabe conceder por *tipo*. O recorte
+por evento também mentiria com facilidade: as quatro observações escolhidas hoje não dizem nada sobre
+a quinta, escrita amanhã pela mesma creche sobre o mesmo problema, e o especialista tratando o caso
+não a veria. **A tela assume o compromisso em voz alta** em vez de escondê-lo.
 
-É a mesma linha que faltava no `requireCustodia` e trancava a adoção inteira, agora na outra
-metade da guarda. **Vale procurar a terceira**: `alcanca()` também só pergunta por pessoa.
+**2. As contagens das caixas saem da LINHA DO TEMPO** (`TimelineRepository.contagemPorTipo`), e não
+de contar cada tabela de origem. Seriam seis consultas para o mesmo, com um risco que a agregada não
+tem: o número na caixa viria de uma fonte e o que o especialista abre depois vem da linha do tempo
+mascarada por escopo. **Contando ali, a promessa e a entrega são a mesma consulta.**
 
-### O frontend, e o que ele decidiu
+**3. A união de escopos no aceite — e é o achado da sessão.** Se o especialista já é co-tutor com
+acesso permanente, gravar prazo e escopos do encaminhamento por cima **ENCOLHERIA** o acesso dele: o
+tutor autorizaria a ver mais e o efeito seria ver menos, e ninguém descobriria antes de o co-tutor
+abrir a carteira e não achar a vacina. Então os escopos **somam**, e o prazo mais generoso vence —
+**nulo vence de tudo**. Há caso de teste para isso.
 
-- **`/colonia`** — a lista com os quatro filtros, "visto por último" e o painel do que qualquer um
-  faz contra o que precisa de duas pessoas
-- **`/animais/{id}/adotar`** — a Tela 44
-- **`GET /group/animals?filtro=`** — a listagem enriquecida, que não existia. Três consultas para
-  a lista inteira, e não três por linha
+**4. A concessão nasce EDITOR, e não VIEWER.** *"O especialista que registra ali passa a devolver o
+retorno para a clínica que encaminhou."* Um encaminhamento só de leitura entregaria o caso e não
+deixaria o especialista escrever o que concluiu — e o retorno voltaria a ser telefone.
 
-**"Vi hoje" é um botão**, e não link nem menu: cada camada entre o dedo e o registro reduz o
-número de marcações — que é a única coisa que faz a coluna do lado significar algo.
+**5. A busca de profissional vive DEBAIXO DO ANIMAL**, e não numa rota de gente. Duas razões, e a
+segunda decidiu: uma rota que devolve pessoas por nome parcial é varredura de dado pessoal — a lição
+do `POST /found` no bloco 5. Debaixo do animal, quem varre precisa antes ter escrita em um animal, e
+a trava passa a ser a guarda que já protege tudo, em vez de um limite por IP.
 
-**"Sem informação" não é "sumido"**, e o filtro respeita: um gato cadastrado ontem, que ninguém
-marcou ainda, não está desaparecido. Contá-lo entre os sumidos mandaria o grupo procurar um animal
-que está na praça.
+**6. Quem responde pelo animal encaminhando produz pedido JÁ AUTORIZADO**, com a concessão na hora.
+Pedir autorização a si mesmo seria teatro — dois botões para o mesmo efeito.
 
-**O passo que o desenho não desenha:** quando alguém concorda com a adoção, quem vai receber o
-animal recebe um **convite**, e a custódia passa quando essa pessoa aceita. A tela diz isso antes
-do gesto.
+### A tela que o desenho não desenha, e por que ela entrou no bloco
 
-### O que NÃO foi feito no bloco 6, e vale saber
+**`/encaminhamentos`** — o tutor recebe e decide. Sem ela a metade desenhada não funciona: **o
+encaminhamento é o único fluxo do produto em que a ação de uma pessoa fica parada esperando outra que
+não está na tela.** A clínica clica e sai do consultório; o tutor recebe um e-mail e precisa de um
+lugar para onde ir.
 
-- **A Tela 45 (encaminhamento)** — bloco 6b, independente
-- **Não há tela de cadastrar animal no grupo nem de convidar quem cuida.** Os dois botões existem
-  no desenho da 43 e não foram construídos: cadastrar reusa `/animais/novo`, e convidar reusa o
-  fluxo de membro de organização — mas nenhum dos dois está ligado a partir daqui
-- **A contagem por aba não aparece** ("Todos · 14", "Falta castrar · 5"). O servidor devolve a
-  lista filtrada, e os números exigiriam ou quatro chamadas ou um endpoint de contagem
+Duas listas na mesma página, e não duas rotas: a veterinária que é tutora de um animal decide sobre
+ele **e** recebe casos de colegas, e duas rotas fariam essa pessoa descobrir a segunda por acidente.
 
-## O bloco 5, e as decisões que ele tomou
+### Três coisas que a tela diz DIFERENTE do desenho, de propósito
 
-**Telas 33 e 34.** O desenho é `Telas Petfy - Fim, reencontro e conta.dc.html`, e ele cobre
-**quatro** telas, não duas: **35 e 36 (a busca e a conta) existem lá** e ficaram de fora do bloco
-por escolha de escopo — o índice antigo dava as duas como nunca desenhadas, e isso estava errado.
+- **Não escreve o nome de quem autoriza.** O desenho diz "Marcelo Dias precisa autorizar"; o nome de
+  quem responde pelo animal vive no escopo `CONTATO`, e quem encaminha em geral tem só o clínico.
+  Escrever o nome exigiria pedir ao servidor um dado que aquela concessão não alcança.
+- **O especialista não é avisado do pendente**, e vê na caixa de entrada dele **sem o nome do
+  animal**. Ele precisa saber que há um caso esperando — pode ligar para a clínica —, e o tutor não
+  autorizou nada ainda.
+- **`CONTATO` aparece marcado como dado pessoal.** Não é pedaço do prontuário, é o telefone do tutor:
+  escondê-lo dentro de um recorte clínico entregaria dado pessoal sem que a diferença aparecesse.
 
-### Tela 33 — encerrar a linha do tempo
+### O que a exclusão de conta e o purger aprenderam
 
-O produto não tinha isto, e **o que ele tinha no lugar era pior que nada**: o
-`DELETE /animals/{id}`, que apaga a carteira, o prontuário, o peso, os anexos e os arquivos no
-disco. Quem perdia o animal escolhia entre destruir sete anos de registro e conviver com um
-cadastro que continua cobrando vacina.
+- **`referrals` sai ANTES de `grants`**, nos dois caminhos: ele aponta para o animal **e** para a
+  concessão que o aceite produziu. Ordem inversa = 500 em todo animal já encaminhado.
+- **`referrals` FICA na união de cadastros** (Tela 32), porque `grants` fica: mover um sem o outro
+  deixaria um pedido autorizado apontando para acesso de outro cadastro.
+- **A exclusão de conta apaga o encaminhamento**, e não desassocia como faz com o anexo: o anexo
+  pertence ao animal e o laudo vale sem quem o subiu; um encaminhamento é conversa entre duas pessoas
+  nomeadas, e sem uma das duas a linha não diz nada.
 
-- `V40__o_fim_da_linha.sql` — `animal_deaths`, com o **animal como chave primária**: morre-se
-  uma vez, e a PK garante isso sem CHECK nenhum. Tabela, e não cinco colunas anuláveis em
-  `animals` — colunas soltas não prometem que, se há data, há também quem a registrou
-- `TimelineEventType.OBITO`, na view, `is_health_data = false`
-- `POST` e `GET /animals/{id}/death`, e `GET /animals/former`
-- Encerra a custódia com `OBITO` **sem sucessor**, encerra as matrículas vivas, põe o fim na
-  linha do tempo e avisa quem cuidava
+## O DEFEITO PRÉ-EXISTENTE QUE ESTA SESSÃO MEDIU E NÃO CORRIGIU
 
-**A GUARDA MUDOU, e é a alteração mais sensível do bloco.** Quem respondia até o óbito continua
-**lendo** a vida do animal, para sempre. Sem isso a promessa da tela — *"os sete anos de vida
-dele continuam aqui, inteiros"* — se quebraria no dia seguinte ao encerramento: a custódia
-acabou, óbito não tem sucessor que conceda nada, e o guard responderia 404.
+**O `Â·` sobreviveu em duas telas, e em TEXTO VISÍVEL.** O bloco 5 pagou essa dívida no `creche.tsx`
+e no `animais.$animalId.tsx` e parou ali. Restam:
 
-Não virou concessão gravada porque **toda concessão tem quem a concedeu e quem pode revogá-la**,
-e aqui não há nem um nem outro. Uma linha em `grants` "concedida por ninguém" apareceria na tela
-de quem cuida como se alguém tivesse autorizado.
+| Arquivo | Linha | Onde |
+|---|---|---|
+| `web/src/rotas/pacientes.tsx` | 211, 212, 247 | **texto visível** (Tela 03) |
+| `web/src/rotas/organizacoes.$organizationId.equipe.tsx` | 203 | **texto visível** (Tela 16) |
+| `web/src/rotas/pacientes.tsx` | 16 | comentário |
+| `web/src/rotas/organizacoes.$organizationId.equipe.tsx` | 19 | comentário |
 
-### A premissa que estava errada: HÁ canal de aviso
+**Quatro ocorrências em tela, e a correção é trocar `Â·` por `·`.** Não foi feita porque pertence às
+Telas 03 e 16, e não a este bloco — a decisão é sua.
 
-**A versão anterior deste arquivo dizia "não há canal de aviso".** Isso vale para aviso in-app,
-mas **o e-mail funciona desde o P4** — `ResendNotifier`, `AsyncNotificationDispatcher`, e o
-`OrganizationActivityNotifier` já manda e-mail a cada vacina e atendimento registrado.
+**E o `PersonServiceImpl` não apaga `group_approvals`.** A tabela nasceu no bloco 6 apontando para
+`persons` em quatro colunas, e a exclusão de conta não a limpa: quem pediu uma concordância num animal
+que **sobrevive** à exclusão faz o `DELETE /persons/me` responder 500. Não há guarda de schema para
+FK que aponta para `persons` — a guarda existe só para `animals`. **Medido, não corrigido.**
 
-A decisão do aviso na Tela 33 foi tomada duas vezes por causa disso: primeiro "entregar o efeito
-e não prometer o aviso", depois refeita para **avisar de verdade**, como o desenho escreveu.
-Faltava só o destinatário de organização, que a `findVigentesDeOrganizacoesNoAnimal` resolveu.
+## A armadilha nova desta sessão
 
-**Vale reler essa linha antes de decidir qualquer coisa nas Telas 03, 23 e 24.**
-
-### Tela 34 — achei um animal na rua
-
-- `POST /found`, pública e sem conta. **POST e não GET por uma razão concreta:** o
-  `RateLimitFilter` só intercepta POST, e uma rota pública que devolve nome e telefone a partir
-  de um número não pode ficar sem trava de varredura. Grupo próprio de limite, por IP
-- DTO próprio, e não o do `/share/{token}`: lá o tutor escolheu os escopos, aqui não houve
-  escolha de ninguém e o conjunto é sempre o mesmo
-- **Busca parcial não existe** — "9810" acharia todo animal de uma fabricante de chip
-- `AccessActorType.MICROCHIP_SEARCH` **sem ator**, pela promessa da própria tela
-- Animal com a linha do tempo encerrada responde como **número inexistente**: mostrar o cartão
-  produziria uma ligação para quem acabou de perder o animal
-
-**Dois pedaços do desenho que não têm de onde sair:** *"avisamos (...) e **por onde**"* — o
-produto não sabe onde a pessoa está, e pedir a região a quem está na calçada com um animal é
-atrito no pior momento — e o **nome de cada organização** avisada na Tela 33.
-
-### O duplicado, e qual cadastro responde
-
-O microchip aparece em mais de um cadastro com frequência — é a razão de a Tela 32 existir. O
-critério de escolha é o mesmo que ela já usa: **quem tem alguém respondendo por ele agora vem
-primeiro; entre iguais, o mais antigo.** "O primeiro que vier" daria a quem está com o animal na
-mão o cadastro que a clínica abriu às 22h com três campos preenchidos.
-
-### A dívida do texto duplo-codificado foi paga
-
-O `creche.tsx` **e** o `animais.$animalId.tsx`. No segundo havia **quatro ocorrências em texto
-visível**: o separador entre nome e espécie aparecia como `Â·` em tela desde a entrega da Tela 02,
-e ninguém tinha visto porque **nenhuma tela foi conferida no navegador em nenhuma entrega**.
+**`Get-Content -Raw | Set-Content -Encoding utf8` DUPLO-CODIFICA o arquivo** e quebra a compilação de
+um jeito que engana: o erro é `class, interface, enum, or record expected` na linha 6, como se o
+`package` estivesse errado. É a mesma família do `Â·`. **Para editar arquivo em lote, usar a
+ferramenta de escrita, nunca o pipe do PowerShell.**
 
 ## A fila, e onde ela está
 
@@ -155,97 +137,81 @@ e ninguém tinha visto porque **nenhuma tela foi conferida no navegador em nenhu
 | 3 | Por onde o valor entra — 40, 41, 42 | **Fechado e mergeado** — PR #56 |
 | 4 | Custo do cuidado — 37, 38, 39 | **Fechado e mergeado** — PR #57 |
 | 5 | Fim e reencontro — 33, 34 | **Fechado e mergeado** — PR #59 |
-| 6 | Animal comunitário — 43, 44 | **Fechado** — PR #60 |
-| 6b | **Encaminhamento — Tela 45** | pendente, e independente das outras duas |
-| 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
+| 6 | Animal comunitário — 43, 44 | **Fechado e mergeado** — PR #60 |
+| 6b | Encaminhamento — Tela 45 | **Fechado** — `feat/encaminhamento` |
+| 7 | **Apadrinhar, hospedar, o ano — 46, 47, 48** | pendente, e é o próximo |
 | 8 | Tela 18 — petshop | pendente (a especificação sempre existiu) |
-| 9 | **A busca e a conta — 35, 36** | pendente, e o desenho existe |
+| 9 | A busca e a conta — 35, 36 | pendente, e o desenho existe |
 
-**A 35 é quase só frontend:** as consultas de busca por microchip já existem no
-`CustodyRepository` e no `GrantRepository`. **A 36 é o maior pedaço** — sessões abertas,
-exportação de dados e encerramento de conta, e mexe em autenticação.
+**Antes de planejar o bloco 7, ler o `.dc.html` inteiro e contar as telas.** O arquivo é
+`Telas Petfy - Apadrinhar, hospedar, o ano.dc.html`, e o nome de arquivo já enganou a fila duas vezes
+— foi assim que as Telas 35 e 36 apareceram.
 
 ## O que continua faltando, e por quê
 
-- **Não há canal de aviso IN-APP.** O e-mail existe e funciona. A Tela 03 lista quem está
+- **Não há canal de aviso IN-APP.** O e-mail existe e funciona desde o P4. A Tela 03 lista quem está
   vencendo e não avisa ninguém, a Tela 23 não avisa quem registrou, e a Tela 24 continua
-  inconstruível — mas agora **por decisão de produto, e não por falta de canal.**
+  inconstruível — mas **por decisão de produto, e não por falta de canal.**
 - **A busca autenticada não tem rota** (Tela 35), e **RGA não é campo de busca**.
 - **Capacidade de organização não se declara** na criação (Tela 15), e **espécie é só CANINA e
   FELINA**.
-- **O escopo do evento de união é um compromisso**, e agora o do óbito também: quem tem concessão
-  só de `OBSERVACOES` ou só de `PESO` não vê nenhum dos dois.
+- **A especialidade é texto livre e ninguém a preenche hoje.** Não há tela para declará-la: toda
+  credencial existente ficou nula na V42, e a busca da Tela 45 só a mostra para quem a gravar por
+  outro caminho. **É a dívida que este bloco criou de propósito.**
+- **A contagem por aba da Tela 43 não aparece** ("Todos · 14"): o servidor devolve a lista filtrada.
+- **`alcanca()` do `AnimalAccessGuard` só pergunta por pessoa** — é a terceira metade do defeito que
+  o bloco 6 encontrou no `requireEscrita`. Ainda não foi olhada.
+- **O escopo do evento de união e do óbito é um compromisso**: quem tem concessão só de `OBSERVACOES`
+  ou só de `PESO` não vê nenhum dos dois.
 - **A edição de vacina não passa pela guarda de dose duplicada.**
-- **Nenhuma tela foi conferida no navegador**, e isso já custou o defeito do `Â·` acima.
+- **Nenhuma tela foi conferida no navegador**, e isso já custou o `Â·` — que continua em duas telas.
 
 ## Armadilhas desta máquina
 
 - **`vite build` suja o `arvore-de-rotas.gen.ts`**: `git status` mostra modificado, `git diff` vem
   vazio (é `core.autocrlf` sem `.gitattributes`), e **o `git pull` aborta**. `git checkout --` no
-  arquivo destrava; ele é gerado. Conferir `git log` DEPOIS do pull.
+  arquivo destrava; ele é gerado. Conferir `git log` DEPOIS do pull. **Nesta sessão a mudança dele
+  foi legítima** — duas rotas novas —, então ele entrou no commit.
+- **Rota nova exige regenerar a árvore antes do `tsc`**: o `npm run typecheck` reclama que a rota
+  "não é assinável a `keyof FileRoutesByPath`", e a saída é `npx vite build` (o `npm run build` roda
+  o `tsc` primeiro e falha antes de gerar).
 - **O Rancher Desktop precisa estar aberto** — sem ele não há Docker, e sem Docker o
   `OpenApiContractTest` e as guardas de cobertura são **pulados**. Conferir `Skipped: 0`.
-  **Nesta sessão isso travou o frontend por meia hora:** sem container não há contrato, e sem
-  contrato não há tipos gerados.
 - **O container `petfy-pg-sessao` já existe**: `docker start petfy-pg-sessao`, e não `docker run`.
+- **O banco de teste NÃO é limpo entre casos.** Uma asserção de "um único resultado" numa busca passa
+  no primeiro caso e falha nos catorze seguintes, porque cada `@BeforeEach` cria gente nova. Recortar
+  pelo id da rodada, e sortear o que for único no schema — o número de CRMV é.
+- **Teste de container não toca coleção preguiçosa fora de transação**: `Grant.scopes` estoura
+  `LazyInitializationException`. Ler pelo `JdbcTemplate` afirma o que ficou GRAVADO, que é o que um
+  teste de container deveria afirmar.
 - **`-Dtest=` com vírgula e `-D` com ponto precisam de aspas no PowerShell**, e
-  `Select-Object -First N` corta o pipe e faz o `$LASTEXITCODE` mentir.
+  `Select-Object -First N` corta o pipe e faz o `$LASTEXITCODE` mentir. **E `Select-String` num log
+  de Maven casa o SQL do Hibernate**: redirecionar para arquivo e filtrar depois.
 - **Here-string do PowerShell quebra em aspas duplas**: escrever a mensagem de commit num arquivo
   e usar `git commit -F`.
+- **`Get-Content -Raw | Set-Content` duplo-codifica** — ver a armadilha nova, acima.
 - **O `cd` do Bash e o do PowerShell se contaminam** — usar caminho absoluto nos dois, sempre.
-- **`python` não existe nesta máquina** (o alias abre a Microsoft Store). Para manipular arquivo
-  em lote, PowerShell com `[System.IO.File]::ReadAllText`.
+- **`python` não existe nesta máquina** (o alias abre a Microsoft Store).
 - **A conta ativa do `gh` é a de trabalho**, e o erro mente: *"Could not resolve to a Repository"*.
   `gh auth switch --user UlyssesLopes` antes de qualquer `gh`.
-- **Commit numa branch cujo PR já mergeou não roda check nenhum**, e nada avisa: o `git push`
-  funciona e o `gh pr view` mostra o `headRefOid` antigo para sempre. Bloco novo, branch nova.
+- **Commit numa branch cujo PR já mergeou não roda check nenhum**, e nada avisa. Bloco novo, branch
+  nova.
 - **O merge de PR é comando do Ulysses, sempre.**
 - **ICU não aceita chave vazia em `select`.** Quando o texto muda conforme um campo existir ou
-  não, são **duas mensagens** concatenadas.
+  não, são **duas mensagens** concatenadas — o `encaminhar.caixa.desde` é o exemplo novo.
+- **Código de erro novo quebra o front**, e é de propósito: o `erroDaApi.test.ts` cobra tradução em
+  `pt-BR` para cada valor do `ErrorMessageEnum`. Sete entraram nesta sessão.
 
 ## Primeiro passo da próxima sessão
 
-**Decidir o PR #60**, e depois sincronizar a `main` e ramificar dela — branch nova é regra desde a
-armadilha do bloco 4.
+**Decidir o PR do bloco 6b**, e depois sincronizar a `main` e ramificar dela — branch nova é regra
+desde a armadilha do bloco 4.
 
-O próximo trabalho é o **bloco 6b — Tela 45, encaminhar ao especialista**. O levantamento está
-feito, e é o que segue.
+Depois, escolher entre três coisas, e as três são pequenas ao lado de um bloco:
 
-## Bloco 6b — a Tela 45, já levantada
-
-**A regra central está no desenho e é o que torna a tela possível:** *"Marcelo Dias precisa
-autorizar. **Encaminhar é você indicando o caminho; conceder acesso continua sendo dele**, como
-sempre foi. O acesso do Roberto vale 90 dias e depois fecha sozinho."*
-
-Ou seja: o encaminhamento **não concede nada**. Ele é um pedido que a clínica faz, o tutor decide,
-e o que o aceite produz é uma **concessão com prazo** — que já existe (`Grant.expiresAt`).
-
-### O que reusa
-
-- `Grant` com `expiresAt` e escopos — o acesso de 90 dias é uma concessão comum
-- `AnimalReach` e o canal de e-mail, para avisar o tutor e o especialista
-- A busca de profissional: **não existe**, e o desenho tem "Buscar outro profissional"
-
-### O que falta, e a peça mais delicada
-
-**Uma entidade de encaminhamento** com: para quem, por quê, o que vai junto, e o estado
-(pendente/autorizado/recusado). Três partes decidem em momentos diferentes — quem encaminha, o
-tutor que autoriza, e o especialista que recebe.
-
-**"O que vai junto" é uma seleção, e é o coração da tela.** O desenho mostra quatro caixas, três
-marcadas e uma desmarcada — *"histórico completo desde 2019 · 147 eventos. Provavelmente mais do
-que ele precisa para este caso."* Isso mapeia bem para `GrantScope`, mas **não perfeitamente**: o
-desenho seleciona *eventos específicos* ("o raio-X de 2023", "4 observações da creche entre 02/06
-e 05/08"), e o escopo concede por *tipo*. Decidir isso é o primeiro passo do bloco — e a saída
-provável é conceder por escopo e listar na mensagem o que motivou, sem prometer um recorte que a
-concessão não sabe fazer.
-
-**O que o desenho promete e não tem backend:** "Ele já registrou o raio-X do Code em 2023" — saber
-que aquele profissional já atendeu o animal exige consultar autoria na linha do tempo, o que a
-`ultimaContribuicaoPorPessoa` já faz.
-
-**Ler o `.dc.html` inteiro antes de planejar, e contar as telas.** O nome do arquivo cobre mais
-do que o bloco declarado — foi assim que as Telas 35 e 36 apareceram.
+1. **O `Â·` em texto visível** (quatro trocas, duas telas)
+2. **`group_approvals` na exclusão de conta** (uma linha e um teste)
+3. **O bloco 7**, que é o trabalho grande
 
 ## Como subir, e como regenerar
 
@@ -261,6 +227,7 @@ Um PostgreSQL nativo do Windows ocupa a 5432 — por isso a 5433.
 mvn test -Dtest=OpenApiContractTest -Dpetfy.openapi.update=true
 mvn test -Dtest=ErrorCodesContractTest -Dpetfy.errorcodes.update=true
 cd web && npm run gerar:api
+cd web && npx vite build                             # regenera a arvore de rotas
 mvn test "-Dsurefire.runOrder=reversealphabetical"   # caça asserção dependente de ordem
 ```
 

@@ -199,7 +199,7 @@ export interface paths {
          * Quem alcanca este animal, e quando contribuiu por ultimo
          * @description Quem responde pelo animal vem primeiro. Traz custodia e concessao, de pessoa e de organizacao, com escopo e ultima contribuicao. Nao traz e-mail nem telefone - e quem tem alcance de fato, nao uma lista de contatos. Nao traz link de compartilhamento: link e alcance anonimo, tem rota propria, e o token dele e a credencial. Concessao revogada ou vencida nao aparece.
          */
-        get: operations["doAnimal"];
+        get: operations["doAnimal_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -502,6 +502,70 @@ export interface paths {
          * @description Idempotente. O que a organizacao ja registrou fica: revogar acesso nao apaga historico, porque o registro e do animal.
          */
         delete: operations["revoke_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/referral-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Buscar outro profissional
+         * @description Busca parcial por nome ou especialidade, entre quem tem credencial ativa. Menos de tres letras devolve lista vazia. Vive debaixo do animal porque assim responde 'ele ja registrou algo neste animal' e porque a guarda de escrita do animal e o que impede a varredura de dado pessoal.
+         */
+        get: operations["candidatos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/referral-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O que pode ir junto num encaminhamento
+         * @description As caixas do 'o que vai junto', cada uma com quantos eventos daquele escopo existem no animal e desde quando. As contagens saem da linha do tempo, com o mesmo mapeamento de tipo para escopo que a guarda aplica ao mascarar — o numero prometido e o que o especialista abre.
+         */
+        get: operations["opcoes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/referrals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Os encaminhamentos deste animal
+         * @description Para a clinica acompanhar o que foi autorizado e o que nao foi.
+         */
+        get: operations["doAnimal"];
+        put?: never;
+        /**
+         * Encaminha o caso a um especialista
+         * @description Nao concede nada: cria um pedido que quem responde pelo animal decide. Se quem encaminha JA responde pelo animal, nasce autorizado e a concessao sai na hora — pedir autorizacao a si mesmo seria teatro.
+         */
+        post: operations["encaminhar"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1006,7 +1070,7 @@ export interface paths {
          * O que espera decisao no grupo
          * @description Traz tambem o que a propria pessoa pediu, com canDecide=false: esconder o proprio pedido pareceria mais limpo e seria pior — quem pediu precisa ver que ele continua parado.
          */
-        get: operations["pendentes"];
+        get: operations["pendentes_1"];
         put?: never;
         /**
          * Pede que outra pessoa do grupo concorde
@@ -1052,7 +1116,7 @@ export interface paths {
          * Recusa o pedido
          * @description Nao apaga: quem pediu precisa ver que foi recusado, e nao que o pedido sumiu.
          */
-        post: operations["recusar"];
+        post: operations["recusar_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1855,6 +1919,86 @@ export interface paths {
         post?: never;
         /** Deixa de exigir uma vacina */
         delete: operations["removeRequirement"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/referrals/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O que espera minha decisao
+         * @description Os encaminhamentos pendentes dos animais por que quem esta lendo responde. A pergunta parte da custodia, e nao de um destinatario gravado: a custodia passa de mao em mao, e um pedido enderecado a quem respondia ontem ficaria parado para sempre.
+         */
+        get: operations["pendentes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/referrals/received": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O que encaminharam para mim
+         * @description A caixa do especialista. O pendente aparece SEM o animal: ele precisa saber que ha um caso esperando autorizacao, e o tutor ainda nao autorizou nada.
+         */
+        get: operations["recebidos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/referrals/{referralId}/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Autoriza o encaminhamento
+         * @description Autorizar e conceder na mesma transacao: nasce um Grant de 90 dias com granted_by sendo quem autorizou, revogavel por ele como qualquer outro. Exige responder pelo animal — nenhum nivel de concessao chega aqui, porque conceder acesso continua sendo de quem responde.
+         */
+        post: operations["autorizar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/referrals/{referralId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recusa o encaminhamento
+         * @description Nao apaga, e nao pede justificativa: autorizar acesso ao proprio prontuario e decisao de quem responde pelo animal, e nao ha a quem justificar. Quem encaminhou e avisado; o especialista, que nunca soube do pedido, nao.
+         */
+        post: operations["recusar"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3239,6 +3383,75 @@ export interface components {
             /** @enum {string} */
             role: "HOLDER" | "EDITOR" | "VIEWER";
         };
+        ReferralCandidateDTO: {
+            credential?: string;
+            /** Format: date-time */
+            lastContributionAt?: string;
+            name?: string;
+            organizations?: string[];
+            /** Format: uuid */
+            personId?: string;
+            specialty?: string;
+        };
+        ReferralOptionsDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: int32 */
+            defaultAccessDays?: number;
+            /** Format: date-time */
+            firstEventAt?: string;
+            scopes?: components["schemas"]["ReferralScopeOptionDTO"][];
+            /** Format: int64 */
+            totalEvents?: number;
+        };
+        ReferralRequestDTO: {
+            /** Format: int32 */
+            accessDays?: number;
+            reason: string;
+            scopes: ("CARTEIRA" | "CONDICOES" | "PRONTUARIO" | "OBSERVACOES" | "PESO" | "ANEXOS" | "CONTATO")[];
+            /** Format: uuid */
+            toPersonId: string;
+        };
+        ReferralResponseDTO: {
+            /** Format: int32 */
+            accessDays?: number;
+            /** Format: date-time */
+            accessExpiresAt?: string;
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            canDecide?: boolean;
+            /** Format: date-time */
+            decidedAt?: string;
+            decidedByName?: string;
+            fromOrganizationName?: string;
+            reason?: string;
+            /** Format: uuid */
+            referralId?: string;
+            referredByName?: string;
+            /** Format: uuid */
+            referredByPersonId?: string;
+            /** Format: date-time */
+            requestedAt?: string;
+            scopes?: ("CARTEIRA" | "CONDICOES" | "PRONTUARIO" | "OBSERVACOES" | "PESO" | "ANEXOS" | "CONTATO")[];
+            /** @enum {string} */
+            status?: "PENDENTE" | "AUTORIZADO" | "RECUSADO";
+            /** Format: uuid */
+            toPersonId?: string;
+            toPersonName?: string;
+            toPersonSpecialty?: string;
+        };
+        ReferralScopeOptionDTO: {
+            /** Format: int64 */
+            events?: number;
+            personalData?: boolean;
+            /** @enum {string} */
+            scope?: "CARTEIRA" | "CONDICOES" | "PRONTUARIO" | "OBSERVACOES" | "PESO" | "ANEXOS" | "CONTATO";
+            /** Format: date-time */
+            since?: string;
+            suggested?: boolean;
+        };
         SensitiveAccessLogResponseDTO: {
             /** Format: date-time */
             accessedAt?: string;
@@ -3837,7 +4050,7 @@ export interface operations {
             };
         };
     };
-    doAnimal: {
+    doAnimal_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -4346,6 +4559,100 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    candidatos: {
+        parameters: {
+            query?: {
+                busca?: string;
+            };
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReferralCandidateDTO"][];
+                };
+            };
+        };
+    };
+    opcoes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReferralOptionsDTO"];
+                };
+            };
+        };
+    };
+    doAnimal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReferralResponseDTO"][];
+                };
+            };
+        };
+    };
+    encaminhar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReferralRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReferralResponseDTO"];
+                };
             };
         };
     };
@@ -5083,7 +5390,7 @@ export interface operations {
             };
         };
     };
-    pendentes: {
+    pendentes_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5149,7 +5456,7 @@ export interface operations {
             };
         };
     };
-    recusar: {
+    recusar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -6436,6 +6743,90 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    pendentes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReferralResponseDTO"][];
+                };
+            };
+        };
+    };
+    recebidos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReferralResponseDTO"][];
+                };
+            };
+        };
+    };
+    autorizar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referralId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReferralResponseDTO"];
+                };
+            };
+        };
+    };
+    recusar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referralId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReferralResponseDTO"];
+                };
             };
         };
     };

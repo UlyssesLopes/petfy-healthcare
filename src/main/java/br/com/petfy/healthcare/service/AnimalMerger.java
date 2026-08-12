@@ -89,6 +89,10 @@ public class AnimalMerger {
      *   · pet_tutor_invites — convite pendente e uma conversa comecada sobre AQUELE cadastro.
      *   · sensitive_access_log — log de acesso e o registro de que alguem leu AQUELA linha.
      *                  Reescrever a quem ele se refere seria falsificar uma auditoria.
+     *   · referrals   — ele aponta para o animal E para o grant que o aceite produziu, e grants nao
+     *                  move. Mover o encaminhamento sem a concessao deixaria um pedido autorizado
+     *                  apontando para um acesso de outro cadastro. E o significado confirma: a
+     *                  pergunta que a clinica escreveu foi escrita olhando AQUELE historico.
      */
 
     @PersistenceContext

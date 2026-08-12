@@ -100,7 +100,16 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             // O pedido de concordancia aponta para o animal, e vale dizer o que se perde ao
             // apaga-lo: ele e o registro de que DUAS pessoas decidiram algo. Some junto porque
             // quem chegou aqui pediu para destruir o rastro do animal, e nao para preserva-lo.
-            "group_approvals");
+            "group_approvals",
+            // O ENCAMINHAMENTO (V42) sai ANTES das concessoes, e a ordem e obrigatoria: ele aponta
+            // para o animal E para o grant que o aceite produziu. Apagar as concessoes primeiro
+            // esbarraria nesta chave estrangeira em todo animal que ja recebeu um encaminhamento
+            // autorizado — e o sintoma seria o de sempre, um 500 que so aparece com dado real.
+            //
+            // `referral_scopes` alcanca animals pela neta, como grant_scopes: aponta para referrals,
+            // que aponta para animals. Quem o apaga e o proprio `deleteAll` por entidade.
+            "referrals",
+            "referral_scopes");
 
     /**
      * Quem chega a {@code animals}, direta ou indiretamente.

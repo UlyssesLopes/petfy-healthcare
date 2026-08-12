@@ -79,6 +79,7 @@ class AnimalPurgerTest {
     @Mock private CareInstructionRepository careInstructionRepository;
     @Mock private CareInstructionFulfillmentRepository careInstructionFulfillmentRepository;
     @Mock private ObservationRepository observationRepository;
+    @Mock private br.com.petfy.healthcare.domain.repository.ReferralRepository referralRepository;
 
     @InjectMocks
     private AnimalPurger animalPurger;
@@ -91,7 +92,7 @@ class AnimalPurgerTest {
                 attachmentRepository, vaccineCorrectionRepository, healthRecordCorrectionRepository,
                 vaccineRepository, healthRecordRepository,
                 animalWeightHistoryRepository, antiparasiticRepository,
-                grantRepository, grantRepository, sensitiveAccessLogRepository,
+                referralRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
                 careInstructionRepository, careInstructionFulfillmentRepository,
                 observationRepository,
@@ -132,6 +133,9 @@ class AnimalPurgerTest {
             ordem.verify(healthRecordRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(animalWeightHistoryRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(antiparasiticRepository).deleteByAnimalAnimalIdIn(UM_PET);
+            // O encaminhamento aponta para o grant que o aceite produziu, entao sai ANTES dele: a
+            // ordem inversa esbarraria na chave estrangeira em todo animal ja encaminhado (Tela 45)
+            ordem.verify(referralRepository).deleteAll(any());
             ordem.verify(grantRepository).deleteAll(any());
             ordem.verify(sensitiveAccessLogRepository).deleteByAnimalAnimalIdIn(UM_PET);
             ordem.verify(animalHealthConditionRepository).deleteByAnimalAnimalIdIn(UM_PET);
@@ -188,7 +192,7 @@ class AnimalPurgerTest {
                     attachmentRepository, vaccineCorrectionRepository, healthRecordCorrectionRepository,
                     vaccineRepository, healthRecordRepository,
                     animalWeightHistoryRepository, antiparasiticRepository,
-                    grantRepository, grantRepository, sensitiveAccessLogRepository,
+                    referralRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
                     careInstructionRepository, careInstructionFulfillmentRepository,
                     observationRepository,

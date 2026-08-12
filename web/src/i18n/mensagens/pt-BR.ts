@@ -173,6 +173,23 @@ export const mensagens = {
   "erro.167":
     "Só quem é do grupo pode fazer isso. Não é sobre função — é sobre cuidar destes animais.",
 
+  // ------------------------------------------------------ o encaminhamento (Tela 45)
+  "erro.168": "Não encontramos este encaminhamento.",
+  "erro.169":
+    "Este encaminhamento já foi decidido. Recarregue para ver como ficou — o que você está vendo é de antes.",
+  "erro.170":
+    "Este animal já foi encaminhado para este profissional, e o pedido espera decisão de quem responde por ele.",
+  "erro.171": "Encaminhar é indicar outro profissional. Escolha alguém diferente de você.",
+  // A recusa que existe para proteger o tutor, e a frase diz por quê: sem ela, encaminhar seria o
+  // caminho mais curto para dar acesso de escrita a qualquer pessoa, com o tutor autorizando na
+  // crença de que era um especialista.
+  "erro.172":
+    "Só quem tem registro profissional ativo pode receber um encaminhamento. Quem responde pelo animal autorizaria acesso ao prontuário achando que é um especialista.",
+  "erro.173":
+    "Esta pessoa já responde por este animal, e alcança tudo sem precisar de encaminhamento nenhum.",
+  "erro.174":
+    "Ninguém responde por este animal agora, então não há quem autorize o encaminhamento.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -1724,6 +1741,87 @@ export const mensagens = {
     "Quando alguém concordar, {quem} recebe um convite para responder pelo animal. A custódia passa quando essa pessoa aceitar — ninguém recebe um animal sem dizer sim.",
   "adotar.pedido.enviado":
     "Pedido enviado. Nada muda até que outra pessoa do grupo concorde.",
+
+  // ------------------------------------------------ Tela 45: encaminhar para o especialista
+  "encaminhar.oQueE": "o encaminhamento",
+  "encaminhar.titulo": "Encaminhar {nome}",
+  "encaminhar.oCasoVaiInteiro":
+    "O caso vai inteiro: seu diagnóstico, os exames e o que quem convive com o animal observou. Nada de foto de prontuário no WhatsApp.",
+  "encaminhar.paraQuem": "Para quem",
+  "encaminhar.buscarOutro": "Buscar outro profissional",
+  "encaminhar.busca.dica": "Nome ou especialidade",
+  // A trava de três letras é do servidor, e a tela diz o porquê em vez de não responder nada.
+  "encaminhar.busca.curta": "Escreva ao menos três letras.",
+  "encaminhar.busca.vazia":
+    "Nenhum profissional com registro ativo encontrado. Só quem tem credencial ativa pode receber um encaminhamento.",
+  // "Ele já registrou o raio-X do Code em 2023." É a diferença entre encaminhar para um nome numa
+  // lista e encaminhar para quem já conhece o caso.
+  "encaminhar.candidato.jaRegistrou": "Já registrou algo sobre {nome} em {ano}.",
+  "encaminhar.candidato.novo": "Nunca registrou nada sobre {nome}.",
+  "encaminhar.motivo": "Por que você está encaminhando",
+  // Obrigatório, e a nota diz por que: duas pessoas leem isto com perguntas diferentes.
+  "encaminhar.motivo.nota":
+    "Quem responde pelo animal decide com base neste texto, e o especialista descobre por ele o que está sendo perguntado.",
+  "encaminhar.oQueVaiJunto": "O que vai junto",
+  // A frase que assume o compromisso do bloco, em vez de escondê-lo: o recorte é por tipo, e o que
+  // motivou o encaminhamento vai no campo do motivo.
+  "encaminhar.oQueVaiJunto.porEscopo":
+    "O acesso é por tipo de registro, e não por evento escolhido — {total, plural, =0 {este animal ainda não tem nada registrado} one {há 1 evento na vida dele} other {há # eventos na vida dele}}. O que motivou o encaminhamento vai no campo acima.",
+  "encaminhar.caixa.eventos":
+    "{quantos, plural, =0 {nada registrado ainda} one {1 registro} other {# registros}}",
+  // Mensagem separada, e não um `select` com chave vazia: o ICU não aceita chave vazia, e "desde"
+  // só existe quando há algo registrado.
+  "encaminhar.caixa.desde": " · desde {ano}",
+  "encaminhar.caixa.dadoPessoal": "· não é prontuário: é o contato de quem responde pelo animal",
+  "encaminhar.escopo.CARTEIRA": "Carteira de vacinação e antiparasitários",
+  "encaminhar.escopo.CONDICOES": "Alergias e condições crônicas",
+  "encaminhar.escopo.PRONTUARIO": "Prontuário: atendimentos, diagnósticos e orientações",
+  "encaminhar.escopo.OBSERVACOES": "Observações de quem convive com o animal",
+  "encaminhar.escopo.PESO": "Histórico de peso",
+  "encaminhar.escopo.ANEXOS": "Laudos, exames e anexos",
+  "encaminhar.escopo.CONTATO": "Nome e telefone de quem responde pelo animal",
+  // Sem o nome de quem responde pelo animal, e a diferença com o desenho é de acesso: o nome vive
+  // no escopo CONTATO, e quem encaminha em geral tem só o clínico.
+  "encaminhar.precisaAutorizar":
+    "Quem responde pelo animal precisa autorizar. Encaminhar é você indicando o caminho; conceder acesso continua sendo dele, como sempre foi. O acesso vale {dias} dias e depois fecha sozinho.",
+  "encaminhar.enviar": "Enviar encaminhamento",
+  "encaminhar.enviando": "Enviando…",
+  "encaminhar.tutorDecide": "Quem responde pelo animal recebe e decide.",
+  "encaminhar.faltaPreencher":
+    "Falta escolher para quem, escrever o motivo e marcar ao menos um tipo de registro.",
+  "encaminhar.enviado.titulo": "Encaminhamento enviado",
+  "encaminhar.enviado.esperandoDecisao":
+    "{quem} só vai poder abrir o caso se quem responde pelo animal autorizar. Ele não foi avisado ainda.",
+  // Quem responde pelo animal encaminhando não pede autorização a si mesmo.
+  "encaminhar.enviado.jaAutorizado":
+    "Você responde por este animal, então o acesso de {quem} já está liberado — por {dias} dias, e depois fecha sozinho.",
+  "encaminhar.voltarAoAnimal": "Voltar para {nome}",
+
+  // -------------------------------------------- o outro lado da Tela 45: receber e decidir
+  "encaminhamentos.oQueE": "os encaminhamentos",
+  "encaminhamentos.titulo": "Encaminhamentos",
+  "encaminhamentos.oQueEstaTelaE":
+    "Quando uma clínica encaminha o caso de um animal seu, a decisão de liberar o acesso é sua — e é aqui.",
+  "encaminhamentos.esperandoVoce": "Esperando sua decisão",
+  "encaminhamentos.nadaEsperando": "Nenhum encaminhamento espera sua decisão.",
+  "encaminhamentos.quemEncaminhou": "{quem} encaminhou {animal} para {para}",
+  "encaminhamentos.oQueIriaJunto": "O que iria junto: {escopos}",
+  "encaminhamentos.prazo":
+    "O acesso valeria {dias} dias e depois fecharia sozinho. Você pode revogar antes, a qualquer momento.",
+  "encaminhamentos.autorizar": "Autorizar o acesso",
+  "encaminhamentos.recusar": "Não autorizar",
+  "encaminhamentos.paraMim": "Encaminharam para você",
+  "encaminhamentos.nadaParaMim": "Nenhum caso foi encaminhado para você.",
+  "encaminhamentos.recebido.titulo": "{quem} encaminhou {animal} para você",
+  // O pendente não traz o nome do animal, e a frase diz o porquê em vez de deixar um espaço vazio.
+  "encaminhamentos.recebido.pendente":
+    "{quem} encaminhou um caso para você, e quem responde pelo animal ainda não autorizou",
+  "encaminhamentos.recebido.esperando":
+    "Você ainda não pode abrir o caso. Enquanto não houver autorização, nem o nome do animal aparece aqui.",
+  "encaminhamentos.recebido.recusado":
+    "Quem responde pelo animal não autorizou. O caso não foi compartilhado.",
+  "encaminhamentos.acessoAte":
+    "Acesso liberado por quem responde pelo animal até {quando}.",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

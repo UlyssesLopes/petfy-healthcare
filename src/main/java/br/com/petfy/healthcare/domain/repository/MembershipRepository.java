@@ -21,6 +21,18 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
     @Query("select m from Membership m where m.person.personId = :personId and m.leftAt is null")
     List<Membership> findAtivosDaPessoa(@Param("personId") UUID personId);
 
+    /**
+     * Os vinculos ativos de VARIAS pessoas de uma vez — "Clinica Anhangabau", na busca da Tela 45.
+     *
+     * <b>Existe para nao fazer uma consulta por resultado.</b> A busca devolve ate vinte
+     * profissionais, e perguntar onde cada um atende seria o N+1 que a V29 tirou da linha do tempo e
+     * o {@code ultimaContribuicaoPorPessoa} evitou na rede de quem cuida. O {@code join fetch} da
+     * organizacao vem pela mesma razao de sempre: o DTO le o nome dela fora da transacao.
+     */
+    @Query("select m from Membership m join fetch m.organization "
+            + "where m.person.personId in :personIds and m.leftAt is null")
+    List<Membership> findAtivosDasPessoas(@Param("personIds") List<UUID> personIds);
+
     @Query("select m from Membership m where m.person.personId = :personId "
             + "and m.organization.organizationId = :organizationId and m.leftAt is null")
     Optional<Membership> findAtivoDaPessoaNaOrganizacao(@Param("personId") UUID personId,

@@ -71,6 +71,7 @@ public class PersonServiceImpl implements PersonService {
     private final ConsentRecordRepository consentRecordRepository;
     private final DueItemSilenceRepository dueItemSilenceRepository;
     private final AttachmentRepository attachmentRepository;
+    private final br.com.petfy.healthcare.domain.repository.ReferralRepository referralRepository;
 
     @Override
     public PersonResponseDTO createPerson(PersonRequestDTO request) {
@@ -313,6 +314,15 @@ public class PersonServiceImpl implements PersonService {
         //
         // Sai tanto o que ela concedeu quanto o que ela recebeu: concessao que ela
         // concedeu perde o autor, e sem autor a linha nao diz mais nada.
+        // O ENCAMINHAMENTO SAI ANTES DA CONCESSAO, e a ordem e obrigatoria (Tela 45): a linha aponta
+        // para persons em tres colunas — quem encaminhou, quem recebeu e quem decidiu — e tambem para
+        // o grant que o aceite produziu. Apagar as concessoes primeiro esbarraria nessa segunda chave.
+        //
+        // Apaga em vez de desassociar, ao contrario do anexo logo acima: o anexo pertence ao ANIMAL e
+        // o laudo continua valendo sem quem o subiu, mas um encaminhamento e uma conversa entre duas
+        // pessoas nomeadas, e sem uma das duas a linha nao diz mais nada.
+        referralRepository.deleteAll(referralRepository.findEnvolvendoPessoa(personId));
+
         grantRepository.deleteAll(grantRepository.findDaPessoa(personId));
 
         // O vinculo com organizacao tambem: a linha aponta para persons e seguraria o

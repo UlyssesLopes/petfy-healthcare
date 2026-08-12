@@ -19,6 +19,7 @@ import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.PetTutorInviteRepository;
+import br.com.petfy.healthcare.domain.repository.ReferralRepository;
 import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalWeightHistoryRepository;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
@@ -81,6 +82,7 @@ public class AnimalPurger {
     private final CareInstructionRepository careInstructionRepository;
     private final ObservationRepository observationRepository;
     private final CareInstructionFulfillmentRepository careInstructionFulfillmentRepository;
+    private final ReferralRepository referralRepository;
 
     /**
      * Apaga os animals informados e todo o rastro deles, o proprio animal incluido.
@@ -177,6 +179,15 @@ public class AnimalPurger {
         healthRecordRepository.deleteByAnimalAnimalIdIn(animalIds);
         animalWeightHistoryRepository.deleteByAnimalAnimalIdIn(animalIds);
         antiparasiticRepository.deleteByAnimalAnimalIdIn(animalIds);
+        // O ENCAMINHAMENTO SAI ANTES DA CONCESSAO, e a ordem aqui e obrigatoria: ele aponta para o
+        // animal E para o grant que o aceite produziu (Tela 45). Apagar as concessoes primeiro
+        // esbarraria nesta chave estrangeira em todo animal que ja recebeu um encaminhamento
+        // autorizado.
+        //
+        // Por entidade, pela mesma razao do grant logo abaixo: `referral_scopes` aponta para
+        // `referrals`, e um delete em massa deixaria os escopos orfaos.
+        referralRepository.deleteAll(referralRepository.findByAnimalAnimalIdIn(animalIds));
+
         // por entidade, e nao em massa: grant_scopes aponta para grants, e um delete
         // em massa deixaria os escopos orfaos - que o Postgres recusa e o mock nao
         grantRepository.deleteAll(grantRepository.findByAnimalAnimalIdIn(animalIds));
