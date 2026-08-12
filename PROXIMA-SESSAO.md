@@ -101,6 +101,51 @@ ele **e** recebe casos de colegas, e duas rotas fariam essa pessoa descobrir a s
   pertence ao animal e o laudo vale sem quem o subiu; um encaminhamento é conversa entre duas pessoas
   nomeadas, e sem uma das duas a linha não diz nada.
 
+## A verificação contra o app rodando, e o que dela ficou de fora
+
+**O fluxo inteiro foi exercitado por HTTP, contra Postgres real** — não só por teste. A `V42` aplicou
+sobre um banco que já tinha dado até a `V41`, e os nove passos responderam como a tela promete:
+
+| Passo | Resultado |
+|---|---|
+| Ana busca `orto` | Roberto Lins · ortopedia · CRMV-SP 54321 · Clínica Anhangabaú |
+| Ana busca `or` | `[]` — duas letras não é buscar |
+| Ana encaminha | `PENDENTE`, 90 dias, **sem concessão e sem data de fim** |
+| Ana tenta autorizar o próprio pedido | **403** — ela tem escrita e não custódia |
+| A lista do Marcelo | o pedido, com `canDecide: true` |
+| Marcelo autoriza | `AUTORIZADO`, expira `2026-11-10` (90 dias exatos) |
+| A caixa do Roberto, antes | `PENDENTE`, **`animalId` e `animalName` nulos** |
+| A caixa do Roberto, depois | `AUTORIZADO`, "Code", com a data |
+| `GET /animals/{id}` como Roberto | **200 — e não abria antes** |
+| Autorizar de novo | **409** |
+
+O `ReferralNotifier` disparou nos três momentos e suprimiu por e-mail não confirmado, com log por
+destinatário. Os únicos `ERROR` no log são as três exceções de negócio provocadas de propósito.
+
+**O que ficou de fora: as telas no navegador.** A extensão do Chrome não está conectada, então a
+conferência visual continua devendo — é a mesma dívida que custou o `Â·`. O `npx vite build` e o
+`tsc` passam, e o dev server serve os três módulos novos sem erro de transformação, mas isso é
+compilação, não renderização.
+
+### Como chegar nas telas (o app pode estar de pé)
+
+```
+docker start petfy-pg-sessao
+$env:DB_PORT="5433"; mvn spring-boot:run "-Dspring-boot.run.profiles=local"
+cd web; npm run dev
+```
+
+Contas semeadas, senha `Petfy!2026` nas três:
+
+- `marcelo@petfy.test` — responde pelo Code, e é quem autoriza → `/encaminhamentos`
+- `ana@petfy.test` — concessão EDITOR no Code, CRMV-SP 12345 → `/animais/e7bf40cc-adbc-4617-be82-3b35f1b5ef45/encaminhar`
+- `roberto@petfy.test` — ortopedia, CRMV-SP 54321, Clínica Anhangabaú → `/encaminhamentos`
+
+O animal `Code` é `e7bf40cc-adbc-4617-be82-3b35f1b5ef45`, com 4 eventos: dois pesos (7,5 → 8,6 kg),
+duas observações e uma condição crônica. **A concessão da Ana e a especialidade do Roberto foram
+inseridas por SQL** — não há tela para declarar especialidade, e conceder acesso a uma *pessoa* só
+existe pelo convite de co-tutor.
+
 ## O DEFEITO PRÉ-EXISTENTE QUE ESTA SESSÃO MEDIU E NÃO CORRIGIU
 
 **O `Â·` sobreviveu em duas telas, e em TEXTO VISÍVEL.** O bloco 5 pagou essa dívida no `creche.tsx`
