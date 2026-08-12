@@ -47,7 +47,12 @@ public final class RotasPublicas {
             new Rota(HttpMethod.POST, "/persons"),
             // o cartao: quem recebe o link nao tem conta, e o token no path faz o
             // papel da credencial
-            new Rota(HttpMethod.GET, "/share/{token}")
+            new Rota(HttpMethod.GET, "/share/{token}"),
+            // quem achou um animal na rua nao vai criar conta as 23h com o bicho no colo. Aqui a
+            // credencial e o proprio numero do microchip — e por isso esta rota, sozinha entre as
+            // publicas do produto, depende do limite por IP para nao virar uma listagem de
+            // tutores com telefone
+            new Rota(HttpMethod.POST, "/found")
     );
 
     /**

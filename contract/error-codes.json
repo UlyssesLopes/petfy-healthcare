@@ -231,6 +231,18 @@
   "codigo" : 158,
   "mensagemDaApi" : "Weekday must be one of MONDAY..SUNDAY"
 }, {
+  "nome" : "INVALID_DEATH_DATE",
+  "codigo" : 159,
+  "mensagemDaApi" : "The death date must not be in the future"
+}, {
+  "nome" : "ANIMAL_TIMELINE_ALREADY_CLOSED",
+  "codigo" : 160,
+  "mensagemDaApi" : "This animal's timeline was already closed"
+}, {
+  "nome" : "MICROCHIP_NOT_FOUND",
+  "codigo" : 161,
+  "mensagemDaApi" : "No animal with this microchip number"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.repository;
 
+import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Custody;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -82,5 +83,46 @@ public interface CustodyRepository extends JpaRepository<Custody, UUID> {
     List<Custody> findByHolderPersonPersonId(UUID personId);
 
     List<Custody> findByAnimalAnimalIdIn(List<UUID> animalIds);
+
+    /**
+     * A pessoa respondeu por este animal ate ele morrer?
+     *
+     * <b>E a consulta que mantem a promessa central da Tela 33:</b> "os sete anos de vida dele
+     * continuam aqui, inteiros, para voce abrir quando quiser". Sem ela, encerrar por obito
+     * arrancaria do tutor o acesso a vida que ele passou sete anos registrando — a custodia
+     * acabou, nao ha concessao nenhuma, e o guard responderia 404 no dia seguinte ao enterro.
+     *
+     * <b>So OBITO, e nao qualquer custodia encerrada.</b> Quem transferiu o animal recebe
+     * concessao de leitura no ato da transferencia, e essa concessao e revogavel por quem passou
+     * a responder — como deve ser. Aqui nao ha quem revogue nem quem conceda, e e por isso que a
+     * leitura nasce do fato e nao de uma concessao inventada em nome de ninguem.
+     */
+    @Query("select c from Custody c where c.animal.animalId = :animalId "
+            + "and c.holderPerson.personId = :personId "
+            + "and c.endReason = br.com.petfy.healthcare.domain.entity.CustodyEndReason.OBITO")
+    Optional<Custody> findEncerradaPorObitoDaPessoa(@Param("animalId") UUID animalId,
+                                                    @Param("personId") UUID personId);
+
+    /**
+     * "Quem ja esteve com voce" — os animais de quem a pessoa cuidou e nao cuida mais.
+     *
+     * <b>O filtro de baixo e o que impede a lista de duplicar a outra.</b> Quem transfere um
+     * animal recebe concessao de leitura no ato, e continua vendo o bicho na lista principal;
+     * mostra-lo tambem aqui diria que ele saiu quando ele esta na tela ao lado. Entao esta lista
+     * e "teve custodia encerrada E nao alcanca mais de nenhum jeito" — que na pratica e o animal
+     * que morreu, e o que foi transferido sem que sobrasse acesso.
+     */
+    @Query("select c.animal from Custody c "
+            + "where c.holderPerson.personId = :personId and c.endedAt is not null "
+            + "and not exists ("
+            + "  select 1 from Custody atual where atual.animal = c.animal "
+            + "    and atual.holderPerson.personId = :personId and atual.endedAt is null) "
+            + "and not exists ("
+            + "  select 1 from Grant g where g.animal = c.animal "
+            + "    and g.granteePerson.personId = :personId and g.revokedAt is null "
+            + "    and (g.expiresAt is null or g.expiresAt > :agora))")
+    Page<Animal> findQueJaEstiveramComAPessoa(@Param("personId") UUID personId,
+                                              @Param("agora") java.time.LocalDateTime agora,
+                                              Pageable pageable);
 
 }

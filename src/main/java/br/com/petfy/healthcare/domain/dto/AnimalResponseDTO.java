@@ -51,4 +51,14 @@ public class AnimalResponseDTO {
 
     private LocalDateTime updateDate;
 
+    /**
+     * Quando a linha do tempo fechou. Nulo no animal vivo, que e o caso de quase toda ficha.
+     *
+     * <b>Esta aqui, e nao num endpoint separado, porque a tela precisa saber disso em toda ficha
+     * que abre</b> — inclusive nas listas. O desenho e explicito em que a ficha nao muda de
+     * aparencia: "sem tarja preta, sem laco, sem memorial. A ficha fica igual as outras — so
+     * parou de pedir coisas". Um campo a mais e exatamente o tamanho dessa diferenca.
+     */
+    private LocalDate deceasedOn;
+
 }

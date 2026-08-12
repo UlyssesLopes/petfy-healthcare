@@ -28,6 +28,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/former": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quem ja esteve com voce
+         * @description Os animais de quem a pessoa cuidou e nao cuida mais. NAO e uma lista de animais mortos: o transferido sem acesso residual tambem esta aqui. Quem transferiu e ficou com concessao de leitura continua na lista principal, e nao aparece duas vezes.
+         */
+        get: operations["listFormer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}": {
         parameters: {
             query?: never;
@@ -294,6 +314,30 @@ export interface paths {
         get: operations["summary"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/death": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A ficha fechada do animal
+         * @description Os numeros do cartao de depois: eventos registrados, quantas pessoas e quantas organizacoes cuidaram dele, e o periodo em que quem le respondeu por ele. 404 no animal que nao foi encerrado.
+         */
+        get: operations["daFichaFechada"];
+        put?: never;
+        /**
+         * Encerra a linha do tempo de um animal que morreu
+         * @description So quem responde pelo animal. A veterinaria que o atendeu na ultima noite registra o obito como ato clinico dela, o que e outro registro: ninguem deve descobrir que perdeu o animal por uma notificacao do sistema. Encerra a custodia sem sucessor, encerra as matriculas vivas, poe o fim na linha do tempo e avisa quem cuidava dele — pessoas e organizacoes. NAO apaga nada: para destruir o registro existe o DELETE, e ele e outra coisa.
+         */
+        post: operations["registrar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -906,6 +950,26 @@ export interface paths {
          * @description Idempotente, e nao exige que a pendencia ainda exista: se o registro de origem saiu, o silencio dele e lixo e apagar e certo de qualquer forma.
          */
         delete: operations["voltarACobrar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/found": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Procura um animal pelo numero do microchip
+         * @description PUBLICA e sem conta, de proposito: e usada por quem encontrou o animal na rua e pode ser a unica pessoa com ele nas proximas horas. Devolve o cartao de emergencia inteiro — contatos, alergias, condicoes, medicacao em curso e vacinacao — e nada alem: historico clinico, diagnostico e endereco continuam fora. O acesso fica registrado no log que o tutor le, sem identificar quem buscou. Limitada por IP contra varredura de numeros. 404 com codigo proprio quando o numero nao esta no Petfy.
+         */
+        post: operations["procurar"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1866,11 +1930,11 @@ export interface components {
             accessedAt?: string;
             actorName?: string;
             /** @enum {string} */
-            actorType?: "VET" | "SHARE_LINK";
+            actorType?: "VET" | "SHARE_LINK" | "MICROCHIP_SEARCH";
             ipAddress?: string;
             organizationName?: string;
             /** @enum {string} */
-            resource?: "VACCINES" | "HEALTH_RECORDS" | "VACCINE_CORRECTIONS" | "HEALTH_RECORD_CORRECTIONS" | "ATTACHMENTS" | "SHARED_CARD";
+            resource?: "VACCINES" | "HEALTH_RECORDS" | "VACCINE_CORRECTIONS" | "HEALTH_RECORD_CORRECTIONS" | "ATTACHMENTS" | "SHARED_CARD" | "FOUND_CARD";
         };
         ActiveContextResponseDTO: {
             active?: components["schemas"]["ContextOptionDTO"];
@@ -1958,6 +2022,12 @@ export interface components {
             total?: number;
             totalEver?: number;
             window?: string;
+        };
+        AnimalDeathRequestDTO: {
+            /** Format: date */
+            deceasedOn: string;
+            farewellNote?: string;
+            place?: string;
         };
         AnimalExportDTO: {
             acessosDeClinica?: components["schemas"]["AcessoDeClinicaDTO"][];
@@ -2077,6 +2147,8 @@ export interface components {
             color?: string;
             /** Format: date-time */
             creationDate?: string;
+            /** Format: date */
+            deceasedOn?: string;
             gender?: string;
             generalRegistry?: string;
             microchip?: boolean;
@@ -2332,6 +2404,29 @@ export interface components {
             /** Format: int64 */
             occupied?: number;
         };
+        ClosedLifeResponseDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            /** Format: date */
+            bornDate?: string;
+            /** Format: int64 */
+            caregiverOrganizationCount?: number;
+            /** Format: int64 */
+            caregiverPersonCount?: number;
+            /** Format: date */
+            deceasedOn?: string;
+            /** Format: int64 */
+            eventCount?: number;
+            farewellNote?: string;
+            /** Format: date-time */
+            holderSince?: string;
+            /** Format: date-time */
+            holderUntil?: string;
+            name?: string;
+            place?: string;
+            /** Format: date-time */
+            recordedAt?: string;
+        };
         CoTutorDTO: {
             /** Format: date-time */
             desde?: string;
@@ -2459,6 +2554,36 @@ export interface components {
             requestedAt?: string;
             status?: string;
             weekdays?: string[];
+        };
+        FoundAnimalCardDTO: {
+            allergies?: string[];
+            /** Format: date */
+            animalBornDate?: string;
+            animalBreed?: string;
+            animalGender?: string;
+            animalName?: string;
+            animalType?: string;
+            /** Format: double */
+            animalWeight?: number;
+            conditions?: string[];
+            contacts?: components["schemas"]["FoundContactDTO"][];
+            ongoingCare?: string[];
+            vaccines?: components["schemas"]["FoundVaccineDTO"][];
+        };
+        FoundAnimalRequestDTO: {
+            microchipNumber: string;
+        };
+        FoundContactDTO: {
+            kind?: string;
+            name?: string;
+            phone?: string;
+        };
+        FoundVaccineDTO: {
+            /** Format: date */
+            nextDoseDate?: string;
+            /** @enum {string} */
+            status?: "OVERDUE" | "DUE_SOON" | "UP_TO_DATE" | "NO_NEXT_DOSE";
+            vaccineName?: string;
         };
         HealthProofItemDTO: {
             blocks?: boolean;
@@ -2946,13 +3071,13 @@ export interface components {
             accessedAt?: string;
             actorName?: string;
             /** @enum {string} */
-            actorType?: "VET" | "SHARE_LINK";
+            actorType?: "VET" | "SHARE_LINK" | "MICROCHIP_SEARCH";
             /** Format: uuid */
             animalId?: string;
             ipAddress?: string;
             organizationName?: string;
             /** @enum {string} */
-            resource?: "VACCINES" | "HEALTH_RECORDS" | "VACCINE_CORRECTIONS" | "HEALTH_RECORD_CORRECTIONS" | "ATTACHMENTS" | "SHARED_CARD";
+            resource?: "VACCINES" | "HEALTH_RECORDS" | "VACCINE_CORRECTIONS" | "HEALTH_RECORD_CORRECTIONS" | "ATTACHMENTS" | "SHARED_CARD" | "FOUND_CARD";
             /** Format: uuid */
             sensitiveAccessLogId?: string;
         };
@@ -3008,7 +3133,7 @@ export interface components {
             /** Format: uuid */
             eventId?: string;
             /** @enum {string} */
-            eventType?: "VACINA" | "ANTIPARASITARIO" | "ATENDIMENTO" | "OBSERVACAO" | "PESAGEM" | "CONDICAO" | "ANEXO" | "ORIENTACAO" | "CUMPRIMENTO" | "UNIAO";
+            eventType?: "VACINA" | "ANTIPARASITARIO" | "ATENDIMENTO" | "OBSERVACAO" | "PESAGEM" | "CONDICAO" | "ANEXO" | "ORIENTACAO" | "CUMPRIMENTO" | "UNIAO" | "OBITO";
             healthData?: boolean;
             /** Format: date-time */
             occurredAt?: string;
@@ -3232,6 +3357,33 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AnimalResponseDTO"];
+                };
+            };
+        };
+    };
+    listFormer: {
+        parameters: {
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageAnimalResponseDTO"];
                 };
             };
         };
@@ -3720,6 +3872,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AnimalCostSummaryResponseDTO"];
+                };
+            };
+        };
+    };
+    daFichaFechada: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClosedLifeResponseDTO"];
+                };
+            };
+        };
+    };
+    registrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnimalDeathRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClosedLifeResponseDTO"];
                 };
             };
         };
@@ -4657,6 +4857,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    procurar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FoundAnimalRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FoundAnimalCardDTO"];
+                };
             };
         };
     };

@@ -16,16 +16,16 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
- * A "Tela 17 Â· a tela mais usada da creche â€” Segunda-feira, 7h30, a operacao do dia", de
+ * A "Tela 17 · a tela mais usada da creche — Segunda-feira, 7h30, a operacao do dia", de
  * `design/IdentidadeVisual/Telas Petfy - Organizacao.dc.html`.
  *
  * <b>Ela e a unica tela do produto em que a pressa e parte do contexto.</b> Sao 7h34, ha catorze
  * animais esperados e seis chegaram, e quem opera tem um cachorro em cada mao. Por isso a linha e
  * de 56 px com um gesto so por animal, e por isso o topo conta em vez de listar.
  *
- * <b>A RECUSA NAO E DESTA TELA, e isso e o mais importante daqui.</b> "V10 venceu ontem â€” nao pode
+ * <b>A RECUSA NAO E DESTA TELA, e isso e o mais importante daqui.</b> "V10 venceu ontem — nao pode
  * entrar. A turma inteira depende disso": o servidor recusa a entrada, e a tela mostra o motivo. Uma
- * tela que apenas avisasse deixaria a decisao para quem esta com quinze cachorros na porta â€” e a lei
+ * tela que apenas avisasse deixaria a decisao para quem esta com quinze cachorros na porta — e a lei
  * nao cobra a tela.
  *
  * <b>ESPERADO nao e um registro.</b> Quem tem matricula ativa e nao tem nada gravado do dia nasce
@@ -79,7 +79,7 @@ function Creche() {
             </div>
           </div>
 
-          {/* As turmas como abas â€” "Turma Tarde", "Turma Manha", "Hospedagem". */}
+          {/* As turmas como abas — "Turma Tarde", "Turma Manha", "Hospedagem". */}
           {turmas.isError ? (
             <ErroDeCarga
               oQue={intl.formatMessage({ id: "creche.oQue.turmas" })}
@@ -195,7 +195,7 @@ function LinhaDoDia({ linha, turma }: { linha: Presenca; turma: string | undefin
 
         {/*
          * "Hoje precisa": o que a creche tem de saber sobre este animal hoje. Quando o animal esta
-         * impedido, o motivo GANHA da lista â€” e a unica informacao que muda o que fazer agora.
+         * impedido, o motivo GANHA da lista — e a unica informacao que muda o que fazer agora.
          */}
         <div style={{ fontSize: "15px", lineHeight: 1.5, color: linha.blocked === true ? "oklch(0.45 0.13 30)" : "oklch(0.35 0.018 150)" }}>
           {linha.blocked === true
@@ -238,7 +238,7 @@ function LinhaDoDia({ linha, turma }: { linha: Presenca; turma: string | undefin
           ) : linha.blocked === true ? (
             /*
              * Nao ha "marcar entrada" para animal impedido, e nao e o botao desabilitado de sempre:
-             * o gesto que resta e outro. O desenho poe "Avisar tutor" aqui â€” e avisar nao existe no
+             * o gesto que resta e outro. O desenho poe "Avisar tutor" aqui — e avisar nao existe no
              * backend, entao o que fica e a frase e o caminho para a carteira, onde a dose entra.
              */
             <div style={{ fontSize: "14px", color: "oklch(0.42 0.015 150)", lineHeight: 1.5, maxWidth: "26ch" }}>

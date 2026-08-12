@@ -87,7 +87,12 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             "care_instruction_fulfillments",
             // filha direta, e sem neta: nada aponta para observations, entao o purger
             // apaga em massa em vez de por entidade
-            "observations");
+            "observations",
+            // O OBITO (V40), e vale dizer o que este delete significa — porque as duas operacoes
+            // se parecem e sao opostas. Encerrar a linha do tempo GUARDA a vida registrada; apagar
+            // o animal a destroi. Quem chega ao purger pediu a segunda, pelo DELETE do animal ou
+            // pela exclusao da conta, e a linha do obito vai junto com todo o resto.
+            "animal_deaths");
 
     /**
      * Quem chega a {@code animals}, direta ou indiretamente.

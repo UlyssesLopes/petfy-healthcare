@@ -69,7 +69,23 @@ public enum TimelineEventType {
      * so {@code OBSERVACOES}, ou so {@code PESO}, nao vera a uniao, e para ela o historico vai
      * parecer ter dobrado sozinho. Resolver de verdade pede um escopo que nao existe hoje.
      */
-    UNIAO(GrantScope.CARTEIRA);
+    UNIAO(GrantScope.CARTEIRA),
+
+    /**
+     * O animal morreu, e a linha do tempo fecha (Tela 33).
+     *
+     * <b>Nao e dado de saude</b>, e a view o marca com {@code is_health_data = false} pela mesma
+     * razao da uniao: quem tem escopo restrito precisa ver que a vida terminou sem que isso lhe
+     * abra o prontuario. Esconder o obito de quem so alcanca a carteira faria a creche continuar
+     * esperando o animal na segunda-feira.
+     *
+     * <b>O escopo aqui e o mesmo compromisso da UNIAO</b>, e vale repetir qual: todo tipo precisa
+     * apontar para um escopo, e nao existe "sempre visivel". O fim entra na {@code CARTEIRA} — o
+     * escopo mais concedido, e o que carrega a identidade do animal. Quem tenha so
+     * {@code OBSERVACOES} ou so {@code PESO} nao vera o obito, e para essa pessoa a linha do tempo
+     * simplesmente para.
+     */
+    OBITO(GrantScope.CARTEIRA);
 
     private final GrantScope escopo;
 

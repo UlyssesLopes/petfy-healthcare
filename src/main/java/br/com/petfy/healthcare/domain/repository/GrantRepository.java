@@ -69,6 +69,24 @@ public interface GrantRepository extends JpaRepository<Grant, UUID> {
                                               @Param("agora") LocalDateTime agora);
 
     /**
+     * As organizacoes que alcancam o animal por concessao agora.
+     *
+     * <b>A contraparte de {@link #findVigentesDePessoasNoAnimal}, e existe por causa do obito</b>
+     * (Tela 33): "a Clinica Vet Norte e a Creche Quintal sao avisadas, sem que voce precise ligar
+     * para cada uma". A consulta de pessoas nao serve — ela exclui organizacao de proposito, e a
+     * pergunta ali e outra ("quem poderia responder pelo animal").
+     *
+     * <b>O link compartilhado fica de fora</b>, e nao por descuido: uma concessao por token nao
+     * tem caixa de e-mail nem alguem do outro lado. Quem tem o link nao e uma parte a ser avisada;
+     * e uma URL.
+     */
+    @Query("select g from Grant g where g.animal.animalId = :animalId "
+            + "and g.granteeOrganization is not null "
+            + "and g.revokedAt is null and (g.expiresAt is null or g.expiresAt > :agora)")
+    List<Grant> findVigentesDeOrganizacoesNoAnimal(@Param("animalId") UUID animalId,
+                                                   @Param("agora") LocalDateTime agora);
+
+    /**
      * TODAS as concessoes vigentes do animal — pessoa, organizacao e link.
      *
      * Existe para a transferencia de titularidade, e o "todas" e a regra: <b>acessos nao sao

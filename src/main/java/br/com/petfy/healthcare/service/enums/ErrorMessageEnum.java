@@ -138,6 +138,25 @@ public enum ErrorMessageEnum {
     // tela precisa poder dizer isso ao desenvolvedor em vez de mandar a creche "conferir os
     // campos marcados", que aqui nao ajudaria ninguem.
     INVALID_WEEKDAY(158, "Weekday must be one of MONDAY..SUNDAY"),
+    // ------------------------------------------------------- o fim da linha do tempo (Tela 33)
+    //
+    // A data do obito nao pode estar no futuro, e a recusa mora aqui e nao no banco: CURRENT_DATE
+    // nao e IMMUTABLE e o Postgres nao aceita a expressao dentro de um CHECK.
+    //
+    // O MESMO CODIGO COBRE "antes do nascimento", com mensagem propria. Sao dois jeitos de a data
+    // estar errada, e nenhum deles muda o que a tela faz: apontar o campo "Quando foi".
+    INVALID_DEATH_DATE(159, "The death date must not be in the future"),
+    // Encerrar duas vezes nao e idempotencia — e sinal de que quem chamou esta olhando um estado
+    // antigo. Sobrescrever em silencio trocaria a data que o tutor informou da primeira vez, que
+    // e o unico campo do formulario que ele nao pode reconstruir depois.
+    ANIMAL_TIMELINE_ALREADY_CLOSED(160, "This animal's timeline was already closed"),
+    // --------------------------------------------------- a busca de animal encontrado (Tela 34)
+    //
+    // O numero digitado nao esta no Petfy. NAO E ERRO DE QUEM BUSCOU, e a tela nao trata como
+    // tal: "o animal pode estar cadastrado em outro sistema, ou o chip pode ter sido aplicado e
+    // nunca registrado". O codigo existe para a tela saber mostrar o que fazer em seguida, em
+    // vez de "nenhum resultado encontrado" — que deixaria a pessoa e o animal parados na calcada.
+    MICROCHIP_NOT_FOUND(161, "No animal with this microchip number"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

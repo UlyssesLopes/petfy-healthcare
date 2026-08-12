@@ -22,6 +22,9 @@ public enum AccessedResource {
     ATTACHMENTS,
 
     /** Carteira aberta pelo link publico. */
-    SHARED_CARD
+    SHARED_CARD,
+
+    /** O cartao aberto pela busca de microchip, sem conta e sem link (Tela 34). */
+    FOUND_CARD
 
 }

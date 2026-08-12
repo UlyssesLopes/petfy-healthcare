@@ -59,8 +59,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
             "/auth/email-verification/resend"
     );
 
+    /**
+     * A busca de animal encontrado (Tela 34), num grupo so dela.
+     *
+     * <b>Ela e a unica rota publica que devolve nome e telefone a partir de um numero</b>, e sem
+     * limite seria uma listagem de tutores indexada por microchip. Nao entra no grupo "restrito"
+     * porque as duas politicas divergem pelo uso: quem esta na calcada com um animal digita o
+     * numero uma vez, erra um digito e digita de novo — cinco por minuto e folgado para essa
+     * pessoa e apertado para um script.
+     */
+    private static final Set<String> ENDPOINTS_ENCONTRADO = Set.of("/found");
+
     private final int loginCapacity;
     private final int restritoCapacity;
+    private final int encontradoCapacity;
 
     /* um balde por (IP + grupo). A chave e "grupo:ip" */
     private final Map<String, Bucket> baldes = new ConcurrentHashMap<>();
@@ -69,9 +81,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     public RateLimitFilter(
             @Value("${petfy.rate-limit.login-por-minuto:10}") int loginCapacity,
-            @Value("${petfy.rate-limit.restrito-por-minuto:5}") int restritoCapacity) {
+            @Value("${petfy.rate-limit.restrito-por-minuto:5}") int restritoCapacity,
+            @Value("${petfy.rate-limit.encontrado-por-minuto:5}") int encontradoCapacity) {
         this.loginCapacity = loginCapacity;
         this.restritoCapacity = restritoCapacity;
+        this.encontradoCapacity = encontradoCapacity;
         this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
@@ -105,6 +119,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
         if (ENDPOINTS_RESTRITO.contains(path)) {
             return baldes.computeIfAbsent("restrito:" + ip, k -> criarBalde(restritoCapacity));
+        }
+        if (ENDPOINTS_ENCONTRADO.contains(path)) {
+            return baldes.computeIfAbsent("encontrado:" + ip, k -> criarBalde(encontradoCapacity));
         }
         return null;
     }
