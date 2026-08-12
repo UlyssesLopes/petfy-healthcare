@@ -52,6 +52,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -398,12 +399,9 @@ class PersonServiceImplTest {
             var autenticado = existingPerson();
             when(currentPersonProvider.require()).thenReturn(autenticado);
 
-            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
-            var vinculo = Custodias.emCurso(autenticado);
-            vinculo.setAnimal(animal);
-
-            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of(vinculo));
-            when(grantRepository.findVigentesDePessoasNoAnimal(eq(ANIMAL_ID), any())).thenReturn(List.of());
+            // SEM CUSTODIA EM CURSO: desde a Tela 36 a conta so encerra quando ninguem depende dela,
+            // e a ordem que este caso guarda so acontece nesse caminho
+            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of());
 
             personService.deleteCurrentPerson();
 
@@ -417,7 +415,8 @@ class PersonServiceImplTest {
 
             // as custodias saem primeiro: seguram animal e person ao mesmo tempo
             ordem.verify(custodyRepository).deleteAll(any());
-            ordem.verify(animalPurger).purge(List.of(ANIMAL_ID));
+            // sem custodia nao ha animal a apagar: a lista vai vazia, e o purge sai cedo
+            ordem.verify(animalPurger).purge(List.of());
             ordem.verify(passwordResetTokenRepository).deleteByPersonPersonId(OWNER_ID);
             ordem.verify(emailVerificationTokenRepository).deleteByPersonPersonId(OWNER_ID);
             ordem.verify(personRepository).delete(autenticado);
@@ -460,12 +459,7 @@ class PersonServiceImplTest {
             var autenticado = existingPerson();
             when(currentPersonProvider.require()).thenReturn(autenticado);
 
-            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
-            var meuVinculo = Custodias.emCurso(autenticado);
-            meuVinculo.setAnimal(animal);
-
-            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            when(grantRepository.findVigentesDePessoasNoAnimal(eq(ANIMAL_ID), any())).thenReturn(List.of());
+            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of());
 
             personService.deleteCurrentPerson();
 
@@ -473,17 +467,25 @@ class PersonServiceImplTest {
             ordem.verify(petTutorInviteRepository).deleteByCreatedByPersonId(OWNER_ID);
             ordem.verify(petTutorInviteRepository).deleteByAcceptedByPersonId(OWNER_ID);
             ordem.verify(custodyRepository).deleteAll(any());
-            ordem.verify(animalPurger).purge(List.of(ANIMAL_ID));
+            // sem custodia nao ha animal a apagar: a lista vai vazia, e o purge sai cedo
+            ordem.verify(animalPurger).purge(List.of());
             ordem.verify(personRepository).delete(autenticado);
         }
 
         /**
-         * O indice do banco exige exatamente um HOLDER por animal, entao o titular
-         * nao pode simplesmente sumir: alguem herda.
+         * <b>NINGUEM HERDA MAIS, e o que este caso substitui era justamente a heranca.</b>
+         *
+         * Ate a Tela 36 o titular que saia via a titularidade passar sozinha para o tutor mais antigo
+         * — e a pessoa promovida descobria depois que passara a responder por um animal. O produto
+         * (3.4) decidiu que o destino e escolhido por quem sai, e nao inferido pelo sistema.
+         *
+         * <b>A regra de indice que o caso antigo protegia continua valendo em outro lugar:</b> a
+         * transferencia de titularidade e a hospedagem passam custodia adiante, e as duas encerram
+         * antes de abrir, com flush no meio.
          */
         @Test
-        @DisplayName("titular que sai passa a titularidade ao tutor mais antigo")
-        void titularQueSaiPassaATitularidade() {
+        @DisplayName("ninguem e promovido: o encerramento recusa em vez de escolher sucessor")
+        void ninguemEPromovido() {
             var autenticado = existingPerson();
             when(currentPersonProvider.require()).thenReturn(autenticado);
 
@@ -491,62 +493,15 @@ class PersonServiceImplTest {
 
             var meuVinculo = Custodias.emCurso(autenticado);
             meuVinculo.setAnimal(animal);
-            meuVinculo.setStartedAt(LocalDateTime.of(2026, 1, 1, 10, 0));
-
-            var maria = Person.builder().personId(OUTRO_OWNER_ID).name("Maria").build();
-            var vinculoDaMaria = concessaoPara(maria, GrantLevel.VIEWER);
-            vinculoDaMaria.setAnimal(animal);
-            vinculoDaMaria.setGrantedAt(LocalDateTime.of(2026, 2, 1, 10, 0));
 
             when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            
-            // devolve so quem fica: a consulta acontece depois de o vinculo de quem
-            // sai ter sido apagado e descarregado, entao o banco nao teria como
-            // trazer o proprio. Stubar os dois aqui foi o que deixou passar a
-            // violacao do indice unico - ver PersonDeletionContainerTest
-            when(grantRepository.findVigentesDePessoasNoAnimal(eq(ANIMAL_ID), any()))                    .thenReturn(List.of(vinculoDaMaria));
 
-            personService.deleteCurrentPerson();
+            assertThatThrownBy(() -> personService.deleteCurrentPerson())
+                    .isInstanceOf(PetfyHealthcareException.class);
 
-            var captor = ArgumentCaptor.forClass(Custody.class);
-            verify(custodyRepository).save(captor.capture());
-            assertThat(captor.getValue().getHolderPerson().getPersonId()).isEqualTo(OUTRO_OWNER_ID);
-            assertThat(captor.getValue().getNature()).isEqualTo(CustodyNature.DEFINITIVA);
-        }
-
-        /**
-         * A ordem e a regra, nao detalhe de implementacao: o indice unico parcial da
-         * V15 exige exatamente um HOLDER por animal, entao promover o sucessor antes de
-         * o vinculo de quem sai ter saido deixa dois na tabela e o Postgres recusa o
-         * update - derrubando a exclusao inteira.
-         */
-        @Test
-        @DisplayName("o vinculo de quem sai e apagado antes de o sucessor ser promovido")
-        void apagaOVinculoAntesDePromover() {
-            var autenticado = existingPerson();
-            when(currentPersonProvider.require()).thenReturn(autenticado);
-
-            var animal = Animal.builder().animalId(ANIMAL_ID).name("Rex").build();
-
-            var meuVinculo = Custodias.emCurso(autenticado);
-            meuVinculo.setAnimal(animal);
-            meuVinculo.setStartedAt(LocalDateTime.of(2026, 1, 1, 10, 0));
-
-            var maria = Person.builder().personId(OUTRO_OWNER_ID).name("Maria").build();
-            var vinculoDaMaria = concessaoPara(maria, GrantLevel.VIEWER);
-            vinculoDaMaria.setAnimal(animal);
-            vinculoDaMaria.setGrantedAt(LocalDateTime.of(2026, 2, 1, 10, 0));
-
-            when(custodyRepository.findEmCursoDaPessoa(OWNER_ID)).thenReturn(List.of(meuVinculo));
-            
-            when(grantRepository.findVigentesDePessoasNoAnimal(eq(ANIMAL_ID), any()))                    .thenReturn(List.of(vinculoDaMaria));
-
-            personService.deleteCurrentPerson();
-
-            var ordem = inOrder(custodyRepository);
-            ordem.verify(custodyRepository).deleteAll(any());
-            ordem.verify(custodyRepository).flush();
-            ordem.verify(custodyRepository).save(any(Custody.class));
+            verify(custodyRepository, never()).save(any(Custody.class));
+            verify(animalPurger, never()).purge(any());
+            verify(personRepository, never()).delete(any());
         }
 
         /** Co-tutor que sai nao mexe em titularidade: nao ha o que herdar. */

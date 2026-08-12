@@ -178,6 +178,10 @@ public class PersonServiceImpl implements PersonService {
         }
 
         person.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        // "Senha · alterada em 02/2024" (Tela 36). Nao da para derivar do `updateDate`: ele muda
+        // quando a pessoa corrige o telefone, e a tela passaria a dizer que a senha foi trocada no
+        // dia em que ela arrumou o proprio nome — fazendo alguem concluir que trocou e nao trocar.
+        person.setPasswordChangedAt(LocalDateTime.now());
 
         // e isto que derruba as sessoes abertas: o filtro recusa token emitido
         // antes deste instante. Sem o carimbo, trocar a senha nao expulsaria
@@ -229,27 +233,32 @@ public class PersonServiceImpl implements PersonService {
         // tem acesso concedido nunca respondeu pelo animal.
         List<Custody> custodias = custodyRepository.findEmCursoDaPessoa(personId);
 
+        /*
+         * NINGUEM SAI DO PETFY DEIXANDO UM ANIMAL SEM QUEM RESPONDA POR ELE (Tela 36, e PRODUTO 3.4).
+         *
+         * <b>Este era o "vai numa fatia propria" que o comentario anterior prometia, e a fatia e
+         * esta.</b> Ate aqui o encerramento resolvia sozinho: o animal sem outro tutor MORRIA com a
+         * conta, e o que tinha co-tutor passava para o mais antigo deles — os dois em silencio, sem
+         * ninguem escolher. O primeiro destroi anos de registro de um animal que continua vivo; o
+         * segundo entrega a responsabilidade a alguem que nunca disse sim.
+         *
+         * O desenho e literal: <i>"O Code e o Bartolomeu precisam de alguem antes que voce saia. Passe
+         * cada um para outra pessoa — a vida registrada deles vai junto e nao se apaga com a sua
+         * conta."</i> E: <i>"Disponivel quando nenhum animal estiver sob sua responsabilidade."</i>
+         *
+         * <b>E o caminho de saida existe e nao e novo:</b> transferir a titularidade, encerrar a linha
+         * do tempo se o animal morreu, ou apagar o cadastro. O que deixa de existir e o desfecho que
+         * ninguem escolheu.
+         */
+        if (!custodias.isEmpty()) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.ANIMALS_STILL_UNDER_YOUR_RESPONSIBILITY.getMessage(),
+                    ErrorMessageEnum.ANIMALS_STILL_UNDER_YOUR_RESPONSIBILITY.getCode(),
+                    HttpStatus.CONFLICT);
+        }
+
         List<UUID> animalsQueMorrem = new ArrayList<>();
         List<UUID> animalsQuePrecisamDeSucessor = new ArrayList<>();
-
-        LocalDateTime agora = LocalDateTime.now();
-
-        for (Custody custodia : custodias) {
-            UUID animalId = custodia.getAnimal().getAnimalId();
-
-            // sobrevive se alguem mais alcanca o animal: nesse caso a custodia passa
-            // para o mais antigo desses. Sem ninguem, o animal morre com a conta.
-            //
-            // A regra que o PRODUTO.md 3.4 decidiu e outra - recusar a exclusao ate o
-            // titular dar destino ao animal -, e ela nao entra aqui de proposito: e
-            // mudanca de contrato de um endpoint de LGPD, e vai numa fatia propria.
-            // Este passo preserva o comportamento que ja existia.
-            if (!grantRepository.findVigentesDePessoasNoAnimal(animalId, agora).isEmpty()) {
-                animalsQuePrecisamDeSucessor.add(animalId);
-            } else {
-                animalsQueMorrem.add(animalId);
-            }
-        }
 
         // Os convites saem antes dos vinculos e dos animals: cada linha aponta para o
         // animal, para quem convidou e para quem aceitou, entao seguraria os tres
@@ -267,10 +276,26 @@ public class PersonServiceImpl implements PersonService {
         // com a de quem sai ainda aberta deixa duas, e o Postgres recusa - derrubando a
         // exclusao de conta inteira. Nao aparece em teste de mock, que nao tem indice.
         // E a mesma armadilha que o 8b encontrou na troca de titularidade.
-        custodias.forEach(c -> c.setSuccessor(null));
-        custodyRepository.saveAll(custodias);
+        /*
+         * AS CUSTODIAS JA ENCERRADAS SAEM TAMBEM, e este buraco so apareceu quando a regra nova o
+         * pos no caminho principal.
+         *
+         * Antes, quem encerrava a conta quase nunca tinha custodia encerrada: o fluxo comum era ter o
+         * animal e sair. Agora o produto EXIGE dar destino a cada animal antes — ou seja, toda pessoa
+         * que encerra a conta passou por uma transferencia, e cada transferencia deixa uma custodia
+         * encerrada apontando para ela. Sem este delete, o `DELETE /persons/me` responderia 500 por
+         * `fk_custodies_holder_person` <b>justamente para quem seguiu a instrucao da tela</b>.
+         *
+         * <b>O que se perde, e vale dizer:</b> a linha que registrava que aquela pessoa respondeu por
+         * aquele animal ate certa data. E dado pessoal de quem pediu para ser esquecido, e a vida
+         * registrada do animal — os eventos, com autoria — nao esta aqui: esta na linha do tempo.
+         */
+        List<Custody> todasAsMinhas = custodyRepository.findByHolderPersonPersonId(personId);
+
+        todasAsMinhas.forEach(c -> c.setSuccessor(null));
+        custodyRepository.saveAll(todasAsMinhas);
         custodyRepository.flush();
-        custodyRepository.deleteAll(custodias);
+        custodyRepository.deleteAll(todasAsMinhas);
         custodyRepository.flush();
 
         animalsQuePrecisamDeSucessor.forEach(this::abrirCustodiaDoSucessor);
@@ -514,6 +539,80 @@ public class PersonServiceImpl implements PersonService {
                 .creationDate(person.getCreationDate())
                 .updateDate(person.getUpdateDate())
                 .build();
+    }
+
+    /**
+     * "Sua conta" (Tela 36).
+     *
+     * <b>A lista de animais sob responsabilidade e o campo que decide a tela inteira</b>: e ela que
+     * habilita ou bloqueia o encerramento, e e ela que a tela usa para oferecer o caminho — "o Code e
+     * o Bartolomeu precisam de alguem antes que voce saia".
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public br.com.petfy.healthcare.domain.dto.AccountOverviewDTO conta() {
+        Person eu = currentPersonProvider.require();
+
+        List<br.com.petfy.healthcare.domain.dto.AnimalSearchItemDTO> sobMinhaResponsabilidade =
+                custodyRepository.findEmCursoDaPessoa(eu.getPersonId()).stream()
+                        .map(c -> br.com.petfy.healthcare.domain.dto.AnimalSearchItemDTO.builder()
+                                .animalId(c.getAnimal().getAnimalId())
+                                .name(c.getAnimal().getName())
+                                .microchipNumber(c.getAnimal().getMicrochipNumber())
+                                .build())
+                        .toList();
+
+        return br.com.petfy.healthcare.domain.dto.AccountOverviewDTO.builder()
+                .name(eu.getName())
+                .email(eu.getEmail())
+                .phone(eu.getPhone())
+                .passwordChangedAt(eu.getPasswordChangedAt())
+                .professionalCredential(credentialRepository
+                        .findByPersonPersonId(eu.getPersonId()).stream()
+                        .findFirst()
+                        .map(c -> c.getCouncil() + "-" + c.getUf() + " " + c.getNumber())
+                        .orElse(null))
+                .animalsUnderMyResponsibility(sobMinhaResponsabilidade)
+                .canDeleteAccount(sobMinhaResponsabilidade.isEmpty())
+                .build();
+    }
+
+    /**
+     * "Registro profissional · Declarar" (Tela 36).
+     *
+     * <b>Reusa o mesmo caminho do cadastro</b> — inclusive a recusa de registro ja usado por outra
+     * pessoa, que existe desde o P2b. O que muda e o momento: ate aqui so dava para declarar na
+     * criacao da conta.
+     */
+    @Override
+    @Transactional
+    public br.com.petfy.healthcare.domain.dto.AccountOverviewDTO declararCredencial(
+            br.com.petfy.healthcare.domain.dto.ProfessionalCredentialRequestDTO request) {
+        Person eu = currentPersonProvider.require();
+
+        String uf = request.getUf().toUpperCase();
+
+        if (credentialRepository.existsByCouncilAndUfAndNumber(CONSELHO_CRMV, uf, request.getCrmv())) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.CREDENTIAL_ALREADY_REGISTERED.getMessage(),
+                    ErrorMessageEnum.CREDENTIAL_ALREADY_REGISTERED.getCode(),
+                    HttpStatus.CONFLICT);
+        }
+
+        credentialRepository.save(ProfessionalCredential.builder()
+                .person(eu)
+                .council(CONSELHO_CRMV)
+                .uf(uf)
+                .number(request.getCrmv())
+                // INFORMADO, e nao VERIFICADO: nao ha integracao com conselho, e o registro carrega
+                // essa informacao em vez de fingir uma garantia que o produto nao tem
+                .status(CredentialStatus.INFORMADO)
+                .specialty(request.getSpecialty() == null || request.getSpecialty().isBlank()
+                        ? null : request.getSpecialty().trim())
+                .creationDate(LocalDateTime.now())
+                .build());
+
+        return conta();
     }
 
 }

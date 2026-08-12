@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './rotas/__root'
 import { Route as IndexRouteImport } from './rotas/index'
 import { Route as AgendaRouteImport } from './rotas/agenda'
 import { Route as ApadrinhamentosRouteImport } from './rotas/apadrinhamentos'
+import { Route as BuscarRouteImport } from './rotas/buscar'
 import { Route as ColoniaRouteImport } from './rotas/colonia'
 import { Route as ComecarRouteImport } from './rotas/comecar'
+import { Route as ContaRouteImport } from './rotas/conta'
 import { Route as CrecheRouteImport } from './rotas/creche'
 import { Route as CriarContaRouteImport } from './rotas/criar-conta'
 import { Route as EncaminhamentosRouteImport } from './rotas/encaminhamentos'
@@ -62,6 +64,11 @@ const ApadrinhamentosRoute = ApadrinhamentosRouteImport.update({
   path: '/apadrinhamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuscarRoute = BuscarRouteImport.update({
+  id: '/buscar',
+  path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ColoniaRoute = ColoniaRouteImport.update({
   id: '/colonia',
   path: '/colonia',
@@ -70,6 +77,11 @@ const ColoniaRoute = ColoniaRouteImport.update({
 const ComecarRoute = ComecarRouteImport.update({
   id: '/comecar',
   path: '/comecar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContaRoute = ContaRouteImport.update({
+  id: '/conta',
+  path: '/conta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrecheRoute = CrecheRouteImport.update({
@@ -250,8 +262,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/apadrinhamentos': typeof ApadrinhamentosRoute
+  '/buscar': typeof BuscarRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
+  '/conta': typeof ContaRoute
   '/creche': typeof CrecheRoute
   '/criar-conta': typeof CriarContaRoute
   '/encaminhamentos': typeof EncaminhamentosRoute
@@ -289,8 +303,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/apadrinhamentos': typeof ApadrinhamentosRoute
+  '/buscar': typeof BuscarRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
+  '/conta': typeof ContaRoute
   '/creche': typeof CrecheRoute
   '/criar-conta': typeof CriarContaRoute
   '/encaminhamentos': typeof EncaminhamentosRoute
@@ -329,8 +345,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/apadrinhamentos': typeof ApadrinhamentosRoute
+  '/buscar': typeof BuscarRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
+  '/conta': typeof ContaRoute
   '/creche': typeof CrecheRoute
   '/criar-conta': typeof CriarContaRoute
   '/encaminhamentos': typeof EncaminhamentosRoute
@@ -370,8 +388,10 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/apadrinhamentos'
+    | '/buscar'
     | '/colonia'
     | '/comecar'
+    | '/conta'
     | '/creche'
     | '/criar-conta'
     | '/encaminhamentos'
@@ -409,8 +429,10 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/apadrinhamentos'
+    | '/buscar'
     | '/colonia'
     | '/comecar'
+    | '/conta'
     | '/creche'
     | '/criar-conta'
     | '/encaminhamentos'
@@ -448,8 +470,10 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/apadrinhamentos'
+    | '/buscar'
     | '/colonia'
     | '/comecar'
+    | '/conta'
     | '/creche'
     | '/criar-conta'
     | '/encaminhamentos'
@@ -488,8 +512,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
   ApadrinhamentosRoute: typeof ApadrinhamentosRoute
+  BuscarRoute: typeof BuscarRoute
   ColoniaRoute: typeof ColoniaRoute
   ComecarRoute: typeof ComecarRoute
+  ContaRoute: typeof ContaRoute
   CrecheRoute: typeof CrecheRoute
   CriarContaRoute: typeof CriarContaRoute
   EncaminhamentosRoute: typeof EncaminhamentosRoute
@@ -544,6 +570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApadrinhamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/buscar': {
+      id: '/buscar'
+      path: '/buscar'
+      fullPath: '/buscar'
+      preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/colonia': {
       id: '/colonia'
       path: '/colonia'
@@ -556,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/comecar'
       fullPath: '/comecar'
       preLoaderRoute: typeof ComecarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conta': {
+      id: '/conta'
+      path: '/conta'
+      fullPath: '/conta'
+      preLoaderRoute: typeof ContaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creche': {
@@ -814,8 +854,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
   ApadrinhamentosRoute: ApadrinhamentosRoute,
+  BuscarRoute: BuscarRoute,
   ColoniaRoute: ColoniaRoute,
   ComecarRoute: ComecarRoute,
+  ContaRoute: ContaRoute,
   CrecheRoute: CrecheRoute,
   CriarContaRoute: CriarContaRoute,
   EncaminhamentosRoute: EncaminhamentosRoute,

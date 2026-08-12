@@ -220,6 +220,13 @@ export const mensagens = {
   "erro.189":
     "Sua organização não tem acesso a este animal. Peça acesso a quem cuida dele antes de agendar.",
 
+  // ------------------------------------------------------- a busca e a conta (Telas 35 e 36)
+  // A recusa que substituiu um desfecho silencioso: antes, o animal sem outro tutor morria com a
+  // conta e o que tinha co-tutor passava para o mais antigo — sem ninguém escolher.
+  "erro.190":
+    "Dê um destino a cada animal antes de encerrar a conta. Passe cada um para outra pessoa — a vida registrada deles vai junto e não se apaga com a sua conta.",
+  "erro.191": "Escreva ao menos três letras para buscar.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -2056,6 +2063,64 @@ export const mensagens = {
   // A recusa é um estado só, e a tela não inventa a distinção que o backend recusa a dar.
   "conviteDeAnimal.invalido.oQuePodeSer":
     "Ele pode ter expirado, já ter sido usado, ter sido cancelado por quem o enviou, ou ter sido endereçado a outro e-mail. Peça um convite novo a quem cuida do animal.",
+
+  // ------------------------------------------------------------------ Tela 35: a busca
+  "buscar.titulo": "Buscar",
+  "buscar.dica": "Nome, microchip ou RGA",
+  "buscar.curta": "Escreva ao menos três letras.",
+  "buscar.procurando": "Procurando…",
+  "buscar.seusAnimais": "Seus animais",
+  "buscar.nenhumSeu": "Nenhum animal seu com esse nome ou número.",
+  "buscar.pelaOrganizacao": "Animais que você alcança pela {organizacao}",
+  "buscar.nenhumDaOrganizacao": "Nenhum animal da organização com esse nome ou número.",
+  "buscar.tutor": " · tutor {quem}",
+  // A frase que quase nenhum produto teria: dizer que existe o que você não pode ver.
+  "buscar.existemOutros":
+    "Existem outros animais que casam com essa busca no Petfy. Você não tem acesso a eles, e por isso não aparecem aqui. Se você encontrou um animal na rua,",
+  "buscar.useAEncontrado": "use a busca de animal encontrado.",
+
+  // ------------------------------------------------------------------ Tela 36: a conta
+  "conta.oQueE": "sua conta",
+  "conta.titulo": "Sua conta",
+  "conta.alterar": "Alterar",
+  "conta.nomeETelefone": "Nome e telefone",
+  "conta.nomeETelefone.nota":
+    "Aparecem para quem cuida dos seus animais, e no cartão de emergência.",
+  "conta.senha": "Senha",
+  "conta.senha.alteradaEm": "Alterada em {quando}.",
+  // Nulo significa "nunca desde que a conta existe", e a tela diz isso em vez de mostrar a data do
+  // cadastro como se fosse troca.
+  "conta.senha.nuncaTrocada": "Você nunca trocou desde que criou a conta.",
+  "conta.registroProfissional": "Registro profissional",
+  "conta.registro.semNenhum":
+    "Você não declarou nenhum. Sem ele, você não registra diagnóstico nem prescrição.",
+  "conta.declarar": "Declarar",
+  "conta.registro.numero": "CRMV",
+  "conta.registro.uf": "UF",
+  "conta.registro.especialidade": "Especialidade (opcional)",
+  "conta.registro.salvar": "Salvar registro",
+  "conta.registro.informado":
+    "Entra como informado: o Petfy não consulta o conselho, e o registro carrega essa informação em vez de fingir uma garantia que não tem.",
+  "conta.aparelhos": "Aparelhos conectados",
+  // O produto não sabe, e diz que não sabe — um número estimado faria a pessoa clicar em "encerrar"
+  // acreditando ter encerrado.
+  "conta.aparelhos.naoSabemos":
+    "O Petfy não guarda a lista de aparelhos conectados, então não conseguimos mostrá-la nem encerrar sessões uma a uma. Trocar a senha derruba todas de uma vez.",
+  "conta.levarDados": "Levar meus dados embora",
+  "conta.levarDados.nota":
+    "Baixa a vida registrada dos seus animais em arquivo legível, sem pedir motivo.",
+  "conta.baixar": "Baixar",
+  "conta.encerrar": "Encerrar a conta",
+  // A regra que esta tela trouxe: ninguém sai deixando um animal sem quem responda por ele.
+  "conta.encerrar.precisamDeAlguem":
+    "{quantos, plural, one {O {animais} precisa} other {Os animais {animais} precisam}} de alguém antes que você saia. Passe cada um para outra pessoa — a vida registrada deles vai junto e não se apaga com a sua conta.",
+  "conta.encerrar.transferir": "Transferir {animal}",
+  "conta.encerrar.nadaPendente":
+    "Nenhum animal está sob a sua responsabilidade. Encerrar apaga a sua conta e os seus dados, e é irreversível.",
+  "conta.encerrar.botao": "Encerrar conta",
+  "conta.encerrar.confirmar": "Confirmar — isto não tem volta",
+  "conta.encerrar.disponivelQuando":
+    "Disponível quando nenhum animal estiver sob sua responsabilidade.",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

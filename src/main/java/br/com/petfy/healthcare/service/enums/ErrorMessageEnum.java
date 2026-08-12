@@ -234,6 +234,14 @@ public enum ErrorMessageEnum {
     // Agendar exige que o petshop ALCANCE o animal. Sem isso, qualquer organizacao poria qualquer
     // animal na propria agenda — e a agenda e onde aparece o que o tutor compartilhou.
     ANIMAL_NOT_REACHED_BY_ORGANIZATION(189, "Your organization does not have access to this animal"),
+    // O CODIGO QUE MUDA UM CONTRATO ANTIGO (Tela 36, e PRODUTO 3.4). Ate aqui, encerrar a conta
+    // matava o animal sem outro tutor ou passava a custodia ao co-tutor mais antigo — em silencio,
+    // e sem ninguem escolher. Agora o produto recusa e devolve a lista: "o Code e o Bartolomeu
+    // precisam de alguem antes que voce saia". Ninguem sai do Petfy deixando um animal sem quem
+    // responda por ele, e ninguem descobre depois que perdeu o cadastro do proprio cachorro.
+    ANIMALS_STILL_UNDER_YOUR_RESPONSIBILITY(190, "Give each animal a destination before closing your account"),
+    // Buscar com uma letra devolveria meio cadastro. E a mesma trava da busca de profissional.
+    SEARCH_TERM_TOO_SHORT(191, "Type at least three characters"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma
