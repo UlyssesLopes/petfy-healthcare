@@ -3,6 +3,8 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.repository.AnimalCostRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalDeathRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalSightingRepository;
+import br.com.petfy.healthcare.domain.repository.GroupApprovalRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalMergeRequestRepository;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.AttendanceRepository;
@@ -58,6 +60,8 @@ public class AnimalPurger {
     private final AnimalRepository animalRepository;
     private final AnimalCostRepository animalCostRepository;
     private final AnimalDeathRepository animalDeathRepository;
+    private final AnimalSightingRepository animalSightingRepository;
+    private final GroupApprovalRepository groupApprovalRepository;
     private final AnimalMergeRequestRepository animalMergeRequestRepository;
     private final AttachmentRepository attachmentRepository;
     private final AttachmentStorage attachmentStorage;
@@ -159,6 +163,14 @@ public class AnimalPurger {
         // destroi. Quem chega aqui pediu a segunda coisa — pelo DELETE do animal ou pela exclusao
         // da conta —, e a linha do obito vai junto com todo o resto.
         animalDeathRepository.deleteByAnimalIdIn(animalIds);
+
+        // O PEDIDO DE CONCORDANCIA sai antes do animal, e vale dizer o que se perde: ele e o
+        // registro de que duas pessoas decidiram algo. Some junto porque aponta para o animal —
+        // e quem chegou aqui pediu para destruir o rastro dele, nao para preserva-lo.
+        groupApprovalRepository.deleteByAnimalAnimalIdIn(animalIds);
+
+        // O avistamento e filha direta e some em massa: nada aponta para ele.
+        animalSightingRepository.deleteByAnimalAnimalIdIn(animalIds);
 
         // filhas: apontam para o animal
         vaccineRepository.deleteByAnimalAnimalIdIn(animalIds);

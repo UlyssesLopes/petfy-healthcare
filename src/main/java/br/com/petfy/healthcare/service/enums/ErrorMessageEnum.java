@@ -157,6 +157,24 @@ public enum ErrorMessageEnum {
     // nunca registrado". O codigo existe para a tela saber mostrar o que fazer em seguida, em
     // vez de "nenhum resultado encontrado" — que deixaria a pessoa e o animal parados na calcada.
     MICROCHIP_NOT_FOUND(161, "No animal with this microchip number"),
+    // ---------------------------------------------------- o animal comunitario (Telas 43 e 44)
+    //
+    // Ver um animal amanha nao e possivel. A recusa mora no servico pela mesma razao da data do
+    // obito: CURRENT_DATE nao e IMMUTABLE e nao cabe num CHECK do Postgres.
+    SIGHTING_DATE_IN_FUTURE(162, "The sighting date must not be in the future"),
+    GROUP_APPROVAL_NOT_FOUND(163, "Approval request not found"),
+    // Decidir duas vezes nao e idempotencia: a segunda decisao viria de quem leu o pedido antes
+    // de a primeira acontecer, sobre um estado que ja nao existe.
+    GROUP_APPROVAL_ALREADY_DECIDED(164, "This request was already decided"),
+    // O CODIGO QUE CARREGA A REGRA INTEIRA do animal sem dono: "sem dono, a protecao contra o
+    // gesto irreversivel de uma pessoa so e o acordo de duas". Quem pede nao concorda consigo, e
+    // esta e a unica recusa deste bloco que existe para proteger o animal de quem cuida dele.
+    CANNOT_APPROVE_OWN_REQUEST(165, "The person who asked cannot be the one who agrees"),
+    GROUP_APPROVAL_ALREADY_PENDING(166, "There is already a pending request for this"),
+    // Concordar exige ser do grupo. Nao e sobre hierarquia — um voluntario concorda tanto quanto
+    // a administradora —, e sim sobre pertencer: quem nao cuida daqueles animais nao tem como
+    // saber se a adocao faz sentido.
+    NOT_A_GROUP_MEMBER(167, "Only an active member of this group can do that"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

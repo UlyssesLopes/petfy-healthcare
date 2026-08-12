@@ -238,6 +238,31 @@ public class AnimalAccessGuard {
             return carregar(animalId);
         }
 
+        /*
+         * A CUSTODIA DA ORGANIZACAO CONTA AQUI TAMBEM, e nao contava — <b>e este era o mesmo
+         * defeito que a Tela 13 encontrou no `requireCustodia`, na outra metade da guarda.</b>
+         *
+         * La a linha que faltava trancava a adocao inteira: nenhum membro do abrigo conseguia
+         * agir sobre o animal do proprio abrigo. Aqui ela trancava algo maior e menos visivel —
+         * ler e ESCREVER. Um animal cuja custodia e de uma organizacao, sem tutor humano, so
+         * podia receber registro de quem tivesse concessao: o abrigo nao conseguia lancar peso no
+         * animal que ele resgatou, e a colonia inteira (Tela 43) seria inconstruivel, porque
+         * "marcar que viu o gato, registrar ferida, foto" e escrita.
+         *
+         * <b>Quem responde e a organizacao DECLARADA no cabecalho</b>, pela mesma razao de sempre:
+         * agir em nome de uma organizacao e escolha explicita de quem age, nunca inferencia do
+         * servidor. Um voluntario de duas colonias registraria na colonia errada sem saber.
+         *
+         * O nivel exigido nao filtra aqui: quem RESPONDE pelo animal escreve, e nao ha grau de
+         * custodia. E a mesma decisao que o ramo de cima ja tomava para a pessoa.
+         */
+        Optional<UUID> organizacaoDeclarada = organizacaoAtiva();
+
+        if (organizacaoDeclarada.isPresent()
+                && custodyRepository.findEmCursoDaOrganizacao(animalId, organizacaoDeclarada.get()).isPresent()) {
+            return carregar(animalId);
+        }
+
         // o animal morreu e quem responde por ele era esta pessoa: le, e nao escreve. A checagem
         // vem antes da concessao porque quem respondia nao tem concessao nenhuma para consultar
         if (nivelExigido == GrantLevel.VIEWER && respondiaAteOFim(animalId, personId)) {

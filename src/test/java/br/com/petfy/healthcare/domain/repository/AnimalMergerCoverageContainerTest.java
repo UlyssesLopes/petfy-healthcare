@@ -45,6 +45,20 @@ class AnimalMergerCoverageContainerTest extends PostgresContainerTest {
             // O custo E da vida do animal: "o custo do Code" nao muda porque descobriram que
             // havia dois cadastros dele. Se ficasse para tras, unir os cadastros faria metade do
             // que o tutor gastou desaparecer da conta — sem aviso nenhum.
+            // O AVISTAMENTO MOVE, e e o caso que mais parece "vinculo" desta lista.
+            //
+            // Ele parece vinculo porque fala de uma pessoa vendo um animal num dia. Mas o que ele
+            // registra e um fato do ANIMAL: ele estava vivo e na praca naquele dia. Se ficasse
+            // para tras, unir dois cadastros do mesmo gato faria "visto por ultimo" saltar para
+            // "ha 22 dias" no instante da uniao — e a colonia sairia procurando um gato que
+            // alguem viu hoje de manha.
+            //
+            // <b>E o unico dos que movem com indice unico</b> — (animal, pessoa, dia) —, e a
+            // colisao e o caso TIPICO da uniao: dois cadastros do mesmo gato existem porque duas
+            // pessoas o registraram, e as duas o veem no mesmo dia. O merger tem um passo proprio
+            // para isso (`desfazerAvistamentosEmDuplicata`), sem o qual a uniao inteira falharia
+            // por violacao de chave.
+            "animal_sightings",
             "animal_costs",
             "attachments",
             "vaccines",
@@ -87,7 +101,12 @@ class AnimalMergerCoverageContainerTest extends PostgresContainerTest {
             // A consequencia — um cadastro absorvido levando o obito consigo — quase nao alcanca a
             // realidade: unir exige quem responde pelo animal, e por um animal morto ninguem
             // responde. O aceite da uniao bate em `requireCustodia` antes de chegar aqui.
-            "animal_deaths");
+            "animal_deaths",
+            // O PEDIDO DE CONCORDANCIA FICA, pela mesma razao do pedido de uniao: ele nao e um
+            // fato do animal, e uma pergunta feita a um grupo especifico sobre um cadastro
+            // especifico. Move-lo faria um pedido de adocao pendente reaparecer apontando para um
+            // cadastro que quem pediu nunca viu — e a segunda pessoa concordaria com outra coisa.
+            "group_approvals");
 
     /**
      * As netas, que seguem o pai.

@@ -109,6 +109,21 @@ public class Animal {
     @Column(name = "castrated_at")
     private LocalDate castratedAt;
 
+    /**
+     * A castracao MARCADA, e ainda nao feita — o mutirao do dia 22 (Tela 43).
+     *
+     * <b>Nao e o {@link #castratedAt} com data futura</b>, e a diferenca custa caro: aquele campo
+     * afirma que o animal FOI castrado. O gato que nao aparece no dia do mutirao ficaria
+     * registrado como castrado para sempre, e a proxima lista de "falta castrar" o deixaria de
+     * fora — o defeito mais caro possivel numa tela cujo propósito é não perder gato nenhum.
+     *
+     * O servico limpa este campo quando a castracao acontece: um animal castrado nao tem
+     * castracao marcada. Data no passado e sinal, e nao erro — quer dizer que o mutirao passou e
+     * ninguem registrou o que houve.
+     */
+    @Column(name = "neutering_scheduled_for")
+    private LocalDate neuteringScheduledFor;
+
     private String bornLocal;
 
     private LocalDateTime creationDate;

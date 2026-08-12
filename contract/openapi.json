@@ -744,6 +744,39 @@
         },
         "type" : "object"
       },
+      "AnimalSightingRequestDTO" : {
+        "properties" : {
+          "seenOn" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalSightingResponseDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalSightingId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "daysSince" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "recordedByName" : {
+            "type" : "string"
+          },
+          "seenOn" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AnimalWeightRequestDTO" : {
         "properties" : {
           "measuredAt" : {
@@ -1752,6 +1785,93 @@
             "type" : "string"
           },
           "vaccineName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "GroupApprovalRequestDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "deceasedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "ADOCAO", "OBITO", "REMOCAO_DE_MEMBRO" ],
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "targetPersonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "toPersonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "kind" ],
+        "type" : "object"
+      },
+      "GroupApprovalResponseDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "canDecide" : {
+            "type" : "boolean"
+          },
+          "decidedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "decidedByName" : {
+            "type" : "string"
+          },
+          "groupApprovalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "ADOCAO", "OBITO", "REMOCAO_DE_MEMBRO" ],
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "requestedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "requestedByName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "PENDENTE", "CONCORDADO", "RECUSADO" ],
+            "type" : "string"
+          },
+          "targetPersonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "targetPersonName" : {
+            "type" : "string"
+          },
+          "toPersonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "toPersonName" : {
             "type" : "string"
           }
         },
@@ -4516,7 +4636,7 @@
       },
       "post" : {
         "description" : "So quem responde pelo animal. A veterinaria que o atendeu na ultima noite registra o obito como ato clinico dela, o que e outro registro: ninguem deve descobrir que perdeu o animal por uma notificacao do sistema. Encerra a custodia sem sucessor, encerra as matriculas vivas, poe o fim na linha do tempo e avisa quem cuidava dele — pessoas e organizacoes. NAO apaga nada: para destruir o registro existe o DELETE, e ele e outra coisa.",
-        "operationId" : "registrar",
+        "operationId" : "registrar_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "animalId",
@@ -4978,6 +5098,44 @@
         },
         "summary" : "Cria um link para o cartao do animal",
         "tags" : [ "animal-share-controller" ]
+      }
+    },
+    "/animals/{animalId}/sightings" : {
+      "post" : {
+        "description" : "IDEMPOTENTE por pessoa, animal e dia: tocar duas vezes devolve o mesmo registro em vez de erro — quem passa na praca de manha e a noite ja fez o que queria fazer. Duas PESSOAS marcando o mesmo dia sao dois registros, porque confirmacao e informacao. Exige escrita, e nao custodia: marcar que viu e do que qualquer um pode fazer. Corpo opcional — sem data, e hoje.",
+        "operationId" : "registrar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AnimalSightingRequestDTO"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimalSightingResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Marca que viu o animal",
+        "tags" : [ "animal-sighting-controller" ]
       }
     },
     "/animals/{animalId}/timeline" : {
@@ -5885,6 +6043,115 @@
         "security" : [ ],
         "summary" : "Procura um animal pelo numero do microchip",
         "tags" : [ "found-animal-controller" ]
+      }
+    },
+    "/group-approvals" : {
+      "get" : {
+        "description" : "Traz tambem o que a propria pessoa pediu, com canDecide=false: esconder o proprio pedido pareceria mais limpo e seria pior — quem pediu precisa ver que ele continua parado.",
+        "operationId" : "pendentes",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/GroupApprovalResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que espera decisao no grupo",
+        "tags" : [ "group-approval-controller" ]
+      },
+      "post" : {
+        "description" : "Os tres atos que, num grupo sem dono, nao podem ser de uma pessoa so: dar um animal para adocao, encerrar a linha do tempo dele e tirar alguem do grupo. Exige organizacao declarada no cabecalho, e que quem pede seja membro ativo dela.",
+        "operationId" : "pedir",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GroupApprovalRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroupApprovalResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Pede que outra pessoa do grupo concorde",
+        "tags" : [ "group-approval-controller" ]
+      }
+    },
+    "/group-approvals/{groupApprovalId}/agree" : {
+      "post" : {
+        "description" : "Concordar e executar sao a mesma transacao: guardar 'concordado, falta executar' criaria um estado em que o grupo acha que deu e o animal nao mudou de mao. Quem pediu NAO pode concordar — 403 com codigo proprio, e e a regra inteira do animal sem dono.",
+        "operationId" : "concordar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "groupApprovalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroupApprovalResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Concorda, e o ato acontece",
+        "tags" : [ "group-approval-controller" ]
+      }
+    },
+    "/group-approvals/{groupApprovalId}/reject" : {
+      "post" : {
+        "description" : "Nao apaga: quem pediu precisa ver que foi recusado, e nao que o pedido sumiu.",
+        "operationId" : "recusar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "groupApprovalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroupApprovalResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Recusa o pedido",
+        "tags" : [ "group-approval-controller" ]
       }
     },
     "/health-records" : {

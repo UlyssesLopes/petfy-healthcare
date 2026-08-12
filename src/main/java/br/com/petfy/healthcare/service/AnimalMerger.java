@@ -3,6 +3,7 @@ package br.com.petfy.healthcare.service;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalCost;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthCondition;
+import br.com.petfy.healthcare.domain.entity.AnimalSighting;
 import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
 import br.com.petfy.healthcare.domain.entity.Antiparasitic;
 import br.com.petfy.healthcare.domain.entity.Attachment;
@@ -63,7 +64,16 @@ public class AnimalMerger {
             Antiparasitic.class,
             AnimalHealthCondition.class,
             CareInstruction.class,
-            Observation.class);
+            Observation.class,
+            // O avistamento (V41) e o caso que mais parece vinculo desta lista, e nao e: ele
+            // registra um fato do ANIMAL — ele estava vivo e na praca naquele dia. Se ficasse
+            // para tras, unir dois cadastros do mesmo gato faria "visto por ultimo" saltar para
+            // "ha 22 dias" no instante da uniao, e a colonia sairia procurando um gato que
+            // alguem viu hoje de manha.
+            //
+            // <b>Ele e o unico da lista com indice unico</b>, e por isso tem um passo proprio
+            // antes do loop. Ver {@link #desfazerAvistamentosEmDuplicata}.
+            AnimalSighting.class);
 
     /*
      * O que NAO move, e por que cada um:
@@ -99,6 +109,8 @@ public class AnimalMerger {
     public int mover(UUID doAbsorvido, UUID paraOSobrevivente) {
         Animal sobrevivente = entityManager.getReference(Animal.class, paraOSobrevivente);
 
+        desfazerAvistamentosEmDuplicata(doAbsorvido, paraOSobrevivente);
+
         int movidos = 0;
 
         for (Class<?> tipo : MOVEM) {
@@ -117,6 +129,32 @@ public class AnimalMerger {
         entityManager.clear();
 
         return movidos;
+    }
+
+    /**
+     * Apaga do absorvido os avistamentos que colidiriam com os do sobrevivente.
+     *
+     * <b>O avistamento e o unico dos que MOVEM com indice unico</b> — {@code (animal, pessoa,
+     * dia)} —, e a colisao nao e hipotetica: ela e o caso TIPICO da uniao. Dois cadastros do
+     * mesmo gato existem justamente porque duas pessoas o registraram, e as duas o veem no mesmo
+     * dia. Sem este passo, o {@code update} em massa estoura e a uniao inteira falha por
+     * violacao de chave.
+     *
+     * <b>Apagar aqui nao perde fato nenhum</b>, e e por isso que a saida e esta e nao um
+     * {@code on conflict do nothing} escondido: os dois cadastros eram o mesmo animal, entao
+     * Sandra vendo "os dois" no dia 12 viu um gato. A linha que fica diz exatamente o mesmo que
+     * a que sai.
+     */
+    private void desfazerAvistamentosEmDuplicata(UUID doAbsorvido, UUID paraOSobrevivente) {
+        entityManager.createQuery(
+                        "delete from AnimalSighting s where s.animal.animalId = :absorvido "
+                                + "and exists (select 1 from AnimalSighting outro "
+                                + "  where outro.animal.animalId = :sobrevivente "
+                                + "    and outro.recordedBy = s.recordedBy "
+                                + "    and outro.seenOn = s.seenOn)")
+                .setParameter("absorvido", doAbsorvido)
+                .setParameter("sobrevivente", paraOSobrevivente)
+                .executeUpdate();
     }
 
 }
