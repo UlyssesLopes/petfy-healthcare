@@ -80,6 +80,7 @@ class AnimalPurgerTest {
     @Mock private CareInstructionFulfillmentRepository careInstructionFulfillmentRepository;
     @Mock private ObservationRepository observationRepository;
     @Mock private br.com.petfy.healthcare.domain.repository.ReferralRepository referralRepository;
+    @Mock private br.com.petfy.healthcare.domain.repository.SponsorshipRepository sponsorshipRepository;
 
     @InjectMocks
     private AnimalPurger animalPurger;
@@ -92,7 +93,7 @@ class AnimalPurgerTest {
                 attachmentRepository, vaccineCorrectionRepository, healthRecordCorrectionRepository,
                 vaccineRepository, healthRecordRepository,
                 animalWeightHistoryRepository, antiparasiticRepository,
-                referralRepository, grantRepository, sensitiveAccessLogRepository,
+                sponsorshipRepository, referralRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
                 careInstructionRepository, careInstructionFulfillmentRepository,
                 observationRepository,
@@ -192,7 +193,7 @@ class AnimalPurgerTest {
                     attachmentRepository, vaccineCorrectionRepository, healthRecordCorrectionRepository,
                     vaccineRepository, healthRecordRepository,
                     animalWeightHistoryRepository, antiparasiticRepository,
-                    referralRepository, grantRepository, sensitiveAccessLogRepository,
+                    sponsorshipRepository, referralRepository, grantRepository, sensitiveAccessLogRepository,
                 animalHealthConditionRepository,
                     careInstructionRepository, careInstructionFulfillmentRepository,
                     observationRepository,

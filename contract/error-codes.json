@@ -295,6 +295,30 @@
   "codigo" : 174,
   "mensagemDaApi" : "No one answers for this animal right now"
 }, {
+  "nome" : "SPONSORSHIP_NOT_OFFERED",
+  "codigo" : 175,
+  "mensagemDaApi" : "This animal is not open to sponsorship"
+}, {
+  "nome" : "SPONSORSHIP_NOT_FOUND",
+  "codigo" : 176,
+  "mensagemDaApi" : "Sponsorship not found"
+}, {
+  "nome" : "SPONSORSHIP_ALREADY_ACTIVE",
+  "codigo" : 177,
+  "mensagemDaApi" : "You already sponsor this for this animal"
+}, {
+  "nome" : "SPONSORSHIP_ALREADY_ENDING",
+  "codigo" : 178,
+  "mensagemDaApi" : "This sponsorship is already ending"
+}, {
+  "nome" : "COST_NOT_FROM_ANIMAL",
+  "codigo" : 179,
+  "mensagemDaApi" : "That cost does not belong to this animal"
+}, {
+  "nome" : "CANNOT_SPONSOR_OWN_ANIMAL",
+  "codigo" : 180,
+  "mensagemDaApi" : "You cannot sponsor an animal your organization answers for"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

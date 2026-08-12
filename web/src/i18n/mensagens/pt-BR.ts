@@ -190,6 +190,19 @@ export const mensagens = {
   "erro.174":
     "Ninguém responde por este animal agora, então não há quem autorize o encaminhamento.",
 
+  // ------------------------------------------------------ o apadrinhamento (Tela 46)
+  // Cobre os dois casos, e a frase diz os dois: o abrigo não abriu este animal, ou quem responde
+  // por ele é uma pessoa. Apadrinhar o cachorro de alguém seria pagar a conta dessa pessoa.
+  "erro.175":
+    "Este animal não está aberto a padrinhos. Ou o abrigo não o ofereceu, ou quem responde por ele é uma pessoa — e aí não é apadrinhar, é pagar a conta de alguém.",
+  "erro.176": "Não encontramos este apadrinhamento.",
+  "erro.177":
+    "Você já banca isto para este animal. Para dar mais, use “Outro” e escreva o que você quer bancar.",
+  "erro.178": "Este apadrinhamento já está terminando. A data combinada continua valendo.",
+  "erro.179": "Este gasto não é deste animal.",
+  "erro.180":
+    "Sua organização responde por este animal, então ela não pode apadrinhá-lo. Se quiser bancar do seu bolso, saia do contexto da organização primeiro.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -1822,6 +1835,63 @@ export const mensagens = {
     "Quem responde pelo animal não autorizou. O caso não foi compartilhado.",
   "encaminhamentos.acessoAte":
     "Acesso liberado por quem responde pelo animal até {quando}.",
+
+  // ------------------------------------------------------------- Tela 46: apadrinhar
+  "apadrinhar.oQueE": "o apadrinhamento",
+  "apadrinhar.identidade": "{especie} · {raca} · no {abrigo}",
+  "apadrinhar.desdeQuando": "Lá desde {ano}",
+  "apadrinhar.oQueCusta": "O que o abrigo gasta com ele por mês",
+  "apadrinhar.custoReal": "Custo real, todo mês",
+  // O vazio dirige, e não anuncia falha: sem custo lançado não há o que bancar de concreto.
+  "apadrinhar.semCusto":
+    "O {abrigo} ainda não lançou os gastos mensais deste animal. Você pode bancar um valor livre — e o que for comprado aparece para você.",
+  "apadrinhar.quantoBancar": "Quanto você quer bancar",
+  "apadrinhar.outro": "Outro",
+  "apadrinhar.outro.nota": "valor livre",
+  "apadrinhar.livre.oQue": "O que você quer bancar",
+  "apadrinhar.livre.quanto": "Quanto por mês",
+  "apadrinhar.coisaConcreta":
+    "Você banca uma coisa concreta, não uma cota abstrata. Quando ela for comprada, você vai ver o evento — com data, valor e quem comprou.",
+  "apadrinhar.bancar": "Passar a bancar",
+  "apadrinhar.enviando": "Registrando…",
+  "apadrinhar.podeParar":
+    "Pode parar quando quiser, sem justificar. O abrigo é avisado com 30 dias para se organizar.",
+  // Um número, e não nomes: nenhum ranking, nenhuma barra de meta, nenhuma urgência fabricada.
+  "apadrinhar.quantosBancam":
+    "{quantos, plural, one {Uma pessoa já banca} other {# pessoas já bancam}} algo dele.",
+  "apadrinhar.faltaEscolher": "Escolha o que você quer bancar.",
+  "apadrinhar.pronto.titulo": "Você passou a bancar o cuidado do {nome}",
+  "apadrinhar.pronto.oQueAcontece":
+    "O {abrigo} foi avisado. A partir de agora, o que for comprado do que você banca aparece para você — com data, valor e quem comprou.",
+  // A frase que evita a pergunta mais previsível desta tela.
+  "apadrinhar.pronto.oPetfyNaoCobra":
+    "O Petfy não cobra esse valor de você e não o repassa: quem combina o pagamento são vocês dois. O que o produto faz é registrar o compromisso e mostrar onde o dinheiro foi.",
+
+  // --------------------------------------------- o lado do padrinho, depois do gesto
+  "apadrinhamentos.oQueE": "o que você banca",
+  "apadrinhamentos.titulo": "O que você banca",
+  "apadrinhamentos.oQueEstaTelaE":
+    "A vida registrada de quem você ajuda, filtrada no que você banca. Nenhum relatório, nenhuma newsletter.",
+  "apadrinhamentos.vazio": "Você ainda não banca o cuidado de nenhum animal.",
+  "apadrinhamentos.oQueVoceBanca": "{oQue} · {animal}",
+  "apadrinhamentos.porMes": " por mês",
+  "apadrinhamentos.desde": "Desde {quando}.",
+  "apadrinhamentos.terminaEm":
+    "Você pediu para parar. Continua bancando até {quando} — são os 30 dias que o abrigo tem para se organizar.",
+  "apadrinhamentos.terminou": "Terminou.",
+  "apadrinhamentos.verOQueRecebo": "Ver o que foi comprado",
+  "apadrinhamentos.fechar": "Fechar",
+  "apadrinhamentos.parar": "Parar de bancar",
+  "apadrinhamentos.carregandoEventos": "Carregando…",
+  // O vazio aqui é comum e não é falha: o abrigo ainda não lançou nada desde que a pessoa começou.
+  "apadrinhamentos.aindaSemEvento":
+    "Nada foi lançado ainda desde que você começou. O que o abrigo registrar aparece aqui.",
+  "apadrinhamentos.evento": "{oQue} em {quando} · {valor}",
+  "apadrinhamentos.evento.porQuem": " · {quem}",
+  // O desenho promete a foto e avisa que ela não é garantida. O produto não tem como entregá-la
+  // sem decidir quais anexos são públicos, então diz o que faz em vez de simular.
+  "apadrinhamentos.semFoto":
+    "Aparecem aqui os gastos do que você banca. Fotos do dia a dia não são prometidas — o que o Petfy garante é o registro.",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

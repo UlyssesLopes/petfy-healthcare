@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './rotas/__root'
 import { Route as IndexRouteImport } from './rotas/index'
+import { Route as ApadrinhamentosRouteImport } from './rotas/apadrinhamentos'
 import { Route as ColoniaRouteImport } from './rotas/colonia'
 import { Route as ComecarRouteImport } from './rotas/comecar'
 import { Route as CrecheRouteImport } from './rotas/creche'
@@ -25,6 +26,7 @@ import { Route as OrganizacoesNovaRouteImport } from './rotas/organizacoes.nova'
 import { Route as PacientesAnimalIdRouteImport } from './rotas/pacientes.$animalId'
 import { Route as AnimaisAnimalIdAdocaoRouteImport } from './rotas/animais.$animalId_.adocao'
 import { Route as AnimaisAnimalIdAdotarRouteImport } from './rotas/animais.$animalId_.adotar'
+import { Route as AnimaisAnimalIdApadrinharRouteImport } from './rotas/animais.$animalId_.apadrinhar'
 import { Route as AnimaisAnimalIdCompraRouteImport } from './rotas/animais.$animalId_.compra'
 import { Route as AnimaisAnimalIdConcederAcessoRouteImport } from './rotas/animais.$animalId_.conceder-acesso'
 import { Route as AnimaisAnimalIdCustoRouteImport } from './rotas/animais.$animalId_.custo'
@@ -44,6 +46,11 @@ import { Route as CrecheMatriculaClassGroupIdEnrollmentIdRouteImport } from './r
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApadrinhamentosRoute = ApadrinhamentosRouteImport.update({
+  id: '/apadrinhamentos',
+  path: '/apadrinhamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ColoniaRoute = ColoniaRouteImport.update({
@@ -121,6 +128,12 @@ const AnimaisAnimalIdAdotarRoute = AnimaisAnimalIdAdotarRouteImport.update({
   path: '/animais/$animalId/adotar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnimaisAnimalIdApadrinharRoute =
+  AnimaisAnimalIdApadrinharRouteImport.update({
+    id: '/animais/$animalId_/apadrinhar',
+    path: '/animais/$animalId/apadrinhar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AnimaisAnimalIdCompraRoute = AnimaisAnimalIdCompraRouteImport.update({
   id: '/animais/$animalId_/compra',
   path: '/animais/$animalId/compra',
@@ -210,6 +223,7 @@ const CrecheMatriculaClassGroupIdEnrollmentIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/apadrinhamentos': typeof ApadrinhamentosRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
   '/creche': typeof CrecheRoute
@@ -225,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/pacientes/$animalId': typeof PacientesAnimalIdRouteWithChildren
   '/animais/$animalId/adocao': typeof AnimaisAnimalIdAdocaoRoute
   '/animais/$animalId/adotar': typeof AnimaisAnimalIdAdotarRoute
+  '/animais/$animalId/apadrinhar': typeof AnimaisAnimalIdApadrinharRoute
   '/animais/$animalId/compra': typeof AnimaisAnimalIdCompraRoute
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/custo': typeof AnimaisAnimalIdCustoRoute
@@ -243,6 +258,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/apadrinhamentos': typeof ApadrinhamentosRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
   '/creche': typeof CrecheRoute
@@ -258,6 +274,7 @@ export interface FileRoutesByTo {
   '/pacientes/$animalId': typeof PacientesAnimalIdRouteWithChildren
   '/animais/$animalId/adocao': typeof AnimaisAnimalIdAdocaoRoute
   '/animais/$animalId/adotar': typeof AnimaisAnimalIdAdotarRoute
+  '/animais/$animalId/apadrinhar': typeof AnimaisAnimalIdApadrinharRoute
   '/animais/$animalId/compra': typeof AnimaisAnimalIdCompraRoute
   '/animais/$animalId/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId/custo': typeof AnimaisAnimalIdCustoRoute
@@ -277,6 +294,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/apadrinhamentos': typeof ApadrinhamentosRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
   '/creche': typeof CrecheRoute
@@ -292,6 +310,7 @@ export interface FileRoutesById {
   '/pacientes/$animalId': typeof PacientesAnimalIdRouteWithChildren
   '/animais/$animalId_/adocao': typeof AnimaisAnimalIdAdocaoRoute
   '/animais/$animalId_/adotar': typeof AnimaisAnimalIdAdotarRoute
+  '/animais/$animalId_/apadrinhar': typeof AnimaisAnimalIdApadrinharRoute
   '/animais/$animalId_/compra': typeof AnimaisAnimalIdCompraRoute
   '/animais/$animalId_/conceder-acesso': typeof AnimaisAnimalIdConcederAcessoRoute
   '/animais/$animalId_/custo': typeof AnimaisAnimalIdCustoRoute
@@ -312,6 +331,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/apadrinhamentos'
     | '/colonia'
     | '/comecar'
     | '/creche'
@@ -327,6 +347,7 @@ export interface FileRouteTypes {
     | '/pacientes/$animalId'
     | '/animais/$animalId/adocao'
     | '/animais/$animalId/adotar'
+    | '/animais/$animalId/apadrinhar'
     | '/animais/$animalId/compra'
     | '/animais/$animalId/conceder-acesso'
     | '/animais/$animalId/custo'
@@ -345,6 +366,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/apadrinhamentos'
     | '/colonia'
     | '/comecar'
     | '/creche'
@@ -360,6 +382,7 @@ export interface FileRouteTypes {
     | '/pacientes/$animalId'
     | '/animais/$animalId/adocao'
     | '/animais/$animalId/adotar'
+    | '/animais/$animalId/apadrinhar'
     | '/animais/$animalId/compra'
     | '/animais/$animalId/conceder-acesso'
     | '/animais/$animalId/custo'
@@ -378,6 +401,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/apadrinhamentos'
     | '/colonia'
     | '/comecar'
     | '/creche'
@@ -393,6 +417,7 @@ export interface FileRouteTypes {
     | '/pacientes/$animalId'
     | '/animais/$animalId_/adocao'
     | '/animais/$animalId_/adotar'
+    | '/animais/$animalId_/apadrinhar'
     | '/animais/$animalId_/compra'
     | '/animais/$animalId_/conceder-acesso'
     | '/animais/$animalId_/custo'
@@ -412,6 +437,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApadrinhamentosRoute: typeof ApadrinhamentosRoute
   ColoniaRoute: typeof ColoniaRoute
   ComecarRoute: typeof ComecarRoute
   CrecheRoute: typeof CrecheRoute
@@ -426,6 +452,7 @@ export interface RootRouteChildren {
   OrganizacoesNovaRoute: typeof OrganizacoesNovaRoute
   AnimaisAnimalIdAdocaoRoute: typeof AnimaisAnimalIdAdocaoRoute
   AnimaisAnimalIdAdotarRoute: typeof AnimaisAnimalIdAdotarRoute
+  AnimaisAnimalIdApadrinharRoute: typeof AnimaisAnimalIdApadrinharRoute
   AnimaisAnimalIdCompraRoute: typeof AnimaisAnimalIdCompraRoute
   AnimaisAnimalIdConcederAcessoRoute: typeof AnimaisAnimalIdConcederAcessoRoute
   AnimaisAnimalIdCustoRoute: typeof AnimaisAnimalIdCustoRoute
@@ -448,6 +475,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apadrinhamentos': {
+      id: '/apadrinhamentos'
+      path: '/apadrinhamentos'
+      fullPath: '/apadrinhamentos'
+      preLoaderRoute: typeof ApadrinhamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/colonia': {
@@ -553,6 +587,13 @@ declare module '@tanstack/react-router' {
       path: '/animais/$animalId/adotar'
       fullPath: '/animais/$animalId/adotar'
       preLoaderRoute: typeof AnimaisAnimalIdAdotarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/animais/$animalId_/apadrinhar': {
+      id: '/animais/$animalId_/apadrinhar'
+      path: '/animais/$animalId/apadrinhar'
+      fullPath: '/animais/$animalId/apadrinhar'
+      preLoaderRoute: typeof AnimaisAnimalIdApadrinharRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/animais/$animalId_/compra': {
@@ -690,6 +731,7 @@ const PacientesRouteWithChildren = PacientesRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApadrinhamentosRoute: ApadrinhamentosRoute,
   ColoniaRoute: ColoniaRoute,
   ComecarRoute: ComecarRoute,
   CrecheRoute: CrecheRoute,
@@ -704,6 +746,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizacoesNovaRoute: OrganizacoesNovaRoute,
   AnimaisAnimalIdAdocaoRoute: AnimaisAnimalIdAdocaoRoute,
   AnimaisAnimalIdAdotarRoute: AnimaisAnimalIdAdotarRoute,
+  AnimaisAnimalIdApadrinharRoute: AnimaisAnimalIdApadrinharRoute,
   AnimaisAnimalIdCompraRoute: AnimaisAnimalIdCompraRoute,
   AnimaisAnimalIdConcederAcessoRoute: AnimaisAnimalIdConcederAcessoRoute,
   AnimaisAnimalIdCustoRoute: AnimaisAnimalIdCustoRoute,

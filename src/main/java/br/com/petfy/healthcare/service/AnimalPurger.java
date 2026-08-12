@@ -23,6 +23,7 @@ import br.com.petfy.healthcare.domain.repository.ReferralRepository;
 import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalWeightHistoryRepository;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
+import br.com.petfy.healthcare.domain.repository.SponsorshipRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.storage.AttachmentStorage;
@@ -83,6 +84,7 @@ public class AnimalPurger {
     private final ObservationRepository observationRepository;
     private final CareInstructionFulfillmentRepository careInstructionFulfillmentRepository;
     private final ReferralRepository referralRepository;
+    private final SponsorshipRepository sponsorshipRepository;
 
     /**
      * Apaga os animals informados e todo o rastro deles, o proprio animal incluido.
@@ -156,6 +158,14 @@ public class AnimalPurger {
 
         // O custo aponta para o animal, e tambem para o atendimento e para a matricula de onde
         // saiu — entao sai ANTES das duas, senao o delete delas esbarra nesta chave estrangeira.
+        // O APADRINHAMENTO SAI ANTES DO CUSTO (Tela 46), e a ordem e obrigatoria: ele aponta para o
+        // animal E para a linha de custo que o padrinho escolheu bancar. Apagar os custos primeiro
+        // esbarraria nessa chave em todo animal de abrigo que tenha padrinho.
+        //
+        // Vale dizer o que se perde: e o registro de que alguem bancou o cuidado daquele animal. Some
+        // junto porque quem chegou aqui pediu para destruir o rastro dele.
+        sponsorshipRepository.deleteAll(sponsorshipRepository.findByAnimalAnimalIdIn(animalIds));
+
         animalCostRepository.deleteByAnimalAnimalIdIn(animalIds);
 
         // O OBITO E FILHA DO ANIMAL PELA PROPRIA CHAVE (Tela 33): o `animal_id` e a PK dela.

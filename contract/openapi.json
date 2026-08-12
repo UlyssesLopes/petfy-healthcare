@@ -3503,6 +3503,156 @@
         },
         "type" : "object"
       },
+      "SponsoredEventDTO" : {
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "costId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "recordedByName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SponsorshipCostLineDTO" : {
+        "properties" : {
+          "alreadySponsored" : {
+            "type" : "boolean"
+          },
+          "amount" : {
+            "type" : "number"
+          },
+          "costId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SponsorshipOfferDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "atOrganizationSince" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "bornDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "breed" : {
+            "type" : "string"
+          },
+          "canSponsor" : {
+            "type" : "boolean"
+          },
+          "monthlyCosts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SponsorshipCostLineDTO"
+            },
+            "type" : "array"
+          },
+          "monthlyTotal" : {
+            "type" : "number"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "species" : {
+            "type" : "string"
+          },
+          "sponsorCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "SponsorshipRequestDTO" : {
+        "properties" : {
+          "amount" : {
+            "exclusiveMinimum" : false,
+            "minimum" : 0.01,
+            "type" : "number"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "sourceCostId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "amount", "description" ],
+        "type" : "object"
+      },
+      "SponsorshipResponseDTO" : {
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "cancelRequestedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "endsOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "sponsorName" : {
+            "type" : "string"
+          },
+          "sponsorshipId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "startedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "ATIVO", "ENCERRAMENTO_PEDIDO", "ENCERRADO" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "TimelineEntryResponseDTO" : {
         "properties" : {
           "correctionCount" : {
@@ -5493,6 +5643,74 @@
         "tags" : [ "animal-sighting-controller" ]
       }
     },
+    "/animals/{animalId}/sponsorship-offer" : {
+      "get" : {
+        "description" : "Quem ele e, o que o abrigo gasta com ele por mes, e quantas pessoas ja bancam algo dele. Responde 404 quando o abrigo nao abriu o animal a padrinhos, e tambem quando quem responde por ele e uma pessoa: apadrinhar o cachorro de alguem seria pagar a conta de uma pessoa. NENHUM dado clinico viaja aqui.",
+        "operationId" : "oferta",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SponsorshipOfferDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A tela de apadrinhar um animal de abrigo",
+        "tags" : [ "sponsorship-controller" ]
+      }
+    },
+    "/animals/{animalId}/sponsorships" : {
+      "post" : {
+        "description" : "Registra um COMPROMISSO, e nao um pagamento: o Petfy nao movimenta valor em lugar nenhum. O que o padrinho recebe em troca sao os eventos de custo do que ele banca, assinados e datados.",
+        "operationId" : "apadrinhar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SponsorshipRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SponsorshipResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Passa a bancar um custo do animal",
+        "tags" : [ "sponsorship-controller" ]
+      }
+    },
     "/animals/{animalId}/timeline" : {
       "get" : {
         "description" : "Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir.",
@@ -6538,6 +6756,29 @@
         },
         "summary" : "Os animais do grupo, com o ultimo avistamento",
         "tags" : [ "colony-controller" ]
+      }
+    },
+    "/group/sponsorships" : {
+      "get" : {
+        "description" : "Traz o que esta terminando junto com o que esta ativo — e essa lista que mostra, com trinta dias de antecedencia, qual custo vai deixar de ser coberto. Exige organizacao declarada no cabecalho.",
+        "operationId" : "daOrganizacao",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SponsorshipResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Quem banca os animais da sua organizacao",
+        "tags" : [ "sponsorship-controller" ]
       }
     },
     "/health-records" : {
@@ -8381,6 +8622,90 @@
         },
         "summary" : "Revoga o link",
         "tags" : [ "animal-share-controller" ]
+      }
+    },
+    "/sponsorships/mine" : {
+      "get" : {
+        "description" : "Inclusive o que ja acabou: quem bancou por dois anos precisa poder ver que bancou.",
+        "operationId" : "meus",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SponsorshipResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que voce banca",
+        "tags" : [ "sponsorship-controller" ]
+      }
+    },
+    "/sponsorships/{sponsorshipId}/end" : {
+      "post" : {
+        "description" : "Nao pede justificativa, e nao encerra na hora: o padrinho continua cobrindo o custo ate a data, e o abrigo e avisado para se organizar.",
+        "operationId" : "encerrar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "sponsorshipId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SponsorshipResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Para de bancar, com trinta dias",
+        "tags" : [ "sponsorship-controller" ]
+      }
+    },
+    "/sponsorships/{sponsorshipId}/events" : {
+      "get" : {
+        "description" : "Os eventos de custo do que este apadrinhamento banca, do mais recente para o mais antigo, e nunca de antes de ele comecar. Nao e a linha do tempo do animal: nenhum historico clinico e aberto ao padrinho.",
+        "operationId" : "eventos",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "sponsorshipId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SponsoredEventDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que voce passa a receber",
+        "tags" : [ "sponsorship-controller" ]
       }
     },
     "/vaccine-catalog" : {

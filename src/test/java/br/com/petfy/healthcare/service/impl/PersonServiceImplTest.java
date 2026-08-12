@@ -122,6 +122,9 @@ class PersonServiceImplTest {
     @Mock
     private br.com.petfy.healthcare.domain.repository.ReferralRepository referralRepository;
 
+    @Mock
+    private br.com.petfy.healthcare.domain.repository.SponsorshipRepository sponsorshipRepository;
+
     @InjectMocks
     private PersonServiceImpl personService;
 
