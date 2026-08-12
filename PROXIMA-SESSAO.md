@@ -4,22 +4,60 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-12, no fim de uma sessão que fechou o **bloco 5**.
+> Escrito em 2026-08-12, no fim de uma sessão que fechou o **bloco 5** e deixou o **bloco 6 pela
+> metade** — backend inteiro, frontend nenhum.
 
 ## Onde o trabalho está agora
 
-**O bloco 5 está mergeado** — PR #59, com CI verde nos dois workflows. O #58, que era só
-documentação, entrou antes dele (`520e5f2`). **Não há branch de feature aberta.**
+**O bloco 5 está mergeado** — PR #59, CI verde. A `main` está em `4524050`.
 
-**922 casos no backend, 51 no front, `Skipped: 0`.** Contrato regenerado, nenhuma operação
-renomeada. `npm run build` limpo.
+**O BLOCO 6 ESTÁ PELA METADE, e a metade que falta é a visível.** A branch
+`feat/animal-comunitario` tem, em `347e681`, o **backend completo das Telas 43 e 44** — migração,
+entidades, serviços, rotas, guardas de cobertura e 10 casos de container. **Não há frontend
+nenhum**, e o contrato já está regenerado com as rotas novas.
 
-**Duas telas novas no ar:** 33 (encerrar a linha do tempo) e 34 (achei um animal na rua).
+**932 casos no backend, 51 no front, `Skipped: 0`.**
 
-**O conflito que os dois PRs produziram, e que vai voltar:** os dois reescreveram esta página. A
-resolução foi ficar com esta versão, que já continha o conteúdo do #58. **Enquanto houver dois PRs
-abertos ao mesmo tempo, este arquivo conflita** — e a saída é resolver por "a versão mais nova
-vence", nunca mesclando as duas.
+**Duas telas no ar desde o bloco 5:** 33 (encerrar a linha do tempo) e 34 (achei um animal na rua).
+
+**O conflito que os dois PRs produziram, e que vai voltar:** #58 e #59 reescreveram esta página. A
+resolução foi "a versão mais nova vence", nunca mesclando as duas. **Enquanto houver dois PRs
+abertos ao mesmo tempo, este arquivo conflita.**
+
+## O bloco 6, e o que falta dele
+
+**Escopo escolhido: 43 e 44 agora, 45 depois.** O arquivo do desenho traz três telas, e a 45
+(encaminhar ao especialista) **é independente das outras duas** — caiu ali por ser "o caso que
+passa adiante", e vira bloco próprio sem perder nada.
+
+### O que já está pronto (backend, em `347e681`)
+
+- **`V41__o_animal_que_e_de_todos.sql`** — `animal_sightings`, `group_approvals`,
+  `memberships.contribution` e `animals.neutering_scheduled_for`
+- `POST /animals/{id}/sightings` — idempotente por pessoa, animal e dia
+- `POST /group-approvals`, `GET`, `.../agree`, `.../reject`
+- Os três atos executam de verdade: adoção vira convite de titularidade, óbito reusa o fluxo da
+  Tela 33 inteiro, remoção desliga a `membership`
+
+### O defeito que o teste encontrou, e que é o achado da sessão
+
+**O `requireEscrita` não enxergava custódia de organização** — só o `requireCustodia` enxergava,
+desde a Tela 13. O efeito era mudo e grande: um animal cuja custódia é de uma organização, sem
+tutor humano, **não podia receber registro nenhum de quem cuida dele**. O abrigo não lançava peso
+no animal que resgatou.
+
+É a mesma linha que faltava no `requireCustodia` e trancava a adoção inteira, agora na outra
+metade da guarda. **Vale procurar a terceira**: `alcanca()` também só pergunta por pessoa.
+
+### O que falta para fechar o bloco 6
+
+1. **O frontend das Telas 43 e 44** — a lista da colônia com os quatro filtros ("todos", "falta
+   castrar", "em tratamento", "sumidos há mais de 15 dias"), a coluna "visto por último", o painel
+   de quem cuida, e a tela de passar o gato para uma casa
+2. **A listagem enriquecida no backend**: a lista existente (`VetPetServiceImpl.listAnimalsInCustody`,
+   Tela 12) **não traz "visto por último" nem os filtros novos**. A consulta em lote já existe
+   (`AnimalSightingRepository.ultimoDeCada`), mas nada a chama ainda
+3. **Mensagens em pt-BR** para as duas telas, e os códigos 162–167 na tabela de erro do front
 
 ## O bloco 5, e as decisões que ele tomou
 
@@ -101,7 +139,8 @@ e ninguém tinha visto porque **nenhuma tela foi conferida no navegador em nenhu
 | 3 | Por onde o valor entra — 40, 41, 42 | **Fechado e mergeado** — PR #56 |
 | 4 | Custo do cuidado — 37, 38, 39 | **Fechado e mergeado** — PR #57 |
 | 5 | Fim e reencontro — 33, 34 | **Fechado e mergeado** — PR #59 |
-| 6 | Animal comunitário — 43, 44, 45 | pendente |
+| 6 | Animal comunitário — 43, 44 | **Backend pronto**, frontend faltando |
+| 6b | **Encaminhamento — Tela 45** | pendente, e independente das outras duas |
 | 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
 | 8 | Tela 18 — petshop | pendente (a especificação sempre existiu) |
 | 9 | **A busca e a conta — 35, 36** | pendente, e o desenho existe |
@@ -150,12 +189,14 @@ exportação de dados e encerramento de conta, e mexe em autenticação.
 
 ## Primeiro passo da próxima sessão
 
-**Sincronizar a `main` e ramificar dela** — não há nada pendente, e branch nova é regra desde a
-armadilha do bloco 4.
+**Continuar na branch `feat/animal-comunitario`, que já existe e tem o backend.** Ela saiu de uma
+`main` sincronizada e **ainda não tem PR aberto** — então commitar nela roda CI normalmente
+quando o PR abrir.
 
-Depois, **o bloco 6 — Animal comunitário, Telas 43, 44 e 45**, cujo desenho é
-`design/IdentidadeVisual/Telas Petfy - Animal comunitário e encaminhamento.dc.html` e **ainda não
-foi lido**. Ou o bloco 9 (35 e 36), se a preferência for fechar o arquivo do bloco 5 inteiro.
+O trabalho é o **frontend das Telas 43 e 44**, mais a listagem enriquecida que falta no backend
+(ver "o que falta para fechar o bloco 6", acima). O desenho é
+`design/IdentidadeVisual/Telas Petfy - Animal comunitário e encaminhamento.dc.html`, **já lido** —
+e a Tela 45 dele está fora deste bloco de propósito.
 
 **Ler o `.dc.html` inteiro antes de planejar, e contar as telas.** O nome do arquivo cobre mais
 do que o bloco declarado — foi assim que as Telas 35 e 36 apareceram.
