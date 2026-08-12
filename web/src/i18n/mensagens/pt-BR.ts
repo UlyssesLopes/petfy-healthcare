@@ -190,6 +190,36 @@ export const mensagens = {
   "erro.174":
     "Ninguém responde por este animal agora, então não há quem autorize o encaminhamento.",
 
+  // ------------------------------------------------------ o apadrinhamento (Tela 46)
+  // Cobre os dois casos, e a frase diz os dois: o abrigo não abriu este animal, ou quem responde
+  // por ele é uma pessoa. Apadrinhar o cachorro de alguém seria pagar a conta dessa pessoa.
+  "erro.175":
+    "Este animal não está aberto a padrinhos. Ou o abrigo não o ofereceu, ou quem responde por ele é uma pessoa — e aí não é apadrinhar, é pagar a conta de alguém.",
+  "erro.176": "Não encontramos este apadrinhamento.",
+  "erro.177":
+    "Você já banca isto para este animal. Para dar mais, use “Outro” e escreva o que você quer bancar.",
+  "erro.178": "Este apadrinhamento já está terminando. A data combinada continua valendo.",
+  "erro.179": "Este gasto não é deste animal.",
+  "erro.180":
+    "Sua organização responde por este animal, então ela não pode apadrinhá-lo. Se quiser bancar do seu bolso, saia do contexto da organização primeiro.",
+
+  // ---------------------------------------------------------- a hospedagem (Tela 47)
+  "erro.181": "Este animal não está hospedado agora.",
+  "erro.182": "Este animal já está hospedado. Registre a volta antes de entregá-lo de novo.",
+  "erro.183": "A volta prevista precisa ser depois de hoje.",
+  "erro.184":
+    "Só quem está com o animal ou quem o entregou pode registrar a volta.",
+  "erro.185":
+    "Esta organização não pode responder por um animal. Hospedagem passa a responsabilidade, e não só o acesso.",
+
+  // -------------------------------------------------------- a agenda do petshop (Tela 18)
+  "erro.186": "Não encontramos este agendamento.",
+  "erro.187": "Este animal já tem um horário marcado nesse momento.",
+  "erro.188":
+    "Este agendamento não está no estado que permite isso. Recarregue para ver como ele está agora.",
+  "erro.189":
+    "Sua organização não tem acesso a este animal. Peça acesso a quem cuida dele antes de agendar.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -1822,6 +1852,210 @@ export const mensagens = {
     "Quem responde pelo animal não autorizou. O caso não foi compartilhado.",
   "encaminhamentos.acessoAte":
     "Acesso liberado por quem responde pelo animal até {quando}.",
+
+  // ------------------------------------------------------------- Tela 46: apadrinhar
+  "apadrinhar.oQueE": "o apadrinhamento",
+  "apadrinhar.identidade": "{especie} · {raca} · no {abrigo}",
+  "apadrinhar.desdeQuando": "Lá desde {ano}",
+  "apadrinhar.oQueCusta": "O que o abrigo gasta com ele por mês",
+  "apadrinhar.custoReal": "Custo real, todo mês",
+  // O vazio dirige, e não anuncia falha: sem custo lançado não há o que bancar de concreto.
+  "apadrinhar.semCusto":
+    "O {abrigo} ainda não lançou os gastos mensais deste animal. Você pode bancar um valor livre — e o que for comprado aparece para você.",
+  "apadrinhar.quantoBancar": "Quanto você quer bancar",
+  "apadrinhar.outro": "Outro",
+  "apadrinhar.outro.nota": "valor livre",
+  "apadrinhar.livre.oQue": "O que você quer bancar",
+  "apadrinhar.livre.quanto": "Quanto por mês",
+  "apadrinhar.coisaConcreta":
+    "Você banca uma coisa concreta, não uma cota abstrata. Quando ela for comprada, você vai ver o evento — com data, valor e quem comprou.",
+  "apadrinhar.bancar": "Passar a bancar",
+  "apadrinhar.enviando": "Registrando…",
+  "apadrinhar.podeParar":
+    "Pode parar quando quiser, sem justificar. O abrigo é avisado com 30 dias para se organizar.",
+  // Um número, e não nomes: nenhum ranking, nenhuma barra de meta, nenhuma urgência fabricada.
+  "apadrinhar.quantosBancam":
+    "{quantos, plural, one {Uma pessoa já banca} other {# pessoas já bancam}} algo dele.",
+  "apadrinhar.faltaEscolher": "Escolha o que você quer bancar.",
+  "apadrinhar.pronto.titulo": "Você passou a bancar o cuidado do {nome}",
+  "apadrinhar.pronto.oQueAcontece":
+    "O {abrigo} foi avisado. A partir de agora, o que for comprado do que você banca aparece para você — com data, valor e quem comprou.",
+  // A frase que evita a pergunta mais previsível desta tela.
+  "apadrinhar.pronto.oPetfyNaoCobra":
+    "O Petfy não cobra esse valor de você e não o repassa: quem combina o pagamento são vocês dois. O que o produto faz é registrar o compromisso e mostrar onde o dinheiro foi.",
+
+  // --------------------------------------------- o lado do padrinho, depois do gesto
+  "apadrinhamentos.oQueE": "o que você banca",
+  "apadrinhamentos.titulo": "O que você banca",
+  "apadrinhamentos.oQueEstaTelaE":
+    "A vida registrada de quem você ajuda, filtrada no que você banca. Nenhum relatório, nenhuma newsletter.",
+  "apadrinhamentos.vazio": "Você ainda não banca o cuidado de nenhum animal.",
+  "apadrinhamentos.oQueVoceBanca": "{oQue} · {animal}",
+  "apadrinhamentos.porMes": " por mês",
+  "apadrinhamentos.desde": "Desde {quando}.",
+  "apadrinhamentos.terminaEm":
+    "Você pediu para parar. Continua bancando até {quando} — são os 30 dias que o abrigo tem para se organizar.",
+  "apadrinhamentos.terminou": "Terminou.",
+  "apadrinhamentos.verOQueRecebo": "Ver o que foi comprado",
+  "apadrinhamentos.fechar": "Fechar",
+  "apadrinhamentos.parar": "Parar de bancar",
+  "apadrinhamentos.carregandoEventos": "Carregando…",
+  // O vazio aqui é comum e não é falha: o abrigo ainda não lançou nada desde que a pessoa começou.
+  "apadrinhamentos.aindaSemEvento":
+    "Nada foi lançado ainda desde que você começou. O que o abrigo registrar aparece aqui.",
+  "apadrinhamentos.evento": "{oQue} em {quando} · {valor}",
+  "apadrinhamentos.evento.porQuem": " · {quem}",
+  // O desenho promete a foto e avisa que ela não é garantida. O produto não tem como entregá-la
+  // sem decidir quais anexos são públicos, então diz o que faz em vez de simular.
+  "apadrinhamentos.semFoto":
+    "Aparecem aqui os gastos do que você banca. Fotos do dia a dia não são prometidas — o que o Petfy garante é o registro.",
+
+  // ------------------------------------------------------------ Tela 47: hospedagem
+  "hospedagem.oQueE": "a hospedagem",
+  "hospedagem.entregar.titulo": "Deixar o animal hospedado",
+  "hospedagem.entregar.oQueE":
+    "Hospedagem é custódia temporária: quem recebe passa a responder pelo animal, com prazo, e devolve no dia combinado.",
+  "hospedagem.entregar.onde": "Onde ele fica",
+  "hospedagem.entregar.onde.nota":
+    "Só aparecem organizações que podem responder por um animal. Uma clínica que apenas registra atendimento não passa a responder por ele durante uma semana.",
+  "hospedagem.entregar.volta": "Volta prevista",
+  "hospedagem.entregar.volta.nota":
+    "Prevista, e não automática: a volta acontece quando alguém registra. A data serve para vocês dois combinarem, e ninguém devolve um animal porque o relógio virou.",
+  // O que muda de verdade, dito antes do gesto.
+  "hospedagem.entregar.oQueMuda":
+    "Enquanto ele estiver lá, quem responde por ele é a organização — ela pode levá-lo ao veterinário sem esperar você. Você continua vendo tudo, e a responsabilidade volta para você no dia da devolução.",
+  "hospedagem.entregar": "Entregar para hospedagem",
+  "hospedagem.entregando": "Registrando…",
+  "hospedagem.voltarAoAnimal": "Voltar para o animal",
+  "hospedagem.titulo": "O {animal} está na {onde}",
+  "hospedagem.diaDe": "Dia {dia} de {total}",
+  "hospedagem.periodo": "Entrou em {entrada} · volta prevista para {volta}",
+  "hospedagem.oQueAconteceu": "Isto é o que aconteceu com ele desde que saiu de casa.",
+  "hospedagem.carregando": "Carregando…",
+  // O vazio é comum e não é falha: ninguém registrou nada desde a entrada.
+  "hospedagem.aindaNada":
+    "Nada foi registrado desde a entrada. Quando alguém da {onde} anotar algo, aparece aqui.",
+  // Evento fora do escopo aparece opaco em vez de sumir — sumir diria que nada aconteceu.
+  "hospedagem.evento.opaco": "Um registro que você não alcança",
+  "hospedagem.enquantoEleEstaLa": "Enquanto ele está lá",
+  "hospedagem.regra.responde":
+    "A {onde} responde por ele até {volta}, e pode levá-lo ao veterinário sem esperar você.",
+  "hospedagem.regra.voceContinuaLendo":
+    "A responsabilidade volta para {quem} quando a devolução for registrada. Até lá, você continua vendo tudo que acontece com ele.",
+  "hospedagem.devolver": "Registrar a volta",
+  "hospedagem.devolvendo": "Registrando…",
+
+  // -------------------------------------------------------- Tela 48: o ano do animal
+  "ano.oQueE": "o ano do animal",
+  "ano.titulo": "O ano do {nome}",
+  "ano.periodo": "{de} a {ate}",
+  "ano.anoDeVida": " · {ano}º ano dele",
+  "ano.imprimir": "Imprimir",
+  "ano.registros": "Registros no ano",
+  "ano.registros.nota":
+    "por {pessoas, plural, =0 {ninguém} one {1 pessoa} other {# pessoas}} e {organizacoes, plural, =0 {nenhuma organização} one {1 organização} other {# organizações}}",
+  "ano.creche": "Dias na creche",
+  "ano.creche.nota":
+    "{dias, plural, =0 {nenhum de hospedagem} one {e 1 de hospedagem} other {e # de hospedagem}}",
+  "ano.peso": "Peso",
+  "ano.peso.valor": "{kg} kg",
+  "ano.peso.antes": "era {kg} kg no começo do período",
+  "ano.peso.semAnterior": "não houve outra pesagem no período",
+  "ano.saude": "O que aconteceu de saúde",
+  "ano.saude.consultas":
+    "{quantas, plural, =0 {Nenhum atendimento registrado} one {1 atendimento} other {# atendimentos}}",
+  "ano.saude.doses":
+    "{vacinas, plural, =0 {Nenhuma vacina} one {1 vacina} other {# vacinas}} e {antiparasitarios, plural, =0 {nenhum antiparasitário} one {1 antiparasitário} other {# antiparasitários}}",
+  // O QUE DEU ERRADO. É a parte que nenhum resumo automático costuma ter.
+  "ano.saude.esteveVencida":
+    "A {vacina} ficou {dias, plural, one {1 dia} other {# dias}} vencida em {quando}.",
+  // O ainda-vencido é outra frase: ele não é história, é uma pendência de hoje.
+  "ano.saude.vencidaAgora":
+    "A {vacina} está vencida desde {desde} — {dias, plural, one {1 dia} other {# dias}} até agora.",
+  "ano.saude.naoReavaliada": "A {condicao} não foi reavaliada desde {ano}.",
+  // O vazio aqui é notícia boa, e a frase diz isso em vez de deixar a seção sem nada.
+  "ano.saude.nadaPendente":
+    "Nenhuma vacina esteve vencida e nenhuma condição crônica ficou sem reavaliação no período.",
+  "ano.quemCuidou": "Quem cuidou dele este ano",
+  "ano.quemCuidou.pelaOrganizacao": "{quem}, pela {organizacao}",
+  "ano.quemCuidou.registros": "{quantos, plural, one {1 registro} other {# registros}}",
+  "ano.quemCuidou.ninguem": "Ninguém registrou nada sobre ele no período.",
+  "ano.paraQueServe":
+    "Este é o documento que você leva à próxima consulta, e o que você entrega junto com ele se algum dia ele passar para outra pessoa. Um ano de vida dele, em uma página.",
+
+  // ------------------------------------------------------ Tela 18: a agenda do petshop
+  "agenda.oQueE": "a agenda",
+  "agenda.hoje": "Hoje",
+  "agenda.quantos": "{quantos, plural, =0 {nada marcado} one {1 banho hoje} other {# banhos hoje}}",
+  // O vazio dirige, e não anuncia falha: um dia sem banho marcado é um dia normal.
+  "agenda.vazia": "Nada marcado para hoje.",
+  "agenda.abrir": "Abrir",
+  "agenda.fechar": "Fechar",
+  "agenda.marcarEntrada": "Marcar entrada",
+  "agenda.entregue": "Entregue às {quando}",
+  "agenda.faltou": "Não veio",
+  "agenda.naoVeio": "Marcar que não veio",
+  "agenda.oQuePrecisaSaber": "O que você precisa saber antes de encostar nele",
+  // O estado que a maioria dos produtos esconderia. Um cartão sem as linhas parece um animal sem
+  // restrição nenhuma.
+  "agenda.noEscuro": "O acesso a este animal venceu — você está no escuro",
+  "agenda.semLinhas":
+    "Você não tem acesso às informações deste animal. Peça de novo antes de dar o banho: um cartão vazio não quer dizer que ele não tem restrição.",
+  "agenda.vacinacaoEmDia": "Vacinação em dia",
+  "agenda.vacinacaoAtrasada": "Há vacina vencida na carteira dele",
+  "agenda.eTudoQueOTutorCompartilhou":
+    "É tudo o que quem cuida dele compartilhou, e é tudo o que o banho exige. O histórico clínico existe e não está aqui.",
+  "agenda.algoQueNotou": "Alguma coisa que você notou",
+  // A frase mais importante da tela: observação nunca vira ato clínico sozinha.
+  "agenda.descrevaOQueViu":
+    "Descreva o que viu, não o que acha que é. Isso entra na linha do tempo do {animal} como observação sua, e o veterinário decide o resto.",
+  "agenda.entregarEAvisar": "Entregar e avisar quem cuida dele",
+  "agenda.oQueNuncaVe": "O que você nunca vê",
+  "agenda.oQueNuncaVe.lista":
+    "Diagnósticos, prescrições e exames · histórico de atendimentos · recados e fotos de outras organizações.",
+  "agenda.quatroLinhasBastam":
+    "Quatro linhas de saúde bastam para o banho ser seguro. Pedir mais que isso seria pedir o que não se usa.",
+
+  // -------------------------------------- Telas 19–21: quem recebe o convite de animal
+  "conviteDeAnimal.oQueE": "o convite",
+  "conviteDeAnimal.tipo.coTutoria": "Convite de co-tutoria",
+  "conviteDeAnimal.tipo.transferencia": "Transferência de titularidade",
+  "conviteDeAnimal.tipo.adocao": "Adoção",
+  "conviteDeAnimal.coTutoria.titulo": "{quem} quer dividir o cuidado do {animal} com você",
+  "conviteDeAnimal.coTutoria.resumo":
+    "Você vai ver tudo sobre o {animal} e registrar junto: remédio dado, consulta, o que notou no dia.",
+  "conviteDeAnimal.transferencia.titulo": "{quem} quer passar o {animal} para você",
+  "conviteDeAnimal.transferencia.resumo":
+    "Você passa a responder pelo {animal}. A vida registrada dele vai junto — ela não recomeça no dia em que ele muda de mão.",
+  "conviteDeAnimal.adocao.titulo": "{quem} quer que você adote o {animal}",
+  "conviteDeAnimal.adocao.resumo":
+    "Você passa a responder pelo {animal}. Tudo que o abrigo registrou sobre ele vai junto — você não recebe uma ficha em branco.",
+  "conviteDeAnimal.oQueSignifica": "O que isso significa",
+  "conviteDeAnimal.significa.avisos": "Você passa a receber os avisos de vacina e remédio",
+  "conviteDeAnimal.significa.autoria": "O que você registrar leva o seu nome, para sempre",
+  "conviteDeAnimal.significa.eleContinuaRespondendo":
+    "{quem} continua respondendo pelo {animal}. Você pode sair quando quiser.",
+  "conviteDeAnimal.significa.voceResponde":
+    "Quem responde pelo animal passa a ser você. {quem} continua vendo a vida dele, e deixa de decidir sobre ele.",
+  "conviteDeAnimal.aceitar": "Aceitar",
+  "conviteDeAnimal.aceitando": "Aceitando…",
+  "conviteDeAnimal.recusar": "Recusar",
+  "conviteDeAnimal.recusando": "Recusando…",
+  "conviteDeAnimal.seRecusar": "Se recusar, {quem} é avisado e nada muda para o {animal}.",
+  "conviteDeAnimal.aceito.titulo": "Pronto — o {animal} é seu agora também",
+  "conviteDeAnimal.aceito.agoraVoceAcompanha":
+    "Você já vê tudo sobre ele e pode registrar junto com {quem}.",
+  "conviteDeAnimal.aceito.agoraVoceResponde":
+    "Você responde pelo {animal} a partir de agora. Toda a vida registrada dele veio junto.",
+  "conviteDeAnimal.recusado.titulo": "Convite recusado",
+  "conviteDeAnimal.recusado.nadaMuda":
+    "{quem} foi avisado, e nada muda para o {animal}: quem respondia por ele continua respondendo.",
+  "conviteDeAnimal.verAnimais": "Ver meus animais",
+  "conviteDeAnimal.irParaInicio": "Ir para o início",
+  "conviteDeAnimal.invalido.titulo": "Este convite não vale mais",
+  // A recusa é um estado só, e a tela não inventa a distinção que o backend recusa a dar.
+  "conviteDeAnimal.invalido.oQuePodeSer":
+    "Ele pode ter expirado, já ter sido usado, ter sido cancelado por quem o enviou, ou ter sido endereçado a outro e-mail. Peça um convite novo a quem cuida do animal.",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

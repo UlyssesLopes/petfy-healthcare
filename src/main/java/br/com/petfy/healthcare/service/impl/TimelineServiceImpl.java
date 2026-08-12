@@ -58,7 +58,7 @@ public class TimelineServiceImpl implements TimelineService {
     @Override
     @Transactional(readOnly = true)
     public Page<TimelineEntryResponseDTO> doAnimal(UUID animalId, Pageable pageable) {
-        return doAnimal(animalId, false, false, pageable);
+        return doAnimal(animalId, false, false, null, pageable);
     }
 
     /**
@@ -77,12 +77,14 @@ public class TimelineServiceImpl implements TimelineService {
     @Override
     @Transactional(readOnly = true)
     public Page<TimelineEntryResponseDTO> doAnimal(UUID animalId, boolean apenasDaMinhaOrganizacao,
-                                                   boolean apenasMeus, Pageable pageable) {
+                                                   boolean apenasMeus,
+                                                   java.time.LocalDateTime desde,
+                                                   Pageable pageable) {
         animalAccessGuard.requireLeitura(animalId);
 
         Set<GrantScope> escopo = animalAccessGuard.escopoDoAutenticado(animalId);
 
-        if (!apenasDaMinhaOrganizacao && !apenasMeus) {
+        if (!apenasDaMinhaOrganizacao && !apenasMeus && desde == null) {
             return timelineRepository.findDoAnimal(animalId, pageable)
                     .map(entrada -> toResponse(entrada, escopo));
         }
@@ -96,7 +98,9 @@ public class TimelineServiceImpl implements TimelineService {
                 : null;
 
         return timelineRepository
-                .findDoAnimalFiltrada(animalId, organizationId, apenasMeus ? eu.getPersonId() : null, pageable)
+                .findDoAnimalFiltrada(animalId, organizationId,
+                        apenasMeus ? eu.getPersonId() : null,
+                        desde == null ? DESDE_SEMPRE : desde, pageable)
                 .map(entrada -> toResponse(entrada, escopo));
     }
 
@@ -108,6 +112,20 @@ public class TimelineServiceImpl implements TimelineService {
      * em que voce esteja agindo".
      */
     private static final UUID NENHUMA_ORGANIZACAO = new UUID(0L, 0L);
+
+    /**
+     * A data-piso, para "sem recorte de janela".
+     *
+     * <b>Nulo nao serve aqui, e a razao e do banco:</b> o Postgres recusa a consulta com
+     * {@code could not determine data type of parameter} quando o {@code :desde is null} recebe um
+     * nulo sem tipo. Os outros dois filtros escapam porque o Hibernate os associa a colunas
+     * {@code uuid}; este nao tem a quem se associar dentro do {@code is null}.
+     *
+     * 1900 e antes de qualquer animal deste produto, e antes de qualquer vacina que alguem lance
+     * retroativamente.
+     */
+    private static final java.time.LocalDateTime DESDE_SEMPRE =
+            java.time.LocalDateTime.of(1900, 1, 1, 0, 0);
 
     /**
      * <b>Tudo que identifica autoria e mascarado fora do escopo, e isso e regra e nao

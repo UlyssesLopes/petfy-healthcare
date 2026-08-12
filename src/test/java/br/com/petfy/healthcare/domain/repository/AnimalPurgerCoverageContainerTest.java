@@ -109,7 +109,16 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             // `referral_scopes` alcanca animals pela neta, como grant_scopes: aponta para referrals,
             // que aponta para animals. Quem o apaga e o proprio `deleteAll` por entidade.
             "referrals",
-            "referral_scopes");
+            "referral_scopes",
+            // O APADRINHAMENTO (V43) sai ANTES de `animal_costs`, e a ordem e obrigatoria: ele aponta
+            // para o animal E para a linha de custo que o padrinho escolheu bancar. Apagar os custos
+            // primeiro esbarraria nessa chave em todo animal de abrigo que tenha padrinho.
+            //
+            // Vale dizer o que se perde: e o registro de que alguem bancou o cuidado daquele animal.
+            "sponsorships",
+            // O AGENDAMENTO (V45) e filha direta e sem neta: sai em massa. Um animal que vai ao
+            // petshop todo mes acumula dezenas destas linhas.
+            "service_appointments");
 
     /**
      * Quem chega a {@code animals}, direta ou indiretamente.

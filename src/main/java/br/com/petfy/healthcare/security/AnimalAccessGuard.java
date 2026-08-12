@@ -130,7 +130,7 @@ public class AnimalAccessGuard {
 
         // se a pessoa alcanca o animal por concessao, ela sabe que ele existe: negar com 404
         // seria mentir para quem ja tem a informacao
-        if (concessaoVigente(animalId, personId).isPresent()) {
+        if (concessaoDoAutenticado(animalId, personId).isPresent()) {
             throw nivelInsuficiente();
         }
 
@@ -191,7 +191,12 @@ public class AnimalAccessGuard {
             return null;
         }
 
-        return concessaoVigente(animalId, personId)
+        /*
+         * A CONCESSAO DE ORGANIZACAO conta aqui tambem. Sem isto, quem alcanca o animal pela clinica
+         * receberia conjunto VAZIO — que esta classe define como negativa —, e a linha do tempo
+         * inteira apareceria opaca para quem tem acesso legitimo.
+         */
+        return concessaoDoAutenticado(animalId, personId)
                 .map(Grant::getScopes)
                 .orElseGet(java.util.Set::of);
     }
@@ -227,7 +232,13 @@ public class AnimalAccessGuard {
         UUID personId = currentPersonProvider.require().getPersonId();
 
         return custodyRepository.findEmCursoDaPessoa(animalId, personId).isPresent()
-                || concessaoVigente(animalId, personId).isPresent();
+                // a CUSTODIA e a CONCESSAO da organizacao declarada contam, pela mesma razao do
+                // `require`: eram a terceira metade do mesmo defeito, e este metodo decide se um
+                // registro aparece na busca de quem o procura
+                || organizacaoAtiva()
+                        .flatMap(org -> custodyRepository.findEmCursoDaOrganizacao(animalId, org))
+                        .isPresent()
+                || concessaoDoAutenticado(animalId, personId).isPresent();
     }
 
     private Animal require(UUID animalId, GrantLevel nivelExigido) {
@@ -269,7 +280,7 @@ public class AnimalAccessGuard {
             return carregar(animalId);
         }
 
-        Grant concessao = concessaoVigente(animalId, personId)
+        Grant concessao = concessaoDoAutenticado(animalId, personId)
                 .orElseThrow(AnimalAccessGuard::animalNaoEncontrado);
 
         if (!concessao.getLevel().permite(nivelExigido)) {
@@ -283,6 +294,42 @@ public class AnimalAccessGuard {
 
     private Optional<Grant> concessaoVigente(UUID animalId, UUID personId) {
         return grantRepository.findVigenteDaPessoaNoAnimal(animalId, personId, LocalDateTime.now());
+    }
+
+    /**
+     * A concessao pela qual esta pessoa alcanca o animal — a dela, ou a da organizacao em nome de que
+     * ela declarou estar agindo.
+     *
+     * <b>A CONCESSAO DE ORGANIZACAO NAO CONTAVA AQUI, e essa era a terceira metade do mesmo
+     * defeito.</b> A primeira, na Tela 13: o {@code requireCustodia} nao enxergava CUSTODIA de
+     * organizacao, e nenhum membro do abrigo agia sobre o animal do proprio abrigo. A segunda, na Tela
+     * 43: o {@code require} tinha o mesmo buraco, e o abrigo nao lancava peso no animal que resgatou.
+     * <b>Esta e a terceira, e a mais larga:</b> o {@code Grant} aceita {@code granteeOrganization}
+     * desde o P2a — e o tutor concede a CLINICA, e nao ao veterinario, justamente porque "quem atende
+     * hoje pode nao ser quem atende no retorno" —, mas a guarda so sabia perguntar por pessoa.
+     *
+     * O efeito era grande e mudo: <b>a clinica listava o animal em "meus pacientes" pelo
+     * {@code findVigentesDaClinica} e respondia 404 quando alguem tentava abrir ou escrever nele.</b>
+     * Duas telas discordando sobre o mesmo acesso, e a que mente e a que promete.
+     *
+     * <b>Vale so a organizacao DECLARADA no cabecalho</b>, pela mesma razao de sempre: agir em nome de
+     * uma organizacao e escolha explicita de quem age, nunca inferencia do servidor. Quem atende em
+     * duas clinicas alcancaria o animal pela clinica errada sem saber — e a assinatura do registro sai
+     * errada com ela.
+     *
+     * <b>A concessao da PESSOA vem primeiro</b>, e nao por precedencia moral: e a mais especifica, e a
+     * que existe quando as duas existem costuma ser a mais ampla (o co-tutor que tambem trabalha na
+     * clinica). Escolher a menor faria alguem perder acesso ao entrar numa organizacao.
+     */
+    private Optional<Grant> concessaoDoAutenticado(UUID animalId, UUID personId) {
+        Optional<Grant> daPessoa = concessaoVigente(animalId, personId);
+
+        if (daPessoa.isPresent()) {
+            return daPessoa;
+        }
+
+        return organizacaoAtiva().flatMap(organizationId -> grantRepository
+                .findVigenteDaClinicaNoAnimal(animalId, organizationId, LocalDateTime.now()));
     }
 
     /**

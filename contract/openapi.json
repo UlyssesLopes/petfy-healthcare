@@ -822,6 +822,135 @@
         },
         "type" : "object"
       },
+      "AnimalYearCaregiverDTO" : {
+        "properties" : {
+          "organizationName" : {
+            "type" : "string"
+          },
+          "personName" : {
+            "type" : "string"
+          },
+          "records" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalYearDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "antiparasitics" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "appointments" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "boardingDays" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "caregivers" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalYearCaregiverDTO"
+            },
+            "type" : "array"
+          },
+          "daycareDays" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "from" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "lapses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalYearLapseDTO"
+            },
+            "type" : "array"
+          },
+          "notReassessed" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalYearPendingDTO"
+            },
+            "type" : "array"
+          },
+          "organizations" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "people" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "records" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "to" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "vaccines" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "weightBefore" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "weightNow" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "yearOfLife" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalYearLapseDTO" : {
+        "properties" : {
+          "days" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "overdueSince" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "regularizedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "vaccineName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalYearPendingDTO" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "lastTouchedOn" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AntiparasiticCatalogResponseDTO" : {
         "properties" : {
           "antiparasiticCatalogId" : {
@@ -1096,6 +1225,69 @@
               "type" : "string"
             },
             "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "BoardingRequestDTO" : {
+        "properties" : {
+          "expectedReturnOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "organizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "expectedReturnOn", "organizationId" ],
+        "type" : "object"
+      },
+      "BoardingResponseDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "boardingId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "canEnd" : {
+            "type" : "boolean"
+          },
+          "dayOfStay" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "endedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "expectedReturnOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "organizationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "returnsToName" : {
+            "type" : "string"
+          },
+          "startedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "totalDays" : {
+            "format" : "int32",
+            "type" : "integer"
           }
         },
         "type" : "object"
@@ -3058,6 +3250,31 @@
         },
         "type" : "object"
       },
+      "PetTutorInvitePreviewResponseDTO" : {
+        "properties" : {
+          "animalName" : {
+            "type" : "string"
+          },
+          "currentHolderName" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "fromOrganization" : {
+            "type" : "boolean"
+          },
+          "invitedByName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "HOLDER", "EDITOR", "VIEWER" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "PetTutorInviteRequestDTO" : {
         "properties" : {
           "email" : {
@@ -3385,6 +3602,86 @@
         },
         "type" : "object"
       },
+      "ServiceAppointmentCloseRequestDTO" : {
+        "properties" : {
+          "note" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ServiceAppointmentRequestDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "scheduledAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "animalId", "scheduledAt", "service" ],
+        "type" : "object"
+      },
+      "ServiceAppointmentResponseDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "checkedInAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "completedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "inTheDark" : {
+            "type" : "boolean"
+          },
+          "safetyNotes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ServiceSafetyNoteDTO"
+            },
+            "type" : "array"
+          },
+          "scheduledAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "serviceAppointmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "AGENDADO", "EM_ATENDIMENTO", "CONCLUIDO", "FALTOU" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ServiceSafetyNoteDTO" : {
+        "properties" : {
+          "severity" : {
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "SharedConditionDTO" : {
         "properties" : {
           "description" : {
@@ -3498,6 +3795,156 @@
             "type" : "string"
           },
           "property" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SponsoredEventDTO" : {
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "costId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "recordedByName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SponsorshipCostLineDTO" : {
+        "properties" : {
+          "alreadySponsored" : {
+            "type" : "boolean"
+          },
+          "amount" : {
+            "type" : "number"
+          },
+          "costId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SponsorshipOfferDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "atOrganizationSince" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "bornDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "breed" : {
+            "type" : "string"
+          },
+          "canSponsor" : {
+            "type" : "boolean"
+          },
+          "monthlyCosts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SponsorshipCostLineDTO"
+            },
+            "type" : "array"
+          },
+          "monthlyTotal" : {
+            "type" : "number"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "species" : {
+            "type" : "string"
+          },
+          "sponsorCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "SponsorshipRequestDTO" : {
+        "properties" : {
+          "amount" : {
+            "exclusiveMinimum" : false,
+            "minimum" : 0.01,
+            "type" : "number"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "sourceCostId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "amount", "description" ],
+        "type" : "object"
+      },
+      "SponsorshipResponseDTO" : {
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "cancelRequestedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "endsOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "sponsorName" : {
+            "type" : "string"
+          },
+          "sponsorshipId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "startedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "ATIVO", "ENCERRAMENTO_PEDIDO", "ENCERRADO" ],
             "type" : "string"
           }
         },
@@ -4322,6 +4769,101 @@
         },
         "summary" : "Anexa um arquivo ao animal",
         "tags" : [ "attachment-controller" ]
+      }
+    },
+    "/animals/{animalId}/boarding" : {
+      "get" : {
+        "description" : "Onde ele esta, desde quando, ate quando, e em que dia da estadia estamos. O dia e contado no servidor: um calculo no cliente diria 'dia 2' para quem abriu o Petfy em Lisboa.",
+        "operationId" : "emCurso",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardingResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A estadia em curso",
+        "tags" : [ "boarding-controller" ]
+      },
+      "post" : {
+        "description" : "A custodia passa para a organizacao, com prazo, e volta no dia em que alguem registrar a devolucao. Exige RESPONDER pelo animal: passar a custodia adiante e o mesmo ato que transferir titularidade, e nenhum nivel de concessao chega la. Quem entrega ganha uma concessao pelo tempo da estadia — sem ela, perderia o proprio animal de vista.",
+        "operationId" : "hospedar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BoardingRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardingResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Entrega o animal para hospedagem",
+        "tags" : [ "boarding-controller" ]
+      }
+    },
+    "/animals/{animalId}/boarding/end" : {
+      "post" : {
+        "description" : "A custodia retorna a quem entregou, e a concessao da estadia e revogada. Pode ser registrada pela organizacao que esta com o animal OU por quem o entregou — sem o segundo, uma creche que esquecesse de registrar deixaria o animal fora de casa para sempre.",
+        "operationId" : "devolver",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoardingResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Registra a volta",
+        "tags" : [ "boarding-controller" ]
       }
     },
     "/animals/{animalId}/care-instructions" : {
@@ -5493,9 +6035,77 @@
         "tags" : [ "animal-sighting-controller" ]
       }
     },
+    "/animals/{animalId}/sponsorship-offer" : {
+      "get" : {
+        "description" : "Quem ele e, o que o abrigo gasta com ele por mes, e quantas pessoas ja bancam algo dele. Responde 404 quando o abrigo nao abriu o animal a padrinhos, e tambem quando quem responde por ele e uma pessoa: apadrinhar o cachorro de alguem seria pagar a conta de uma pessoa. NENHUM dado clinico viaja aqui.",
+        "operationId" : "oferta",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SponsorshipOfferDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A tela de apadrinhar um animal de abrigo",
+        "tags" : [ "sponsorship-controller" ]
+      }
+    },
+    "/animals/{animalId}/sponsorships" : {
+      "post" : {
+        "description" : "Registra um COMPROMISSO, e nao um pagamento: o Petfy nao movimenta valor em lugar nenhum. O que o padrinho recebe em troca sao os eventos de custo do que ele banca, assinados e datados.",
+        "operationId" : "apadrinhar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SponsorshipRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SponsorshipResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Passa a bancar um custo do animal",
+        "tags" : [ "sponsorship-controller" ]
+      }
+    },
     "/animals/{animalId}/timeline" : {
       "get" : {
-        "description" : "Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir.",
+        "description" : "Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir. E `since` recorta por janela: e o que a tela de hospedagem usa para mostrar so o que aconteceu desde que o animal saiu de casa.",
         "operationId" : "timeline",
         "parameters" : [ {
           "in" : "path",
@@ -5520,6 +6130,14 @@
           "schema" : {
             "default" : false,
             "type" : "boolean"
+          }
+        }, {
+          "in" : "query",
+          "name" : "since",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
           }
         }, {
           "description" : "Zero-based page index (0..N)",
@@ -5875,6 +6493,43 @@
         },
         "summary" : "Registra uma pesagem",
         "tags" : [ "animal-weight-controller" ]
+      }
+    },
+    "/animals/{animalId}/year" : {
+      "get" : {
+        "description" : "Os doze meses que terminam em `to` (hoje, se omitido): quantos registros, por quantas pessoas e organizacoes, dias na creche e de hospedagem, peso no comeco e no fim, e o que aconteceu de saude. INCLUI O QUE DEU ERRADO — os dias em que uma vacina esteve vencida e as condicoes cronicas que ninguem reavaliou —, porque um resumo que so mostra o bonito nao serve para cuidar. Exige apenas leitura, e o escopo de quem le nao mascara os numeros: eles sao contagens, e nao conteudo clinico.",
+        "operationId" : "ano",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimalYearDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O ano do animal, em uma pagina",
+        "tags" : [ "animal-year-controller" ]
       }
     },
     "/antiparasitics" : {
@@ -6538,6 +7193,184 @@
         },
         "summary" : "Os animais do grupo, com o ultimo avistamento",
         "tags" : [ "colony-controller" ]
+      }
+    },
+    "/group/appointments" : {
+      "get" : {
+        "description" : "Os compromissos da organizacao declarada, do primeiro ao ultimo horario. Cada linha traz 'o que voce precisa saber antes de encostar nele' — as linhas de seguranca que o ESCOPO da concessao permite, e nada de prontuario. Quando a concessao venceu, a lista vem vazia e `inTheDark` diz por que: um cartao sem as linhas parece um animal sem restricao nenhuma.",
+        "operationId" : "doDia",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "day",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A agenda do dia",
+        "tags" : [ "service-appointment-controller" ]
+      },
+      "post" : {
+        "description" : "Exige que a organizacao ALCANCE o animal: sem isso, qualquer uma poria qualquer animal na propria agenda — e a agenda e onde aparece o que o tutor compartilhou.",
+        "operationId" : "agendar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ServiceAppointmentRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Agenda um banho",
+        "tags" : [ "service-appointment-controller" ]
+      }
+    },
+    "/group/appointments/{appointmentId}/check-in" : {
+      "post" : {
+        "operationId" : "marcarEntrada",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "appointmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Marca a entrada do animal",
+        "tags" : [ "service-appointment-controller" ]
+      }
+    },
+    "/group/appointments/{appointmentId}/deliver" : {
+      "post" : {
+        "description" : "O texto, quando houver, entra na linha do tempo como OBSERVACAO assinada — e nunca como ato clinico: 'descreva o que viu, nao o que acha que e'. Sem texto, nada entra: um banho sem novidade nao e fato de saude, e enche-la de 'deu banho' enterraria o que importa.",
+        "operationId" : "entregar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "appointmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ServiceAppointmentCloseRequestDTO"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Entrega o animal e avisa quem cuida dele",
+        "tags" : [ "service-appointment-controller" ]
+      }
+    },
+    "/group/appointments/{appointmentId}/no-show" : {
+      "post" : {
+        "description" : "A ausencia e informacao, como a falta na creche: um compromisso que some da agenda sem desfecho faz o petshop perder a conta de quem desmarcou e de quem simplesmente nao apareceu.",
+        "operationId" : "faltou",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "appointmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O animal nao veio",
+        "tags" : [ "service-appointment-controller" ]
+      }
+    },
+    "/group/sponsorships" : {
+      "get" : {
+        "description" : "Traz o que esta terminando junto com o que esta ativo — e essa lista que mostra, com trinta dias de antecedencia, qual custo vai deixar de ser coberto. Exige organizacao declarada no cabecalho.",
+        "operationId" : "daOrganizacao",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SponsorshipResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Quem banca os animais da sua organizacao",
+        "tags" : [ "sponsorship-controller" ]
       }
     },
     "/health-records" : {
@@ -7397,6 +8230,34 @@
         "tags" : [ "pet-id-controller" ]
       }
     },
+    "/pet-tutor-invites/{token}" : {
+      "get" : {
+        "description" : "Nome do animal, quem convidou, o que esta sendo oferecido e ate quando vale. NAO CONSOME o convite: abrir o link para entender o que esta em jogo nao pode gastar o direito de entrar. E nao traz nada de saude — quem ainda nao aceitou nao alcanca o animal.",
+        "operationId" : "preview",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PetTutorInvitePreviewResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O convite antes de aceitar",
+        "tags" : [ "pet-tutor-invite-controller" ]
+      }
+    },
     "/pet-tutor-invites/{token}/accept" : {
       "post" : {
         "description" : "Quem aceita passa a alcancar o animal por concessao - nao vira titular. A titularidade se transfere por rota propria, e e um fato diferente: dividir o cuidado nao e passar a responsabilidade.",
@@ -7422,6 +8283,27 @@
           }
         },
         "summary" : "Aceita o convite de co-tutor",
+        "tags" : [ "pet-tutor-invite-controller" ]
+      }
+    },
+    "/pet-tutor-invites/{token}/reject" : {
+      "post" : {
+        "description" : "Consome o convite e avisa quem convidou — 'se recusar, ele e avisado e nada muda para o animal'. NAO pede motivo: recusar dividir o cuidado de um animal e uma decisao pessoal, e um campo de justificativa faria o produto pedir a quem disse nao que explicasse o nao.",
+        "operationId" : "reject",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Recusa o convite",
         "tags" : [ "pet-tutor-invite-controller" ]
       }
     },
@@ -8381,6 +9263,90 @@
         },
         "summary" : "Revoga o link",
         "tags" : [ "animal-share-controller" ]
+      }
+    },
+    "/sponsorships/mine" : {
+      "get" : {
+        "description" : "Inclusive o que ja acabou: quem bancou por dois anos precisa poder ver que bancou.",
+        "operationId" : "meus",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SponsorshipResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que voce banca",
+        "tags" : [ "sponsorship-controller" ]
+      }
+    },
+    "/sponsorships/{sponsorshipId}/end" : {
+      "post" : {
+        "description" : "Nao pede justificativa, e nao encerra na hora: o padrinho continua cobrindo o custo ate a data, e o abrigo e avisado para se organizar.",
+        "operationId" : "encerrar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "sponsorshipId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SponsorshipResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Para de bancar, com trinta dias",
+        "tags" : [ "sponsorship-controller" ]
+      }
+    },
+    "/sponsorships/{sponsorshipId}/events" : {
+      "get" : {
+        "description" : "Os eventos de custo do que este apadrinhamento banca, do mais recente para o mais antigo, e nunca de antes de ele comecar. Nao e a linha do tempo do animal: nenhum historico clinico e aberto ao padrinho.",
+        "operationId" : "eventos",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "sponsorshipId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SponsoredEventDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que voce passa a receber",
+        "tags" : [ "sponsorship-controller" ]
       }
     },
     "/vaccine-catalog" : {

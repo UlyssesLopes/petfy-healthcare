@@ -72,6 +72,7 @@ public class PersonServiceImpl implements PersonService {
     private final DueItemSilenceRepository dueItemSilenceRepository;
     private final AttachmentRepository attachmentRepository;
     private final br.com.petfy.healthcare.domain.repository.ReferralRepository referralRepository;
+    private final br.com.petfy.healthcare.domain.repository.SponsorshipRepository sponsorshipRepository;
 
     @Override
     public PersonResponseDTO createPerson(PersonRequestDTO request) {
@@ -314,6 +315,11 @@ public class PersonServiceImpl implements PersonService {
         //
         // Sai tanto o que ela concedeu quanto o que ela recebeu: concessao que ela
         // concedeu perde o autor, e sem autor a linha nao diz mais nada.
+        // O APADRINHAMENTO SAI JUNTO (Tela 46): a linha aponta para persons, e nao ha guarda de
+        // schema para FK que aponta para a conta. Some em vez de desassociar, como o encaminhamento:
+        // "quem banca" e metade do acordo, e um apadrinhamento sem padrinho nao diz nada.
+        sponsorshipRepository.deleteAll(sponsorshipRepository.findBySponsorPersonId(personId));
+
         // O ENCAMINHAMENTO SAI ANTES DA CONCESSAO, e a ordem e obrigatoria (Tela 45): a linha aponta
         // para persons em tres colunas — quem encaminhou, quem recebeu e quem decidiu — e tambem para
         // o grant que o aceite produziu. Apagar as concessoes primeiro esbarraria nessa segunda chave.

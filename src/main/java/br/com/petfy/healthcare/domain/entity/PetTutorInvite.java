@@ -77,11 +77,22 @@ public class PetTutorInvite {
 
     private LocalDateTime revokedAt;
 
+    /**
+     * Quando quem recebeu disse nao (Telas 19, 20 e 21).
+     *
+     * <b>Coluna propria, e nao o {@code revokedAt}.</b> Revogar e o que QUEM CONVIDOU faz ao mudar de
+     * ideia; recusar e o que QUEM RECEBEU faz. Com um campo so, a lista de convites do tutor diria
+     * "voce revogou" sobre um convite que a outra pessoa recusou — e ele procuraria no proprio
+     * historico uma acao que nunca praticou.
+     */
+    private LocalDateTime rejectedAt;
+
     private LocalDateTime creationDate;
 
-    /** Uso unico: aceitar consome. */
+    /** Uso unico: aceitar consome, recusar consome, revogar consome. */
     public boolean isUsable(LocalDateTime agora) {
-        return revokedAt == null && acceptedAt == null && expiresAt.isAfter(agora);
+        return revokedAt == null && acceptedAt == null && rejectedAt == null
+                && expiresAt.isAfter(agora);
     }
 
     public boolean transfereTitularidade() {

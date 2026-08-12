@@ -43,14 +43,21 @@ public class TimelineController {
                              + "organizacao em que voce age agora, e onlyMine ao que voce mesmo "
                              + "registrou. Eles recortam o que voce PEDIU; o escopo continua "
                              + "mascarando o que voce nao alcanca, e evento fora de escopo "
-                             + "continua aparecendo opaco em vez de sumir.")
+                             + "continua aparecendo opaco em vez de sumir. E `since` recorta por "
+                             + "janela: e o que a tela de hospedagem usa para mostrar so o que "
+                             + "aconteceu desde que o animal saiu de casa.")
     @GetMapping("/{animalId}/timeline")
     public ResponseEntity<Page<TimelineEntryResponseDTO>> timeline(
             @PathVariable UUID animalId,
             @RequestParam(defaultValue = "false") boolean onlyMyOrganization,
             @RequestParam(defaultValue = "false") boolean onlyMine,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(
+                    iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
+            java.time.LocalDateTime since,
             Pageable pageable) {
-        return ResponseEntity.ok(timelineService.doAnimal(animalId, onlyMyOrganization, onlyMine, pageable));
+        return ResponseEntity.ok(
+                timelineService.doAnimal(animalId, onlyMyOrganization, onlyMine, since, pageable));
     }
 
 }

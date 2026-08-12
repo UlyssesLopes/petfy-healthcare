@@ -120,6 +120,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/boarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A estadia em curso
+         * @description Onde ele esta, desde quando, ate quando, e em que dia da estadia estamos. O dia e contado no servidor: um calculo no cliente diria 'dia 2' para quem abriu o Petfy em Lisboa.
+         */
+        get: operations["emCurso"];
+        put?: never;
+        /**
+         * Entrega o animal para hospedagem
+         * @description A custodia passa para a organizacao, com prazo, e volta no dia em que alguem registrar a devolucao. Exige RESPONDER pelo animal: passar a custodia adiante e o mesmo ato que transferir titularidade, e nenhum nivel de concessao chega la. Quem entrega ganha uma concessao pelo tempo da estadia — sem ela, perderia o proprio animal de vista.
+         */
+        post: operations["hospedar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/boarding/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registra a volta
+         * @description A custodia retorna a quem entregou, e a concessao da estadia e revogada. Pode ser registrada pela organizacao que esta com o animal OU por quem o entregou — sem o segundo, uma creche que esquecesse de registrar deixaria o animal fora de casa para sempre.
+         */
+        post: operations["devolver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}/care-instructions": {
         parameters: {
             query?: never;
@@ -615,6 +659,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/sponsorship-offer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A tela de apadrinhar um animal de abrigo
+         * @description Quem ele e, o que o abrigo gasta com ele por mes, e quantas pessoas ja bancam algo dele. Responde 404 quando o abrigo nao abriu o animal a padrinhos, e tambem quando quem responde por ele e uma pessoa: apadrinhar o cachorro de alguem seria pagar a conta de uma pessoa. NENHUM dado clinico viaja aqui.
+         */
+        get: operations["oferta"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/sponsorships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Passa a bancar um custo do animal
+         * @description Registra um COMPROMISSO, e nao um pagamento: o Petfy nao movimenta valor em lugar nenhum. O que o padrinho recebe em troca sao os eventos de custo do que ele banca, assinados e datados.
+         */
+        post: operations["apadrinhar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}/timeline": {
         parameters: {
             query?: never;
@@ -624,7 +708,7 @@ export interface paths {
         };
         /**
          * A vida do animal em ordem, atravessando custodias e organizacoes
-         * @description Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir.
+         * @description Ordenada por quando aconteceu, e nao por quando foi digitado - a vacina de 2019 lancada hoje aparece em 2019. Nao recomeca na transferencia: o adotante recebe a vida inteira. Cada entrada traz quem registrou, em nome de que organizacao, a credencial com o estado dela, quantas correcoes sofreu, e o peso anterior quando e uma pesagem. Evento fora do escopo de quem le aparece SEM conteudo em vez de desaparecer, com visivel=false - sumir diria que o animal nunca foi ao veterinario. Os dois recortes da Tela 30 sao opcionais e combinaveis: onlyMyOrganization limita ao que foi registrado em nome da organizacao em que voce age agora, e onlyMine ao que voce mesmo registrou. Eles recortam o que voce PEDIU; o escopo continua mascarando o que voce nao alcanca, e evento fora de escopo continua aparecendo opaco em vez de sumir. E `since` recorta por janela: e o que a tela de hospedagem usa para mostrar so o que aconteceu desde que o animal saiu de casa.
          */
         get: operations["timeline"];
         put?: never;
@@ -749,6 +833,26 @@ export interface paths {
          * @description Peso e serie, e nao campo do cadastro: cada pesagem e um evento com data propria, e e a curva que diz algo clinico - nao o numero de hoje. measuredAt e quando o animal foi pesado, nao quando alguem digitou.
          */
         post: operations["addWeight"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/year": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O ano do animal, em uma pagina
+         * @description Os doze meses que terminam em `to` (hoje, se omitido): quantos registros, por quantas pessoas e organizacoes, dias na creche e de hospedagem, peso no comeco e no fim, e o que aconteceu de saude. INCLUI O QUE DEU ERRADO — os dias em que uma vacina esteve vencida e as condicoes cronicas que ninguem reavaliou —, porque um resumo que so mostra o bonito nao serve para cuidar. Exige apenas leitura, e o escopo de quem le nao mascara os numeros: eles sao contagens, e nao conteudo clinico.
+         */
+        get: operations["ano"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1135,6 +1239,107 @@ export interface paths {
          * @description A lista da colonia. Diferente da lista do abrigo (Tela 12) por uma coluna que so existe na rua: quantos dias desde que alguem viu o animal. Filtros: TODOS, FALTA_CASTRAR, EM_TRATAMENTO, SUMIDOS. SUMIDOS deixa de fora quem nunca foi marcado — sem informacao nao e desaparecido, e contar os dois juntos mandaria o grupo procurar um gato que esta na praca.
          */
         get: operations["listar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A agenda do dia
+         * @description Os compromissos da organizacao declarada, do primeiro ao ultimo horario. Cada linha traz 'o que voce precisa saber antes de encostar nele' — as linhas de seguranca que o ESCOPO da concessao permite, e nada de prontuario. Quando a concessao venceu, a lista vem vazia e `inTheDark` diz por que: um cartao sem as linhas parece um animal sem restricao nenhuma.
+         */
+        get: operations["doDia"];
+        put?: never;
+        /**
+         * Agenda um banho
+         * @description Exige que a organizacao ALCANCE o animal: sem isso, qualquer uma poria qualquer animal na propria agenda — e a agenda e onde aparece o que o tutor compartilhou.
+         */
+        post: operations["agendar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/appointments/{appointmentId}/check-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marca a entrada do animal */
+        post: operations["marcarEntrada"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/appointments/{appointmentId}/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Entrega o animal e avisa quem cuida dele
+         * @description O texto, quando houver, entra na linha do tempo como OBSERVACAO assinada — e nunca como ato clinico: 'descreva o que viu, nao o que acha que e'. Sem texto, nada entra: um banho sem novidade nao e fato de saude, e enche-la de 'deu banho' enterraria o que importa.
+         */
+        post: operations["entregar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/appointments/{appointmentId}/no-show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O animal nao veio
+         * @description A ausencia e informacao, como a falta na creche: um compromisso que some da agenda sem desfecho faz o petshop perder a conta de quem desmarcou e de quem simplesmente nao apareceu.
+         */
+        post: operations["faltou"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/sponsorships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quem banca os animais da sua organizacao
+         * @description Traz o que esta terminando junto com o que esta ativo — e essa lista que mostra, com trinta dias de antecedencia, qual custo vai deixar de ser coberto. Exige organizacao declarada no cabecalho.
+         */
+        get: operations["daOrganizacao"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1559,6 +1764,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pet-tutor-invites/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O convite antes de aceitar
+         * @description Nome do animal, quem convidou, o que esta sendo oferecido e ate quando vale. NAO CONSOME o convite: abrir o link para entender o que esta em jogo nao pode gastar o direito de entrar. E nao traz nada de saude — quem ainda nao aceitou nao alcanca o animal.
+         */
+        get: operations["preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pet-tutor-invites/{token}/accept": {
         parameters: {
             query?: never;
@@ -1573,6 +1798,26 @@ export interface paths {
          * @description Quem aceita passa a alcancar o animal por concessao - nao vira titular. A titularidade se transfere por rota propria, e e um fato diferente: dividir o cuidado nao e passar a responsabilidade.
          */
         post: operations["accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pet-tutor-invites/{token}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recusa o convite
+         * @description Consome o convite e avisa quem convidou — 'se recusar, ele e avisado e nada muda para o animal'. NAO pede motivo: recusar dividir o cuidado de um animal e uma decisao pessoal, e um campo de justificativa faria o produto pedir a quem disse nao que explicasse o nao.
+         */
+        post: operations["reject"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2044,6 +2289,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sponsorships/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O que voce banca
+         * @description Inclusive o que ja acabou: quem bancou por dois anos precisa poder ver que bancou.
+         */
+        get: operations["meus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sponsorships/{sponsorshipId}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Para de bancar, com trinta dias
+         * @description Nao pede justificativa, e nao encerra na hora: o padrinho continua cobrindo o custo ate a data, e o abrigo e avisado para se organizar.
+         */
+        post: operations["encerrar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sponsorships/{sponsorshipId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O que voce passa a receber
+         * @description Os eventos de custo do que este apadrinhamento banca, do mais recente para o mais antigo, e nunca de antes de ele comecar. Nao e a linha do tempo do animal: nenhum historico clinico e aberto ao padrinho.
+         */
+        get: operations["eventos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/vaccine-catalog": {
         parameters: {
             query?: never;
@@ -2467,6 +2772,60 @@ export interface components {
             /** Format: uuid */
             weightHistoryId?: string;
         };
+        AnimalYearCaregiverDTO: {
+            organizationName?: string;
+            personName?: string;
+            /** Format: int64 */
+            records?: number;
+        };
+        AnimalYearDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: int64 */
+            antiparasitics?: number;
+            /** Format: int64 */
+            appointments?: number;
+            /** Format: int64 */
+            boardingDays?: number;
+            caregivers?: components["schemas"]["AnimalYearCaregiverDTO"][];
+            /** Format: int64 */
+            daycareDays?: number;
+            /** Format: date */
+            from?: string;
+            lapses?: components["schemas"]["AnimalYearLapseDTO"][];
+            notReassessed?: components["schemas"]["AnimalYearPendingDTO"][];
+            /** Format: int64 */
+            organizations?: number;
+            /** Format: int64 */
+            people?: number;
+            /** Format: int64 */
+            records?: number;
+            /** Format: date */
+            to?: string;
+            /** Format: int64 */
+            vaccines?: number;
+            /** Format: double */
+            weightBefore?: number;
+            /** Format: double */
+            weightNow?: number;
+            /** Format: int32 */
+            yearOfLife?: number;
+        };
+        AnimalYearLapseDTO: {
+            /** Format: int64 */
+            days?: number;
+            /** Format: date */
+            overdueSince?: string;
+            /** Format: date */
+            regularizedOn?: string;
+            vaccineName?: string;
+        };
+        AnimalYearPendingDTO: {
+            description?: string;
+            /** Format: date */
+            lastTouchedOn?: string;
+        };
         AntiparasiticCatalogResponseDTO: {
             /** Format: uuid */
             antiparasiticCatalogId?: string;
@@ -2583,6 +2942,34 @@ export interface components {
             species?: string;
             status?: string;
             todayNeeds?: string[];
+        };
+        BoardingRequestDTO: {
+            /** Format: date */
+            expectedReturnOn: string;
+            /** Format: uuid */
+            organizationId: string;
+        };
+        BoardingResponseDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: uuid */
+            boardingId?: string;
+            canEnd?: boolean;
+            /** Format: int32 */
+            dayOfStay?: number;
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: date */
+            expectedReturnOn?: string;
+            /** Format: uuid */
+            organizationId?: string;
+            organizationName?: string;
+            returnsToName?: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: int32 */
+            totalDays?: number;
         };
         CareInstructionFulfillmentRequestDTO: {
             /** Format: date-time */
@@ -3337,6 +3724,16 @@ export interface components {
             /** Format: double */
             weight?: number;
         };
+        PetTutorInvitePreviewResponseDTO: {
+            animalName?: string;
+            currentHolderName?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            fromOrganization?: boolean;
+            invitedByName?: string;
+            /** @enum {string} */
+            role?: "HOLDER" | "EDITOR" | "VIEWER";
+        };
         PetTutorInviteRequestDTO: {
             email: string;
             /** Format: int32 */
@@ -3467,6 +3864,38 @@ export interface components {
             /** Format: uuid */
             sensitiveAccessLogId?: string;
         };
+        ServiceAppointmentCloseRequestDTO: {
+            note?: string;
+        };
+        ServiceAppointmentRequestDTO: {
+            /** Format: uuid */
+            animalId: string;
+            /** Format: date-time */
+            scheduledAt: string;
+            service: string;
+        };
+        ServiceAppointmentResponseDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: date-time */
+            checkedInAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
+            inTheDark?: boolean;
+            safetyNotes?: components["schemas"]["ServiceSafetyNoteDTO"][];
+            /** Format: date-time */
+            scheduledAt?: string;
+            service?: string;
+            /** Format: uuid */
+            serviceAppointmentId?: string;
+            /** @enum {string} */
+            status?: "AGENDADO" | "EM_ATENDIMENTO" | "CONCLUIDO" | "FALTOU";
+        };
+        ServiceSafetyNoteDTO: {
+            severity?: string;
+            text?: string;
+        };
         SharedConditionDTO: {
             description?: string;
             /** @enum {string} */
@@ -3509,6 +3938,65 @@ export interface components {
             ignoreCase?: boolean;
             nullHandling?: string;
             property?: string;
+        };
+        SponsoredEventDTO: {
+            amount?: number;
+            /** Format: uuid */
+            costId?: string;
+            description?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            organizationName?: string;
+            recordedByName?: string;
+        };
+        SponsorshipCostLineDTO: {
+            alreadySponsored?: boolean;
+            amount?: number;
+            /** Format: uuid */
+            costId?: string;
+            description?: string;
+        };
+        SponsorshipOfferDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            /** Format: date */
+            atOrganizationSince?: string;
+            /** Format: date */
+            bornDate?: string;
+            breed?: string;
+            canSponsor?: boolean;
+            monthlyCosts?: components["schemas"]["SponsorshipCostLineDTO"][];
+            monthlyTotal?: number;
+            name?: string;
+            organizationName?: string;
+            species?: string;
+            /** Format: int32 */
+            sponsorCount?: number;
+        };
+        SponsorshipRequestDTO: {
+            amount: number;
+            description: string;
+            /** Format: uuid */
+            sourceCostId?: string;
+        };
+        SponsorshipResponseDTO: {
+            amount?: number;
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: date-time */
+            cancelRequestedAt?: string;
+            description?: string;
+            /** Format: date */
+            endsOn?: string;
+            organizationName?: string;
+            sponsorName?: string;
+            /** Format: uuid */
+            sponsorshipId?: string;
+            /** Format: date */
+            startedOn?: string;
+            /** @enum {string} */
+            status?: "ATIVO" | "ENCERRAMENTO_PEDIDO" | "ENCERRADO";
         };
         TimelineEntryResponseDTO: {
             /** Format: int64 */
@@ -3925,6 +4413,76 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AttachmentResponseDTO"];
+                };
+            };
+        };
+    };
+    emCurso: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardingResponseDTO"];
+                };
+            };
+        };
+    };
+    hospedar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardingRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardingResponseDTO"];
+                };
+            };
+        };
+    };
+    devolver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BoardingResponseDTO"];
                 };
             };
         };
@@ -4730,11 +5288,60 @@ export interface operations {
             };
         };
     };
+    oferta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SponsorshipOfferDTO"];
+                };
+            };
+        };
+    };
+    apadrinhar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SponsorshipRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SponsorshipResponseDTO"];
+                };
+            };
+        };
+    };
     timeline: {
         parameters: {
             query?: {
                 onlyMyOrganization?: boolean;
                 onlyMine?: boolean;
+                since?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -4967,6 +5574,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AnimalWeightResponseDTO"];
+                };
+            };
+        };
+    };
+    ano: {
+        parameters: {
+            query?: {
+                to?: string;
+            };
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalYearDTO"];
                 };
             };
         };
@@ -5496,6 +6127,142 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ColonyAnimalDTO"][];
+                };
+            };
+        };
+    };
+    doDia: {
+        parameters: {
+            query?: {
+                day?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"][];
+                };
+            };
+        };
+    };
+    agendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceAppointmentRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"];
+                };
+            };
+        };
+    };
+    marcarEntrada: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"];
+                };
+            };
+        };
+    };
+    entregar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ServiceAppointmentCloseRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"];
+                };
+            };
+        };
+    };
+    faltou: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"];
+                };
+            };
+        };
+    };
+    daOrganizacao: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SponsorshipResponseDTO"][];
                 };
             };
         };
@@ -6179,6 +6946,28 @@ export interface operations {
             };
         };
     };
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PetTutorInvitePreviewResponseDTO"];
+                };
+            };
+        };
+    };
     accept: {
         parameters: {
             query?: never;
@@ -6198,6 +6987,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["PetTutorResponseDTO"];
                 };
+            };
+        };
+    };
+    reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -6869,6 +7678,70 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    meus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SponsorshipResponseDTO"][];
+                };
+            };
+        };
+    };
+    encerrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sponsorshipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SponsorshipResponseDTO"];
+                };
+            };
+        };
+    };
+    eventos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sponsorshipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SponsoredEventDTO"][];
+                };
             };
         };
     };

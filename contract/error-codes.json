@@ -295,6 +295,66 @@
   "codigo" : 174,
   "mensagemDaApi" : "No one answers for this animal right now"
 }, {
+  "nome" : "SPONSORSHIP_NOT_OFFERED",
+  "codigo" : 175,
+  "mensagemDaApi" : "This animal is not open to sponsorship"
+}, {
+  "nome" : "SPONSORSHIP_NOT_FOUND",
+  "codigo" : 176,
+  "mensagemDaApi" : "Sponsorship not found"
+}, {
+  "nome" : "SPONSORSHIP_ALREADY_ACTIVE",
+  "codigo" : 177,
+  "mensagemDaApi" : "You already sponsor this for this animal"
+}, {
+  "nome" : "SPONSORSHIP_ALREADY_ENDING",
+  "codigo" : 178,
+  "mensagemDaApi" : "This sponsorship is already ending"
+}, {
+  "nome" : "COST_NOT_FROM_ANIMAL",
+  "codigo" : 179,
+  "mensagemDaApi" : "That cost does not belong to this animal"
+}, {
+  "nome" : "CANNOT_SPONSOR_OWN_ANIMAL",
+  "codigo" : 180,
+  "mensagemDaApi" : "You cannot sponsor an animal your organization answers for"
+}, {
+  "nome" : "BOARDING_NOT_FOUND",
+  "codigo" : 181,
+  "mensagemDaApi" : "This animal is not boarded right now"
+}, {
+  "nome" : "ALREADY_BOARDED",
+  "codigo" : 182,
+  "mensagemDaApi" : "This animal is already boarded"
+}, {
+  "nome" : "INVALID_RETURN_DATE",
+  "codigo" : 183,
+  "mensagemDaApi" : "The expected return must be in the future"
+}, {
+  "nome" : "CANNOT_END_BOARDING",
+  "codigo" : 184,
+  "mensagemDaApi" : "Only the organization holding the animal or whoever handed it over can end this"
+}, {
+  "nome" : "ORGANIZATION_CANNOT_BOARD",
+  "codigo" : 185,
+  "mensagemDaApi" : "This organization cannot hold custody"
+}, {
+  "nome" : "APPOINTMENT_NOT_FOUND",
+  "codigo" : 186,
+  "mensagemDaApi" : "Appointment not found"
+}, {
+  "nome" : "APPOINTMENT_ALREADY_SCHEDULED",
+  "codigo" : 187,
+  "mensagemDaApi" : "This animal already has an appointment at that time"
+}, {
+  "nome" : "APPOINTMENT_WRONG_STATE",
+  "codigo" : 188,
+  "mensagemDaApi" : "This appointment is not in a state that allows that"
+}, {
+  "nome" : "ANIMAL_NOT_REACHED_BY_ORGANIZATION",
+  "codigo" : 189,
+  "mensagemDaApi" : "Your organization does not have access to this animal"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

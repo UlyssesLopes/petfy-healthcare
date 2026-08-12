@@ -47,13 +47,31 @@ public interface TimelineRepository extends JpaRepository<TimelineEntry, UUID> {
      * que ela nao alcanca. Misturar os dois faria um evento fora do escopo desaparecer quando ela
      * marcasse "so desta clinica" — e sumir diria que o animal nunca foi atendido.
      */
+    /*
+     * O TERCEIRO RECORTE, "desde quando", chegou com a hospedagem (Tela 47).
+     *
+     * "Isto e o que aconteceu com ele desde que saiu de casa" — e a pergunta que o tutor em viagem
+     * faz, e ela e de JANELA, nao de autor. Filtrar no cliente seria o erro que o comentario acima
+     * ja nomeia por outro motivo: a pagina tem vinte itens e a estadia pode ter mais.
+     *
+     * <b>Este NAO desliga com nulo, e os outros dois desligam.</b> A diferenca nao e de gosto: o
+     * Postgres recusa a consulta com {@code could not determine data type of parameter} quando o
+     * {@code :desde is null} recebe um nulo sem tipo — os dois de cima escapam porque o Hibernate os
+     * associa a colunas {@code uuid}, e este nao tem a quem se associar dentro do {@code is null}.
+     *
+     * Entao quem chama passa uma DATA-PISO para dizer "sem recorte", como o
+     * {@code NENHUMA_ORGANIZACAO} do servico faz para o outro filtro. O truque e o mesmo, e a razao
+     * tambem: um sentinela explicito e melhor que uma consulta que so quebra em producao.
+     */
     @Query("select t from TimelineEntry t where t.animalId = :animalId "
             + "and (:organizationId is null or t.organizationId = :organizationId) "
             + "and (:recordedByPersonId is null or t.recordedByPersonId = :recordedByPersonId) "
+            + "and t.occurredAt >= :desde "
             + "order by t.occurredAt desc, t.recordedAt desc")
     Page<TimelineEntry> findDoAnimalFiltrada(@Param("animalId") UUID animalId,
                                              @Param("organizationId") UUID organizationId,
                                              @Param("recordedByPersonId") UUID recordedByPersonId,
+                                             @Param("desde") LocalDateTime desde,
                                              Pageable pageable);
 
     /**
@@ -119,6 +137,59 @@ public interface TimelineRepository extends JpaRepository<TimelineEntry, UUID> {
             + "from TimelineEntry t where t.animalId = :animalId "
             + "group by t.eventType")
     List<PorTipo> contagemPorTipo(@Param("animalId") UUID animalId);
+
+    /**
+     * O tamanho da vida registrada NUM PERIODO — "61 registros no ano, por 5 pessoas e 3
+     * organizacoes" (Tela 48).
+     *
+     * <b>E o {@code tamanhoDe} com janela</b>, e nao uma consulta nova por capricho: o resumo anual e
+     * sobre o ano, e reusar a contagem total diria "147 eventos" num documento que se chama "o ano do
+     * Code". Um filtro em memoria sobre a linha inteira leria a vida de dez anos para contar doze
+     * meses.
+     */
+    @Query("select count(t) as eventos, min(t.occurredAt) as primeiro, "
+            + "count(distinct t.recordedByPersonId) as pessoas, "
+            + "count(distinct t.organizationId) as organizacoes "
+            + "from TimelineEntry t where t.animalId = :animalId "
+            + "and t.occurredAt between :de and :ate")
+    Tamanho tamanhoNoPeriodo(@Param("animalId") UUID animalId,
+                             @Param("de") LocalDateTime de,
+                             @Param("ate") LocalDateTime ate);
+
+    /**
+     * "Quem cuidou dele este ano", com quantos registros cada um.
+     *
+     * <b>Agrupa por NOME, e nao por id</b>, e a escolha e deliberada. A view ja carrega
+     * {@code recorded_by_name} e {@code organization_name} desde a V29 — foi o que tirou o N+1 da
+     * linha do tempo —, e agrupar por id obrigaria uma consulta a mais so para descobrir como chamar
+     * cada linha do resumo.
+     *
+     * <b>A dupla (pessoa, organizacao) e a unidade</b>, porque e assim que o desenho escreve:
+     * "Rafaela Lopes, pela Creche Quintal" e "Juliana Dias, co-tutora" sao duas linhas, e a mesma
+     * pessoa registrando por si e pela creche sao duas contribuicoes diferentes — foi ela quem
+     * decidiu assinar de cada jeito.
+     */
+    @Query("select t.recordedByName as pessoa, t.organizationName as organizacao, "
+            + "count(t) as registros "
+            + "from TimelineEntry t where t.animalId = :animalId "
+            + "and t.occurredAt between :de and :ate "
+            + "and (t.recordedByName is not null or t.organizationName is not null) "
+            + "group by t.recordedByName, t.organizationName "
+            + "order by count(t) desc")
+    List<QuemCuidou> quemCuidouNoPeriodo(@Param("animalId") UUID animalId,
+                                         @Param("de") LocalDateTime de,
+                                         @Param("ate") LocalDateTime ate);
+
+    /** Projecao da consulta acima. */
+    interface QuemCuidou {
+
+        String getPessoa();
+
+        String getOrganizacao();
+
+        long getRegistros();
+
+    }
 
     /** Projecao da consulta acima. */
     interface PorTipo {

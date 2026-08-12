@@ -197,6 +197,43 @@ public enum ErrorMessageEnum {
     // encerrada — deixaria o pedido parado para sempre, e a tela diria "o Marcelo recebe e decide"
     // sobre um Marcelo que nao existe mais.
     NO_ONE_CAN_AUTHORIZE(174, "No one answers for this animal right now"),
+    // Nem todo animal aceita padrinho, e a decisao e do abrigo (V43). Um animal com tutor humano
+    // tambem cai aqui: apadrinhar o cachorro de alguem seria pagar a conta de uma pessoa, e nao
+    // bancar o cuidado de um animal que nao tem quem pague.
+    SPONSORSHIP_NOT_OFFERED(175, "This animal is not open to sponsorship"),
+    SPONSORSHIP_NOT_FOUND(176, "Sponsorship not found"),
+    // Bancar duas vezes a mesma coisa nao e generosidade dobrada: e o mesmo clique repetido, e o
+    // abrigo somaria o dobro de um custo que nao dobrou.
+    SPONSORSHIP_ALREADY_ACTIVE(177, "You already sponsor this for this animal"),
+    SPONSORSHIP_ALREADY_ENDING(178, "This sponsorship is already ending"),
+    // O gasto apontado tem de ser DAQUELE animal, senao a lista do abrigo passaria a somar
+    // apadrinhamento de um custo que nao e dele.
+    COST_NOT_FROM_ANIMAL(179, "That cost does not belong to this animal"),
+    // O abrigo nao apadrinha o proprio animal: o total de "coberto por padrinhos" passaria a
+    // incluir o dinheiro do proprio abrigo.
+    CANNOT_SPONSOR_OWN_ANIMAL(180, "You cannot sponsor an animal your organization answers for"),
+    BOARDING_NOT_FOUND(181, "This animal is not boarded right now"),
+    // Um animal ja hospedado nao entra em outra hospedagem: o indice do banco so admite UMA
+    // custodia em curso, e a segunda chamada esbarraria nele com um 500 em vez de uma recusa.
+    ALREADY_BOARDED(182, "This animal is already boarded"),
+    // A volta prevista no passado nao e hospedagem: e um registro retroativo que a tela nao sabe
+    // mostrar — "dia 3 de 7" com total negativo.
+    INVALID_RETURN_DATE(183, "The expected return must be in the future"),
+    // Encerrar e de quem esta com o animal ou de quem o entregou, e de mais ninguem.
+    CANNOT_END_BOARDING(184, "Only the organization holding the animal or whoever handed it over can end this"),
+    // Hospedar exige uma organizacao que possa DETER CUSTODIA. Uma clinica que so registra ato
+    // clinico nao passa a responder pelo animal por uma semana.
+    ORGANIZATION_CANNOT_BOARD(185, "This organization cannot hold custody"),
+    APPOINTMENT_NOT_FOUND(186, "Appointment not found"),
+    // O duplo clique em "Agendar banho": sem esta recusa o mesmo banho apareceria duas vezes as
+    // 09h30, e o tosador marcaria entrada num e deixaria o outro pendurado o dia inteiro.
+    APPOINTMENT_ALREADY_SCHEDULED(187, "This animal already has an appointment at that time"),
+    // Marcar entrada duas vezes, ou entregar um animal que nunca chegou: a agenda e uma maquina de
+    // estados, e pular um passo faria as duas telas discordarem sobre o mesmo banho.
+    APPOINTMENT_WRONG_STATE(188, "This appointment is not in a state that allows that"),
+    // Agendar exige que o petshop ALCANCE o animal. Sem isso, qualquer organizacao poria qualquer
+    // animal na propria agenda — e a agenda e onde aparece o que o tutor compartilhou.
+    ANIMAL_NOT_REACHED_BY_ORGANIZATION(189, "Your organization does not have access to this animal"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

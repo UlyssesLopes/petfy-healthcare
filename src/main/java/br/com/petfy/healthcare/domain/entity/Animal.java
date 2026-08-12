@@ -124,6 +124,20 @@ public class Animal {
     @Column(name = "neutering_scheduled_for")
     private LocalDate neuteringScheduledFor;
 
+    /**
+     * Se o abrigo abriu este animal a padrinhos (Tela 46).
+     *
+     * <b>Coluna, e nao inferencia.</b> A alternativa era "todo animal sob custodia de organizacao
+     * aceita padrinho", e ela poria o cao que chegou ontem, ainda sem diagnostico, na mesma vitrine do
+     * Teco — e poria tambem o animal que o abrigo nao quer expor. A decisao de oferecer um animal a
+     * padrinhos e do abrigo, e uma inferencia a tomaria por ele.
+     *
+     * Falso por omissao: nenhum animal existente passou a aceitar padrinho por causa da V43.
+     */
+    @Column(name = "accepts_sponsorship", nullable = false)
+    @Builder.Default
+    private Boolean acceptsSponsorship = false;
+
     private String bornLocal;
 
     private LocalDateTime creationDate;

@@ -117,7 +117,19 @@ class AnimalMergerCoverageContainerTest extends PostgresContainerTest {
             // tutor sobre AQUELE cadastro — "piora da claudicacao nos ultimos 3 meses" foi escrito
             // olhando o historico daquele cadastro. Move-lo faria a pergunta reaparecer sobre um
             // conjunto de eventos que quem a escreveu nunca viu.
-            "referrals");
+            "referrals",
+            // O APADRINHAMENTO FICA. Ele aponta para uma linha de `animal_costs`, que MOVE — e isso
+            // parece motivo para mover junto. Nao e: apadrinhamento nao e fato do animal, e um
+            // acordo entre uma pessoa e a organizacao que respondia por AQUELE cadastro. Mover
+            // faria o padrinho aparecer bancando um animal cujo abrigo ele nunca escolheu, e o
+            // `source_cost_id` continua valido de qualquer forma: o custo levou o id consigo.
+            "sponsorships",
+            // O AGENDAMENTO FICA, e a razao e mecanica: as linhas de seguranca que ele mostra saem
+            // da CONCESSAO daquele cadastro, e `grants` fica. Mover o banho de sexta para o
+            // sobrevivente o faria aparecer na agenda do petshop com "voce esta no escuro" — porque
+            // a concessao ficou para tras. O compromisso e entre um petshop e o cadastro que ele
+            // alcanca.
+            "service_appointments");
 
     /**
      * As netas, que seguem o pai.

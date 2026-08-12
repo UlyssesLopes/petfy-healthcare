@@ -93,6 +93,12 @@ public class AnimalMerger {
      *                  move. Mover o encaminhamento sem a concessao deixaria um pedido autorizado
      *                  apontando para um acesso de outro cadastro. E o significado confirma: a
      *                  pergunta que a clinica escreveu foi escrita olhando AQUELE historico.
+     *   · sponsorships — o padrinho escolheu bancar um custo DAQUELE cadastro, e `animal_costs`
+     *                  move. Parece motivo para mover junto, e nao e: apadrinhamento nao e um fato
+     *                  do animal, e um acordo entre uma pessoa e a organizacao que respondia por
+     *                  aquele cadastro. Mover faria o padrinho aparecer bancando um animal cujo
+     *                  abrigo ele nunca escolheu — e o `source_cost_id` continua valido de qualquer
+     *                  forma, porque o custo levou o id consigo.
      */
 
     @PersistenceContext
