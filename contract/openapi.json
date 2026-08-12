@@ -1366,6 +1366,43 @@
         },
         "type" : "object"
       },
+      "ColonyAnimalDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "daysSinceLastSeen" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "lastSeenBy" : {
+            "type" : "string"
+          },
+          "lastSeenOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "neutered" : {
+            "type" : "boolean"
+          },
+          "neuteredAt" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "neuteringScheduledFor" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "ongoingCare" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "CondicaoDTO" : {
         "properties" : {
           "ativa" : {
@@ -5918,7 +5955,7 @@
     "/due-items" : {
       "get" : {
         "description" : "Dose de vacina, antiparasitario, orientacao a cumprir, convite aguardando resposta e consentimento pendente, do mais atrasado ao menos urgente. Derivada de cada fonte a cada chamada - nao existe tabela de pendencia, porque a primeira a divergir cobraria algo que ja foi feito. windowDays define quanto do futuro entra; o que ja venceu entra sempre.",
-        "operationId" : "listar",
+        "operationId" : "listar_1",
         "parameters" : [ {
           "in" : "query",
           "name" : "windowDays",
@@ -6152,6 +6189,37 @@
         },
         "summary" : "Recusa o pedido",
         "tags" : [ "group-approval-controller" ]
+      }
+    },
+    "/group/animals" : {
+      "get" : {
+        "description" : "A lista da colonia. Diferente da lista do abrigo (Tela 12) por uma coluna que so existe na rua: quantos dias desde que alguem viu o animal. Filtros: TODOS, FALTA_CASTRAR, EM_TRATAMENTO, SUMIDOS. SUMIDOS deixa de fora quem nunca foi marcado — sem informacao nao e desaparecido, e contar os dois juntos mandaria o grupo procurar um gato que esta na praca.",
+        "operationId" : "listar",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "filtro",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ColonyAnimalDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Os animais do grupo, com o ultimo avistamento",
+        "tags" : [ "colony-controller" ]
       }
     },
     "/health-records" : {
