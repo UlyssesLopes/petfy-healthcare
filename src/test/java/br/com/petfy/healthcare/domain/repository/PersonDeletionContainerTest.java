@@ -11,6 +11,10 @@ import br.com.petfy.healthcare.domain.entity.EmailVerificationToken;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.Custody;
+import br.com.petfy.healthcare.domain.entity.GroupApproval;
+import br.com.petfy.healthcare.domain.entity.GroupApprovalKind;
+import br.com.petfy.healthcare.domain.entity.GroupApprovalStatus;
+import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
@@ -181,7 +185,9 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
         @Autowired private PersonService personService;
         @Autowired private AnimalRepository animalRepository;
         @Autowired private CustodyRepository custodyRepository;
-    @Autowired private GrantRepository grantRepository;
+        @Autowired private GrantRepository grantRepository;
+        @Autowired private GroupApprovalRepository groupApprovalRepository;
+        @Autowired private OrganizationRepository organizationRepository;
         @Autowired private VaccineRepository vaccineRepository;
         @Autowired private AnimalWeightHistoryRepository animalWeightHistoryRepository;
         @Autowired private AntiparasiticRepository antiparasiticRepository;
@@ -403,6 +409,52 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
 
             assertThat(personRepository.findById(person.getPersonId())).isEmpty();
             assertThat(dueItemSilenceRepository.findByPersonPersonId(person.getPersonId())).isEmpty();
+        }
+
+        /**
+         * <b>O acordo de duas pessoas num animal que SOBREVIVE à exclusão.</b>
+         *
+         * O defeito estava aberto desde o bloco 6 e ficava escondido: o caminho comum apagava o animal
+         * junto, e o {@code AnimalPurger} levava o pedido com ele. O caso que faltava é o do animal
+         * que fica — e ele **passou a ser a regra** quando o encerramento passou a exigir destino para
+         * cada animal, porque agora todo animal de quem sai sobrevive por definição.
+         *
+         * Sem o delete, o `DELETE /persons/me` responde 500 por
+         * `fk_group_approvals_requested_by`. E não há guarda de schema para FK que aponta para
+         * `persons` — só para `animals`.
+         */
+        @Test
+        @DisplayName("o pedido de concordancia num animal que fica nao segura a exclusao")
+        void contaComAcordoDeDuasPessoasEApagada() {
+            Organization grupo = organizationRepository.saveAndFlush(Organization.builder()
+                    .name("Grupo Gatos da Benedito " + UUID.randomUUID())
+                    .creationDate(LocalDateTime.now())
+                    .build());
+
+            // person PEDIU e maria DECIDIU: duas das quatro colunas que apontam para persons
+            groupApprovalRepository.saveAndFlush(GroupApproval.builder()
+                    .organization(grupo)
+                    .kind(GroupApprovalKind.ADOCAO)
+                    .animal(rex)
+                    .toPerson(maria)
+                    .reason("Paula visita a praca ha meses.")
+                    .status(GroupApprovalStatus.CONCORDADO)
+                    .requestedBy(person)
+                    .requestedAt(LocalDateTime.now().minusDays(2))
+                    .decidedBy(maria)
+                    .decidedAt(LocalDateTime.now().minusDays(1))
+                    .build());
+
+            // o Rex fica: passa para a maria, e e justamente por isso que ele sobrevive ao purge
+            passarRexPara(maria);
+
+            autenticar(person);
+
+            personService.deleteCurrentPerson();
+
+            assertThat(personRepository.findById(person.getPersonId())).isEmpty();
+            // e o animal continua de pe, com quem o recebeu
+            assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
         }
 
         /** Co-tutor sai: o animal nao muda de titular e continua de pe. */

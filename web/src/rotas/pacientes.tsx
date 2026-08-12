@@ -13,17 +13,17 @@ import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
- * A "Tela 03 Â· web, tela grande â€” Area de organizacao, a segunda-feira da veterinaria", de
+ * A "Tela 03 · web, tela grande — Area de organizacao, a segunda-feira da veterinaria", de
  * `design/IdentidadeVisual/Telas Petfy.dc.html`.
  *
- * <b>A COLUNA MAIS IMPORTANTE DELA EXISTE AGORA.</b> O desenho pede quatro colunas â€” animal,
- * tutor, <b>situacao</b> e <b>ultima visita</b> â€”, quatro recortes contados no topo e um painel
+ * <b>A COLUNA MAIS IMPORTANTE DELA EXISTE AGORA.</b> O desenho pede quatro colunas — animal,
+ * tutor, <b>situacao</b> e <b>ultima visita</b> —, quatro recortes contados no topo e um painel
  * "quem esta vencendo". Ate a rodada passada nada disso vinha do backend: o `VetPetDTO` tinha
  * nome, tutor, raca, sexo, nascimento e peso, e zero sobre saude.
  *
  * O que destravou foi a agregacao por organizacao: `healthStatus`, `lastVisitAt` e
  * `underTreatment` viajam por animal, e `/professional/animals/summary` conta o conjunto
- * inteiro. <b>Tudo em lote, no servidor</b> â€” era justamente a leitura por animal (318
+ * inteiro. <b>Tudo em lote, no servidor</b> — era justamente a leitura por animal (318
  * requisicoes para desenhar uma tabela) que tornava isso impossivel no cliente.
  *
  * <b>A TELA NAO RECALCULA NADA.</b> A situacao vem pronta, como na Tela 10: no dia em que o
@@ -31,7 +31,7 @@ import { lerSessao } from "../dados/sessao.ts";
  * apareceria em dia para quem decide a quem ligar.
  *
  * <b>O que AINDA nao existe e o GESTO:</b> "avisar os doze tutores". Nao ha canal de aviso no
- * produto, e um botao que nao avisa ninguem seria pior que a ausencia dele â€” entao o painel
+ * produto, e um botao que nao avisa ninguem seria pior que a ausencia dele — entao o painel
  * lista quem esta vencendo e diz, em vez de desenhar, que avisar dali nao existe.
  *
  * <b>A busca e do servidor</b> (`q`), e nao do cliente: 318 pacientes nao caberiam numa
@@ -53,7 +53,7 @@ function Pacientes() {
 
   /*
    * DUAS LISTAS, e nao um filtro: "quem eu alcanco porque alguem me concedeu" e "por quem eu
-   * respondo" sao perguntas diferentes. O abrigo precisa da segunda para decidir uma adocao â€”
+   * respondo" sao perguntas diferentes. O abrigo precisa da segunda para decidir uma adocao —
    * e a Tela 12 inteira mora nela, quando tiver onde-esta e saude.
    */
   const [aba, setAba] = useState<"acesso" | "custodia">("acesso");
@@ -96,7 +96,7 @@ function Pacientes() {
 
           {/*
            * Os quatro recortes do desenho. As duas abas contam pelo `totalElements` de cada
-           * lista â€” sao dois conjuntos diferentes, e nao dois filtros do mesmo. Os outros tres
+           * lista — sao dois conjuntos diferentes, e nao dois filtros do mesmo. Os outros tres
            * vem do resumo, que conta sobre a organizacao INTEIRA: numero que muda ao buscar nao
            * e resumo.
            */}
@@ -184,8 +184,8 @@ function Pacientes() {
           )}
 
           {/*
-            "QUEM ESTA VENCENDO". A lista existe agora; o GESTO do desenho â€” "avisar os doze
-            tutores" â€” continua nao existindo, e por isso continua escrito em vez de desenhado:
+            "QUEM ESTA VENCENDO". A lista existe agora; o GESTO do desenho — "avisar os doze
+            tutores" — continua nao existindo, e por isso continua escrito em vez de desenhado:
             nao ha canal de aviso no produto, e um botao que nao avisa ninguem seria pior que a
             ausencia dele.
 
@@ -208,8 +208,8 @@ function Pacientes() {
                     <b style={{ fontWeight: 500 }}>{paciente.name}</b>
                     {paciente.personName === undefined
                       ? ""
-                      : ` Â· ${paciente.personName}`}
-                    {" Â· "}
+                      : ` · ${paciente.personName}`}
+                    {" · "}
                     <Situacao status={paciente.healthStatus} />
                   </li>
                 ))}
@@ -244,13 +244,13 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
       <div>
         <span style={{ fontSize: "16px", fontWeight: 500 }}>{paciente.name}</span>
         {identidade !== "" && (
-          <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}> Â· {identidade}</span>
+          <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}> · {identidade}</span>
         )}
       </div>
 
       {/*
        * SEM TUTOR HUMANO e uma informacao, e nao um campo vazio. O animal sob custodia do
-       * abrigo nao tem tutor â€” escrever o nome do abrigo aqui faria a coluna mentir, e deixar
+       * abrigo nao tem tutor — escrever o nome do abrigo aqui faria a coluna mentir, e deixar
        * em branco faria parecer defeito.
        */}
       <div style={{ fontSize: "15px", color: paciente.personName === undefined ? "oklch(0.5 0.015 150)" : "oklch(0.35 0.018 150)" }}>
@@ -258,7 +258,7 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
       </div>
 
       {/*
-        A COLUNA QUE A TELA NAO TINHA. O servidor manda a dose mais urgente da carteira pronta â€”
+        A COLUNA QUE A TELA NAO TINHA. O servidor manda a dose mais urgente da carteira pronta —
         vencida vence vencendo, que vence em dia. A tela nao recalcula nada: no dia em que ela
         divergisse do servidor, seria o dia em que um animal com antirrabica vencida apareceria
         em dia para quem decide a quem ligar.
@@ -276,7 +276,7 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
       </div>
 
       {/*
-        Nunca visitou NAO e "â€”": e "sem visita registrada", e a diferenca importa para quem le.
+        Nunca visitou NAO e "—": e "sem visita registrada", e a diferenca importa para quem le.
         O tracinho diz "nao sei"; a frase diz o que o produto sabe.
       */}
       <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", fontFamily: "'DM Mono', monospace" }}>
@@ -294,7 +294,7 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
         <span></span>
       ) : (
         <div style={{ display: "flex", gap: "10px" }}>
-          {/* Adotar so aparece para quem o abrigo RESPONDE â€” e a Tela 13. */}
+          {/* Adotar so aparece para quem o abrigo RESPONDE — e a Tela 13. */}
           {sobCustodia && (
             <Link
               to="/animais/$animalId/adocao"
@@ -329,7 +329,7 @@ function Linha({ paciente, sobCustodia }: { paciente: Paciente; sobCustodia: boo
  * A situacao da carteira, em palavra e cor.
  *
  * <b>`NO_NEXT_DOSE` nao e "em dia", e por isso tem frase propria.</b> Pode ser dose unica e pode
- * ser carteira que ninguem registrou â€” dizer "em dia" ali seria o produto afirmando saude a
+ * ser carteira que ninguem registrou — dizer "em dia" ali seria o produto afirmando saude a
  * partir de ausencia de dado, que e exatamente o que ele existe para nao fazer.
  */
 function Situacao({ status }: { status: Paciente["healthStatus"] }) {
@@ -372,7 +372,7 @@ function Recorte({ texto, atencao = false }: { texto: string; atencao?: boolean 
   );
 }
 
-/** Os recortes do topo: sÃ³ existem os dois que uma consulta responde. */
+/** Os recortes do topo: só existem os dois que uma consulta responde. */
 function Aba({
   escolhida,
   aoEscolher,
