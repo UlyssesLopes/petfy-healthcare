@@ -1,5 +1,7 @@
 package br.com.petfy.healthcare.controller;
 
+import br.com.petfy.healthcare.domain.dto.AccountOverviewDTO;
+import br.com.petfy.healthcare.domain.dto.ProfessionalCredentialRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PersonExportDTO;
 import br.com.petfy.healthcare.domain.dto.PersonRequestDTO;
 import br.com.petfy.healthcare.domain.dto.PersonResponseDTO;
@@ -78,7 +80,37 @@ public class PersonController {
         return ResponseEntity.ok(personExportService.exportarDoAutenticado());
     }
 
-    @Operation(summary = "Apaga a minha conta", description = "Irreversivel. Animal com outro tutor sobrevive e a titularidade passa a ele; animal que so eu tinha morre com a carteira inteira. O registro de consentimento sai junto - guardar prova de aceite de quem pediu para ser esquecido inverteria o proposito da prova.")
+    @Operation(summary = "Sua conta",
+               description = "O estado da conta e o que falta para poder encerra-la: nome, telefone, "
+                             + "quando a senha foi trocada, registro profissional, e os animais por "
+                             + "que voce responde agora. NAO traz sessoes abertas — este produto "
+                             + "autentica com JWT sem estado, e um numero estimado seria pior que a "
+                             + "ausencia.")
+    @GetMapping("/me/account")
+    public ResponseEntity<AccountOverviewDTO> conta() {
+        return ResponseEntity.ok(personService.conta());
+    }
+
+    @Operation(summary = "Declara um registro profissional",
+               description = "So dava para declarar no cadastro ate aqui — e a veterinaria que criou "
+                             + "a conta como tutora nao tinha como dizer depois que e veterinaria. "
+                             + "Entra como INFORMADO: nao ha integracao com conselho, e o registro "
+                             + "carrega essa informacao em vez de fingir garantia.")
+    @PostMapping("/me/professional-credential")
+    public ResponseEntity<AccountOverviewDTO> declararCredencial(
+            @Valid @RequestBody ProfessionalCredentialRequestDTO request) {
+        return ResponseEntity.ok(personService.declararCredencial(request));
+    }
+
+    @Operation(summary = "Apaga a minha conta",
+               description = "Irreversivel, e RECUSA enquanto houver animal sob a sua "
+                             + "responsabilidade (409). Ate a Tela 36, o animal sem outro tutor "
+                             + "morria com a conta e o que tinha co-tutor passava para o mais antigo "
+                             + "deles — os dois em silencio, sem ninguem escolher. Agora o produto "
+                             + "pede um destino para cada um: transferir, encerrar a linha do tempo, "
+                             + "ou apagar o cadastro. O registro de consentimento sai junto - guardar "
+                             + "prova de aceite de quem pediu para ser esquecido inverteria o "
+                             + "proposito da prova.")
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteCurrentPerson() {
         personService.deleteCurrentPerson();

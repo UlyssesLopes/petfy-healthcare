@@ -14,6 +14,7 @@ import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
+import br.com.petfy.healthcare.domain.entity.CustodyEndReason;
 import br.com.petfy.healthcare.domain.entity.CustodyNature;
 import br.com.petfy.healthcare.domain.entity.AnimalWeightHistory;
 import br.com.petfy.healthcare.domain.entity.Species;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Exclusao de conta contra Postgres de verdade.
@@ -229,39 +231,86 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
         }
 
         /**
-         * O titular fecha a conta e o animal tem outro tutor: o animal sobrevive e a
-         * titularidade passa para quem fica. E aqui que os dois HOLDER coexistem.
+         * <b>O CONTRATO MUDOU NA TELA 36, e este caso e o que ele substitui.</b>
+         *
+         * Ate aqui, o titular que fechava a conta via a titularidade passar sozinha para o co-tutor
+         * mais antigo — em silencio, e sem que ninguem escolhesse. O produto (3.4) decidiu outra
+         * coisa, e o desenho a escreve: <i>"o Code e o Bartolomeu precisam de alguem antes que voce
+         * saia. Passe cada um para outra pessoa"</i>, e o botao so fica <i>"disponivel quando nenhum
+         * animal estiver sob sua responsabilidade"</i>.
+         *
+         * Entregar a responsabilidade a quem nunca disse sim e o que deixou de acontecer.
          */
         @Test
-        @DisplayName("titular sai, animal sobrevive e a titularidade passa ao co-tutor")
-        void titularSaiEAnimalSobrevive() {
+        @DisplayName("nao encerra a conta enquanto o titular responde pelo animal")
+        void naoEncerraEnquantoRespondePeloAnimal() {
             autenticar(person);
 
+            assertThatThrownBy(() -> personService.deleteCurrentPerson())
+                    .isInstanceOf(br.com.petfy.healthcare.exception.PetfyHealthcareException.class);
+
+            assertThat(personRepository.findById(person.getPersonId())).isPresent();
+            assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
+        }
+
+        /**
+         * E dado o destino, a conta encerra e o animal fica de pe com quem o recebeu.
+         *
+         * <b>O caminho de saida existe e nao e novo</b>: transferir a titularidade, encerrar a linha
+         * do tempo se o animal morreu, ou apagar o cadastro. O que deixou de existir e o desfecho que
+         * ninguem escolheu.
+         */
+        @Test
+        @DisplayName("dado destino ao animal, a conta encerra e ele sobrevive")
+        void comDestinoDadoAContaEncerra() {
+            passarRexPara(maria);
+
+            autenticar(person);
             personService.deleteCurrentPerson();
 
+            assertThat(personRepository.findById(person.getPersonId())).isEmpty();
             assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
-            // maria tinha concessao; passa a responder pelo animal, e a concessao dela
-            // e revogada - manter as duas deixaria a mesma pessoa alcancando o animal
-            // por dois caminhos, e o dia em que divergissem seria um vazamento
             assertThat(custodyRepository.findEmCurso(rex.getAnimalId()))
                     .get()
                     .satisfies(nova -> assertThat(nova.getHolderPerson().getPersonId())
                             .isEqualTo(maria.getPersonId()));
-            assertThat(grantRepository.findVigentesDePessoasNoAnimal(rex.getAnimalId(), LocalDateTime.now()))
-                    .isEmpty();
         }
 
         /**
-         * O animal unico da conta morre com ela, e leva a carteira inteira.
+         * Passa a custodia do Rex adiante, como a transferencia de titularidade faz.
          *
-         * Peso e antiparasitario chegaram no passo 9 e nao entraram na cascata da
-         * exclusao: a partir dali, apagar a conta de quem tinha registrado uma
-         * pesagem respondia 500 e o pedido de exclusao ficava sem atendimento. Nao
-         * aparecia em mock nem nos casos acima, que criavam animal sem historico.
+         * A ordem importa e e a mesma de sempre: encerra a anterior, da flush, e so entao abre a nova
+         * — o indice unico parcial admite no maximo UMA custodia em curso por animal.
+         */
+        private void passarRexPara(Person quemRecebe) {
+            Custody atual = custodyRepository.findEmCurso(rex.getAnimalId()).orElseThrow();
+            atual.setEndedAt(LocalDateTime.now());
+            atual.setEndReason(CustodyEndReason.TRANSFERENCIA);
+            custodyRepository.saveAndFlush(atual);
+
+            Custody nova = custodyRepository.saveAndFlush(Custody.builder()
+                    .animal(rex).holderPerson(quemRecebe).nature(CustodyNature.DEFINITIVA)
+                    .startedAt(LocalDateTime.now()).build());
+
+            atual.setSuccessor(nova);
+            custodyRepository.saveAndFlush(atual);
+        }
+
+        /**
+         * <b>O ANIMAL UNICO NAO MORRE MAIS COM A CONTA, e essa e a mudanca que mais importa.</b>
+         *
+         * Este caso afirmava o contrario ate a Tela 36: o animal sem outro tutor era apagado com a
+         * carteira inteira — vacinas, peso, antiparasitario — porque a conta fechou. Sete anos de
+         * registro de um animal VIVO destruidos por um desfecho que ninguem escolheu.
+         *
+         * O que sobreviveu do caso antigo e a razao pratica dele: peso e antiparasitario chegaram no
+         * passo 9 e nao entraram na cascata, e apagar a conta de quem tinha registrado uma pesagem
+         * respondia 500. A cascata continua sendo exercitada — so que depois de o animal ter recebido
+         * um destino, que e quando ela pode rodar.
          */
         @Test
-        @DisplayName("animal unico da conta morre com a carteira inteira, peso e antiparasitario incluidos")
-        void animalUnicoMorreComACarteiraInteira() {
+        @DisplayName("o animal unico impede o encerramento, e nao morre com a conta")
+        void animalUnicoImpedeOEncerramento() {
             Animal nina = animalRepository.saveAndFlush(Animal.builder()
                     .name("Nina").species(Species.CANINA).creationDate(LocalDateTime.now()).build());
             custodyRepository.saveAndFlush(Custody.builder()
@@ -281,15 +330,16 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
 
             autenticar(person);
 
-            personService.deleteCurrentPerson();
+            assertThatThrownBy(() -> personService.deleteCurrentPerson())
+                    .isInstanceOf(br.com.petfy.healthcare.exception.PetfyHealthcareException.class);
 
-            assertThat(personRepository.findById(person.getPersonId())).isEmpty();
-            assertThat(animalRepository.findById(nina.getAnimalId())).isEmpty();
-            assertThat(animalWeightHistoryRepository.findByAnimalAnimalIdOrderByMeasuredAtDesc(nina.getAnimalId())).isEmpty();
-            assertThat(antiparasiticRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(nina.getAnimalId())).isEmpty();
-
-            // rex tem outro tutor e sobrevive, com a titularidade passada a maria
-            assertThat(animalRepository.findById(rex.getAnimalId())).isPresent();
+            // a conta continua, e a carteira da Nina INTEIRA continua
+            assertThat(personRepository.findById(person.getPersonId())).isPresent();
+            assertThat(animalRepository.findById(nina.getAnimalId())).isPresent();
+            assertThat(animalWeightHistoryRepository
+                    .findByAnimalAnimalIdOrderByMeasuredAtDesc(nina.getAnimalId())).isNotEmpty();
+            assertThat(antiparasiticRepository
+                    .findByAnimalAnimalIdOrderByApplicationDateDesc(nina.getAnimalId())).isNotEmpty();
         }
 
         /**
@@ -303,6 +353,10 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("conta com consentimento registrado e apagada, e o registro sai junto")
         void contaComConsentimentoEApagada() {
+            // o Rex precisa de destino antes: desde a Tela 36 a conta so encerra quando ninguem
+            // depende dela
+            passarRexPara(maria);
+
             consentRecordRepository.saveAndFlush(ConsentRecord.builder()
                     .person(person)
                     .document(ConsentDocument.PRIVACY_POLICY)
@@ -334,6 +388,8 @@ class PersonDeletionContainerTest extends PostgresContainerTest {
         @Test
         @DisplayName("conta que silenciou pendencia e apagada, e o silencio sai junto")
         void contaComSilencioEApagada() {
+            passarRexPara(maria);
+
             dueItemSilenceRepository.saveAndFlush(DueItemSilence.builder()
                     .person(person)
                     .kind(DueItemKind.DOSE_DE_VACINA)

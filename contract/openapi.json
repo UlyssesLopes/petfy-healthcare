@@ -1,6 +1,36 @@
 {
   "components" : {
     "schemas" : {
+      "AccountOverviewDTO" : {
+        "properties" : {
+          "animalsUnderMyResponsibility" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalSearchItemDTO"
+            },
+            "type" : "array"
+          },
+          "canDeleteAccount" : {
+            "type" : "boolean"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "passwordChangedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "professionalCredential" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AceiteDTO" : {
         "properties" : {
           "acceptedAt" : {
@@ -682,6 +712,47 @@
           "weight" : {
             "format" : "double",
             "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalSearchItemDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "holderName" : {
+            "type" : "string"
+          },
+          "microchipNumber" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalSearchResultDTO" : {
+        "properties" : {
+          "mine" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalSearchItemDTO"
+            },
+            "type" : "array"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "othersExist" : {
+            "type" : "boolean"
+          },
+          "throughOrganization" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalSearchItemDTO"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -3387,6 +3458,23 @@
         "required" : [ "role" ],
         "type" : "object"
       },
+      "ProfessionalCredentialRequestDTO" : {
+        "properties" : {
+          "crmv" : {
+            "type" : "string"
+          },
+          "specialty" : {
+            "type" : "string"
+          },
+          "uf" : {
+            "maxLength" : 2,
+            "minLength" : 2,
+            "type" : "string"
+          }
+        },
+        "required" : [ "crmv", "uf" ],
+        "type" : "object"
+      },
       "ReferralCandidateDTO" : {
         "properties" : {
           "credential" : {
@@ -4509,6 +4597,34 @@
         },
         "summary" : "Quem ja esteve com voce",
         "tags" : [ "animal-controller" ]
+      }
+    },
+    "/animals/search" : {
+      "get" : {
+        "description" : "Os tres campos numa consulta so, porque quem digita nao sabe em qual esta digitando. Devolve em DOIS grupos — os que voce responde e os que voce alcanca pela organizacao em que age — e diz se existem outros que casam e que voce NAO alcanca. Essa ultima parte e deliberada: calar sobre o resto faria a pessoa concluir que o animal nao esta no Petfy. E booleano, e nao contagem: um numero seria um oraculo sobre quantos animais existem com cada prefixo de microchip.",
+        "operationId" : "buscar",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimalSearchResultDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Busca por nome, microchip ou RGA",
+        "tags" : [ "animal-search-controller" ]
       }
     },
     "/animals/{animalId}" : {
@@ -8095,7 +8211,7 @@
     },
     "/persons/me" : {
       "delete" : {
-        "description" : "Irreversivel. Animal com outro tutor sobrevive e a titularidade passa a ele; animal que so eu tinha morre com a carteira inteira. O registro de consentimento sai junto - guardar prova de aceite de quem pediu para ser esquecido inverteria o proposito da prova.",
+        "description" : "Irreversivel, e RECUSA enquanto houver animal sob a sua responsabilidade (409). Ate a Tela 36, o animal sem outro tutor morria com a conta e o que tinha co-tutor passava para o mais antigo deles — os dois em silencio, sem ninguem escolher. Agora o produto pede um destino para cada um: transferir, encerrar a linha do tempo, ou apagar o cadastro. O registro de consentimento sai junto - guardar prova de aceite de quem pediu para ser esquecido inverteria o proposito da prova.",
         "operationId" : "deleteCurrentPerson",
         "responses" : {
           "200" : {
@@ -8151,6 +8267,26 @@
         "tags" : [ "person-controller" ]
       }
     },
+    "/persons/me/account" : {
+      "get" : {
+        "description" : "O estado da conta e o que falta para poder encerra-la: nome, telefone, quando a senha foi trocada, registro profissional, e os animais por que voce responde agora. NAO traz sessoes abertas — este produto autentica com JWT sem estado, e um numero estimado seria pior que a ausencia.",
+        "operationId" : "conta",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountOverviewDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Sua conta",
+        "tags" : [ "person-controller" ]
+      }
+    },
     "/persons/me/export" : {
       "get" : {
         "description" : "Documento JSON com o tutor, os consentimentos e todos os animals em que ele e tutor - vacinas, antiparasitarios, pesagens, atendimentos, correcoes, anexos, links de compartilhamento, acessos de clinica e o log de acessos de terceiros. Dado pessoal de terceiro vem reduzido, e o proprio documento declara o que nao carrega no campo limitacoes.",
@@ -8191,6 +8327,36 @@
           }
         },
         "summary" : "Troca a minha senha",
+        "tags" : [ "person-controller" ]
+      }
+    },
+    "/persons/me/professional-credential" : {
+      "post" : {
+        "description" : "So dava para declarar no cadastro ate aqui — e a veterinaria que criou a conta como tutora nao tinha como dizer depois que e veterinaria. Entra como INFORMADO: nao ha integracao com conselho, e o registro carrega essa informacao em vez de fingir garantia.",
+        "operationId" : "declararCredencial",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProfessionalCredentialRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountOverviewDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Declara um registro profissional",
         "tags" : [ "person-controller" ]
       }
     },

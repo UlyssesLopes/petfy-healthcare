@@ -355,6 +355,14 @@
   "codigo" : 189,
   "mensagemDaApi" : "Your organization does not have access to this animal"
 }, {
+  "nome" : "ANIMALS_STILL_UNDER_YOUR_RESPONSIBILITY",
+  "codigo" : 190,
+  "mensagemDaApi" : "Give each animal a destination before closing your account"
+}, {
+  "nome" : "SEARCH_TERM_TOO_SHORT",
+  "codigo" : 191,
+  "mensagemDaApi" : "Type at least three characters"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

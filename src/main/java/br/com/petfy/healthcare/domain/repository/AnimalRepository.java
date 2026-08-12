@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -82,5 +83,53 @@ public interface AnimalRepository extends JpaRepository<Animal, UUID> {
     @Query("select a from Animal a where a.microchipNumber = :microchip "
             + "and a.mergedIntoAnimalId is null")
     List<Animal> findComMicrochip(@Param("microchip") String microchip);
+
+    /**
+     * A busca autenticada da Tela 35: "nome, microchip ou RGA".
+     *
+     * <b>Os tres campos numa consulta so, porque quem digita nao sabe em qual esta digitando.</b> A
+     * pessoa poe "9810" ou "Code" no mesmo campo — obrigar a escolher o tipo antes de buscar seria
+     * pedir a ela a resposta que ela veio procurar.
+     *
+     * <b>A PARCIAL EXISTE AQUI, e no {@code POST /found} nao existe.</b> A diferenca nao e de gosto e
+     * vale registrar: la a busca e PUBLICA e por microchip, e "9810" acharia todo animal de uma
+     * fabricante de chip — era varredura, e nao servia a ninguem, porque quem esta com o animal na mao
+     * le o numero inteiro. Aqui quem busca ja alcanca os animais que a consulta devolve: o recorte de
+     * acesso vem do serviço, e a parcial so ordena o que ja e dela.
+     *
+     * <b>Exclui o absorvido</b>, como as duas consultas acima: devolver um apontador daria a quem
+     * busca um cadastro sem vida registrada.
+     */
+    @Query("select a from Animal a where a.mergedIntoAnimalId is null "
+            + "and a.animalId in :alcancados "
+            + "and (lower(a.name) like :busca "
+            + "  or lower(coalesce(a.microchipNumber, '')) like :busca "
+            + "  or lower(coalesce(a.generalRegistry, '')) like :busca) "
+            + "order by a.name asc")
+    List<Animal> buscarEntre(@Param("alcancados") Collection<UUID> alcancados,
+                             @Param("busca") String busca);
+
+    /**
+     * <b>Ha animal que casa com a busca e que quem procura NAO alcanca?</b>
+     *
+     * "Existem outros animais com microchip comecando em 9810 no Petfy. Voce nao tem acesso a eles, e
+     * por isso nao aparecem aqui."
+     *
+     * <b>E a frase mais incomum desta tela, e ela e deliberada.</b> A saida obvia seria devolver uma
+     * lista curta e calar sobre o resto — e o efeito seria a pessoa concluir que o animal que ela
+     * procura nao esta no Petfy. Dizer que ele existe e que ela nao o alcanca e a unica resposta
+     * verdadeira, e e ela que torna util o caminho seguinte: a busca de animal encontrado.
+     *
+     * <b>Devolve BOOLEAN, e nao contagem.</b> Um numero seria um oraculo: quem variasse o termo mediria
+     * quantos animais existem com cada prefixo de microchip. O booleano sustenta a frase e nao mede
+     * nada.
+     */
+    @Query("select count(a) > 0 from Animal a where a.mergedIntoAnimalId is null "
+            + "and a.animalId not in :alcancados "
+            + "and (lower(a.name) like :busca "
+            + "  or lower(coalesce(a.microchipNumber, '')) like :busca "
+            + "  or lower(coalesce(a.generalRegistry, '')) like :busca)")
+    boolean existeForaDoAlcance(@Param("alcancados") Collection<UUID> alcancados,
+                                @Param("busca") String busca);
 
 }

@@ -48,6 +48,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Busca por nome, microchip ou RGA
+         * @description Os tres campos numa consulta so, porque quem digita nao sabe em qual esta digitando. Devolve em DOIS grupos — os que voce responde e os que voce alcanca pela organizacao em que age — e diz se existem outros que casam e que voce NAO alcanca. Essa ultima parte e deliberada: calar sobre o resto faria a pessoa concluir que o animal nao esta no Petfy. E booleano, e nao contagem: um numero seria um oraculo sobre quantos animais existem com cada prefixo de microchip.
+         */
+        get: operations["buscar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}": {
         parameters: {
             query?: never;
@@ -1696,9 +1716,29 @@ export interface paths {
         post?: never;
         /**
          * Apaga a minha conta
-         * @description Irreversivel. Animal com outro tutor sobrevive e a titularidade passa a ele; animal que so eu tinha morre com a carteira inteira. O registro de consentimento sai junto - guardar prova de aceite de quem pediu para ser esquecido inverteria o proposito da prova.
+         * @description Irreversivel, e RECUSA enquanto houver animal sob a sua responsabilidade (409). Ate a Tela 36, o animal sem outro tutor morria com a conta e o que tinha co-tutor passava para o mais antigo deles — os dois em silencio, sem ninguem escolher. Agora o produto pede um destino para cada um: transferir, encerrar a linha do tempo, ou apagar o cadastro. O registro de consentimento sai junto - guardar prova de aceite de quem pediu para ser esquecido inverteria o proposito da prova.
          */
         delete: operations["deleteCurrentPerson"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/persons/me/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sua conta
+         * @description O estado da conta e o que falta para poder encerra-la: nome, telefone, quando a senha foi trocada, registro profissional, e os animais por que voce responde agora. NAO traz sessoes abertas — este produto autentica com JWT sem estado, e um numero estimado seria pior que a ausencia.
+         */
+        get: operations["conta"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1738,6 +1778,26 @@ export interface paths {
          */
         put: operations["changePassword"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/persons/me/professional-credential": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Declara um registro profissional
+         * @description So dava para declarar no cadastro ate aqui — e a veterinaria que criou a conta como tutora nao tinha como dizer depois que e veterinaria. Entra como INFORMADO: nao ha integracao com conselho, e o registro carrega essa informacao em vez de fingir garantia.
+         */
+        post: operations["declararCredencial"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2462,6 +2522,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccountOverviewDTO: {
+            animalsUnderMyResponsibility?: components["schemas"]["AnimalSearchItemDTO"][];
+            canDeleteAccount?: boolean;
+            email?: string;
+            name?: string;
+            /** Format: date-time */
+            passwordChangedAt?: string;
+            phone?: string;
+            professionalCredential?: string;
+        };
         AceiteDTO: {
             /** Format: date-time */
             acceptedAt?: string;
@@ -2716,6 +2786,19 @@ export interface components {
             updateDate?: string;
             /** Format: double */
             weight?: number;
+        };
+        AnimalSearchItemDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            holderName?: string;
+            microchipNumber?: string;
+            name?: string;
+        };
+        AnimalSearchResultDTO: {
+            mine?: components["schemas"]["AnimalSearchItemDTO"][];
+            organizationName?: string;
+            othersExist?: boolean;
+            throughOrganization?: components["schemas"]["AnimalSearchItemDTO"][];
         };
         AnimalShareRequestDTO: {
             /** Format: int32 */
@@ -3780,6 +3863,11 @@ export interface components {
             /** @enum {string} */
             role: "HOLDER" | "EDITOR" | "VIEWER";
         };
+        ProfessionalCredentialRequestDTO: {
+            crmv: string;
+            specialty?: string;
+            uf: string;
+        };
         ReferralCandidateDTO: {
             credential?: string;
             /** Format: date-time */
@@ -4258,6 +4346,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageAnimalResponseDTO"];
+                };
+            };
+        };
+    };
+    buscar: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalSearchResultDTO"];
                 };
             };
         };
@@ -6877,6 +6987,26 @@ export interface operations {
             };
         };
     };
+    conta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AccountOverviewDTO"];
+                };
+            };
+        };
+    };
     exportCurrentPerson: {
         parameters: {
             query?: never;
@@ -6916,6 +7046,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    declararCredencial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalCredentialRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AccountOverviewDTO"];
+                };
             };
         };
     };

@@ -1,0 +1,38 @@
+-- A busca e a conta (Telas 35 e 36).
+--
+-- <b>ESTA MIGRACAO NAO CRIA NADA, e o registro dela e o que vale.</b>
+--
+-- As duas telas do bloco 9 nao pediram tabela nem coluna nenhuma, e isso so ficou claro depois de
+-- procurar. Vale escrever onde cada peca ja estava, para a proxima pessoa nao refazer a busca:
+--
+--   * a BUSCA (Tela 35) e uma consulta sobre `animals` recortada pelo que quem procura alcanca —
+--     custodia e concessao, que existem desde o P2b. O que faltava era a rota e o recorte, e nenhum
+--     dos dois e schema.
+--
+--   * "Senha · alterada em 02/2024" (Tela 36) mora em `persons.password_changed_at`, criada na
+--     <b>V10</b> e migrada para `persons` na V22. O campo existia na entidade e ninguem o
+--     preenchia: o `changePassword` trocava a senha e nao carimbava a data. Agora carimba.
+--
+--   * "Levar meus dados embora" e o `GET /persons/me/export`, do P4.
+--
+--   * "Registro profissional · Declarar" reusa `professional_credentials`, do P2b — o que faltava
+--     era poder declarar DEPOIS do cadastro.
+--
+-- ------------------------------------------------------------------ o que NAO existe, e por que
+--
+-- <b>Nao ha tabela de sessao, e a ausencia e uma decisao registrada.</b> O desenho pede "Aparelhos
+-- conectados · 3 sessoes abertas. A mais antiga e de 11/2025". Este produto autentica com JWT sem
+-- estado: o servidor nao sabe quantos tokens validos existem, e nao teria como invalidar um deles.
+-- Entregar a linha exigiria persistir sessao, emitir refresh token e mexer no filtro de autenticacao
+-- inteiro — e um numero estimado seria pior que a ausencia, porque a pessoa clicaria em "encerrar"
+-- acreditando ter encerrado.
+--
+-- <b>A tela diz que nao sabe, em vez de fingir que sabe.</b>
+--
+-- ------------------------------------------------------------------ e a mudanca que nao e de schema
+--
+-- O encerramento de conta passou a RECUSAR enquanto houver animal sob a responsabilidade de quem sai
+-- (PRODUTO 3.4). E mudanca de contrato de um endpoint de LGPD, e ela mora no `PersonServiceImpl` —
+-- nao aqui. Fica anotada porque quem ler as migrations procurando "o que mudou no bloco 9" precisa
+-- saber que a maior mudanca dele nao deixou rastro em SQL.
+SELECT 1;
