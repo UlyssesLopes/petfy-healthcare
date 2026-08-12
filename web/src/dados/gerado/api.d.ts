@@ -337,7 +337,7 @@ export interface paths {
          * Encerra a linha do tempo de um animal que morreu
          * @description So quem responde pelo animal. A veterinaria que o atendeu na ultima noite registra o obito como ato clinico dela, o que e outro registro: ninguem deve descobrir que perdeu o animal por uma notificacao do sistema. Encerra a custodia sem sucessor, encerra as matriculas vivas, poe o fim na linha do tempo e avisa quem cuidava dele — pessoas e organizacoes. NAO apaga nada: para destruir o registro existe o DELETE, e ele e outra coisa.
          */
-        post: operations["registrar"];
+        post: operations["registrar_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -525,6 +525,26 @@ export interface paths {
          * @description O tutor escolhe o escopo e o prazo. E a compensacao por nao haver quebra-vidro: em vez de o produto abrir o prontuario numa emergencia, o tutor prepara de vespera o minimo que quem socorre precisa ver. O token devolvido aqui E a credencial - e a unica vez que ele aparece.
          */
         post: operations["createShare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/animals/{animalId}/sightings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marca que viu o animal
+         * @description IDEMPOTENTE por pessoa, animal e dia: tocar duas vezes devolve o mesmo registro em vez de erro — quem passa na praca de manha e a noite ja fez o que queria fazer. Duas PESSOAS marcando o mesmo dia sao dois registros, porque confirmacao e informacao. Exige escrita, e nao custodia: marcar que viu e do que qualquer um pode fazer. Corpo opcional — sem data, e hoje.
+         */
+        post: operations["registrar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -922,7 +942,7 @@ export interface paths {
          * O que cobra acao de quem esta autenticado
          * @description Dose de vacina, antiparasitario, orientacao a cumprir, convite aguardando resposta e consentimento pendente, do mais atrasado ao menos urgente. Derivada de cada fonte a cada chamada - nao existe tabela de pendencia, porque a primeira a divergir cobraria algo que ja foi feito. windowDays define quanto do futuro entra; o que ja venceu entra sempre.
          */
-        get: operations["listar"];
+        get: operations["listar_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -969,6 +989,90 @@ export interface paths {
          * @description PUBLICA e sem conta, de proposito: e usada por quem encontrou o animal na rua e pode ser a unica pessoa com ele nas proximas horas. Devolve o cartao de emergencia inteiro — contatos, alergias, condicoes, medicacao em curso e vacinacao — e nada alem: historico clinico, diagnostico e endereco continuam fora. O acesso fica registrado no log que o tutor le, sem identificar quem buscou. Limitada por IP contra varredura de numeros. 404 com codigo proprio quando o numero nao esta no Petfy.
          */
         post: operations["procurar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group-approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O que espera decisao no grupo
+         * @description Traz tambem o que a propria pessoa pediu, com canDecide=false: esconder o proprio pedido pareceria mais limpo e seria pior — quem pediu precisa ver que ele continua parado.
+         */
+        get: operations["pendentes"];
+        put?: never;
+        /**
+         * Pede que outra pessoa do grupo concorde
+         * @description Os tres atos que, num grupo sem dono, nao podem ser de uma pessoa so: dar um animal para adocao, encerrar a linha do tempo dele e tirar alguem do grupo. Exige organizacao declarada no cabecalho, e que quem pede seja membro ativo dela.
+         */
+        post: operations["pedir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group-approvals/{groupApprovalId}/agree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Concorda, e o ato acontece
+         * @description Concordar e executar sao a mesma transacao: guardar 'concordado, falta executar' criaria um estado em que o grupo acha que deu e o animal nao mudou de mao. Quem pediu NAO pode concordar — 403 com codigo proprio, e e a regra inteira do animal sem dono.
+         */
+        post: operations["concordar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group-approvals/{groupApprovalId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recusa o pedido
+         * @description Nao apaga: quem pediu precisa ver que foi recusado, e nao que o pedido sumiu.
+         */
+        post: operations["recusar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/animals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Os animais do grupo, com o ultimo avistamento
+         * @description A lista da colonia. Diferente da lista do abrigo (Tela 12) por uma coluna que so existe na rua: quantos dias desde que alguem viu o animal. Filtros: TODOS, FALTA_CASTRAR, EM_TRATAMENTO, SUMIDOS. SUMIDOS deixa de fora quem nunca foi marcado — sem informacao nao e desaparecido, e contar os dois juntos mandaria o grupo procurar um gato que esta na praca.
+         */
+        get: operations["listar"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2184,6 +2288,21 @@ export interface components {
             scopes?: ("CARTEIRA" | "CONDICOES" | "PRONTUARIO" | "OBSERVACOES" | "PESO" | "ANEXOS" | "CONTATO")[];
             token?: string;
         };
+        AnimalSightingRequestDTO: {
+            /** Format: date */
+            seenOn?: string;
+        };
+        AnimalSightingResponseDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            /** Format: uuid */
+            animalSightingId?: string;
+            /** Format: int64 */
+            daysSince?: number;
+            recordedByName?: string;
+            /** Format: date */
+            seenOn?: string;
+        };
         AnimalWeightRequestDTO: {
             /** Format: date */
             measuredAt: string;
@@ -2433,6 +2552,22 @@ export interface components {
             name?: string;
             relacao?: string;
         };
+        ColonyAnimalDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            /** Format: int64 */
+            daysSinceLastSeen?: number;
+            lastSeenBy?: string;
+            /** Format: date */
+            lastSeenOn?: string;
+            name?: string;
+            neutered?: boolean;
+            /** Format: date */
+            neuteredAt?: string;
+            /** Format: date */
+            neuteringScheduledFor?: string;
+            ongoingCare?: string;
+        };
         CondicaoDTO: {
             ativa?: boolean;
             description?: string;
@@ -2584,6 +2719,44 @@ export interface components {
             /** @enum {string} */
             status?: "OVERDUE" | "DUE_SOON" | "UP_TO_DATE" | "NO_NEXT_DOSE";
             vaccineName?: string;
+        };
+        GroupApprovalRequestDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            /** Format: date */
+            deceasedOn?: string;
+            /** @enum {string} */
+            kind: "ADOCAO" | "OBITO" | "REMOCAO_DE_MEMBRO";
+            reason?: string;
+            /** Format: uuid */
+            targetPersonId?: string;
+            /** Format: uuid */
+            toPersonId?: string;
+        };
+        GroupApprovalResponseDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            canDecide?: boolean;
+            /** Format: date-time */
+            decidedAt?: string;
+            decidedByName?: string;
+            /** Format: uuid */
+            groupApprovalId?: string;
+            /** @enum {string} */
+            kind?: "ADOCAO" | "OBITO" | "REMOCAO_DE_MEMBRO";
+            reason?: string;
+            /** Format: date-time */
+            requestedAt?: string;
+            requestedByName?: string;
+            /** @enum {string} */
+            status?: "PENDENTE" | "CONCORDADO" | "RECUSADO";
+            /** Format: uuid */
+            targetPersonId?: string;
+            targetPersonName?: string;
+            /** Format: uuid */
+            toPersonId?: string;
+            toPersonName?: string;
         };
         HealthProofItemDTO: {
             blocks?: boolean;
@@ -3898,7 +4071,7 @@ export interface operations {
             };
         };
     };
-    registrar: {
+    registrar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -4220,6 +4393,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AnimalShareResponseDTO"];
+                };
+            };
+        };
+    };
+    registrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AnimalSightingRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalSightingResponseDTO"];
                 };
             };
         };
@@ -4795,7 +4994,7 @@ export interface operations {
             };
         };
     };
-    listar: {
+    listar_1: {
         parameters: {
             query?: {
                 windowDays?: number;
@@ -4880,6 +5079,116 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FoundAnimalCardDTO"];
+                };
+            };
+        };
+    };
+    pendentes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroupApprovalResponseDTO"][];
+                };
+            };
+        };
+    };
+    pedir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupApprovalRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroupApprovalResponseDTO"];
+                };
+            };
+        };
+    };
+    concordar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupApprovalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroupApprovalResponseDTO"];
+                };
+            };
+        };
+    };
+    recusar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupApprovalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroupApprovalResponseDTO"];
+                };
+            };
+        };
+    };
+    listar: {
+        parameters: {
+            query?: {
+                filtro?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ColonyAnimalDTO"][];
                 };
             };
         };

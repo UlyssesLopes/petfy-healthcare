@@ -4,22 +4,76 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-12, no fim de uma sessão que fechou o **bloco 5**.
+> Escrito em 2026-08-12, no fim de uma sessão que fechou o **bloco 5** e deixou o **bloco 6 pela
+> metade** — backend inteiro, frontend nenhum.
 
 ## Onde o trabalho está agora
 
-**O bloco 5 está mergeado** — PR #59, com CI verde nos dois workflows. O #58, que era só
-documentação, entrou antes dele (`520e5f2`). **Não há branch de feature aberta.**
+**O bloco 5 está mergeado** — PR #59, CI verde. A `main` está em `4524050`.
 
-**922 casos no backend, 51 no front, `Skipped: 0`.** Contrato regenerado, nenhuma operação
-renomeada. `npm run build` limpo.
+**O BLOCO 6 ESTÁ FECHADO — Telas 43 e 44, no PR #60**, esperando seu comando. A Tela 45
+(encaminhamento) ficou de fora de propósito e virou o bloco 6b.
 
-**Duas telas novas no ar:** 33 (encerrar a linha do tempo) e 34 (achei um animal na rua).
+**932 casos no backend, 51 no front, `Skipped: 0`.**
 
-**O conflito que os dois PRs produziram, e que vai voltar:** os dois reescreveram esta página. A
-resolução foi ficar com esta versão, que já continha o conteúdo do #58. **Enquanto houver dois PRs
-abertos ao mesmo tempo, este arquivo conflita** — e a saída é resolver por "a versão mais nova
-vence", nunca mesclando as duas.
+**Duas telas no ar desde o bloco 5:** 33 (encerrar a linha do tempo) e 34 (achei um animal na rua).
+
+**O conflito que os dois PRs produziram, e que vai voltar:** #58 e #59 reescreveram esta página. A
+resolução foi "a versão mais nova vence", nunca mesclando as duas. **Enquanto houver dois PRs
+abertos ao mesmo tempo, este arquivo conflita.**
+
+## O bloco 6, e o que falta dele
+
+**Escopo escolhido: 43 e 44 agora, 45 depois.** O arquivo do desenho traz três telas, e a 45
+(encaminhar ao especialista) **é independente das outras duas** — caiu ali por ser "o caso que
+passa adiante", e vira bloco próprio sem perder nada.
+
+### O que já está pronto (backend, em `347e681`)
+
+- **`V41__o_animal_que_e_de_todos.sql`** — `animal_sightings`, `group_approvals`,
+  `memberships.contribution` e `animals.neutering_scheduled_for`
+- `POST /animals/{id}/sightings` — idempotente por pessoa, animal e dia
+- `POST /group-approvals`, `GET`, `.../agree`, `.../reject`
+- Os três atos executam de verdade: adoção vira convite de titularidade, óbito reusa o fluxo da
+  Tela 33 inteiro, remoção desliga a `membership`
+
+### O defeito que o teste encontrou, e que é o achado da sessão
+
+**O `requireEscrita` não enxergava custódia de organização** — só o `requireCustodia` enxergava,
+desde a Tela 13. O efeito era mudo e grande: um animal cuja custódia é de uma organização, sem
+tutor humano, **não podia receber registro nenhum de quem cuida dele**. O abrigo não lançava peso
+no animal que resgatou.
+
+É a mesma linha que faltava no `requireCustodia` e trancava a adoção inteira, agora na outra
+metade da guarda. **Vale procurar a terceira**: `alcanca()` também só pergunta por pessoa.
+
+### O frontend, e o que ele decidiu
+
+- **`/colonia`** — a lista com os quatro filtros, "visto por último" e o painel do que qualquer um
+  faz contra o que precisa de duas pessoas
+- **`/animais/{id}/adotar`** — a Tela 44
+- **`GET /group/animals?filtro=`** — a listagem enriquecida, que não existia. Três consultas para
+  a lista inteira, e não três por linha
+
+**"Vi hoje" é um botão**, e não link nem menu: cada camada entre o dedo e o registro reduz o
+número de marcações — que é a única coisa que faz a coluna do lado significar algo.
+
+**"Sem informação" não é "sumido"**, e o filtro respeita: um gato cadastrado ontem, que ninguém
+marcou ainda, não está desaparecido. Contá-lo entre os sumidos mandaria o grupo procurar um animal
+que está na praça.
+
+**O passo que o desenho não desenha:** quando alguém concorda com a adoção, quem vai receber o
+animal recebe um **convite**, e a custódia passa quando essa pessoa aceita. A tela diz isso antes
+do gesto.
+
+### O que NÃO foi feito no bloco 6, e vale saber
+
+- **A Tela 45 (encaminhamento)** — bloco 6b, independente
+- **Não há tela de cadastrar animal no grupo nem de convidar quem cuida.** Os dois botões existem
+  no desenho da 43 e não foram construídos: cadastrar reusa `/animais/novo`, e convidar reusa o
+  fluxo de membro de organização — mas nenhum dos dois está ligado a partir daqui
+- **A contagem por aba não aparece** ("Todos · 14", "Falta castrar · 5"). O servidor devolve a
+  lista filtrada, e os números exigiriam ou quatro chamadas ou um endpoint de contagem
 
 ## O bloco 5, e as decisões que ele tomou
 
@@ -101,7 +155,8 @@ e ninguém tinha visto porque **nenhuma tela foi conferida no navegador em nenhu
 | 3 | Por onde o valor entra — 40, 41, 42 | **Fechado e mergeado** — PR #56 |
 | 4 | Custo do cuidado — 37, 38, 39 | **Fechado e mergeado** — PR #57 |
 | 5 | Fim e reencontro — 33, 34 | **Fechado e mergeado** — PR #59 |
-| 6 | Animal comunitário — 43, 44, 45 | pendente |
+| 6 | Animal comunitário — 43, 44 | **Fechado** — PR #60 |
+| 6b | **Encaminhamento — Tela 45** | pendente, e independente das outras duas |
 | 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
 | 8 | Tela 18 — petshop | pendente (a especificação sempre existiu) |
 | 9 | **A busca e a conta — 35, 36** | pendente, e o desenho existe |
@@ -150,12 +205,44 @@ exportação de dados e encerramento de conta, e mexe em autenticação.
 
 ## Primeiro passo da próxima sessão
 
-**Sincronizar a `main` e ramificar dela** — não há nada pendente, e branch nova é regra desde a
+**Decidir o PR #60**, e depois sincronizar a `main` e ramificar dela — branch nova é regra desde a
 armadilha do bloco 4.
 
-Depois, **o bloco 6 — Animal comunitário, Telas 43, 44 e 45**, cujo desenho é
-`design/IdentidadeVisual/Telas Petfy - Animal comunitário e encaminhamento.dc.html` e **ainda não
-foi lido**. Ou o bloco 9 (35 e 36), se a preferência for fechar o arquivo do bloco 5 inteiro.
+O próximo trabalho é o **bloco 6b — Tela 45, encaminhar ao especialista**. O levantamento está
+feito, e é o que segue.
+
+## Bloco 6b — a Tela 45, já levantada
+
+**A regra central está no desenho e é o que torna a tela possível:** *"Marcelo Dias precisa
+autorizar. **Encaminhar é você indicando o caminho; conceder acesso continua sendo dele**, como
+sempre foi. O acesso do Roberto vale 90 dias e depois fecha sozinho."*
+
+Ou seja: o encaminhamento **não concede nada**. Ele é um pedido que a clínica faz, o tutor decide,
+e o que o aceite produz é uma **concessão com prazo** — que já existe (`Grant.expiresAt`).
+
+### O que reusa
+
+- `Grant` com `expiresAt` e escopos — o acesso de 90 dias é uma concessão comum
+- `AnimalReach` e o canal de e-mail, para avisar o tutor e o especialista
+- A busca de profissional: **não existe**, e o desenho tem "Buscar outro profissional"
+
+### O que falta, e a peça mais delicada
+
+**Uma entidade de encaminhamento** com: para quem, por quê, o que vai junto, e o estado
+(pendente/autorizado/recusado). Três partes decidem em momentos diferentes — quem encaminha, o
+tutor que autoriza, e o especialista que recebe.
+
+**"O que vai junto" é uma seleção, e é o coração da tela.** O desenho mostra quatro caixas, três
+marcadas e uma desmarcada — *"histórico completo desde 2019 · 147 eventos. Provavelmente mais do
+que ele precisa para este caso."* Isso mapeia bem para `GrantScope`, mas **não perfeitamente**: o
+desenho seleciona *eventos específicos* ("o raio-X de 2023", "4 observações da creche entre 02/06
+e 05/08"), e o escopo concede por *tipo*. Decidir isso é o primeiro passo do bloco — e a saída
+provável é conceder por escopo e listar na mensagem o que motivou, sem prometer um recorte que a
+concessão não sabe fazer.
+
+**O que o desenho promete e não tem backend:** "Ele já registrou o raio-X do Code em 2023" — saber
+que aquele profissional já atendeu o animal exige consultar autoria na linha do tempo, o que a
+`ultimaContribuicaoPorPessoa` já faz.
 
 **Ler o `.dc.html` inteiro antes de planejar, e contar as telas.** O nome do arquivo cobre mais
 do que o bloco declarado — foi assim que as Telas 35 e 36 apareceram.

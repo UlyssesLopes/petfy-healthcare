@@ -59,6 +59,19 @@ public class Membership {
     @Column(nullable = false, length = 24)
     private MembershipRole role;
 
+    /**
+     * O que esta pessoa faz no grupo: "alimenta de manha", "leva ao veterinario" (Tela 43).
+     *
+     * <b>Texto livre, e nao um valor novo no {@link MembershipRole}.</b> O enum diz o que a
+     * pessoa PODE fazer, e por isso governa permissao; isto diz o que ela FAZ. "De manha" contra
+     * "a noite" e escala, e nao papel — os dois cairiam no mesmo valor de enum, e a tela perderia
+     * exatamente a informacao que mostra.
+     *
+     * Nulo e o normal: a equipe de uma clinica nao declara turno, e a tela dela nunca pediu isso.
+     */
+    @Column(length = 80)
+    private String contribution;
+
     @Column(name = "joined_at", nullable = false)
     private LocalDateTime joinedAt;
 

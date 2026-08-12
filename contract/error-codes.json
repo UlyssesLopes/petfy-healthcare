@@ -243,6 +243,30 @@
   "codigo" : 161,
   "mensagemDaApi" : "No animal with this microchip number"
 }, {
+  "nome" : "SIGHTING_DATE_IN_FUTURE",
+  "codigo" : 162,
+  "mensagemDaApi" : "The sighting date must not be in the future"
+}, {
+  "nome" : "GROUP_APPROVAL_NOT_FOUND",
+  "codigo" : 163,
+  "mensagemDaApi" : "Approval request not found"
+}, {
+  "nome" : "GROUP_APPROVAL_ALREADY_DECIDED",
+  "codigo" : 164,
+  "mensagemDaApi" : "This request was already decided"
+}, {
+  "nome" : "CANNOT_APPROVE_OWN_REQUEST",
+  "codigo" : 165,
+  "mensagemDaApi" : "The person who asked cannot be the one who agrees"
+}, {
+  "nome" : "GROUP_APPROVAL_ALREADY_PENDING",
+  "codigo" : 166,
+  "mensagemDaApi" : "There is already a pending request for this"
+}, {
+  "nome" : "NOT_A_GROUP_MEMBER",
+  "codigo" : 167,
+  "mensagemDaApi" : "Only an active member of this group can do that"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

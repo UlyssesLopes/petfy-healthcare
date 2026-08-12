@@ -160,6 +160,19 @@ export const mensagens = {
   "erro.161":
     "Este número não está no Petfy. Confira os 15 dígitos e procure uma clínica ou a prefeitura — elas consultam bases que o Petfy não alcança.",
 
+  // ------------------------------------------------ o animal comunitário (Telas 43 e 44)
+  "erro.162": "A data não pode ser no futuro — ninguém vê um animal amanhã.",
+  "erro.163": "Não encontramos este pedido.",
+  "erro.164":
+    "Este pedido já foi decidido. Recarregue para ver como ficou — o que você está vendo é de antes.",
+  // A ÚNICA RECUSA DESTE BLOCO QUE EXISTE PARA PROTEGER O ANIMAL DE QUEM CUIDA DELE. A frase diz
+  // a regra inteira, e não "ação não permitida": quem lê precisa entender que não é um defeito.
+  "erro.165":
+    "Quem pede não concorda consigo. Num grupo sem dono, é o acordo de duas pessoas que protege o que não se desfaz — peça a alguém do grupo para olhar.",
+  "erro.166": "Já existe um pedido igual esperando decisão.",
+  "erro.167":
+    "Só quem é do grupo pode fazer isso. Não é sobre função — é sobre cuidar destes animais.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -1630,6 +1643,87 @@ export const mensagens = {
 
   // O vazio que diz o que fazer em seguida. O texto mora em `erro.161`, e este é o título.
   "encontrado.vazio.titulo": "Este número não está no Petfy",
+
+  // ===================================================== o animal comunitário (Telas 43 e 44)
+  "colonia.titulo": "Os animais do grupo",
+  "colonia.vazia":
+    "Nenhum animal registrado ainda. Quem cadastra o primeiro é quem já alimenta a colônia.",
+  "colonia.carregando": "os animais do grupo",
+
+  // A caixa que explica o gesto. Ela está na tela porque "marcar que viu" parece pequeno demais
+  // para ser o mais importante — e é.
+  "colonia.sinalVital.titulo": "“Visto por último” é o sinal vital daqui",
+  "colonia.sinalVital.texto":
+    "Um animal de rua não falta à creche nem deixa de comer em casa: ele some. Marcar que você viu hoje é o gesto mais frequente desta tela, e é o que permite ao grupo perceber, em vez de descobrir tarde, que alguém desapareceu.",
+
+  "colonia.filtro.TODOS": "Todos",
+  "colonia.filtro.FALTA_CASTRAR": "Falta castrar",
+  "colonia.filtro.EM_TRATAMENTO": "Em tratamento",
+  "colonia.filtro.SUMIDOS": "Sumidos há mais de 15 dias",
+
+  "colonia.coluna.gato": "Animal",
+  "colonia.coluna.situacao": "Situação",
+  "colonia.coluna.visto": "Visto por último",
+
+  // A situação, em três estados. O terceiro é o que o desenho desenha tracejado.
+  "colonia.castrado": "Castrado em {data}",
+  "colonia.castracaoMarcada": "Castração marcada, {data}",
+  "colonia.semInformacao": "Sem informação",
+
+  // "Visto por último" — o sinal vital. "Nunca" é diferente de "há muito tempo", e a tela diz os
+  // dois de formas diferentes: quem nunca foi marcado não está sumido, está sem registro.
+  "colonia.visto.hoje": "hoje, por {quem}",
+  "colonia.visto.ontem": "ontem, por {quem}",
+  "colonia.visto.dias": "há {dias} dias, por {quem}",
+  "colonia.visto.nunca": "ninguém marcou ainda",
+  "colonia.marcarQueVi": "Vi hoje",
+  "colonia.marcando": "Marcando…",
+
+  // O painel lateral: o que qualquer um faz, e o que precisa de duas pessoas.
+  "colonia.qualquerUm": "O que qualquer um pode fazer",
+  "colonia.qualquerUm.registrar": "Marcar que viu o animal, registrar ferida, foto, comportamento",
+  "colonia.qualquerUm.veterinario": "Levar ao veterinário e registrar o que foi feito",
+  "colonia.duasPessoas": "O que precisa de mais de uma pessoa",
+  "colonia.duasPessoas.adocao": "Dar um animal para adoção",
+  "colonia.duasPessoas.obito": "Encerrar a linha do tempo de um animal",
+  "colonia.duasPessoas.remocao": "Tirar alguém do grupo",
+  "colonia.duasPessoas.porque":
+    "Duas pessoas do grupo precisam concordar. Sem dono, a proteção contra o gesto irreversível de uma pessoa só é o acordo de duas.",
+
+  // Os pedidos esperando decisão.
+  "colonia.pedidos": "Esperando concordância",
+  "colonia.pedidos.vazio": "Nada esperando decisão agora.",
+  "colonia.pedido.ADOCAO": "Passar {animal} para {quem}",
+  "colonia.pedido.OBITO": "Encerrar a linha do tempo de {animal}",
+  "colonia.pedido.REMOCAO_DE_MEMBRO": "Tirar {quem} do grupo",
+  "colonia.pedido.pedidoPor": "Pedido por {quem}",
+  "colonia.pedido.semMotivo": "Sem motivo escrito.",
+  "colonia.pedido.concordar": "Concordar",
+  "colonia.pedido.recusar": "Recusar",
+  // Quem pediu vê o próprio pedido e vê que não pode decidi-lo. A frase diz o porquê, e não só
+  // "indisponível": é a regra do produto, não uma limitação da tela.
+  "colonia.pedido.euPedi":
+    "Você pediu isto. Quem pede não concorda consigo — falta outra pessoa do grupo olhar.",
+
+  // ------------------------------------------------------ Tela 44: da praça para uma casa
+  "adotar.titulo": "Passar {nome} para uma casa",
+  "adotar.paraQuem": "Para quem",
+  "adotar.motivo": "Por que",
+  "adotar.motivo.nota":
+    "Quem concorda lê isto e nada mais. Um pedido que só diz “concorde” não dá à outra pessoa nada com que decidir.",
+  "adotar.oQueVaiJunto":
+    "A vida registrada vai junto — ela não começa no dia em que o animal entra numa casa.",
+  // Sem nome de pessoa: a regra é "qualquer outra do grupo", e nomear alguém a transformaria em
+  // "peça à Marta" — o pedido pararia no dia em que a Marta viajasse.
+  "adotar.precisaDeOutra":
+    "Outra pessoa do grupo precisa concordar. Duas pessoas decidem juntas o que é irreversível.",
+  "adotar.pedir": "Pedir concordância do grupo",
+  "adotar.pedindo": "Enviando…",
+  // O que acontece DEPOIS da concordância, e que o desenho não diz: quem recebe precisa aceitar.
+  "adotar.viraConvite":
+    "Quando alguém concordar, {quem} recebe um convite para responder pelo animal. A custódia passa quando essa pessoa aceitar — ninguém recebe um animal sem dizer sim.",
+  "adotar.pedido.enviado":
+    "Pedido enviado. Nada muda até que outra pessoa do grupo concorde.",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

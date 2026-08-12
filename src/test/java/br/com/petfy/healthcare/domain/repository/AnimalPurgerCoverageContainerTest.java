@@ -92,7 +92,15 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             // se parecem e sao opostas. Encerrar a linha do tempo GUARDA a vida registrada; apagar
             // o animal a destroi. Quem chega ao purger pediu a segunda, pelo DELETE do animal ou
             // pela exclusao da conta, e a linha do obito vai junto com todo o resto.
-            "animal_deaths");
+            "animal_deaths",
+            // O avistamento (V41) e filha direta e nao tem neta: sai em massa. Um animal de
+            // colonia acumula centenas destas linhas — uma por pessoa, por dia —, e sem este
+            // delete o primeiro gato que alguem tentasse apagar responderia 500.
+            "animal_sightings",
+            // O pedido de concordancia aponta para o animal, e vale dizer o que se perde ao
+            // apaga-lo: ele e o registro de que DUAS pessoas decidiram algo. Some junto porque
+            // quem chegou aqui pediu para destruir o rastro do animal, e nao para preserva-lo.
+            "group_approvals");
 
     /**
      * Quem chega a {@code animals}, direta ou indiretamente.

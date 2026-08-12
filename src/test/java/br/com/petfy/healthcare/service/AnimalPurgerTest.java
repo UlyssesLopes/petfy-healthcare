@@ -59,6 +59,8 @@ class AnimalPurgerTest {
     /* O custo (V36) aponta para o animal, para o atendimento e para a matricula. */
     @Mock private AnimalCostRepository animalCostRepository;
     @Mock private br.com.petfy.healthcare.domain.repository.AnimalDeathRepository animalDeathRepository;
+    @Mock private br.com.petfy.healthcare.domain.repository.AnimalSightingRepository animalSightingRepository;
+    @Mock private br.com.petfy.healthcare.domain.repository.GroupApprovalRepository groupApprovalRepository;
     @Mock private AttachmentRepository attachmentRepository;
     @Mock private AttachmentStorage attachmentStorage;
     @Mock private CustodyRepository custodyRepository;
