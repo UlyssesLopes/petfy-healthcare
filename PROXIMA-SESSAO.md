@@ -11,10 +11,8 @@
 
 **O bloco 5 está mergeado** — PR #59, CI verde. A `main` está em `4524050`.
 
-**O BLOCO 6 ESTÁ PELA METADE, e a metade que falta é a visível.** A branch
-`feat/animal-comunitario` tem, em `347e681`, o **backend completo das Telas 43 e 44** — migração,
-entidades, serviços, rotas, guardas de cobertura e 10 casos de container. **Não há frontend
-nenhum**, e o contrato já está regenerado com as rotas novas.
+**O BLOCO 6 ESTÁ FECHADO — Telas 43 e 44, no PR #60**, esperando seu comando. A Tela 45
+(encaminhamento) ficou de fora de propósito e virou o bloco 6b.
 
 **932 casos no backend, 51 no front, `Skipped: 0`.**
 
@@ -49,15 +47,33 @@ no animal que resgatou.
 É a mesma linha que faltava no `requireCustodia` e trancava a adoção inteira, agora na outra
 metade da guarda. **Vale procurar a terceira**: `alcanca()` também só pergunta por pessoa.
 
-### O que falta para fechar o bloco 6
+### O frontend, e o que ele decidiu
 
-1. **O frontend das Telas 43 e 44** — a lista da colônia com os quatro filtros ("todos", "falta
-   castrar", "em tratamento", "sumidos há mais de 15 dias"), a coluna "visto por último", o painel
-   de quem cuida, e a tela de passar o gato para uma casa
-2. **A listagem enriquecida no backend**: a lista existente (`VetPetServiceImpl.listAnimalsInCustody`,
-   Tela 12) **não traz "visto por último" nem os filtros novos**. A consulta em lote já existe
-   (`AnimalSightingRepository.ultimoDeCada`), mas nada a chama ainda
-3. **Mensagens em pt-BR** para as duas telas, e os códigos 162–167 na tabela de erro do front
+- **`/colonia`** — a lista com os quatro filtros, "visto por último" e o painel do que qualquer um
+  faz contra o que precisa de duas pessoas
+- **`/animais/{id}/adotar`** — a Tela 44
+- **`GET /group/animals?filtro=`** — a listagem enriquecida, que não existia. Três consultas para
+  a lista inteira, e não três por linha
+
+**"Vi hoje" é um botão**, e não link nem menu: cada camada entre o dedo e o registro reduz o
+número de marcações — que é a única coisa que faz a coluna do lado significar algo.
+
+**"Sem informação" não é "sumido"**, e o filtro respeita: um gato cadastrado ontem, que ninguém
+marcou ainda, não está desaparecido. Contá-lo entre os sumidos mandaria o grupo procurar um animal
+que está na praça.
+
+**O passo que o desenho não desenha:** quando alguém concorda com a adoção, quem vai receber o
+animal recebe um **convite**, e a custódia passa quando essa pessoa aceita. A tela diz isso antes
+do gesto.
+
+### O que NÃO foi feito no bloco 6, e vale saber
+
+- **A Tela 45 (encaminhamento)** — bloco 6b, independente
+- **Não há tela de cadastrar animal no grupo nem de convidar quem cuida.** Os dois botões existem
+  no desenho da 43 e não foram construídos: cadastrar reusa `/animais/novo`, e convidar reusa o
+  fluxo de membro de organização — mas nenhum dos dois está ligado a partir daqui
+- **A contagem por aba não aparece** ("Todos · 14", "Falta castrar · 5"). O servidor devolve a
+  lista filtrada, e os números exigiriam ou quatro chamadas ou um endpoint de contagem
 
 ## O bloco 5, e as decisões que ele tomou
 
@@ -139,7 +155,7 @@ e ninguém tinha visto porque **nenhuma tela foi conferida no navegador em nenhu
 | 3 | Por onde o valor entra — 40, 41, 42 | **Fechado e mergeado** — PR #56 |
 | 4 | Custo do cuidado — 37, 38, 39 | **Fechado e mergeado** — PR #57 |
 | 5 | Fim e reencontro — 33, 34 | **Fechado e mergeado** — PR #59 |
-| 6 | Animal comunitário — 43, 44 | **Backend pronto**, frontend faltando |
+| 6 | Animal comunitário — 43, 44 | **Fechado** — PR #60 |
 | 6b | **Encaminhamento — Tela 45** | pendente, e independente das outras duas |
 | 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
 | 8 | Tela 18 — petshop | pendente (a especificação sempre existiu) |
@@ -189,14 +205,14 @@ exportação de dados e encerramento de conta, e mexe em autenticação.
 
 ## Primeiro passo da próxima sessão
 
-**Continuar na branch `feat/animal-comunitario`, que já existe e tem o backend.** Ela saiu de uma
-`main` sincronizada e **ainda não tem PR aberto** — então commitar nela roda CI normalmente
-quando o PR abrir.
+**Decidir o PR #60**, e depois sincronizar a `main` e ramificar dela — branch nova é regra desde a
+armadilha do bloco 4.
 
-O trabalho é o **frontend das Telas 43 e 44**, mais a listagem enriquecida que falta no backend
-(ver "o que falta para fechar o bloco 6", acima). O desenho é
-`design/IdentidadeVisual/Telas Petfy - Animal comunitário e encaminhamento.dc.html`, **já lido** —
-e a Tela 45 dele está fora deste bloco de propósito.
+O próximo trabalho é o **bloco 6b — Tela 45, encaminhar ao especialista**, cujo desenho já está
+lido (mesmo arquivo do bloco 6). Ele é o menor dos que sobraram e reusa concessão com prazo, que
+já existe: *"o acesso do Roberto vale 90 dias e depois fecha sozinho"*. A regra central dele já
+está escrita no desenho — **encaminhar é indicar o caminho; conceder acesso continua sendo do
+tutor**.
 
 **Ler o `.dc.html` inteiro antes de planejar, e contar as telas.** O nome do arquivo cobre mais
 do que o bloco declarado — foi assim que as Telas 35 e 36 apareceram.
