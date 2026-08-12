@@ -1936,6 +1936,44 @@ export const mensagens = {
     "A responsabilidade volta para {quem} quando a devolução for registrada. Até lá, você continua vendo tudo que acontece com ele.",
   "hospedagem.devolver": "Registrar a volta",
   "hospedagem.devolvendo": "Registrando…",
+
+  // -------------------------------------------------------- Tela 48: o ano do animal
+  "ano.oQueE": "o ano do animal",
+  "ano.titulo": "O ano do {nome}",
+  "ano.periodo": "{de} a {ate}",
+  "ano.anoDeVida": " · {ano}º ano dele",
+  "ano.imprimir": "Imprimir",
+  "ano.registros": "Registros no ano",
+  "ano.registros.nota":
+    "por {pessoas, plural, =0 {ninguém} one {1 pessoa} other {# pessoas}} e {organizacoes, plural, =0 {nenhuma organização} one {1 organização} other {# organizações}}",
+  "ano.creche": "Dias na creche",
+  "ano.creche.nota":
+    "{dias, plural, =0 {nenhum de hospedagem} one {e 1 de hospedagem} other {e # de hospedagem}}",
+  "ano.peso": "Peso",
+  "ano.peso.valor": "{kg} kg",
+  "ano.peso.antes": "era {kg} kg no começo do período",
+  "ano.peso.semAnterior": "não houve outra pesagem no período",
+  "ano.saude": "O que aconteceu de saúde",
+  "ano.saude.consultas":
+    "{quantas, plural, =0 {Nenhum atendimento registrado} one {1 atendimento} other {# atendimentos}}",
+  "ano.saude.doses":
+    "{vacinas, plural, =0 {Nenhuma vacina} one {1 vacina} other {# vacinas}} e {antiparasitarios, plural, =0 {nenhum antiparasitário} one {1 antiparasitário} other {# antiparasitários}}",
+  // O QUE DEU ERRADO. É a parte que nenhum resumo automático costuma ter.
+  "ano.saude.esteveVencida":
+    "A {vacina} ficou {dias, plural, one {1 dia} other {# dias}} vencida em {quando}.",
+  // O ainda-vencido é outra frase: ele não é história, é uma pendência de hoje.
+  "ano.saude.vencidaAgora":
+    "A {vacina} está vencida desde {desde} — {dias, plural, one {1 dia} other {# dias}} até agora.",
+  "ano.saude.naoReavaliada": "A {condicao} não foi reavaliada desde {ano}.",
+  // O vazio aqui é notícia boa, e a frase diz isso em vez de deixar a seção sem nada.
+  "ano.saude.nadaPendente":
+    "Nenhuma vacina esteve vencida e nenhuma condição crônica ficou sem reavaliação no período.",
+  "ano.quemCuidou": "Quem cuidou dele este ano",
+  "ano.quemCuidou.pelaOrganizacao": "{quem}, pela {organizacao}",
+  "ano.quemCuidou.registros": "{quantos, plural, one {1 registro} other {# registros}}",
+  "ano.quemCuidou.ninguem": "Ninguém registrou nada sobre ele no período.",
+  "ano.paraQueServe":
+    "Este é o documento que você leva à próxima consulta, e o que você entrega junto com ele se algum dia ele passar para outra pessoa. Um ano de vida dele, em uma página.",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

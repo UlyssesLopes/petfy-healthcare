@@ -138,6 +138,59 @@ public interface TimelineRepository extends JpaRepository<TimelineEntry, UUID> {
             + "group by t.eventType")
     List<PorTipo> contagemPorTipo(@Param("animalId") UUID animalId);
 
+    /**
+     * O tamanho da vida registrada NUM PERIODO — "61 registros no ano, por 5 pessoas e 3
+     * organizacoes" (Tela 48).
+     *
+     * <b>E o {@code tamanhoDe} com janela</b>, e nao uma consulta nova por capricho: o resumo anual e
+     * sobre o ano, e reusar a contagem total diria "147 eventos" num documento que se chama "o ano do
+     * Code". Um filtro em memoria sobre a linha inteira leria a vida de dez anos para contar doze
+     * meses.
+     */
+    @Query("select count(t) as eventos, min(t.occurredAt) as primeiro, "
+            + "count(distinct t.recordedByPersonId) as pessoas, "
+            + "count(distinct t.organizationId) as organizacoes "
+            + "from TimelineEntry t where t.animalId = :animalId "
+            + "and t.occurredAt between :de and :ate")
+    Tamanho tamanhoNoPeriodo(@Param("animalId") UUID animalId,
+                             @Param("de") LocalDateTime de,
+                             @Param("ate") LocalDateTime ate);
+
+    /**
+     * "Quem cuidou dele este ano", com quantos registros cada um.
+     *
+     * <b>Agrupa por NOME, e nao por id</b>, e a escolha e deliberada. A view ja carrega
+     * {@code recorded_by_name} e {@code organization_name} desde a V29 — foi o que tirou o N+1 da
+     * linha do tempo —, e agrupar por id obrigaria uma consulta a mais so para descobrir como chamar
+     * cada linha do resumo.
+     *
+     * <b>A dupla (pessoa, organizacao) e a unidade</b>, porque e assim que o desenho escreve:
+     * "Rafaela Lopes, pela Creche Quintal" e "Juliana Dias, co-tutora" sao duas linhas, e a mesma
+     * pessoa registrando por si e pela creche sao duas contribuicoes diferentes — foi ela quem
+     * decidiu assinar de cada jeito.
+     */
+    @Query("select t.recordedByName as pessoa, t.organizationName as organizacao, "
+            + "count(t) as registros "
+            + "from TimelineEntry t where t.animalId = :animalId "
+            + "and t.occurredAt between :de and :ate "
+            + "and (t.recordedByName is not null or t.organizationName is not null) "
+            + "group by t.recordedByName, t.organizationName "
+            + "order by count(t) desc")
+    List<QuemCuidou> quemCuidouNoPeriodo(@Param("animalId") UUID animalId,
+                                         @Param("de") LocalDateTime de,
+                                         @Param("ate") LocalDateTime ate);
+
+    /** Projecao da consulta acima. */
+    interface QuemCuidou {
+
+        String getPessoa();
+
+        String getOrganizacao();
+
+        long getRegistros();
+
+    }
+
     /** Projecao da consulta acima. */
     interface PorTipo {
 

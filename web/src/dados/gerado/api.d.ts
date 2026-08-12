@@ -839,6 +839,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/year": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O ano do animal, em uma pagina
+         * @description Os doze meses que terminam em `to` (hoje, se omitido): quantos registros, por quantas pessoas e organizacoes, dias na creche e de hospedagem, peso no comeco e no fim, e o que aconteceu de saude. INCLUI O QUE DEU ERRADO — os dias em que uma vacina esteve vencida e as condicoes cronicas que ninguem reavaliou —, porque um resumo que so mostra o bonito nao serve para cuidar. Exige apenas leitura, e o escopo de quem le nao mascara os numeros: eles sao contagens, e nao conteudo clinico.
+         */
+        get: operations["ano"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/antiparasitics": {
         parameters: {
             query?: never;
@@ -2630,6 +2650,60 @@ export interface components {
             weight?: number;
             /** Format: uuid */
             weightHistoryId?: string;
+        };
+        AnimalYearCaregiverDTO: {
+            organizationName?: string;
+            personName?: string;
+            /** Format: int64 */
+            records?: number;
+        };
+        AnimalYearDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: int64 */
+            antiparasitics?: number;
+            /** Format: int64 */
+            appointments?: number;
+            /** Format: int64 */
+            boardingDays?: number;
+            caregivers?: components["schemas"]["AnimalYearCaregiverDTO"][];
+            /** Format: int64 */
+            daycareDays?: number;
+            /** Format: date */
+            from?: string;
+            lapses?: components["schemas"]["AnimalYearLapseDTO"][];
+            notReassessed?: components["schemas"]["AnimalYearPendingDTO"][];
+            /** Format: int64 */
+            organizations?: number;
+            /** Format: int64 */
+            people?: number;
+            /** Format: int64 */
+            records?: number;
+            /** Format: date */
+            to?: string;
+            /** Format: int64 */
+            vaccines?: number;
+            /** Format: double */
+            weightBefore?: number;
+            /** Format: double */
+            weightNow?: number;
+            /** Format: int32 */
+            yearOfLife?: number;
+        };
+        AnimalYearLapseDTO: {
+            /** Format: int64 */
+            days?: number;
+            /** Format: date */
+            overdueSince?: string;
+            /** Format: date */
+            regularizedOn?: string;
+            vaccineName?: string;
+        };
+        AnimalYearPendingDTO: {
+            description?: string;
+            /** Format: date */
+            lastTouchedOn?: string;
         };
         AntiparasiticCatalogResponseDTO: {
             /** Format: uuid */
@@ -5337,6 +5411,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AnimalWeightResponseDTO"];
+                };
+            };
+        };
+    };
+    ano: {
+        parameters: {
+            query?: {
+                to?: string;
+            };
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnimalYearDTO"];
                 };
             };
         };

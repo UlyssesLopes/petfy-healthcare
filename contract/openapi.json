@@ -822,6 +822,135 @@
         },
         "type" : "object"
       },
+      "AnimalYearCaregiverDTO" : {
+        "properties" : {
+          "organizationName" : {
+            "type" : "string"
+          },
+          "personName" : {
+            "type" : "string"
+          },
+          "records" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalYearDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "antiparasitics" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "appointments" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "boardingDays" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "caregivers" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalYearCaregiverDTO"
+            },
+            "type" : "array"
+          },
+          "daycareDays" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "from" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "lapses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalYearLapseDTO"
+            },
+            "type" : "array"
+          },
+          "notReassessed" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalYearPendingDTO"
+            },
+            "type" : "array"
+          },
+          "organizations" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "people" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "records" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "to" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "vaccines" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "weightBefore" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "weightNow" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "yearOfLife" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalYearLapseDTO" : {
+        "properties" : {
+          "days" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "overdueSince" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "regularizedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "vaccineName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalYearPendingDTO" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "lastTouchedOn" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AntiparasiticCatalogResponseDTO" : {
         "properties" : {
           "antiparasiticCatalogId" : {
@@ -6259,6 +6388,43 @@
         },
         "summary" : "Registra uma pesagem",
         "tags" : [ "animal-weight-controller" ]
+      }
+    },
+    "/animals/{animalId}/year" : {
+      "get" : {
+        "description" : "Os doze meses que terminam em `to` (hoje, se omitido): quantos registros, por quantas pessoas e organizacoes, dias na creche e de hospedagem, peso no comeco e no fim, e o que aconteceu de saude. INCLUI O QUE DEU ERRADO — os dias em que uma vacina esteve vencida e as condicoes cronicas que ninguem reavaliou —, porque um resumo que so mostra o bonito nao serve para cuidar. Exige apenas leitura, e o escopo de quem le nao mascara os numeros: eles sao contagens, e nao conteudo clinico.",
+        "operationId" : "ano",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimalYearDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O ano do animal, em uma pagina",
+        "tags" : [ "animal-year-controller" ]
       }
     },
     "/antiparasitics" : {
