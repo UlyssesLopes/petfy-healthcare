@@ -8,19 +8,18 @@
 
 ## Onde o trabalho está agora
 
-**A `main` está em `05b7b0f`.** Há **duas branches abertas**, e as duas esperam seu comando:
-
-| Branch | PR | O que tem |
-|---|---|---|
-| `docs/retomada-bloco-5` | **#58** | só documentação — o estado da sessão anterior |
-| `feat/fim-e-reencontro` | **a abrir** | o bloco 5 inteiro, em `22bf333` |
-
-**Este arquivo vai conflitar com o #58**, e é sabido: o #58 reescreveu esta mesma página, e esta
-versão foi escrita a partir da `main`. **O conteúdo do #58 está inteiro aqui** — se ele mergear
-primeiro, a resolução é ficar com esta versão.
+**O bloco 5 está mergeado** — PR #59, com CI verde nos dois workflows. O #58, que era só
+documentação, entrou antes dele (`520e5f2`). **Não há branch de feature aberta.**
 
 **922 casos no backend, 51 no front, `Skipped: 0`.** Contrato regenerado, nenhuma operação
 renomeada. `npm run build` limpo.
+
+**Duas telas novas no ar:** 33 (encerrar a linha do tempo) e 34 (achei um animal na rua).
+
+**O conflito que os dois PRs produziram, e que vai voltar:** os dois reescreveram esta página. A
+resolução foi ficar com esta versão, que já continha o conteúdo do #58. **Enquanto houver dois PRs
+abertos ao mesmo tempo, este arquivo conflita** — e a saída é resolver por "a versão mais nova
+vence", nunca mesclando as duas.
 
 ## O bloco 5, e as decisões que ele tomou
 
@@ -101,7 +100,7 @@ e ninguém tinha visto porque **nenhuma tela foi conferida no navegador em nenhu
 | 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado e mergeado** (PRs #54 e #55) |
 | 3 | Por onde o valor entra — 40, 41, 42 | **Fechado e mergeado** — PR #56 |
 | 4 | Custo do cuidado — 37, 38, 39 | **Fechado e mergeado** — PR #57 |
-| 5 | Fim e reencontro — 33, 34 | **Fechado**, PR a abrir |
+| 5 | Fim e reencontro — 33, 34 | **Fechado e mergeado** — PR #59 |
 | 6 | Animal comunitário — 43, 44, 45 | pendente |
 | 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
 | 8 | Tela 18 — petshop | pendente (a especificação sempre existiu) |
@@ -151,12 +150,15 @@ exportação de dados e encerramento de conta, e mexe em autenticação.
 
 ## Primeiro passo da próxima sessão
 
-**Decidir os dois PRs abertos** — o #58 é só documentação e está mergeável; o do
-`feat/fim-e-reencontro` traz o bloco 5.
+**Sincronizar a `main` e ramificar dela** — não há nada pendente, e branch nova é regra desde a
+armadilha do bloco 4.
 
 Depois, **o bloco 6 — Animal comunitário, Telas 43, 44 e 45**, cujo desenho é
 `design/IdentidadeVisual/Telas Petfy - Animal comunitário e encaminhamento.dc.html` e **ainda não
 foi lido**. Ou o bloco 9 (35 e 36), se a preferência for fechar o arquivo do bloco 5 inteiro.
+
+**Ler o `.dc.html` inteiro antes de planejar, e contar as telas.** O nome do arquivo cobre mais
+do que o bloco declarado — foi assim que as Telas 35 e 36 apareceram.
 
 ## Como subir, e como regenerar
 
