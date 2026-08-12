@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useIntl } from "react-intl";
 
 import { ehRespostaDeErro } from "../dados/RespostaDeErro.ts";
+import { useLancarCusto } from "../dados/custo.ts";
 import { useDoseAnterior, useRegistrarDose } from "../dados/vacinas.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
 import { Conflito } from "./Estados.tsx";
@@ -35,11 +36,13 @@ export function RegistrarDose({
   const intl = useIntl();
   const anterior = useDoseAnterior(vaccineId);
   const registrar = useRegistrarDose();
+  const lancarCusto = useLancarCusto();
 
   const hoje = new Date().toISOString().slice(0, 10);
 
   const [aplicadaEm, setAplicadaEm] = useState(hoje);
   const [proximaDose, setProximaDose] = useState("");
+  const [valor, setValor] = useState("");
   const [erro, setErro] = useState<string | undefined>(undefined);
 
   if (anterior.isPending) {
@@ -86,7 +89,35 @@ export function RegistrarDose({
         applicationDate: aplicadaEm,
         nextDoseDate: proximaDose === "" ? undefined : proximaDose,
       },
-      { onSuccess: aoFechar },
+      {
+        /*
+         * O VALOR ENTRA DEPOIS DE A DOSE GRAVAR, e liga-se a ELA pelo `sourceVaccineId`.
+         *
+         * E o que da preco a previsao da Tela 38: o reforco do ano que vem e precificado pela
+         * dose do mesmo item de catalogo deste animal. Sem a ligacao, a unica alternativa seria
+         * o ultimo custo de categoria SAUDE, que cobraria a antirrabica com o preco de uma
+         * consulta dermatologica.
+         *
+         * <b>Se o lancamento falhar, a dose fica registrada.</b> O que importa e a dose: ela sai
+         * do feed, entra na linha do tempo e a proxima e calculada. Fechar de qualquer forma e
+         * deliberado — perder o registro clinico por causa de um preco seria o avesso do produto.
+         */
+        onSuccess: (doseGravada) => {
+          const quanto = Number(valor.replace(/[^\d,.-]/g, "").replace(",", "."));
+
+          if (valor.trim() !== "" && !Number.isNaN(quanto) && doseGravada?.vaccineId !== undefined) {
+            lancarCusto.mutate({
+              animalId,
+              descricao: vacina.vaccineName ?? "",
+              valor: quanto,
+              tipo: "VACINA",
+              doseId: doseGravada.vaccineId,
+            });
+          }
+
+          aoFechar();
+        },
+      },
     );
   }
 
@@ -112,6 +143,35 @@ export function RegistrarDose({
           valor={proximaDose}
           aoMudar={setProximaDose}
         />
+
+        {/*
+          O VALOR, e ele e OPCIONAL como em toda tela que o oferece. "Um evento sem valor e
+          normal — nunca um erro, nunca um alerta." Deixar em branco registra a dose igual.
+
+          Ele esta aqui, e nao numa tela de dinheiro, pela tese do bloco 3: "o custo do animal
+          so existe se o dado entrar sem esforco. Um campo dentro do que ja estava sendo
+          registrado, e nada alem disso."
+        */}
+        <div>
+          <label
+            htmlFor={`valor-${vaccineId}`}
+            className="text-rotulo block normal-case text-tinta-secundaria"
+          >
+            {intl.formatMessage({ id: "dose.valor" })}
+          </label>
+          <input
+            id={`valor-${vaccineId}`}
+            type="text"
+            inputMode="decimal"
+            value={valor}
+            onChange={(evento) => setValor(evento.target.value)}
+            placeholder="90,00"
+            className="text-corpo-denso mt-1 min-h-toque w-[140px] rounded-controle border border-linha px-3"
+          />
+          <p className="text-rotulo mt-1 normal-case text-tinta-secundaria">
+            {intl.formatMessage({ id: "dose.valor.apoio" })}
+          </p>
+        </div>
       </div>
 
       {erro !== undefined ? (

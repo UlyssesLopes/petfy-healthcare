@@ -11,6 +11,7 @@ import br.com.petfy.healthcare.domain.dto.VaccineRequirementRequestDTO;
 import br.com.petfy.healthcare.domain.dto.VaccineRequirementResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalCost;
+import br.com.petfy.healthcare.domain.entity.AnimalCostCategory;
 import br.com.petfy.healthcare.domain.entity.AnimalCostKind;
 import br.com.petfy.healthcare.domain.entity.Attendance;
 import br.com.petfy.healthcare.domain.entity.AttendanceStatus;
@@ -436,6 +437,7 @@ public class CrecheServiceImpl implements CrecheService {
                 .description("Diaria avulsa")
                 .amount(matricula.getDailyRate())
                 .kind(AnimalCostKind.CRECHE_DIARIA)
+                .category(AnimalCostCategory.CRECHE)
                 // `paid` NULO, e nao false: "ninguem disse". O produto nao sabe se o tutor pagou a
                 // diaria no dia, e afirmar que nao pagou seria inventar uma divida.
                 .sourceEnrollmentId(matricula.getEnrollmentId())

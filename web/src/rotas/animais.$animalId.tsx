@@ -184,6 +184,19 @@ function VidaDoAnimal() {
             >
               {intl.formatMessage({ id: "animal.acao.compra" })}
             </Link>
+
+            {/*
+             * Tela 37. Fica ao lado de "lancar uma compra" de proposito: quem acabou de lancar
+             * quer ver onde aquilo entrou, e quem olha o custo costuma descobrir ali que falta
+             * lancar algo.
+             */}
+            <Link
+              to="/animais/$animalId/custo"
+              params={{ animalId }}
+              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "12px 20px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+            >
+              {intl.formatMessage({ id: "animal.acao.custo" })}
+            </Link>
           </div>
         </div>
 

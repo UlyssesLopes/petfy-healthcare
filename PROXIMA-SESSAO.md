@@ -4,14 +4,21 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-11, com o **bloco 3 fechado** — as três telas de pé, sem PR aberto.
+> Escrito em 2026-08-11, com o **bloco 3 mergeado** e o **bloco 4 fechado**, esperando merge.
 
 ## Onde o trabalho está agora
 
-**Branch `feat/por-onde-o-valor-entra`, cinco commits, sem PR aberto.**
-A `main` está em `931dac0` — os PRs #53, #54 e #55 já foram mergeados.
+**Branch `feat/custo-do-cuidado`, no PR #57 — pronto para revisão, CI verde. O merge é comando
+do Ulysses.**
+A `main` está em `818333f`: o **bloco 3 foi mergeado** pelo PR #56, com CI verde.
 
-**868 casos no backend, 43 no front, tudo verde, `Skipped: 0`.** Contrato regenerado, nenhuma
+**Uma armadilha de fluxo que custou tempo:** o bloco 4 começou na branch do bloco 3 (decisão de
+sessão: PR empilhado não roda CI). Mas o #56 foi mergeado **antes** de os commits do bloco 4 serem
+empurrados — e aí eles ficaram numa branch cujo PR estava fechado, **sem CI nenhum**, sem aviso.
+O sintoma era mudo: `git push` funciona, e `gh pr view` mostra o `headRefOid` antigo para sempre.
+Daí a branch nova. **Regra: commit numa branch cujo PR já mergeou não roda check nenhum.**
+
+**892 casos no backend, 43 no front, tudo verde, `Skipped: 0`.** Contrato regenerado, nenhuma
 operação renomeada. `npm run build` limpo.
 
 ### O bloco 3, inteiro
@@ -70,6 +77,107 @@ custo"*. Uma compra lançada vale mais do que uma compra bem descrita que ningu�
 transforma compra avulsa em custo mensal previsível — e é dela que o bloco 4 vai depender para
 dizer "a ração do Teco custa R$ 190 por mês, todo mês".
 
+## O bloco 4, e o que ele já tem
+
+- `V38__onde_o_dinheiro_foi.sql` — `AnimalCostCategory` (SAUDE, ALIMENTACAO, CRECHE, HIGIENE,
+  OUTRO), retroativa pelo `kind` e `NOT NULL` só **depois** do retroativo
+- `V39__o_valor_da_dose.sql` — `source_vaccine_id` e `source_antiparasitic_id`, sem os quais a
+  previsão não teria preço
+- `GET /animals/{id}/costs/summary?window=DOZE_MESES|SEMPRE` — os três números, as fatias e os
+  pagadores num payload só
+- `GET /animals/{id}/costs/forecast` — as quatro fontes do que vem pela frente
+- **Tela 37** — `/animais/{id}/custo`
+- **Tela 38** — `/animais/{id}/previsao`
+- **Tela 39** — `/animais/{id}/custo-da-adocao`, alcançada da tela de adoção
+
+### Duas decisões desta parte
+
+**A categoria não é o `kind` com outro nome.** O `kind` diz de que evento o valor saiu; a categoria
+diz em que ele foi gasto. Divergem no caso que decide o gráfico: **ração e remédio saem os dois de
+uma `COMPRA`**. Os três botões da Tela 42 passaram a carregar a categoria — o que também conserta o
+"Outro" que o bloco 3 tinha aceito como preço.
+
+**"Quem pagou" é `organization == null`, e não o `kind`.** Num atendimento o autor é a veterinária:
+ela informou o valor e não disse quem o pagou. Há a linha **sem nome** para a conta fechar, e o
+produto não vai pedir que o tutor atribua depois.
+
+### A paleta do desenho falha no validador, e eu mantive
+
+Os quatro tons de fatia do desenho são uma **rampa de luminosidade na mesma matiz**. Rodados no
+validador de paleta: **passam** em separação para daltonismo (ΔE 11,5), mas **falham** o piso de
+visão normal — `#8fae94` ↔ `#bdd0c0` a ΔE 12, abaixo de 15 —, e os dois tons mais claros ficam
+abaixo de 3:1 de contraste contra o branco.
+
+**Mantive a paleta** (é o FE aprovado) e paguei o alívio que o validador exige: **o nome de cada
+fatia aparece sempre ao lado da cor**, e no lista de eventos o quadradinho tem `title`. A cor é
+reforço; a identidade é o rótulo.
+
+**Dois defeitos que o mockup não podia mostrar:**
+
+1. **A cor seguia a posição, e agora segue a categoria.** As fatias são ordenadas por valor, e a
+   ordem muda ao trocar a janela — pintar por posição faria a creche sair do verde-escuro e a saúde
+   entrar nele **entre dois cliques da mesma tela**.
+2. **`OUTRO` não pode ser um quinto tom plano.** A rampa está cheia em quatro: minha primeira
+   tentativa (um cinza) ficou a **ΔE 3,5** de Alimentação em deuteranopia. Virou **hachura** — canal
+   que sobrevive a daltonismo e a impressão, e que já é vocabulário do desenho.
+
+**E a frase "saúde é o menor pedaço" só aparece quando saúde é de fato a menor fatia.** Escrita
+fixa, ela mentiria no mês em que a saúde fosse o maior gasto — que é justamente o mês em que o
+animal está doente.
+
+### A Tela 38, e o preço que não tinha de onde sair
+
+O desenho põe "antirrábica R$ 90" em cada linha, e **nenhum desses valores tinha fonte**. A
+`animal_costs` ligava-se a atendimento e a matrícula; uma dose de vacina não é nenhum dos dois.
+Precificar pelo último custo de `SAUDE` cobraria a antirrábica com o preço de uma consulta
+dermatológica — pior que não ter preço.
+
+**V39: `source_vaccine_id` e `source_antiparasitic_id`.** O reforço do ano que vem é precificado
+pela dose **do mesmo item de catálogo daquele animal**. O campo de valor entrou no `RegistrarDose`,
+opcional; se o lançamento falhar, **a dose fica registrada**. Tipo novo `AnimalCostKind.VACINA` —
+uma dose não é um atendimento, e o `kind` existe para ler agrupado.
+
+**A conta mora no `CostForecastBuilder`, sem repositório e sem mock**, com 12 casos: um erro ali não
+aparece como exceção, aparece como número plausível e errado, e número plausível ninguém confere.
+
+**O total não finge ser tudo:** `itemsWithoutAmount` diz quantas linhas ficaram de fora.
+
+**Dois números do desenho não existem, e por razões diferentes:**
+
+1. *"foram R$ 176 (...) com **outro animal da turma**"* — é custo de outro animal, e ler custo exige
+   custódia dele. No lugar entrou aritmética sobre o que este tutor já vê: **o valor de um dia
+   combinado** (mensalidade ÷ dias combinados ÷ 4,348). Não é a diária avulsa — essa é o que se paga
+   por um dia *extra*, e o que se perde ao ser barrado é um dia que a mensalidade já cobriu.
+2. **O botão "Dispensar" não existe.** Guardar a dispensa pediria uma tabela, e um botão que esquece
+   no recarregamento é pior que nenhum. No lugar, a tela diz onde o gesto existe: silenciar a
+   pendência no feed.
+
+**A leitura só aparece quando os fatos a sustentam** — dose atrasada **e** matrícula viva cuja
+comprovação impede a entrada. Genérica, ela viraria conselho, e conselho genérico é o que faz a
+pessoa parar de ler.
+
+### A Tela 39, e o rótulo que mudou
+
+Ela é **frontend puro**: reusa os dois endpoints, e o abrigo lê o custo do Teco sem regra de acesso
+nova — `requireCustodia` já conta custódia de organização desde a Tela 13.
+
+**O desenho chama o segundo número de "Previsto para os próximos 12", e eu não pude.** A previsão
+deste produto cobre só **o que está marcado**; a consulta que vai aparecer no meio do ano não está
+nela, e não pode estar (seria estimativa). Logo o número vem **menor** que os doze meses que
+passaram — e chamá-lo de "previsto" na frente de quem está decidindo adotar **subestimaria o custo
+do animal**, o oposto exato do que a tela existe para fazer.
+
+Virou **"Já marcado para os próximos 12"**, com a falta dita ao lado do número e não num rodapé:
+*"este número é um piso, e não um teto."*
+
+E **"tende a subir: ele tem 11 anos" o produto não afirma.** Definir a partir de que idade um animal
+é idoso é conhecimento veterinário que este código não tem, e varia por espécie e porte. A idade
+aparece como fato na ficha; o julgamento fica com quem conversa.
+
+## O bloco 4 está fechado
+
+**Telas 37, 38 e 39 de pé. 892 casos no backend, 43 no front, `Skipped: 0`.** PR #57.
+
 ## O ERRO QUE O DOCUMENTO ANTERIOR CONTINHA
 
 A versão anterior deste arquivo afirmava:
@@ -94,7 +202,7 @@ telas. Eles estão versionados (entraram no PR #53).
 | 1 | A faixa sai de dentro do cabeçalho sticky | **Fechado** — PR #54 |
 | 2 | Núcleo clínico — Telas 30, 31, 32 | **Fechado e mergeado** (PRs #54 e #55) |
 | 3 | Por onde o valor entra — 40, 41, 42 | **Fechado**, sem PR aberto |
-| 4 | Custo do cuidado — 37, 38, 39 | pendente |
+| 4 | Custo do cuidado — 37, 38, 39 | **Fechado** — PR #57, esperando merge |
 | 5 | Fim e reencontro — 33, 34 | pendente |
 | 6 | Animal comunitário — 43, 44, 45 | pendente |
 | 7 | Apadrinhar, hospedar, o ano — 46, 47, 48 | pendente |
@@ -179,17 +287,17 @@ que um 500 — **silencioso**: a união terminaria "com sucesso" deixando evento
 
 ## Primeiro passo da próxima sessão
 
-**Abrir o PR do bloco 3** (o merge é comando do Ulysses), e então **começar o bloco 4 — Custo do
-cuidado, Telas 37, 38 e 39**. O desenho é
-`design/IdentidadeVisual/Telas Petfy - Custo do cuidado.dc.html`.
+**Mergear o #57** (comando do Ulysses), e então **o bloco 5 — Fim e reencontro, Telas 33 e 34**. O
+desenho é `design/IdentidadeVisual/Telas Petfy - Fim, reencontro e conta.dc.html`, que **ainda não
+foi lido nesta sessão**.
 
-O bloco 4 é a **leitura** do que o 3 passou a gravar: `GET /animals/{id}/costs` já existe e já
-devolve tudo com `kind`, `recurrence` e a origem. O que ele vai precisar decidir é como somar o
-recorrente — a `CostRecurrence.MENSAL` marca a linha, e ninguém ainda calculou nada com ela.
+**Duas coisas para conferir antes de planejar o bloco 5:** o `CustodyEndReason` já traz os motivos
+de fim (a adoção usa `ADOCAO`), e a Tela 34 do índice antigo era "a conta" — vale abrir o arquivo e
+ver quais das três telas dele são 33 e 34, porque o nome do arquivo cobre mais do que o bloco.
 
-**Duas coisas do bloco 3 que o 4 vai encontrar prontas:** a caixinha "dura cerca de um mês" da
-Tela 42, que é a única fonte de "custo mensal previsível" que não vem de mensalidade de creche; e
-o `monthlyFee` da matrícula, que o tutor já lê na tela dele.
+**E há uma dívida barata pendente, do bloco 3:** os **comentários** do `web/src/rotas/creche.tsx`
+continuam duplo-codificados (`Â·`, `â€”`). As strings visíveis foram corrigidas; os comentários não,
+e nenhum teste pega isso. É um `sed` e uma revisão.
 
 ### O que essas telas NÃO têm, e o desenho diz com todas as letras
 

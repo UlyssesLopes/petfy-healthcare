@@ -12,6 +12,19 @@ public enum AnimalCostKind {
     /** Saiu de um registro de atendimento (Tela 40). */
     ATENDIMENTO,
 
+    /**
+     * Saiu de uma dose de vacina ou de antiparasitario.
+     *
+     * <b>Tipo proprio e nao ATENDIMENTO, porque uma dose nao e um atendimento</b> — ela mora na
+     * `vaccines`, com catalogo e data de proxima dose proprios, e o tutor que registra a dose que
+     * estava vencendo nao registrou consulta nenhuma. Como o `kind` existe para o tutor LER
+     * agrupado, chamar dose de atendimento erraria justamente na leitura.
+     *
+     * <b>E e ele que da preco a previsao da Tela 38:</b> ligado a dose pelo `sourceVaccineId`, o
+     * valor de hoje precifica o reforco do ano que vem.
+     */
+    VACINA,
+
     /** O combinado da creche, que se repete todo mes (Tela 41). */
     CRECHE_MENSALIDADE,
 

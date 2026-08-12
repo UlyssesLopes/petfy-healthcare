@@ -1,5 +1,6 @@
 package br.com.petfy.healthcare.domain.dto;
 
+import br.com.petfy.healthcare.domain.entity.AnimalCostCategory;
 import br.com.petfy.healthcare.domain.entity.AnimalCostKind;
 import br.com.petfy.healthcare.domain.entity.CostRecurrence;
 import jakarta.validation.constraints.DecimalMin;
@@ -38,6 +39,16 @@ public class AnimalCostRequestDTO {
     /** Nulo vira COMPRA — o lancamento do tutor, que e o unico manual. */
     private AnimalCostKind kind;
 
+    /**
+     * Onde o dinheiro foi (Tela 37).
+     *
+     * <b>Opcional, e o servidor decide quando o `kind` ja responde:</b> atendimento e SAUDE,
+     * mensalidade e diaria sao CRECHE. Quem precisa mandar e a compra do tutor, porque ali racao e
+     * remedio saem do mesmo `kind` e vao para fatias diferentes — e so quem tocou no botao sabe
+     * qual. Nulo numa compra vira OUTRO, que e o terceiro botao da Tela 42.
+     */
+    private AnimalCostCategory category;
+
     /** "Ja foi pago". Nulo e "ninguem disse", e nao "nao foi pago". */
     private Boolean paid;
 
@@ -52,5 +63,16 @@ public class AnimalCostRequestDTO {
 
     /** De qual matricula (Tela 41). */
     private UUID sourceEnrollmentId;
+
+    /**
+     * De qual dose de vacina.
+     *
+     * <b>E o que da preco a previsao da Tela 38</b>: o reforco do ano que vem sai da dose do mesmo
+     * item de catalogo deste animal. Quem informa e a clinica, no momento em que registra a dose.
+     */
+    private UUID sourceVaccineId;
+
+    /** De qual antiparasitario, pela mesma razao. */
+    private UUID sourceAntiparasiticId;
 
 }

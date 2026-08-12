@@ -132,6 +132,24 @@
         },
         "type" : "object"
       },
+      "AnimalCostPayerDTO" : {
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "categories" : {
+            "items" : {
+              "enum" : [ "SAUDE", "ALIMENTACAO", "CRECHE", "HIGIENE", "OUTRO" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "personName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AnimalCostRequestDTO" : {
         "properties" : {
           "amount" : {
@@ -139,13 +157,17 @@
             "minimum" : 0.0,
             "type" : "number"
           },
+          "category" : {
+            "enum" : [ "SAUDE", "ALIMENTACAO", "CRECHE", "HIGIENE", "OUTRO" ],
+            "type" : "string"
+          },
           "description" : {
             "maxLength" : 200,
             "minLength" : 0,
             "type" : "string"
           },
           "kind" : {
-            "enum" : [ "ATENDIMENTO", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
+            "enum" : [ "ATENDIMENTO", "VACINA", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
             "type" : "string"
           },
           "occurredAt" : {
@@ -159,11 +181,19 @@
             "enum" : [ "MENSAL" ],
             "type" : "string"
           },
+          "sourceAntiparasiticId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "sourceEnrollmentId" : {
             "format" : "uuid",
             "type" : "string"
           },
           "sourceHealthRecordId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sourceVaccineId" : {
             "format" : "uuid",
             "type" : "string"
           }
@@ -180,11 +210,15 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "category" : {
+            "enum" : [ "SAUDE", "ALIMENTACAO", "CRECHE", "HIGIENE", "OUTRO" ],
+            "type" : "string"
+          },
           "description" : {
             "type" : "string"
           },
           "kind" : {
-            "enum" : [ "ATENDIMENTO", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
+            "enum" : [ "ATENDIMENTO", "VACINA", "CRECHE_MENSALIDADE", "CRECHE_DIARIA", "COMPRA" ],
             "type" : "string"
           },
           "occurredAt" : {
@@ -210,6 +244,55 @@
           },
           "sourceHealthRecordId" : {
             "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalCostSliceDTO" : {
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "category" : {
+            "enum" : [ "SAUDE", "ALIMENTACAO", "CRECHE", "HIGIENE", "OUTRO" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AnimalCostSummaryResponseDTO" : {
+        "properties" : {
+          "byCategory" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalCostSliceDTO"
+            },
+            "type" : "array"
+          },
+          "byPayer" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AnimalCostPayerDTO"
+            },
+            "type" : "array"
+          },
+          "firstYear" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "from" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "monthlyAverage" : {
+            "type" : "number"
+          },
+          "total" : {
+            "type" : "number"
+          },
+          "totalEver" : {
+            "type" : "number"
+          },
+          "window" : {
             "type" : "string"
           }
         },
@@ -1283,6 +1366,60 @@
           },
           "valorAnterior" : {
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CostForecastItemDTO" : {
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "amountFrom" : {
+            "type" : "string"
+          },
+          "category" : {
+            "enum" : [ "SAUDE", "ALIMENTACAO", "CRECHE", "HIGIENE", "OUTRO" ],
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "dueOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "overdue" : {
+            "type" : "boolean"
+          },
+          "sourceId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "timesInTwelveMonths" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "CostForecastResponseDTO" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CostForecastItemDTO"
+            },
+            "type" : "array"
+          },
+          "itemsWithoutAmount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "type" : "number"
           }
         },
         "type" : "object"
@@ -4060,6 +4197,71 @@
           }
         },
         "summary" : "Lanca um valor gasto com o animal",
+        "tags" : [ "animal-cost-controller" ]
+      }
+    },
+    "/animals/{animalId}/costs/forecast" : {
+      "get" : {
+        "description" : "NAO E PREVISAO DE GASTO: e o que ja esta marcado no registro do animal — dose de vacina com data de reforco, antiparasitario no intervalo, mensalidade combinada e compra marcada como mensal. O valor de uma dose futura sai da ULTIMA DOSE DO MESMO ITEM DE CATALOGO deste animal; sem valor anterior a linha vem sem preco, e isso nao e erro — `itemsWithoutAmount` diz quantas ficaram de fora do total. NUNCA HA PROGNOSTICO CLINICO: a leitura pode dizer que adiar a vacina custa dias de creche perdidos, porque isso e aritmetica sobre fatos registrados; nao pode dizer que tratar agora sai mais barato que operar depois. EXIGE CUSTODIA.",
+        "operationId" : "forecast",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CostForecastResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O que vem pela frente nos proximos 12 meses (Tela 38)",
+        "tags" : [ "animal-cost-controller" ]
+      }
+    },
+    "/animals/{animalId}/costs/summary" : {
+      "get" : {
+        "description" : "Os tres numeros do topo, o 'onde foi' por categoria e o 'quem pagou o que'. EXIGE CUSTODIA, como toda leitura de custo — e aqui com mais razao: o total e exatamente o numero que alguem de fora gostaria de saber sem ver os itens. `window` aceita DOZE_MESES (padrao) ou SEMPRE; qualquer outro valor e lido como DOZE_MESES. O total de sempre e o ano do primeiro valor viajam nas duas janelas, porque o cartao 'desde 2019' do desenho nao muda quando o recorte muda. NAO HA comparacao com outros tutores nem com outras organizacoes, e nao havera: 'quem cuida de um animal doente ja tem o suficiente na cabeca'.",
+        "operationId" : "summary",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "window",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimalCostSummaryResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Quanto o animal custou, somado (Tela 37)",
         "tags" : [ "animal-cost-controller" ]
       }
     },
