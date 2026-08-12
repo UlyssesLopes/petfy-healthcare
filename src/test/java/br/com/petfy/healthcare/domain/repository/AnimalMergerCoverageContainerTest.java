@@ -73,7 +73,21 @@ class AnimalMergerCoverageContainerTest extends PostgresContainerTest {
             // Convite pendente e uma conversa comecada sobre AQUELE cadastro.
             "pet_tutor_invites",
             // Reescrever a quem um log de acesso se refere seria falsificar uma auditoria.
-            "sensitive_access_log");
+            "sensitive_access_log",
+            // O OBITO FICA, e ele e o caso que mais parece "evento" desta lista inteira.
+            //
+            // Duas razoes, e a segunda e a que decide. A primeira e mecanica: a chave primaria da
+            // tabela E o animal, entao mover a linha e reescrever a identidade dela — e se os dois
+            // cadastros tiverem obito, o insert colide.
+            //
+            // A segunda e de significado: o obito nao e um fato solto, e o que ENCERROU uma
+            // custodia especifica, daquele cadastro. A custodia fica; mover so o obito deixaria o
+            // registro do fim apontando para um animal cuja custodia nunca terminou.
+            //
+            // A consequencia — um cadastro absorvido levando o obito consigo — quase nao alcanca a
+            // realidade: unir exige quem responde pelo animal, e por um animal morto ninguem
+            // responde. O aceite da uniao bate em `requireCustodia` antes de chegar aqui.
+            "animal_deaths");
 
     /**
      * As netas, que seguem o pai.

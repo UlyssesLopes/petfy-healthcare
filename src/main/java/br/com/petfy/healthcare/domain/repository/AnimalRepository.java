@@ -67,4 +67,20 @@ public interface AnimalRepository extends JpaRepository<Animal, UUID> {
     List<Animal> findOutrosComMicrochip(@Param("microchip") String microchip,
                                         @Param("exceto") UUID exceto);
 
+    /**
+     * Os cadastros com este microchip — a busca de animal encontrado (Tela 34).
+     *
+     * <b>Devolve lista, e nao Optional, porque o duplicado e a regra e nao a excecao neste
+     * produto.</b> A Tela 32 existe justamente porque o mesmo animal e cadastrado pela protetora,
+     * pela clinica e pelo abrigo. Um {@code Optional} aqui estouraria com
+     * {@code NonUniqueResultException} na rua, no pior momento, e quem escolhe qual cadastro
+     * responde e o servico — com um criterio escrito.
+     *
+     * <b>Exclui o absorvido</b>, pela mesma razao da consulta acima: ele guarda o microchip que
+     * tinha, e devolver um apontador daria a quem socorre o animal um cartao sem vida registrada.
+     */
+    @Query("select a from Animal a where a.microchipNumber = :microchip "
+            + "and a.mergedIntoAnimalId is null")
+    List<Animal> findComMicrochip(@Param("microchip") String microchip);
+
 }

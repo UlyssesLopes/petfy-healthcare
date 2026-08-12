@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -241,6 +242,70 @@ class AnimalAccessGuardTest {
             semAlcance();
 
             assertNaoEncontrado(animalAccessGuard::requireEscrita);
+        }
+    }
+
+    /**
+     * A leitura que sobrevive ao animal (Tela 33).
+     *
+     * <b>E a excecao mais delicada desta guarda, e por isso ela tem bloco proprio:</b> ela deixa
+     * passar quem NAO tem custodia em curso e NAO tem concessao nenhuma. O que a autoriza e um
+     * fato do passado — a pessoa respondeu por aquele animal ate ele morrer —, e o teto e leitura.
+     */
+    @Nested
+    @DisplayName("quem respondia ate o obito")
+    class RespondiaAteOFim {
+
+        /** Nem custodia em curso, nem concessao: so a custodia encerrada por obito. */
+        private void respondiaAteOObito() {
+            autenticado();
+
+            Custody encerrada = Custodias.emCurso(
+                    Person.builder().personId(PERSON_ID).name("Ulysses").build());
+            encerrada.setAnimal(animal());
+            encerrada.setEndedAt(LocalDateTime.now().minusDays(2));
+
+            when(custodyRepository.findEmCursoDaPessoa(ANIMAL_ID, PERSON_ID))
+                    .thenReturn(Optional.empty());
+
+            /*
+             * lenient porque o caminho de ESCRITA nem chega a perguntar isto — e essa e a prova
+             * que o caso `naoEscreve` procura. A excecao vive so no VIEWER, entao a consulta do
+             * obito nao acontece quando o nivel exigido e EDITOR: o stub sobra, e sobrar aqui e o
+             * comportamento correto.
+             */
+            lenient().when(custodyRepository.findEncerradaPorObitoDaPessoa(ANIMAL_ID, PERSON_ID))
+                    .thenReturn(Optional.of(encerrada));
+        }
+
+        @Test
+        @DisplayName("le a vida do animal depois do fim")
+        void continuaLendo() {
+            respondiaAteOObito();
+            animalExiste();
+
+            // "os sete anos de vida dele continuam aqui, inteiros, para voce abrir quando quiser"
+            assertThat(animalAccessGuard.requireLeitura(ANIMAL_ID).getAnimalId()).isEqualTo(ANIMAL_ID);
+        }
+
+        @Test
+        @DisplayName("nao escreve: ninguem responde por um animal morto")
+        void naoEscreve() {
+            respondiaAteOObito();
+            when(grantRepository.findVigenteDaPessoaNoAnimal(eq(ANIMAL_ID), eq(PERSON_ID), any()))
+                    .thenReturn(Optional.empty());
+
+            assertNaoEncontrado(animalAccessGuard::requireEscrita);
+        }
+
+        @Test
+        @DisplayName("le sem escopo limitado: o que ela via nao encolheu com a morte")
+        void leSemEscopo() {
+            respondiaAteOObito();
+
+            // nulo aqui significa "sem limite", e nao "sem acesso" — um escopo qualquer faria a
+            // linha do tempo que ela leu inteira ontem voltar hoje com metade dos eventos opacos
+            assertThat(animalAccessGuard.escopoDoAutenticado(ANIMAL_ID)).isNull();
         }
     }
 

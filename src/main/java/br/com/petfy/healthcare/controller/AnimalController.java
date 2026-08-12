@@ -36,6 +36,22 @@ public class AnimalController {
         return ResponseEntity.status(HttpStatus.CREATED).body(animalService.createAnimal(dto));
     }
 
+    /**
+     * Vem ANTES do {@code /{animalId}} por leitura, e nao por necessidade: o Spring ja da
+     * precedencia ao caminho literal sobre a variavel. Fica junto porque quem le o arquivo procura
+     * as duas listagens no mesmo lugar.
+     */
+    @Operation(summary = "Quem ja esteve com voce",
+               description = "Os animais de quem a pessoa cuidou e nao cuida mais. NAO e uma lista "
+                             + "de animais mortos: o transferido sem acesso residual tambem esta "
+                             + "aqui. Quem transferiu e ficou com concessao de leitura continua na "
+                             + "lista principal, e nao aparece duas vezes.")
+    @GetMapping("/former")
+    public ResponseEntity<Page<AnimalResponseDTO>> listFormer(
+            @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+        return ResponseEntity.ok(animalService.queJaEstiveramComigo(pageable));
+    }
+
     @Operation(summary = "Um animal", description = "Animal fora do seu alcance responde 404 e nao 403: dizer que existe e voce nao pode ver ja e informacao sobre ele.")
     @GetMapping("/{animalId}")
     public ResponseEntity<AnimalResponseDTO> getAnimal(@PathVariable UUID animalId) {

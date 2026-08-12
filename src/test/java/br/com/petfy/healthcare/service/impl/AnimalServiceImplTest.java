@@ -45,6 +45,9 @@ class AnimalServiceImplTest {
     private AnimalRepository animalRepository;
 
     @Mock
+    private br.com.petfy.healthcare.domain.repository.AnimalDeathRepository animalDeathRepository;
+
+    @Mock
     private CustodyRepository custodyRepository;
 
     @Mock

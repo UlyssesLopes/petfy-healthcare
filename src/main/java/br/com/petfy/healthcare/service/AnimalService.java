@@ -17,6 +17,15 @@ public interface AnimalService {
     /** Listagem paginada para o controller. */
     Page<AnimalResponseDTO> listAllAnimals(Pageable pageable);
 
+    /**
+     * "Quem ja esteve com voce" (Tela 33).
+     *
+     * A lista que recebe o animal que saiu da outra. <b>Nao e uma lista de animais mortos:</b> o
+     * animal transferido sem acesso residual tambem esta aqui, porque a pergunta que ela responde
+     * e "de quem eu ja cuidei", e nao "quem morreu".
+     */
+    Page<AnimalResponseDTO> queJaEstiveramComigo(Pageable pageable);
+
     AnimalResponseDTO updateAnimal(UUID animalId, AnimalRequestDTO dto);
 
     void deleteAnimal(UUID animalId);

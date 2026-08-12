@@ -28,7 +28,7 @@ class RateLimitFilterTest {
     @BeforeEach
     void setUp() {
         // capacidade minima para os testes passarem rapido
-        filtro = new RateLimitFilter(2, 2);
+        filtro = new RateLimitFilter(2, 2, 2);
     }
 
     @Test

@@ -419,6 +419,22 @@ function Entrar() {
                 },
               )}
             </div>
+
+            {/*
+             * ================================================ o caminho de quem NAO vem entrar
+             *
+             * A Tela 34 e a unica tela do produto que responde a quem nao tem conta, e ela precisa
+             * ser alcancavel de fora — quem acha um animal na rua e abre o Petfy cai aqui.
+             *
+             * <b>Fica DEPOIS de "criar conta", e nao ao lado do botao de entrar</b>, porque quem
+             * chega nesta tela quase sempre vem entrar. Mas fica na porta, e nao escondido: a
+             * pessoa que precisa dele esta com um animal no colo e nao vai procurar num menu.
+             */}
+            <div style={{ paddingTop: "16px", fontSize: "15px", color: "oklch(0.5 0.015 150)" }}>
+              <Link to="/encontrado" style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)" }}>
+                {intl.formatMessage({ id: "entrar.achouUmAnimal" })}
+              </Link>
+            </div>
           </form>
         </div>
       </div>

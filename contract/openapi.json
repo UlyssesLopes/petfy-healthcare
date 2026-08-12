@@ -54,7 +54,7 @@
             "type" : "string"
           },
           "actorType" : {
-            "enum" : [ "VET", "SHARE_LINK" ],
+            "enum" : [ "VET", "SHARE_LINK", "MICROCHIP_SEARCH" ],
             "type" : "string"
           },
           "ipAddress" : {
@@ -64,7 +64,7 @@
             "type" : "string"
           },
           "resource" : {
-            "enum" : [ "VACCINES", "HEALTH_RECORDS", "VACCINE_CORRECTIONS", "HEALTH_RECORD_CORRECTIONS", "ATTACHMENTS", "SHARED_CARD" ],
+            "enum" : [ "VACCINES", "HEALTH_RECORDS", "VACCINE_CORRECTIONS", "HEALTH_RECORD_CORRECTIONS", "ATTACHMENTS", "SHARED_CARD", "FOUND_CARD" ],
             "type" : "string"
           }
         },
@@ -296,6 +296,24 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "AnimalDeathRequestDTO" : {
+        "properties" : {
+          "deceasedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "farewellNote" : {
+            "type" : "string"
+          },
+          "place" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "deceasedOn" ],
         "type" : "object"
       },
       "AnimalExportDTO" : {
@@ -625,6 +643,10 @@
           },
           "creationDate" : {
             "format" : "date-time",
+            "type" : "string"
+          },
+          "deceasedOn" : {
+            "format" : "date",
             "type" : "string"
           },
           "gender" : {
@@ -1246,6 +1268,56 @@
         },
         "type" : "object"
       },
+      "ClosedLifeResponseDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "bornDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "caregiverOrganizationCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "caregiverPersonCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "deceasedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "eventCount" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "farewellNote" : {
+            "type" : "string"
+          },
+          "holderSince" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "holderUntil" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "place" : {
+            "type" : "string"
+          },
+          "recordedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "CoTutorDTO" : {
         "properties" : {
           "desde" : {
@@ -1585,6 +1657,102 @@
               "type" : "string"
             },
             "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "FoundAnimalCardDTO" : {
+        "properties" : {
+          "allergies" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "animalBornDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "animalBreed" : {
+            "type" : "string"
+          },
+          "animalGender" : {
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "animalType" : {
+            "type" : "string"
+          },
+          "animalWeight" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "conditions" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "contacts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FoundContactDTO"
+            },
+            "type" : "array"
+          },
+          "ongoingCare" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "vaccines" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FoundVaccineDTO"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "FoundAnimalRequestDTO" : {
+        "properties" : {
+          "microchipNumber" : {
+            "maxLength" : 32,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "microchipNumber" ],
+        "type" : "object"
+      },
+      "FoundContactDTO" : {
+        "properties" : {
+          "kind" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "FoundVaccineDTO" : {
+        "properties" : {
+          "nextDoseDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "OVERDUE", "DUE_SOON", "UP_TO_DATE", "NO_NEXT_DOSE" ],
+            "type" : "string"
+          },
+          "vaccineName" : {
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -2855,7 +3023,7 @@
             "type" : "string"
           },
           "actorType" : {
-            "enum" : [ "VET", "SHARE_LINK" ],
+            "enum" : [ "VET", "SHARE_LINK", "MICROCHIP_SEARCH" ],
             "type" : "string"
           },
           "animalId" : {
@@ -2869,7 +3037,7 @@
             "type" : "string"
           },
           "resource" : {
-            "enum" : [ "VACCINES", "HEALTH_RECORDS", "VACCINE_CORRECTIONS", "HEALTH_RECORD_CORRECTIONS", "ATTACHMENTS", "SHARED_CARD" ],
+            "enum" : [ "VACCINES", "HEALTH_RECORDS", "VACCINE_CORRECTIONS", "HEALTH_RECORD_CORRECTIONS", "ATTACHMENTS", "SHARED_CARD", "FOUND_CARD" ],
             "type" : "string"
           },
           "sensitiveAccessLogId" : {
@@ -3015,7 +3183,7 @@
             "type" : "string"
           },
           "eventType" : {
-            "enum" : [ "VACINA", "ANTIPARASITARIO", "ATENDIMENTO", "OBSERVACAO", "PESAGEM", "CONDICAO", "ANEXO", "ORIENTACAO", "CUMPRIMENTO", "UNIAO" ],
+            "enum" : [ "VACINA", "ANTIPARASITARIO", "ATENDIMENTO", "OBSERVACAO", "PESAGEM", "CONDICAO", "ANEXO", "ORIENTACAO", "CUMPRIMENTO", "UNIAO", "OBITO" ],
             "type" : "string"
           },
           "healthData" : {
@@ -3502,6 +3670,59 @@
           }
         },
         "summary" : "Cadastra um animal",
+        "tags" : [ "animal-controller" ]
+      }
+    },
+    "/animals/former" : {
+      "get" : {
+        "description" : "Os animais de quem a pessoa cuidou e nao cuida mais. NAO e uma lista de animais mortos: o transferido sem acesso residual tambem esta aqui. Quem transferiu e ficou com concessao de leitura continua na lista principal, e nao aparece duas vezes.",
+        "operationId" : "listFormer",
+        "parameters" : [ {
+          "description" : "Zero-based page index (0..N)",
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The size of the page to be returned",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "default" : [ "name,ASC" ],
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageAnimalResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Quem ja esteve com voce",
         "tags" : [ "animal-controller" ]
       }
     },
@@ -4263,6 +4484,72 @@
         },
         "summary" : "Quanto o animal custou, somado (Tela 37)",
         "tags" : [ "animal-cost-controller" ]
+      }
+    },
+    "/animals/{animalId}/death" : {
+      "get" : {
+        "description" : "Os numeros do cartao de depois: eventos registrados, quantas pessoas e quantas organizacoes cuidaram dele, e o periodo em que quem le respondeu por ele. 404 no animal que nao foi encerrado.",
+        "operationId" : "daFichaFechada",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClosedLifeResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A ficha fechada do animal",
+        "tags" : [ "animal-death-controller" ]
+      },
+      "post" : {
+        "description" : "So quem responde pelo animal. A veterinaria que o atendeu na ultima noite registra o obito como ato clinico dela, o que e outro registro: ninguem deve descobrir que perdeu o animal por uma notificacao do sistema. Encerra a custodia sem sucessor, encerra as matriculas vivas, poe o fim na linha do tempo e avisa quem cuidava dele — pessoas e organizacoes. NAO apaga nada: para destruir o registro existe o DELETE, e ele e outra coisa.",
+        "operationId" : "registrar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AnimalDeathRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClosedLifeResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Encerra a linha do tempo de um animal que morreu",
+        "tags" : [ "animal-death-controller" ]
       }
     },
     "/animals/{animalId}/duplicates" : {
@@ -5567,6 +5854,37 @@
         },
         "summary" : "Para de cobrar esta pendencia de mim",
         "tags" : [ "due-item-controller" ]
+      }
+    },
+    "/found" : {
+      "post" : {
+        "description" : "PUBLICA e sem conta, de proposito: e usada por quem encontrou o animal na rua e pode ser a unica pessoa com ele nas proximas horas. Devolve o cartao de emergencia inteiro — contatos, alergias, condicoes, medicacao em curso e vacinacao — e nada alem: historico clinico, diagnostico e endereco continuam fora. O acesso fica registrado no log que o tutor le, sem identificar quem buscou. Limitada por IP contra varredura de numeros. 404 com codigo proprio quando o numero nao esta no Petfy.",
+        "operationId" : "procurar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FoundAnimalRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FoundAnimalCardDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Procura um animal pelo numero do microchip",
+        "tags" : [ "found-animal-controller" ]
       }
     },
     "/health-records" : {

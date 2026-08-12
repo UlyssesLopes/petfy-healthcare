@@ -4,8 +4,10 @@ import br.com.petfy.healthcare.domain.dto.AnimalRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.entity.AnimalDeath;
 import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.entity.CustodyNature;
+import br.com.petfy.healthcare.domain.repository.AnimalDeathRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
@@ -20,15 +22,19 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AnimalServiceImpl implements AnimalService {
 
     private final AnimalRepository animalRepository;
+    private final AnimalDeathRepository animalDeathRepository;
     private final CustodyRepository custodyRepository;
     private final CurrentPersonProvider currentPersonProvider;
     private final AnimalAccessGuard animalAccessGuard;
@@ -91,8 +97,41 @@ public class AnimalServiceImpl implements AnimalService {
     @Override
     @Transactional(readOnly = true)
     public Page<AnimalResponseDTO> listAllAnimals(Pageable pageable) {
-        return animalRepository.findAlcancadosPor(currentPersonProvider.require().getPersonId(), LocalDateTime.now(), pageable)
-                .map(this::toResponse);
+        return comDataDeObito(animalRepository.findAlcancadosPor(
+                currentPersonProvider.require().getPersonId(), LocalDateTime.now(), pageable));
+    }
+
+    /**
+     * A lista que recebe o animal que saiu da outra (Tela 33).
+     *
+     * <b>Paginada como a principal</b>, e nao uma lista inteira: quem cuida de animais ha vinte
+     * anos tem mais nomes aqui do que na lista de agora, e essa e a lista que so cresce.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AnimalResponseDTO> queJaEstiveramComigo(Pageable pageable) {
+        return comDataDeObito(custodyRepository.findQueJaEstiveramComAPessoa(
+                currentPersonProvider.require().getPersonId(), LocalDateTime.now(), pageable));
+    }
+
+    /**
+     * Preenche a data de obito da pagina inteira com UMA consulta.
+     *
+     * Um {@code findById} dentro do {@code map} custaria uma ida ao banco por animal — vinte numa
+     * pagina de vinte, e em "quem ja esteve com voce" praticamente todos respondem. E o mesmo N+1
+     * que a V29 tirou da linha do tempo trazendo autoria para dentro da view.
+     */
+    private Page<AnimalResponseDTO> comDataDeObito(Page<Animal> pagina) {
+        List<UUID> ids = pagina.getContent().stream().map(Animal::getAnimalId).toList();
+
+        Map<UUID, LocalDate> obitos = ids.isEmpty()
+                ? Map.of()
+                : animalDeathRepository.findByAnimalIdIn(ids).stream()
+                        .collect(Collectors.toMap(AnimalDeath::getAnimalId, AnimalDeath::getDeceasedOn));
+
+        return pagina.map(animal -> toResponse(animal,
+                animal.getHolder().map(Person::getPersonId).orElse(null),
+                obitos.get(animal.getAnimalId())));
     }
 
     /** Editar o cadastro do animal exige EDITOR - leitor acompanha, nao altera. */
@@ -163,8 +202,22 @@ public class AnimalServiceImpl implements AnimalService {
         return dto.getCastratedAt() != null ? Boolean.TRUE : null;
     }
 
+    /**
+     * A ficha de um animal so, com a data de obito lida a parte.
+     *
+     * Uma consulta por ficha aberta e o custo certo aqui — o que nao pode e uma por LINHA de uma
+     * lista, e para isso existe o {@link #comDataDeObito}.
+     */
     private AnimalResponseDTO toResponse(Animal animal) {
-        return toResponse(animal, animal.getHolder().map(Person::getPersonId).orElse(null));
+        return toResponse(animal,
+                animal.getHolder().map(Person::getPersonId).orElse(null),
+                animalDeathRepository.findById(animal.getAnimalId())
+                        .map(AnimalDeath::getDeceasedOn)
+                        .orElse(null));
+    }
+
+    private AnimalResponseDTO toResponse(Animal animal, UUID holderId) {
+        return toResponse(animal, holderId, null);
     }
 
     /**
@@ -172,8 +225,9 @@ public class AnimalServiceImpl implements AnimalService {
      * dono", que deixou de existir como conceito unico. O nome ficou por
      * compatibilidade do contrato ja publicado.
      */
-    private AnimalResponseDTO toResponse(Animal animal, UUID holderId) {
+    private AnimalResponseDTO toResponse(Animal animal, UUID holderId, LocalDate deceasedOn) {
         return AnimalResponseDTO.builder()
+                .deceasedOn(deceasedOn)
                 .animalId(animal.getAnimalId())
                 .name(animal.getName())
                 .type(animal.getType())

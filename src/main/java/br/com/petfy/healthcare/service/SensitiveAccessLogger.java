@@ -76,6 +76,24 @@ public class SensitiveAccessLogger {
                 .resource(AccessedResource.SHARED_CARD));
     }
 
+    /**
+     * Alguem procurou o animal pelo numero do microchip (Tela 34).
+     *
+     * <b>Este registro E o aviso, hoje.</b> O desenho promete que "avisamos quem responde pelo
+     * animal que ele foi procurado, e por onde" — a segunda metade nao tem de onde sair, porque o
+     * produto nao sabe onde a pessoa esta e pedir a regiao a quem esta na calcada com um animal
+     * seria atrito no pior momento. O que existe e verdadeiro: o tutor abre o log e ve que o
+     * cartao do animal foi aberto por uma busca de microchip, com data e IP.
+     *
+     * Sem ator, pela promessa da propria tela: "nao guardamos quem fez a busca".
+     */
+    public void microchipProcurado(Animal animal) {
+        registrar(SensitiveAccessLog.builder()
+                .animal(animal)
+                .actorType(AccessActorType.MICROCHIP_SEARCH)
+                .resource(AccessedResource.FOUND_CARD));
+    }
+
     private void registrar(SensitiveAccessLog.SensitiveAccessLogBuilder builder) {
         sensitiveAccessLogRepository.save(builder
                 .accessedAt(LocalDateTime.now())

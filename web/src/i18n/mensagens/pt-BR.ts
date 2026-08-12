@@ -142,6 +142,24 @@ export const mensagens = {
   // diz que o combinado nao foi gravado, que e a consequencia que importa para quem esta ali.
   "erro.158": "Não conseguimos gravar os dias combinados. O resto do combinado também não foi salvo — tente de novo.",
 
+  // -------------------------------------------------- o fim da linha do tempo (Tela 33)
+  //
+  // As duas frases mais difíceis de escrever do arquivo, e a regra que valeu é a mesma da
+  // seção 2: o fato primeiro, sem culpar quem preencheu. Quem está nesta tela acabou de perder
+  // o animal, e um "campo inválido" aqui seria uma grosseria.
+  "erro.159": "Confira a data: ela não pode ser no futuro nem antes do nascimento dele.",
+  // Encerrar duas vezes quase sempre é a mesma pessoa em duas abas, ou um toque repetido. A
+  // frase não trata como erro, e diz onde o registro está.
+  "erro.160": "A linha do tempo dele já foi encerrada. O que você preencheu antes está guardado.",
+
+  // --------------------------------------------- a busca de animal encontrado (Tela 34)
+  //
+  // NÃO É UM ERRO, e a frase não pode soar como um. O número pode estar em outro sistema, ou o
+  // chip pode ter sido aplicado e nunca registrado — e quem está lendo isso tem um animal na
+  // frente e precisa saber o que fazer em seguida, não que a busca "falhou".
+  "erro.161":
+    "Este número não está no Petfy. Confira os 15 dígitos e procure uma clínica ou a prefeitura — elas consultam bases que o Petfy não alcança.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -195,6 +213,9 @@ export const mensagens = {
   "entrar.link.apoio": "Sem senha. Você clica no link e entra — serve quando a senha não vem à cabeça.",
   "entrar.criarConta": "Ainda não tem conta? {acao}",
   "entrar.criarConta.acao": "Criar uma agora",
+  // O caminho de quem não vem entrar (Tela 34). A frase é a pergunta que a pessoa tem na cabeça,
+  // e não o nome da funcionalidade: ninguém procura por "consulta de microchip".
+  "entrar.achouUmAnimal": "Achou um animal na rua? Procure pelo microchip, sem criar conta",
 
   // As quatro frases de "por que esta desabilitado". A secao 06 pede que o desabilitado
   // nunca apareca mudo, e que o motivo venha ANTES do gesto — nao depois.
@@ -647,6 +668,9 @@ export const mensagens = {
   "animal.acao.creches": "Creches",
   "animal.acao.compra": "Lançar uma compra",
   "animal.acao.custo": "Quanto custou",
+  // O caminho para a Tela 33. Escrito no infinitivo e sem eufemismo: "encerrar a ficha" ou
+  // "arquivar" faria a pessoa clicar sem saber o que vai encontrar do outro lado.
+  "animal.acao.encerrar": "Encerrar a linha do tempo do {nome}",
   "matricula.titulo": "As creches do {nome}",
   "matricula.apoio": "A comprovação de saúde é do produto, e não da creche: o Petfy compara o que cada organização exige com o que a carteira tem, e refaz essa conta a cada vez que alguém olha.",
   "matricula.oQue": "as matrículas",
@@ -1511,6 +1535,101 @@ export const mensagens = {
   "duplicado.nenhuma.texto":
     "Nenhum outro cadastro tem este microchip. Se o animal tem microchip e ele não está preenchido aqui, vale registrar — é a única pista que permite reconhecer o mesmo bicho visto por duas pessoas.",
   "duplicado.voltar": "Voltar ao paciente",
+
+  // ============================================================ o fim da linha do tempo (Tela 33)
+  //
+  // "Sentimos muito" é a única concessão emocional da tela, e ela está no desenho. Depois disso
+  // o produto fica em silêncio: não manda condolências, não sugere adotar outro, não pergunta a
+  // causa da morte.
+  "fim.titulo": "O {nome} morreu",
+  "fim.apoio":
+    "Sentimos muito. Quando você conseguir, preencha o que souber. Nada aqui tem pressa, e você pode fechar esta tela e voltar depois.",
+
+  // O "o que é" dos estados de carga e de erro. Fala do animal, e não do formulário: quem está
+  // esperando aqui quer ver a ficha dele, não "a tela de encerramento".
+  "fim.oQueE": "a ficha do animal",
+
+  "fim.quando": "Quando foi",
+  "fim.onde": "Onde",
+  "fim.onde.exemplo": "Em casa",
+  "fim.despedida": "Se quiser dizer alguma coisa",
+  "fim.despedida.nota": "Fica na linha do tempo dele, no lugar de quem escreveu.",
+  "fim.opcional": "opcional",
+
+  // O bloco "o que acontece". As três primeiras linhas são efeitos que o servidor produz de
+  // fato; a quarta é o que muda na tela de quem preenche.
+  "fim.acontece": "O que acontece",
+  "fim.acontece.avisos": "Os avisos param hoje. Ninguém mais vai te cobrar uma vacina do {nome}.",
+  "fim.acontece.organizacoes":
+    "Quem cuida dele é avisado, sem que você precise ligar para cada um. A matrícula na creche é encerrada.",
+  "fim.acontece.historico":
+    "O que foi registrado continua aqui, inteiro, para você abrir quando quiser.",
+  "fim.acontece.lista": "O {nome} sai da sua lista de animais e passa a ficar em “quem já esteve com você”.",
+
+  // As duas caixas ao lado do formulário. A primeira responde a pergunta que a tela levanta
+  // sozinha: por que a clínica que atendeu na última noite não fez isso.
+  "fim.porQueSoVoce": "Por que só você encerra",
+  "fim.porQueSoVoce.texto":
+    "A veterinária que atendeu na última noite pode registrar o óbito como ato clínico dela — isso é o trabalho dela. Mas fechar a linha do tempo é de quem responde pelo animal, e não pode acontecer sem essa pessoa. Ninguém deve descobrir que perdeu o animal por uma notificação do sistema.",
+  "fim.oQueNaoFazemos": "O que o Petfy não faz",
+  "fim.oQueNaoFazemos.texto":
+    "Não manda condolências automáticas. Não sugere adotar outro. Não pergunta a causa da morte — se você quiser contar, o campo aberto está aí. Depois disso, o Petfy fica em silêncio sobre ele.",
+
+  "fim.registrar": "Registrar",
+  "fim.registrando": "Registrando…",
+  "fim.agoraNao": "Agora não",
+
+  // A ficha fechada. "Sem tarja preta, sem laço, sem memorial."
+  "fim.ficha.periodo": "{inicio} — {fim}",
+  "fim.ficha.tempoComVoce": "{anos, plural, one {# ano} other {# anos}} com você",
+  "fim.ficha.eventos": "Eventos registrados",
+  "fim.ficha.quemCuidou": "Quem cuidou dele",
+  "fim.ficha.quemCuidou.valor":
+    "{pessoas, plural, one {# pessoa} other {# pessoas}}, {organizacoes, plural, one {# organização} other {# organizações}}",
+  "fim.ficha.verVida": "Ver a vida do {nome}",
+  "fim.ficha.encerradaEm": "Linha do tempo encerrada em {data}.",
+  "fim.ficha.onde": "Onde: {onde}",
+
+  // A lista que recebe o animal que saiu da outra.
+  "anteriores.titulo": "Quem já esteve com você",
+  "anteriores.vazia":
+    "Nenhum animal saiu da sua lista até agora. Aqui ficam os que você cuidou e não cuida mais.",
+  "anteriores.morreuEm": "Morreu em {data}",
+  // O transferido também está nesta lista, e o produto não sabe para quem foi — dizer "morreu"
+  // sobre ele seria mentira, e é por isso que a data vem do óbito e não do fim da custódia.
+  "anteriores.saiu": "Não está mais com você",
+
+  // ==================================================== achei um animal na rua (Tela 34)
+  "encontrado.titulo": "Achou um animal?",
+  "encontrado.apoio":
+    "Se ele tem microchip, um veterinário, uma clínica ou uma ONG podem ler o número em segundos. Digite aqui e encontre quem responde por ele.",
+  "encontrado.numero": "Número do microchip",
+  "encontrado.procurar": "Procurar",
+  "encontrado.procurando": "Procurando…",
+  // A promessa do desenho é "não guardamos quem fez a busca", e ela é verdade: o log registra o
+  // acesso sem ator. A segunda metade — "e por onde" — não existe, e a frase não a promete.
+  "encontrado.semConta":
+    "Não precisa criar conta. Não guardamos quem fez a busca. Quem responde pelo animal vê que ele foi procurado.",
+
+  "encontrado.cartao.marca": "Encontrado · só leitura",
+  "encontrado.ligar": "Ligar para {quem}",
+  // Cadastro sem telefone: o nome aparece de todo jeito, porque saber que existe uma clínica
+  // cuidando dele já ajuda quem está com o animal.
+  "encontrado.semTelefone": "{quem} · sem telefone cadastrado",
+  "encontrado.alergias": "Alergias",
+  "encontrado.condicoes": "Condições",
+  "encontrado.medicacao": "Medicação em curso",
+  "encontrado.vacinacao": "Vacinação",
+  "encontrado.vacina.vencida": "{nome} vencida",
+  "encontrado.vacina.emDia": "{nome} em dia",
+  "encontrado.vacina.chegando": "{nome} · próxima dose em {data}",
+  "encontrado.vacina.semProxima": "{nome} · sem próxima dose marcada",
+  "encontrado.nada": "Nada registrado",
+  "encontrado.rodape":
+    "Quem responde pelo {nome} foi avisado de que ele foi procurado agora. É o mesmo cartão de emergência dele — nada a mais.",
+
+  // O vazio que diz o que fazer em seguida. O texto mora em `erro.161`, e este é o título.
+  "encontrado.vazio.titulo": "Este número não está no Petfy",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

@@ -2,6 +2,7 @@ package br.com.petfy.healthcare.service;
 
 import br.com.petfy.healthcare.domain.entity.Custody;
 import br.com.petfy.healthcare.domain.repository.AnimalCostRepository;
+import br.com.petfy.healthcare.domain.repository.AnimalDeathRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalMergeRequestRepository;
 import br.com.petfy.healthcare.domain.repository.AntiparasiticRepository;
 import br.com.petfy.healthcare.domain.repository.AttendanceRepository;
@@ -56,6 +57,7 @@ public class AnimalPurger {
 
     private final AnimalRepository animalRepository;
     private final AnimalCostRepository animalCostRepository;
+    private final AnimalDeathRepository animalDeathRepository;
     private final AnimalMergeRequestRepository animalMergeRequestRepository;
     private final AttachmentRepository attachmentRepository;
     private final AttachmentStorage attachmentStorage;
@@ -149,6 +151,14 @@ public class AnimalPurger {
         // O custo aponta para o animal, e tambem para o atendimento e para a matricula de onde
         // saiu — entao sai ANTES das duas, senao o delete delas esbarra nesta chave estrangeira.
         animalCostRepository.deleteByAnimalAnimalIdIn(animalIds);
+
+        // O OBITO E FILHA DO ANIMAL PELA PROPRIA CHAVE (Tela 33): o `animal_id` e a PK dela.
+        //
+        // Vale dizer o que este delete significa, porque as duas operacoes se parecem e sao
+        // opostas: encerrar a linha do tempo GUARDA a vida registrada, e apagar o animal a
+        // destroi. Quem chega aqui pediu a segunda coisa — pelo DELETE do animal ou pela exclusao
+        // da conta —, e a linha do obito vai junto com todo o resto.
+        animalDeathRepository.deleteByAnimalIdIn(animalIds);
 
         // filhas: apontam para o animal
         vaccineRepository.deleteByAnimalAnimalIdIn(animalIds);

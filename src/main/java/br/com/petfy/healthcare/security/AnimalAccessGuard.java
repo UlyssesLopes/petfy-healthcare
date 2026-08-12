@@ -60,6 +60,30 @@ public class AnimalAccessGuard {
         return require(animalId, GrantLevel.VIEWER);
     }
 
+    /**
+     * Quem respondia pelo animal ate ele morrer continua lendo a vida dele. <b>Para sempre, e so
+     * leitura.</b>
+     *
+     * A Tela 33 promete isso com todas as letras — "os sete anos de vida dele continuam aqui,
+     * inteiros, para voce abrir quando quiser" — e sem esta excecao a promessa se quebraria no
+     * dia seguinte ao encerramento: a custodia terminou, obito nao tem sucessor que conceda nada,
+     * e o {@code require} responderia 404 a quem passou sete anos registrando aquilo.
+     *
+     * <b>Nao virou uma concessao gravada no encerramento, e a escolha e deliberada.</b> Toda
+     * concessao tem quem a concedeu e quem pode revoga-la; aqui nao ha nem um nem outro. Uma
+     * linha em {@code grants} "concedida por ninguem, revogavel por ninguem" seria uma mentira
+     * sobre a origem daquele acesso, e apareceria na tela de quem cuida do animal como se alguem
+     * tivesse autorizado.
+     *
+     * <b>Leitura e o teto, e nao um detalhe:</b> a excecao vive so no {@code VIEWER} porque
+     * escrever exige responder pelo animal, e ninguem responde por um animal morto. Quem lia por
+     * concessao antes do obito continua com a concessao que tinha — este caminho nao lhe tira
+     * nem lhe da nada.
+     */
+    private boolean respondiaAteOFim(UUID animalId, UUID personId) {
+        return custodyRepository.findEncerradaPorObitoDaPessoa(animalId, personId).isPresent();
+    }
+
     /** Registra vacina, corrige peso, edita o cadastro: custodia ou concessao EDITOR. */
     public Animal requireEscrita(UUID animalId) {
         return require(animalId, GrantLevel.EDITOR);
@@ -158,6 +182,15 @@ public class AnimalAccessGuard {
             return null;
         }
 
+        /*
+         * Quem respondia ate o obito tambem le sem limite, e por uma razao pratica: um escopo
+         * qualquer aqui faria a linha do tempo que ele leu inteira ontem voltar hoje com metade
+         * dos eventos opacos. O animal morreu; o que ele podia ver nao encolheu por causa disso.
+         */
+        if (respondiaAteOFim(animalId, personId)) {
+            return null;
+        }
+
         return concessaoVigente(animalId, personId)
                 .map(Grant::getScopes)
                 .orElseGet(java.util.Set::of);
@@ -202,6 +235,12 @@ public class AnimalAccessGuard {
 
         // custodia primeiro: quem responde pelo animal nao depende de concessao
         if (custodyRepository.findEmCursoDaPessoa(animalId, personId).isPresent()) {
+            return carregar(animalId);
+        }
+
+        // o animal morreu e quem responde por ele era esta pessoa: le, e nao escreve. A checagem
+        // vem antes da concessao porque quem respondia nao tem concessao nenhuma para consultar
+        if (nivelExigido == GrantLevel.VIEWER && respondiaAteOFim(animalId, personId)) {
             return carregar(animalId);
         }
 

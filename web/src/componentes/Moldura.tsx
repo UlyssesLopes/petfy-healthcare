@@ -50,13 +50,29 @@ const PORTAS = ["/entrar", "/criar-conta"];
  */
 const SEM_NAVEGACAO = ["/comecar", "/animais/novo"];
 
+/**
+ * As telas publicas, lidas por quem nao tem conta (Tela 34).
+ *
+ * <b>Lista propria e nao um item em PORTAS</b>, porque as duas coisas se parecem e nao sao a mesma:
+ * uma porta e o comeco de uma sessao, e esta tela nao leva a sessao nenhuma — quem digita um
+ * microchip as 23h com um animal no colo nao esta a caminho de criar conta.
+ *
+ * O efeito hoje e a moldura reduzida, e ela serve pela mesma razao das portas: a tela desenha a
+ * propria marca dentro do cartao. <b>A variante MINIMA do desenho — "sem rodape institucional
+ * entre o dedo e o telefone do veterinario" — ainda nao existe aqui</b>, e quando existir e esta
+ * lista que muda, num lugar so.
+ */
+const PUBLICAS = ["/encontrado"];
+
 type Variante = "completa" | "reduzida";
 
 export function Moldura({ children }: { children: ReactNode }) {
   const caminho = useRouterState({ select: (estado) => estado.location.pathname });
 
   const variante: Variante =
-    PORTAS.includes(caminho) || SEM_NAVEGACAO.includes(caminho) ? "reduzida" : "completa";
+    PORTAS.includes(caminho) || SEM_NAVEGACAO.includes(caminho) || PUBLICAS.includes(caminho)
+      ? "reduzida"
+      : "completa";
 
   /* As portas desenham a propria marca dentro do cartao, e o desenho delas ja e a moldura
      reduzida. Repetir a marca aqui daria duas. */

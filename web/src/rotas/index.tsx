@@ -5,6 +5,7 @@ import { useIntl } from "react-intl";
 import { DeRelance } from "../componentes/DeRelance.tsx";
 import { RegistrarDose } from "../componentes/RegistrarDose.tsx";
 import { useAnimais, type Animal } from "../dados/animais.ts";
+import { useQueJaEstiveramComigo } from "../dados/fim.ts";
 import { useRedeDeCuidado } from "../dados/carteira.ts";
 import { useMeuContexto } from "../dados/contexto.ts";
 import {
@@ -192,6 +193,8 @@ function Inicio() {
             >
               {intl.formatMessage({ id: "home.cadastrarAnimal" })}
             </Link>
+
+            <QuemJaEsteve />
           </div>
 
           {/* ---------------------------------------------------------------- centro: hoje */}
@@ -251,6 +254,61 @@ function Inicio() {
 }
 
 /* ------------------------------------------------------------------------------ pedacos */
+
+/**
+ * "Quem ja esteve com voce" (Tela 33).
+ *
+ * <b>Some quando esta vazia, e nao mostra "nenhum animal saiu da sua lista".</b> E a unica lista
+ * do produto cujo estado vazio e uma boa noticia, e anuncia-lo seria o produto lembrando, todo
+ * dia, de uma perda que ainda nao aconteceu. Quem tem alguem aqui ja sabe.
+ *
+ * <b>Discreta de proposito:</b> abaixo do "cadastrar animal", em texto menor, sem marcador de
+ * pendencia. Estes animais nao pedem nada — e essa e a definicao deles.
+ */
+function QuemJaEsteve() {
+  const intl = useIntl();
+  const anteriores = useQueJaEstiveramComigo();
+
+  const lista = anteriores.data?.content ?? [];
+
+  if (lista.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <div style={{ height: "1px", background: "oklch(0.92 0.006 150)", margin: "12px 0" }}></div>
+
+      <div style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)", padding: "0 12px 10px" }}>
+        {intl.formatMessage({ id: "anteriores.titulo" })}
+      </div>
+
+      {lista.map((animal) => (
+        <Link
+          key={animal.animalId}
+          to="/animais/$animalId"
+          params={{ animalId: animal.animalId! }}
+          style={{ display: "block", padding: "10px 12px", borderRadius: "8px", textDecoration: "none", color: "oklch(0.42 0.015 150)" }}
+        >
+          <div style={{ fontSize: "15px" }}>{animal.name}</div>
+          <div style={{ fontSize: "13px", color: "oklch(0.55 0.015 150)", marginTop: "2px" }}>
+            {/*
+             * O transferido tambem esta nesta lista, e sobre ele o produto nao sabe dizer para
+             * onde foi — entao a linha nao inventa: "nao esta mais com voce". So quem tem data de
+             * obito recebe a frase que fala de morte.
+             */}
+            {animal.deceasedOn === undefined || animal.deceasedOn === null
+              ? intl.formatMessage({ id: "anteriores.saiu" })
+              : intl.formatMessage(
+                  { id: "anteriores.morreuEm" },
+                  { data: intl.formatDate(animal.deceasedOn, { month: "2-digit", year: "numeric", timeZone: "UTC" }) },
+                )}
+          </div>
+        </Link>
+      ))}
+    </>
+  );
+}
 
 function Aviso({ children }: { children: ReactNode }) {
   return (
