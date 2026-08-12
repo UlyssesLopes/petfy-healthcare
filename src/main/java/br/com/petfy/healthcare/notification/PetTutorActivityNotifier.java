@@ -104,6 +104,34 @@ public class PetTutorActivityNotifier {
         }
     }
 
+    /**
+     * "Se recusar, Marcelo e avisado e nada muda para o Code" (Telas 19, 20 e 21).
+     *
+     * <b>So quem convidou recebe, e a mensagem termina dizendo que nada mudou.</b> Um convite recusado
+     * nao e um evento do animal: nenhum co-tutor precisa saber que um terceiro disse nao, e avisar a
+     * todos transformaria uma decisao pessoal em assunto do grupo.
+     *
+     * <b>E NAO carrega motivo</b>, porque nao ha motivo a carregar: o produto nao pergunta por que, e
+     * repassar uma justificativa que ninguem deu seria inventa-la.
+     */
+    public void conviteRecusado(Animal animal, Person quemConvidou, Person quemRecusou,
+                                boolean eraTitularidade) {
+        enviar(List.of(quemConvidou), null, destinatario -> {
+            List<String> linhas = new ArrayList<>();
+
+            linhas.add(String.format("%s nao aceitou %s do %s.",
+                    quemRecusou.getName(),
+                    eraTitularidade ? "receber a responsabilidade" : "dividir o cuidado",
+                    animal.getName()));
+            linhas.add("");
+            linhas.add("Nada muda para o " + animal.getName() + ": quem responde por ele continua "
+                    + "sendo quem respondia.");
+
+            return montar(destinatario,
+                    quemRecusou.getName() + " nao aceitou o convite do " + animal.getName(), linhas);
+        }, "convite de animal recusado");
+    }
+
     private String descrever(PetTutorRole papel) {
         return switch (papel) {
             case HOLDER -> "titular, que decide sobre convites e exclusao";

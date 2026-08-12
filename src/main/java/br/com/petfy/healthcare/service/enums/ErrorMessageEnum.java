@@ -224,6 +224,16 @@ public enum ErrorMessageEnum {
     // Hospedar exige uma organizacao que possa DETER CUSTODIA. Uma clinica que so registra ato
     // clinico nao passa a responder pelo animal por uma semana.
     ORGANIZATION_CANNOT_BOARD(185, "This organization cannot hold custody"),
+    APPOINTMENT_NOT_FOUND(186, "Appointment not found"),
+    // O duplo clique em "Agendar banho": sem esta recusa o mesmo banho apareceria duas vezes as
+    // 09h30, e o tosador marcaria entrada num e deixaria o outro pendurado o dia inteiro.
+    APPOINTMENT_ALREADY_SCHEDULED(187, "This animal already has an appointment at that time"),
+    // Marcar entrada duas vezes, ou entregar um animal que nunca chegou: a agenda e uma maquina de
+    // estados, e pular um passo faria as duas telas discordarem sobre o mesmo banho.
+    APPOINTMENT_WRONG_STATE(188, "This appointment is not in a state that allows that"),
+    // Agendar exige que o petshop ALCANCE o animal. Sem isso, qualquer organizacao poria qualquer
+    // animal na propria agenda — e a agenda e onde aparece o que o tutor compartilhou.
+    ANIMAL_NOT_REACHED_BY_ORGANIZATION(189, "Your organization does not have access to this animal"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

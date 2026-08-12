@@ -212,6 +212,14 @@ export const mensagens = {
   "erro.185":
     "Esta organização não pode responder por um animal. Hospedagem passa a responsabilidade, e não só o acesso.",
 
+  // -------------------------------------------------------- a agenda do petshop (Tela 18)
+  "erro.186": "Não encontramos este agendamento.",
+  "erro.187": "Este animal já tem um horário marcado nesse momento.",
+  "erro.188":
+    "Este agendamento não está no estado que permite isso. Recarregue para ver como ele está agora.",
+  "erro.189":
+    "Sua organização não tem acesso a este animal. Peça acesso a quem cuida dele antes de agendar.",
+
   // -------------------------------------------------------------------- os tres gerais
   //
   // O 400 e o caso que nenhum codigo resolve: o servidor devolve `campo: motivo` com
@@ -1974,6 +1982,80 @@ export const mensagens = {
   "ano.quemCuidou.ninguem": "Ninguém registrou nada sobre ele no período.",
   "ano.paraQueServe":
     "Este é o documento que você leva à próxima consulta, e o que você entrega junto com ele se algum dia ele passar para outra pessoa. Um ano de vida dele, em uma página.",
+
+  // ------------------------------------------------------ Tela 18: a agenda do petshop
+  "agenda.oQueE": "a agenda",
+  "agenda.hoje": "Hoje",
+  "agenda.quantos": "{quantos, plural, =0 {nada marcado} one {1 banho hoje} other {# banhos hoje}}",
+  // O vazio dirige, e não anuncia falha: um dia sem banho marcado é um dia normal.
+  "agenda.vazia": "Nada marcado para hoje.",
+  "agenda.abrir": "Abrir",
+  "agenda.fechar": "Fechar",
+  "agenda.marcarEntrada": "Marcar entrada",
+  "agenda.entregue": "Entregue às {quando}",
+  "agenda.faltou": "Não veio",
+  "agenda.naoVeio": "Marcar que não veio",
+  "agenda.oQuePrecisaSaber": "O que você precisa saber antes de encostar nele",
+  // O estado que a maioria dos produtos esconderia. Um cartão sem as linhas parece um animal sem
+  // restrição nenhuma.
+  "agenda.noEscuro": "O acesso a este animal venceu — você está no escuro",
+  "agenda.semLinhas":
+    "Você não tem acesso às informações deste animal. Peça de novo antes de dar o banho: um cartão vazio não quer dizer que ele não tem restrição.",
+  "agenda.vacinacaoEmDia": "Vacinação em dia",
+  "agenda.vacinacaoAtrasada": "Há vacina vencida na carteira dele",
+  "agenda.eTudoQueOTutorCompartilhou":
+    "É tudo o que quem cuida dele compartilhou, e é tudo o que o banho exige. O histórico clínico existe e não está aqui.",
+  "agenda.algoQueNotou": "Alguma coisa que você notou",
+  // A frase mais importante da tela: observação nunca vira ato clínico sozinha.
+  "agenda.descrevaOQueViu":
+    "Descreva o que viu, não o que acha que é. Isso entra na linha do tempo do {animal} como observação sua, e o veterinário decide o resto.",
+  "agenda.entregarEAvisar": "Entregar e avisar quem cuida dele",
+  "agenda.oQueNuncaVe": "O que você nunca vê",
+  "agenda.oQueNuncaVe.lista":
+    "Diagnósticos, prescrições e exames · histórico de atendimentos · recados e fotos de outras organizações.",
+  "agenda.quatroLinhasBastam":
+    "Quatro linhas de saúde bastam para o banho ser seguro. Pedir mais que isso seria pedir o que não se usa.",
+
+  // -------------------------------------- Telas 19–21: quem recebe o convite de animal
+  "conviteDeAnimal.oQueE": "o convite",
+  "conviteDeAnimal.tipo.coTutoria": "Convite de co-tutoria",
+  "conviteDeAnimal.tipo.transferencia": "Transferência de titularidade",
+  "conviteDeAnimal.tipo.adocao": "Adoção",
+  "conviteDeAnimal.coTutoria.titulo": "{quem} quer dividir o cuidado do {animal} com você",
+  "conviteDeAnimal.coTutoria.resumo":
+    "Você vai ver tudo sobre o {animal} e registrar junto: remédio dado, consulta, o que notou no dia.",
+  "conviteDeAnimal.transferencia.titulo": "{quem} quer passar o {animal} para você",
+  "conviteDeAnimal.transferencia.resumo":
+    "Você passa a responder pelo {animal}. A vida registrada dele vai junto — ela não recomeça no dia em que ele muda de mão.",
+  "conviteDeAnimal.adocao.titulo": "{quem} quer que você adote o {animal}",
+  "conviteDeAnimal.adocao.resumo":
+    "Você passa a responder pelo {animal}. Tudo que o abrigo registrou sobre ele vai junto — você não recebe uma ficha em branco.",
+  "conviteDeAnimal.oQueSignifica": "O que isso significa",
+  "conviteDeAnimal.significa.avisos": "Você passa a receber os avisos de vacina e remédio",
+  "conviteDeAnimal.significa.autoria": "O que você registrar leva o seu nome, para sempre",
+  "conviteDeAnimal.significa.eleContinuaRespondendo":
+    "{quem} continua respondendo pelo {animal}. Você pode sair quando quiser.",
+  "conviteDeAnimal.significa.voceResponde":
+    "Quem responde pelo animal passa a ser você. {quem} continua vendo a vida dele, e deixa de decidir sobre ele.",
+  "conviteDeAnimal.aceitar": "Aceitar",
+  "conviteDeAnimal.aceitando": "Aceitando…",
+  "conviteDeAnimal.recusar": "Recusar",
+  "conviteDeAnimal.recusando": "Recusando…",
+  "conviteDeAnimal.seRecusar": "Se recusar, {quem} é avisado e nada muda para o {animal}.",
+  "conviteDeAnimal.aceito.titulo": "Pronto — o {animal} é seu agora também",
+  "conviteDeAnimal.aceito.agoraVoceAcompanha":
+    "Você já vê tudo sobre ele e pode registrar junto com {quem}.",
+  "conviteDeAnimal.aceito.agoraVoceResponde":
+    "Você responde pelo {animal} a partir de agora. Toda a vida registrada dele veio junto.",
+  "conviteDeAnimal.recusado.titulo": "Convite recusado",
+  "conviteDeAnimal.recusado.nadaMuda":
+    "{quem} foi avisado, e nada muda para o {animal}: quem respondia por ele continua respondendo.",
+  "conviteDeAnimal.verAnimais": "Ver meus animais",
+  "conviteDeAnimal.irParaInicio": "Ir para o início",
+  "conviteDeAnimal.invalido.titulo": "Este convite não vale mais",
+  // A recusa é um estado só, e a tela não inventa a distinção que o backend recusa a dar.
+  "conviteDeAnimal.invalido.oQuePodeSer":
+    "Ele pode ter expirado, já ter sido usado, ter sido cancelado por quem o enviou, ou ter sido endereçado a outro e-mail. Peça um convite novo a quem cuida do animal.",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

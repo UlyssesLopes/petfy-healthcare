@@ -3250,6 +3250,31 @@
         },
         "type" : "object"
       },
+      "PetTutorInvitePreviewResponseDTO" : {
+        "properties" : {
+          "animalName" : {
+            "type" : "string"
+          },
+          "currentHolderName" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "fromOrganization" : {
+            "type" : "boolean"
+          },
+          "invitedByName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "HOLDER", "EDITOR", "VIEWER" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "PetTutorInviteRequestDTO" : {
         "properties" : {
           "email" : {
@@ -3572,6 +3597,86 @@
           },
           "sensitiveAccessLogId" : {
             "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ServiceAppointmentCloseRequestDTO" : {
+        "properties" : {
+          "note" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ServiceAppointmentRequestDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "scheduledAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "animalId", "scheduledAt", "service" ],
+        "type" : "object"
+      },
+      "ServiceAppointmentResponseDTO" : {
+        "properties" : {
+          "animalId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "animalName" : {
+            "type" : "string"
+          },
+          "checkedInAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "completedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "inTheDark" : {
+            "type" : "boolean"
+          },
+          "safetyNotes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ServiceSafetyNoteDTO"
+            },
+            "type" : "array"
+          },
+          "scheduledAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "serviceAppointmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "AGENDADO", "EM_ATENDIMENTO", "CONCLUIDO", "FALTOU" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ServiceSafetyNoteDTO" : {
+        "properties" : {
+          "severity" : {
+            "type" : "string"
+          },
+          "text" : {
             "type" : "string"
           }
         },
@@ -7090,6 +7195,161 @@
         "tags" : [ "colony-controller" ]
       }
     },
+    "/group/appointments" : {
+      "get" : {
+        "description" : "Os compromissos da organizacao declarada, do primeiro ao ultimo horario. Cada linha traz 'o que voce precisa saber antes de encostar nele' — as linhas de seguranca que o ESCOPO da concessao permite, e nada de prontuario. Quando a concessao venceu, a lista vem vazia e `inTheDark` diz por que: um cartao sem as linhas parece um animal sem restricao nenhuma.",
+        "operationId" : "doDia",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "day",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A agenda do dia",
+        "tags" : [ "service-appointment-controller" ]
+      },
+      "post" : {
+        "description" : "Exige que a organizacao ALCANCE o animal: sem isso, qualquer uma poria qualquer animal na propria agenda — e a agenda e onde aparece o que o tutor compartilhou.",
+        "operationId" : "agendar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ServiceAppointmentRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Agenda um banho",
+        "tags" : [ "service-appointment-controller" ]
+      }
+    },
+    "/group/appointments/{appointmentId}/check-in" : {
+      "post" : {
+        "operationId" : "marcarEntrada",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "appointmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Marca a entrada do animal",
+        "tags" : [ "service-appointment-controller" ]
+      }
+    },
+    "/group/appointments/{appointmentId}/deliver" : {
+      "post" : {
+        "description" : "O texto, quando houver, entra na linha do tempo como OBSERVACAO assinada — e nunca como ato clinico: 'descreva o que viu, nao o que acha que e'. Sem texto, nada entra: um banho sem novidade nao e fato de saude, e enche-la de 'deu banho' enterraria o que importa.",
+        "operationId" : "entregar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "appointmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ServiceAppointmentCloseRequestDTO"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Entrega o animal e avisa quem cuida dele",
+        "tags" : [ "service-appointment-controller" ]
+      }
+    },
+    "/group/appointments/{appointmentId}/no-show" : {
+      "post" : {
+        "description" : "A ausencia e informacao, como a falta na creche: um compromisso que some da agenda sem desfecho faz o petshop perder a conta de quem desmarcou e de quem simplesmente nao apareceu.",
+        "operationId" : "faltou",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "appointmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ServiceAppointmentResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O animal nao veio",
+        "tags" : [ "service-appointment-controller" ]
+      }
+    },
     "/group/sponsorships" : {
       "get" : {
         "description" : "Traz o que esta terminando junto com o que esta ativo — e essa lista que mostra, com trinta dias de antecedencia, qual custo vai deixar de ser coberto. Exige organizacao declarada no cabecalho.",
@@ -7970,6 +8230,34 @@
         "tags" : [ "pet-id-controller" ]
       }
     },
+    "/pet-tutor-invites/{token}" : {
+      "get" : {
+        "description" : "Nome do animal, quem convidou, o que esta sendo oferecido e ate quando vale. NAO CONSOME o convite: abrir o link para entender o que esta em jogo nao pode gastar o direito de entrar. E nao traz nada de saude — quem ainda nao aceitou nao alcanca o animal.",
+        "operationId" : "preview",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PetTutorInvitePreviewResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O convite antes de aceitar",
+        "tags" : [ "pet-tutor-invite-controller" ]
+      }
+    },
     "/pet-tutor-invites/{token}/accept" : {
       "post" : {
         "description" : "Quem aceita passa a alcancar o animal por concessao - nao vira titular. A titularidade se transfere por rota propria, e e um fato diferente: dividir o cuidado nao e passar a responsabilidade.",
@@ -7995,6 +8283,27 @@
           }
         },
         "summary" : "Aceita o convite de co-tutor",
+        "tags" : [ "pet-tutor-invite-controller" ]
+      }
+    },
+    "/pet-tutor-invites/{token}/reject" : {
+      "post" : {
+        "description" : "Consome o convite e avisa quem convidou — 'se recusar, ele e avisado e nada muda para o animal'. NAO pede motivo: recusar dividir o cuidado de um animal e uma decisao pessoal, e um campo de justificativa faria o produto pedir a quem disse nao que explicasse o nao.",
+        "operationId" : "reject",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Recusa o convite",
         "tags" : [ "pet-tutor-invite-controller" ]
       }
     },

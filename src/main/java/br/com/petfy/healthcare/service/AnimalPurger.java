@@ -23,6 +23,7 @@ import br.com.petfy.healthcare.domain.repository.ReferralRepository;
 import br.com.petfy.healthcare.domain.repository.CustodyRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalWeightHistoryRepository;
 import br.com.petfy.healthcare.domain.repository.SensitiveAccessLogRepository;
+import br.com.petfy.healthcare.domain.repository.ServiceAppointmentRepository;
 import br.com.petfy.healthcare.domain.repository.SponsorshipRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineCorrectionRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
@@ -85,6 +86,7 @@ public class AnimalPurger {
     private final CareInstructionFulfillmentRepository careInstructionFulfillmentRepository;
     private final ReferralRepository referralRepository;
     private final SponsorshipRepository sponsorshipRepository;
+    private final ServiceAppointmentRepository serviceAppointmentRepository;
 
     /**
      * Apaga os animals informados e todo o rastro deles, o proprio animal incluido.
@@ -204,6 +206,10 @@ public class AnimalPurger {
         sensitiveAccessLogRepository.deleteByAnimalAnimalIdIn(animalIds);
         animalHealthConditionRepository.deleteByAnimalAnimalIdIn(animalIds);
         careInstructionRepository.deleteByAnimalAnimalIdIn(animalIds);
+        // O AGENDAMENTO (V45) e filha direta e nao tem neta: sai em massa. Um animal que vai ao
+        // petshop todo mes acumula dezenas destas linhas, e sem este delete o primeiro cachorro que
+        // alguem tentasse apagar responderia 500.
+        serviceAppointmentRepository.deleteByAnimalAnimalIdIn(animalIds);
         observationRepository.deleteByAnimalAnimalIdIn(animalIds);
         enrollmentRepository.deleteByAnimalAnimalIdIn(animalIds);
 

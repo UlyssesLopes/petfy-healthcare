@@ -19,8 +19,25 @@ public interface PetTutorService {
     /** Titular convida alguem para o animal. Devolve o token uma unica vez. */
     PetTutorInviteResponseDTO invite(UUID animalId, PetTutorInviteRequestDTO request);
 
+    /**
+     * O convite antes de aceitar (Telas 19, 20 e 21).
+     *
+     * <b>Ler nao consome</b>, pela mesma razao do convite de organizacao: abrir o link para entender o
+     * que esta sendo oferecido nao pode gastar o direito de entrar.
+     */
+    br.com.petfy.healthcare.domain.dto.PetTutorInvitePreviewResponseDTO preview(String token);
+
     /** Quem recebeu o convite aceita, autenticado, e passa a ser tutor. */
     PetTutorResponseDTO accept(String token);
+
+    /**
+     * Quem recebeu diz nao.
+     *
+     * <b>Nao pede motivo</b>, e a ausencia e deliberada: recusar dividir o cuidado de um animal — ou
+     * recusar recebe-lo — e uma decisao pessoal, e um campo de justificativa faria o produto pedir a
+     * quem disse nao que explicasse o nao. "Se recusar, Marcelo e avisado e nada muda para o Code."
+     */
+    void reject(String token);
 
     /** Quem cuida do animal, em qualquer papel. Visivel a qualquer tutor. */
     List<PetTutorResponseDTO> listTutors(UUID animalId);

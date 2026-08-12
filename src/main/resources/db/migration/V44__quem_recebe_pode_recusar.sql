@@ -1,0 +1,27 @@
+-- Quem recebe um convite de animal pode RECUSAR (Telas 19, 20 e 21).
+--
+-- <b>Uma coluna, e a razao dela e nao confundir dois fatos que se parecem.</b> O convite ja tinha
+-- `revoked_at`, e reusa-lo seria barato e errado: revogar e o que QUEM CONVIDOU faz quando muda de
+-- ideia, e recusar e o que QUEM RECEBEU faz. Com uma coluna so, a lista de convites do tutor diria
+-- "voce revogou" sobre um convite que a outra pessoa recusou — e ele procuraria no proprio historico
+-- uma acao que nunca praticou.
+--
+-- <b>E os dois desfechos precisam existir separados porque a tela promete um aviso:</b> "se recusar,
+-- Marcelo e avisado e nada muda para o Code." Nao se avisa alguem de uma acao que o proprio sistema
+-- registrou como sendo dele.
+--
+-- ------------------------------------------------------------------ o que NAO entrou junto
+--
+-- <b>Nao ha campo de motivo</b>, e a ausencia e deliberada. Recusar dividir o cuidado de um animal —
+-- ou recusar recebe-lo — e uma decisao pessoal, e um campo de justificativa faria o produto pedir a
+-- quem disse nao que explicasse o nao. A tela diz "nada muda para o Code", e e tudo o que precisa ser
+-- dito.
+ALTER TABLE pet_tutor_invites ADD COLUMN rejected_at timestamp;
+
+-- Nao ha CHECK impedindo `accepted_at` e `rejected_at` juntos.
+--
+-- A regra existe e mora no `isUsable`: um convite so e usavel enquanto nao foi aceito, revogado nem
+-- recusado, e todos os tres caminhos passam por la antes de gravar qualquer coisa. Um CHECK aqui
+-- seria a duplicata certa se o risco fosse insert direto no banco — e nao e: este convite so nasce e
+-- so muda pelo servico, ao contrario do acordo de duas pessoas, cuja regra ("quem pede nao concorda
+-- consigo") protege o animal de quem cuida dele e por isso ganhou CHECK.

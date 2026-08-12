@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './rotas/__root'
 import { Route as IndexRouteImport } from './rotas/index'
+import { Route as AgendaRouteImport } from './rotas/agenda'
 import { Route as ApadrinhamentosRouteImport } from './rotas/apadrinhamentos'
 import { Route as ColoniaRouteImport } from './rotas/colonia'
 import { Route as ComecarRouteImport } from './rotas/comecar'
@@ -22,6 +23,7 @@ import { Route as PacientesRouteImport } from './rotas/pacientes'
 import { Route as AnimaisAnimalIdRouteImport } from './rotas/animais.$animalId'
 import { Route as AnimaisNovoRouteImport } from './rotas/animais.novo'
 import { Route as ConvitesAceitarRouteImport } from './rotas/convites.aceitar'
+import { Route as ConvitesAnimalRouteImport } from './rotas/convites.animal'
 import { Route as OrganizacoesNovaRouteImport } from './rotas/organizacoes.nova'
 import { Route as PacientesAnimalIdRouteImport } from './rotas/pacientes.$animalId'
 import { Route as AnimaisAnimalIdAdocaoRouteImport } from './rotas/animais.$animalId_.adocao'
@@ -48,6 +50,11 @@ import { Route as CrecheMatriculaClassGroupIdEnrollmentIdRouteImport } from './r
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgendaRoute = AgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApadrinhamentosRoute = ApadrinhamentosRouteImport.update({
@@ -108,6 +115,11 @@ const AnimaisNovoRoute = AnimaisNovoRouteImport.update({
 const ConvitesAceitarRoute = ConvitesAceitarRouteImport.update({
   id: '/convites/aceitar',
   path: '/convites/aceitar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConvitesAnimalRoute = ConvitesAnimalRouteImport.update({
+  id: '/convites/animal',
+  path: '/convites/animal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizacoesNovaRoute = OrganizacoesNovaRouteImport.update({
@@ -236,6 +248,7 @@ const CrecheMatriculaClassGroupIdEnrollmentIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
   '/apadrinhamentos': typeof ApadrinhamentosRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
@@ -248,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
   '/convites/aceitar': typeof ConvitesAceitarRoute
+  '/convites/animal': typeof ConvitesAnimalRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
   '/pacientes/$animalId': typeof PacientesAnimalIdRouteWithChildren
   '/animais/$animalId/adocao': typeof AnimaisAnimalIdAdocaoRoute
@@ -273,6 +287,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
   '/apadrinhamentos': typeof ApadrinhamentosRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
@@ -285,6 +300,7 @@ export interface FileRoutesByTo {
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
   '/convites/aceitar': typeof ConvitesAceitarRoute
+  '/convites/animal': typeof ConvitesAnimalRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
   '/pacientes/$animalId': typeof PacientesAnimalIdRouteWithChildren
   '/animais/$animalId/adocao': typeof AnimaisAnimalIdAdocaoRoute
@@ -311,6 +327,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
   '/apadrinhamentos': typeof ApadrinhamentosRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
@@ -323,6 +340,7 @@ export interface FileRoutesById {
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
   '/convites/aceitar': typeof ConvitesAceitarRoute
+  '/convites/animal': typeof ConvitesAnimalRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
   '/pacientes/$animalId': typeof PacientesAnimalIdRouteWithChildren
   '/animais/$animalId_/adocao': typeof AnimaisAnimalIdAdocaoRoute
@@ -350,6 +368,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agenda'
     | '/apadrinhamentos'
     | '/colonia'
     | '/comecar'
@@ -362,6 +381,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId'
     | '/animais/novo'
     | '/convites/aceitar'
+    | '/convites/animal'
     | '/organizacoes/nova'
     | '/pacientes/$animalId'
     | '/animais/$animalId/adocao'
@@ -387,6 +407,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agenda'
     | '/apadrinhamentos'
     | '/colonia'
     | '/comecar'
@@ -399,6 +420,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId'
     | '/animais/novo'
     | '/convites/aceitar'
+    | '/convites/animal'
     | '/organizacoes/nova'
     | '/pacientes/$animalId'
     | '/animais/$animalId/adocao'
@@ -424,6 +446,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/agenda'
     | '/apadrinhamentos'
     | '/colonia'
     | '/comecar'
@@ -436,6 +459,7 @@ export interface FileRouteTypes {
     | '/animais/$animalId'
     | '/animais/novo'
     | '/convites/aceitar'
+    | '/convites/animal'
     | '/organizacoes/nova'
     | '/pacientes/$animalId'
     | '/animais/$animalId_/adocao'
@@ -462,6 +486,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgendaRoute: typeof AgendaRoute
   ApadrinhamentosRoute: typeof ApadrinhamentosRoute
   ColoniaRoute: typeof ColoniaRoute
   ComecarRoute: typeof ComecarRoute
@@ -474,6 +499,7 @@ export interface RootRouteChildren {
   AnimaisAnimalIdRoute: typeof AnimaisAnimalIdRoute
   AnimaisNovoRoute: typeof AnimaisNovoRoute
   ConvitesAceitarRoute: typeof ConvitesAceitarRoute
+  ConvitesAnimalRoute: typeof ConvitesAnimalRoute
   OrganizacoesNovaRoute: typeof OrganizacoesNovaRoute
   AnimaisAnimalIdAdocaoRoute: typeof AnimaisAnimalIdAdocaoRoute
   AnimaisAnimalIdAdotarRoute: typeof AnimaisAnimalIdAdotarRoute
@@ -502,6 +528,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agenda': {
+      id: '/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AgendaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/apadrinhamentos': {
@@ -586,6 +619,13 @@ declare module '@tanstack/react-router' {
       path: '/convites/aceitar'
       fullPath: '/convites/aceitar'
       preLoaderRoute: typeof ConvitesAceitarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/convites/animal': {
+      id: '/convites/animal'
+      path: '/convites/animal'
+      fullPath: '/convites/animal'
+      preLoaderRoute: typeof ConvitesAnimalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizacoes/nova': {
@@ -772,6 +812,7 @@ const PacientesRouteWithChildren = PacientesRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgendaRoute: AgendaRoute,
   ApadrinhamentosRoute: ApadrinhamentosRoute,
   ColoniaRoute: ColoniaRoute,
   ComecarRoute: ComecarRoute,
@@ -784,6 +825,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnimaisAnimalIdRoute: AnimaisAnimalIdRoute,
   AnimaisNovoRoute: AnimaisNovoRoute,
   ConvitesAceitarRoute: ConvitesAceitarRoute,
+  ConvitesAnimalRoute: ConvitesAnimalRoute,
   OrganizacoesNovaRoute: OrganizacoesNovaRoute,
   AnimaisAnimalIdAdocaoRoute: AnimaisAnimalIdAdocaoRoute,
   AnimaisAnimalIdAdotarRoute: AnimaisAnimalIdAdotarRoute,

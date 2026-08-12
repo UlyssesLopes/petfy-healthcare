@@ -124,6 +124,74 @@ public class PetTutorServiceImpl implements PetTutorService {
      * respondem igual.</b> Distinguir diria a quem tenta adivinhar qual parte errou -
      * e um convite de animal e o que separa um estranho da carteira inteira.
      */
+    /**
+     * O convite antes de aceitar (Telas 19, 20 e 21).
+     *
+     * <b>Nao consome, e nao entrega saude.</b> Quem ainda nao aceitou nao alcanca o animal: viaja
+     * daqui o nome dele, quem convidou, o que esta sendo oferecido e ate quando vale. Mandar condicao,
+     * vacina ou peso entregaria o prontuario a quem tem um link — o oposto do que o convite existe
+     * para proteger.
+     *
+     * <b>E confere o e-mail como o {@code accept} confere</b>, com a mesma resposta unica para todos
+     * os motivos. Uma previa mais permissiva que o aceite transformaria a leitura num oraculo: quem
+     * tivesse um link saberia o nome do animal e de quem cuida dele sem nunca poder aceitar.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public br.com.petfy.healthcare.domain.dto.PetTutorInvitePreviewResponseDTO preview(String token) {
+        Person quemLe = currentPersonProvider.require();
+
+        PetTutorInvite invite = petTutorInviteRepository.findByTokenHash(opaqueTokenService.hash(token))
+                .filter(i -> i.isUsable(LocalDateTime.now()))
+                .filter(i -> i.getEmail().equalsIgnoreCase(quemLe.getEmail()))
+                .orElseThrow(PetTutorServiceImpl::conviteInvalido);
+
+        Custody atual = custodyRepository.findEmCurso(invite.getAnimal().getAnimalId()).orElse(null);
+
+        Organization abrigo = atual == null ? null : atual.getHolderOrganization();
+
+        return br.com.petfy.healthcare.domain.dto.PetTutorInvitePreviewResponseDTO.builder()
+                .animalName(invite.getAnimal().getName())
+                .invitedByName(invite.getCreatedBy().getName())
+                .role(invite.getRole())
+                // e o que separa a Tela 20 da 21: receber de um amigo e adotar de um abrigo sao a
+                // mesma mecanica e nao sao a mesma frase
+                .fromOrganization(abrigo != null)
+                .currentHolderName(abrigo != null
+                        ? abrigo.getName()
+                        : (atual == null || atual.getHolderPerson() == null
+                                ? null : atual.getHolderPerson().getName()))
+                .expiresAt(invite.getExpiresAt())
+                .build();
+    }
+
+    /**
+     * Quem recebeu diz nao.
+     *
+     * <b>Consome o convite e avisa quem convidou</b> — "se recusar, Marcelo e avisado e nada muda para
+     * o Code". O aviso e metade da promessa: sem ele, quem convidou ficaria esperando indefinidamente
+     * uma resposta que ja veio.
+     *
+     * <b>Grava em coluna propria, e nao no {@code revokedAt}</b>: revogar e o que quem convidou faz, e
+     * a lista dele diria "voce revogou" sobre uma decisao que nao foi dele.
+     */
+    @Override
+    @Transactional
+    public void reject(String token) {
+        Person quemRecusa = currentPersonProvider.require();
+
+        PetTutorInvite invite = petTutorInviteRepository.findByTokenHash(opaqueTokenService.hash(token))
+                .filter(i -> i.isUsable(LocalDateTime.now()))
+                .filter(i -> i.getEmail().equalsIgnoreCase(quemRecusa.getEmail()))
+                .orElseThrow(PetTutorServiceImpl::conviteInvalido);
+
+        invite.setRejectedAt(LocalDateTime.now());
+        petTutorInviteRepository.save(invite);
+
+        petTutorActivityNotifier.conviteRecusado(invite.getAnimal(), invite.getCreatedBy(),
+                quemRecusa, invite.transfereTitularidade());
+    }
+
     @Override
     @Transactional
     public PetTutorResponseDTO accept(String token) {

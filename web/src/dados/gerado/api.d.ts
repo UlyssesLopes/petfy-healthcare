@@ -1247,6 +1247,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/group/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A agenda do dia
+         * @description Os compromissos da organizacao declarada, do primeiro ao ultimo horario. Cada linha traz 'o que voce precisa saber antes de encostar nele' — as linhas de seguranca que o ESCOPO da concessao permite, e nada de prontuario. Quando a concessao venceu, a lista vem vazia e `inTheDark` diz por que: um cartao sem as linhas parece um animal sem restricao nenhuma.
+         */
+        get: operations["doDia"];
+        put?: never;
+        /**
+         * Agenda um banho
+         * @description Exige que a organizacao ALCANCE o animal: sem isso, qualquer uma poria qualquer animal na propria agenda — e a agenda e onde aparece o que o tutor compartilhou.
+         */
+        post: operations["agendar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/appointments/{appointmentId}/check-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marca a entrada do animal */
+        post: operations["marcarEntrada"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/appointments/{appointmentId}/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Entrega o animal e avisa quem cuida dele
+         * @description O texto, quando houver, entra na linha do tempo como OBSERVACAO assinada — e nunca como ato clinico: 'descreva o que viu, nao o que acha que e'. Sem texto, nada entra: um banho sem novidade nao e fato de saude, e enche-la de 'deu banho' enterraria o que importa.
+         */
+        post: operations["entregar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/appointments/{appointmentId}/no-show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * O animal nao veio
+         * @description A ausencia e informacao, como a falta na creche: um compromisso que some da agenda sem desfecho faz o petshop perder a conta de quem desmarcou e de quem simplesmente nao apareceu.
+         */
+        post: operations["faltou"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/group/sponsorships": {
         parameters: {
             query?: never;
@@ -1683,6 +1764,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pet-tutor-invites/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O convite antes de aceitar
+         * @description Nome do animal, quem convidou, o que esta sendo oferecido e ate quando vale. NAO CONSOME o convite: abrir o link para entender o que esta em jogo nao pode gastar o direito de entrar. E nao traz nada de saude — quem ainda nao aceitou nao alcanca o animal.
+         */
+        get: operations["preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pet-tutor-invites/{token}/accept": {
         parameters: {
             query?: never;
@@ -1697,6 +1798,26 @@ export interface paths {
          * @description Quem aceita passa a alcancar o animal por concessao - nao vira titular. A titularidade se transfere por rota propria, e e um fato diferente: dividir o cuidado nao e passar a responsabilidade.
          */
         post: operations["accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pet-tutor-invites/{token}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recusa o convite
+         * @description Consome o convite e avisa quem convidou — 'se recusar, ele e avisado e nada muda para o animal'. NAO pede motivo: recusar dividir o cuidado de um animal e uma decisao pessoal, e um campo de justificativa faria o produto pedir a quem disse nao que explicasse o nao.
+         */
+        post: operations["reject"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3603,6 +3724,16 @@ export interface components {
             /** Format: double */
             weight?: number;
         };
+        PetTutorInvitePreviewResponseDTO: {
+            animalName?: string;
+            currentHolderName?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            fromOrganization?: boolean;
+            invitedByName?: string;
+            /** @enum {string} */
+            role?: "HOLDER" | "EDITOR" | "VIEWER";
+        };
         PetTutorInviteRequestDTO: {
             email: string;
             /** Format: int32 */
@@ -3732,6 +3863,38 @@ export interface components {
             resource?: "VACCINES" | "HEALTH_RECORDS" | "VACCINE_CORRECTIONS" | "HEALTH_RECORD_CORRECTIONS" | "ATTACHMENTS" | "SHARED_CARD" | "FOUND_CARD";
             /** Format: uuid */
             sensitiveAccessLogId?: string;
+        };
+        ServiceAppointmentCloseRequestDTO: {
+            note?: string;
+        };
+        ServiceAppointmentRequestDTO: {
+            /** Format: uuid */
+            animalId: string;
+            /** Format: date-time */
+            scheduledAt: string;
+            service: string;
+        };
+        ServiceAppointmentResponseDTO: {
+            /** Format: uuid */
+            animalId?: string;
+            animalName?: string;
+            /** Format: date-time */
+            checkedInAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
+            inTheDark?: boolean;
+            safetyNotes?: components["schemas"]["ServiceSafetyNoteDTO"][];
+            /** Format: date-time */
+            scheduledAt?: string;
+            service?: string;
+            /** Format: uuid */
+            serviceAppointmentId?: string;
+            /** @enum {string} */
+            status?: "AGENDADO" | "EM_ATENDIMENTO" | "CONCLUIDO" | "FALTOU";
+        };
+        ServiceSafetyNoteDTO: {
+            severity?: string;
+            text?: string;
         };
         SharedConditionDTO: {
             description?: string;
@@ -5968,6 +6131,122 @@ export interface operations {
             };
         };
     };
+    doDia: {
+        parameters: {
+            query?: {
+                day?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"][];
+                };
+            };
+        };
+    };
+    agendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceAppointmentRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"];
+                };
+            };
+        };
+    };
+    marcarEntrada: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"];
+                };
+            };
+        };
+    };
+    entregar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ServiceAppointmentCloseRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"];
+                };
+            };
+        };
+    };
+    faltou: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ServiceAppointmentResponseDTO"];
+                };
+            };
+        };
+    };
     daOrganizacao: {
         parameters: {
             query?: never;
@@ -6667,6 +6946,28 @@ export interface operations {
             };
         };
     };
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PetTutorInvitePreviewResponseDTO"];
+                };
+            };
+        };
+    };
     accept: {
         parameters: {
             query?: never;
@@ -6686,6 +6987,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["PetTutorResponseDTO"];
                 };
+            };
+        };
+    };
+    reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -115,7 +115,10 @@ class AnimalPurgerCoverageContainerTest extends PostgresContainerTest {
             // primeiro esbarraria nessa chave em todo animal de abrigo que tenha padrinho.
             //
             // Vale dizer o que se perde: e o registro de que alguem bancou o cuidado daquele animal.
-            "sponsorships");
+            "sponsorships",
+            // O AGENDAMENTO (V45) e filha direta e sem neta: sai em massa. Um animal que vai ao
+            // petshop todo mes acumula dezenas destas linhas.
+            "service_appointments");
 
     /**
      * Quem chega a {@code animals}, direta ou indiretamente.
