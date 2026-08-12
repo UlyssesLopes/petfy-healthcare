@@ -73,6 +73,7 @@ public class PersonServiceImpl implements PersonService {
     private final AttachmentRepository attachmentRepository;
     private final br.com.petfy.healthcare.domain.repository.ReferralRepository referralRepository;
     private final br.com.petfy.healthcare.domain.repository.SponsorshipRepository sponsorshipRepository;
+    private final br.com.petfy.healthcare.domain.repository.GroupApprovalRepository groupApprovalRepository;
 
     @Override
     public PersonResponseDTO createPerson(PersonRequestDTO request) {
@@ -353,6 +354,22 @@ public class PersonServiceImpl implements PersonService {
         // o laudo continua valendo sem quem o subiu, mas um encaminhamento e uma conversa entre duas
         // pessoas nomeadas, e sem uma das duas a linha nao diz mais nada.
         referralRepository.deleteAll(referralRepository.findEnvolvendoPessoa(personId));
+
+        /*
+         * O ACORDO DE DUAS PESSOAS SAI TAMBEM, e este defeito estava aberto desde o bloco 6.
+         *
+         * A tabela aponta para `persons` QUATRO vezes — quem pediu (NOT NULL), sobre quem, para quem,
+         * e quem decidiu. Ficou escondido porque o caminho comum apagava o animal junto, e o
+         * `AnimalPurger` levava o pedido com ele; o caso que faltava e o do animal que SOBREVIVE a
+         * exclusao — que passou a ser a regra quando o encerramento passou a exigir destino para cada
+         * animal.
+         *
+         * <b>O que se perde, e vale dizer:</b> o registro de que duas pessoas concordaram com algo
+         * irreversivel num animal que continua vivo. E dado de quem pediu para ser esquecido, e o
+         * EFEITO daquele acordo continua no animal — a adocao que aconteceu, o obito que encerrou a
+         * linha do tempo. O que sai e a papeleta, e nao o fato.
+         */
+        groupApprovalRepository.deleteAll(groupApprovalRepository.findEnvolvendoPessoa(personId));
 
         grantRepository.deleteAll(grantRepository.findDaPessoa(personId));
 

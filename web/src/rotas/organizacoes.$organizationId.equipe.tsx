@@ -16,16 +16,16 @@ import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
- * A "Tela 16 Â· administracao â€” Equipe, funcoes e desligamento", de
+ * A "Tela 16 · administracao — Equipe, funcoes e desligamento", de
  * `design/IdentidadeVisual/Telas Petfy - Organizacao.dc.html`.
  *
  * <b>A TELA ESTAVA A UM QUARTO DO DESENHO, e o que faltava era backend.</b> Ela dizia isso em
- * vez de desenhar uma tabela vazia â€” a armadilha que a secao 06 nomeia: <b>vazio nao e a mesma
+ * vez de desenhar uma tabela vazia — a armadilha que a secao 06 nomeia: <b>vazio nao e a mesma
  * coisa que nao existe</b>. Uma tabela de equipe com "nenhum membro" seria mentira, porque os
  * membros existiam e o produto e que nao sabia mostra-los.
  *
  * As tres coisas que faltavam entraram, e por isso a tela tem agora as quatro colunas do
- * desenho â€” pessoa, funcao, o que ela registra e "ajustar" â€” mais o desligamento:
+ * desenho — pessoa, funcao, o que ela registra e "ajustar" — mais o desligamento:
  *
  * <ul>
  *   <li><b>`GET /organizations/members`</b> devolve quem ja entrou, com funcao, "desde" e o
@@ -39,7 +39,7 @@ import { lerSessao } from "../dados/sessao.ts";
  *
  * <b>A ultima parte que dependia de backend fechou.</b> Quem JA tem conta no Petfy agora aceita
  * o convite pela tela `/convites/aceitar`, sem precisar criar uma segunda conta com outro e-mail
- * â€” que era o que o `inviteToken` do `PersonRequestDTO`, unico caminho de aceite ate aqui, na
+ * — que era o que o `inviteToken` do `PersonRequestDTO`, unico caminho de aceite ate aqui, na
  * pratica exigia da veterinaria que ja usava o produto.
  */
 
@@ -200,7 +200,7 @@ function Equipe() {
                               nisso. Dizer o vazio aqui inventaria uma cobranca.
                             */}
                             {membro.professionalCredential !== undefined
-                              ? ` Â· ${membro.professionalCredential}`
+                              ? ` · ${membro.professionalCredential}`
                               : ""}
                           </div>
                         </div>
@@ -319,7 +319,7 @@ function Equipe() {
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {/* O aviso ambar que morava aqui dizia que quem ja tem conta nao conseguia aceitar.
                   Ele saiu junto com o defeito: agora os dois caminhos existem, e o que resta e
-                  explicar QUAL deles cada pessoa vai usar â€” que e informacao util, e nao desculpa. */}
+                  explicar QUAL deles cada pessoa vai usar — que e informacao util, e nao desculpa. */}
               <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", background: "oklch(0.975 0.004 150)", padding: "22px 24px", fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
                 {intl.formatMessage({ id: "equipe.comoAceita" })}
               </div>

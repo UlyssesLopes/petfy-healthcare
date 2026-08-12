@@ -41,4 +41,26 @@ public interface GroupApprovalRepository extends JpaRepository<GroupApproval, UU
 
     void deleteByAnimalAnimalIdIn(List<UUID> animalIds);
 
+    /**
+     * Todo pedido em que esta pessoa aparece — para a exclusao de conta.
+     *
+     * <b>As QUATRO colunas, e nao so quem pediu.</b> A tabela aponta para {@code persons} quatro
+     * vezes — quem pediu, sobre quem, para quem, e quem decidiu — e a primeira e NOT NULL. Esquecer
+     * qualquer uma faz o {@code DELETE /persons/me} responder 500 para quem tiver participado de um
+     * acordo de duas pessoas num animal que SOBREVIVE a exclusao.
+     *
+     * <b>O animal que morre com a conta ja estava coberto</b> pelo {@code AnimalPurger}, e e por isso
+     * que o defeito ficou escondido desde o bloco 6: o caminho comum apagava o animal junto, e com
+     * ele o pedido. O caso que faltava e o do animal que fica — e ele passou a ser a regra quando o
+     * encerramento passou a exigir que cada animal tenha destino.
+     *
+     * <b>Nao ha guarda de schema para FK que aponta para {@code persons}</b>, so para {@code animals}
+     * — entao esta consulta e escrita a mao, como o silencio de pendencia e a credencial antes dela.
+     */
+    @Query("select a from GroupApproval a where a.requestedBy.personId = :personId "
+            + "or a.targetPerson.personId = :personId "
+            + "or a.toPerson.personId = :personId "
+            + "or a.decidedBy.personId = :personId")
+    List<GroupApproval> findEnvolvendoPessoa(@Param("personId") UUID personId);
+
 }
