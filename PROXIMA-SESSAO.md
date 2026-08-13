@@ -15,9 +15,26 @@
 | PR | Conteúdo | Estado |
 |---|---|---|
 | **#61** | Bloco 6b — Tela 45 | **mergeado** |
-| **#62** | Blocos 7, 8 e 9 | **aberto**, esperando seu comando |
+| **#62** | Blocos 7 e 8 | **mergeado** |
+| **#63** | Bloco 9 — as duas últimas telas | **mergeado** |
+| **#64** | As duas dívidas: o `Â·` e o acordo na exclusão | **aberto**, CI verde |
 
-**1001 casos no backend, 51 no front, `Skipped: 0`.**
+**1002 casos no backend, 51 no front, `Skipped: 0`.** A `main` está em `bb4df76`.
+
+## O banco local foi zerado
+
+`DROP SCHEMA public CASCADE` e o Flyway reconstruiu: **as 46 migrations aplicam do zero, em ordem,
+sem erro** — em 1,3 s. Zero registros em tudo. O catálogo de vacinas fica com 11 linhas de propósito:
+é dado de referência que uma migration semeia, não registro de usuário.
+
+## A conferência no navegador começou
+
+A extensão conectou. **Três telas públicas conferidas, todas limpas** — `/criar-conta`, `/encontrado`
+e `/entrar`: acentuação correta, nenhum `Â·`, nada quebrado.
+
+**As autenticadas não foram abertas**, porque o banco está vazio por pedido — quem cria os dados é
+você. Quando houver conta e animal, as que mais valem olhar são: `/pacientes` e
+`/organizacoes/{id}/equipe` (onde o `Â·` estava), `/agenda`, `/animais/{id}/ano` e `/conta`.
 
 ## Os três achados desta sessão, e o segundo é o maior
 
