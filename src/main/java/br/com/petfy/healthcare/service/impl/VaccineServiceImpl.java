@@ -72,6 +72,33 @@ public class VaccineServiceImpl implements VaccineService {
     public VaccineResponseDTO updateVaccine(UUID id, VaccineRequestDTO request) {
         Vaccine existing = buscarAlcancavel(id);
 
+        /*
+         * A GUARDA DE DOSE DUPLICADA VALE NA EDICAO, e ela vem ANTES DE TUDO.
+         *
+         * Ate aqui so a criacao passava por ela, e estava escrito no `VaccineFactory` que a edicao
+         * ficava de fora de proposito — mudar a data para bater com outro registro seria raro e
+         * deixaria rastro no log de correcao. Rastro nao e guarda: a duplicata nascida de uma edicao
+         * dobra a dose no historico exatamente como a nascida de duas gravacoes.
+         *
+         * <b>Antes do `recordByPerson` porque este metodo NAO e transacional</b>: o log grava na
+         * hora, e recusar depois dele deixaria uma correcao registrada para uma edicao que nunca
+         * aconteceu — o rastro passaria a mentir, que e pior do que nao existir.
+         *
+         * O animal e resolvido aqui em cima pelo mesmo motivo: a duplicata tem de ser procurada no
+         * animal de DESTINO, e mover a vacina de animal e uma das formas de criar uma.
+         */
+        Animal animalDestino = request.getAnimalId() != null
+                ? animalAccessGuard.requireEscrita(request.getAnimalId())
+                : existing.getAnimal();
+
+        vaccineFactory.recusarDoseDuplicada(
+                animalDestino,
+                // o catalogo nao e editavel: o que vale e o que o registro ja tem
+                existing.getCatalog(),
+                request.getVaccineName() != null ? request.getVaccineName() : existing.getVaccineName(),
+                request.getApplicationDate() != null ? request.getApplicationDate() : existing.getApplicationDate(),
+                existing.getVaccineId());
+
         // o snapshot sai antes dos setters. O tutor nao tem janela de correcao -
         // a carteira e dele - mas deixa rastro igual: se so o veterinario
         // registrasse, o historico contaria meia verdade
@@ -83,7 +110,7 @@ public class VaccineServiceImpl implements VaccineService {
         if (request.getDescription() != null) existing.setDescription(request.getDescription());
 
         if (request.getAnimalId() != null) {
-            existing.setAnimal(animalAccessGuard.requireEscrita(request.getAnimalId()));
+            existing.setAnimal(animalDestino);
         }
 
         if (request.getOrganizationId() != null) {

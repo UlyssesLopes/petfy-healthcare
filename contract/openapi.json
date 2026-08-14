@@ -221,6 +221,10 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "sourceCareInstructionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "sourceEnrollmentId" : {
             "format" : "uuid",
             "type" : "string"
@@ -276,6 +280,10 @@
           },
           "recurrence" : {
             "enum" : [ "MENSAL" ],
+            "type" : "string"
+          },
+          "sourceCareInstructionId" : {
+            "format" : "uuid",
             "type" : "string"
           },
           "sourceEnrollmentId" : {
@@ -2934,6 +2942,55 @@
         },
         "type" : "object"
       },
+      "PagePersonNotificationResponseDTO" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PersonNotificationResponseDTO"
+            },
+            "type" : "array"
+          },
+          "empty" : {
+            "type" : "boolean"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "number" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "numberOfElements" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "size" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sort" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SortObject"
+            },
+            "type" : "array"
+          },
+          "totalElements" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPages" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "PageSensitiveAccessLogResponseDTO" : {
         "properties" : {
           "content" : {
@@ -3244,6 +3301,32 @@
         },
         "type" : "object"
       },
+      "PersonNotificationResponseDTO" : {
+        "properties" : {
+          "body" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "event" : {
+            "type" : "string"
+          },
+          "personNotificationId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "readAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "subject" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "PersonRequestDTO" : {
         "properties" : {
           "acceptedTerms" : {
@@ -3310,6 +3393,29 @@
           },
           "updateDate" : {
             "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PersonSessionResponseDTO" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "current" : {
+            "type" : "boolean"
+          },
+          "personSessionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "revokedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "userAgent" : {
             "type" : "string"
           }
         },
@@ -6936,6 +7042,14 @@
       "post" : {
         "description" : "Devolve o JWT. Trocar a senha invalida os tokens emitidos antes, entao o cliente recebe 401 num token que ainda nao expirou - e precisa distinguir isso de expiracao.",
         "operationId" : "login",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "User-Agent",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -8317,6 +8431,129 @@
         "tags" : [ "person-controller" ]
       }
     },
+    "/persons/me/notifications" : {
+      "get" : {
+        "description" : "O texto vem pronto do banco, e nao remontado a partir do estado atual: o aviso e um FATO, e continua sendo o que a pessoa leu mesmo depois de o fato deixar de valer. E o mesmo texto que foi por e-mail.",
+        "operationId" : "listMyNotifications",
+        "parameters" : [ {
+          "description" : "Zero-based page index (0..N)",
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The size of the page to be returned",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagePersonNotificationResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Os seus avisos, do mais novo para o mais velho",
+        "tags" : [ "person-notification-controller" ]
+      }
+    },
+    "/persons/me/notifications/read" : {
+      "post" : {
+        "description" : "Uma escrita so, e nao uma por aviso. Devolve quantos deixaram de estar por ler.",
+        "operationId" : "markAllAsRead",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "int32",
+                  "type" : "integer"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Marca todos como lidos",
+        "tags" : [ "person-notification-controller" ]
+      }
+    },
+    "/persons/me/notifications/unread-count" : {
+      "get" : {
+        "description" : "Rota propria porque a marca no sino e perguntada de qualquer tela: carregar uma pagina de avisos so para contar seria pagar a leitura inteira para mostrar um numero.",
+        "operationId" : "countMineUnread",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Quantos avisos ainda nao foram lidos",
+        "tags" : [ "person-notification-controller" ]
+      }
+    },
+    "/persons/me/notifications/{personNotificationId}/read" : {
+      "post" : {
+        "description" : "Ler duas vezes nao reescreve a data: 'quando ela viu' e a PRIMEIRA vez que viu. Aviso de outra pessoa responde 404.",
+        "operationId" : "markAsRead",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "personNotificationId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PersonNotificationResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Marca um aviso como lido",
+        "tags" : [ "person-notification-controller" ]
+      }
+    },
     "/persons/me/password" : {
       "put" : {
         "description" : "Exige a senha atual, e derruba as sessoes abertas: quem trocou porque desconfiou de acesso indevido nao teria ganhado nada se o token do invasor continuasse valendo. O cliente recebe 401 em token que ainda nao expirou.",
@@ -8368,6 +8605,51 @@
         },
         "summary" : "Declara um registro profissional",
         "tags" : [ "person-controller" ]
+      }
+    },
+    "/persons/me/sessions" : {
+      "get" : {
+        "description" : "Das mais novas para as mais velhas, incluindo as ja encerradas. NAO HA LOCALIZACAO: o produto nao guarda de onde alguem entra, e um IP nao ajudaria ninguem a reconhecer o proprio aparelho. O que identifica e o navegador e quando comecou.",
+        "operationId" : "listMySessions",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PersonSessionResponseDTO"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Os aparelhos conectados a sua conta",
+        "tags" : [ "person-session-controller" ]
+      }
+    },
+    "/persons/me/sessions/{personSessionId}" : {
+      "delete" : {
+        "description" : "O token daquela entrada para de valer na proxima requisicao. ENCERRAR NAO APAGA: a linha fica com a data, porque quem encerra por suspeita de acesso indevido quer que o registro permaneca. Encerrar a sessao atual e sair, e e permitido — a tela avisa antes, o servidor nao impede.",
+        "operationId" : "revokeSession",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "personSessionId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Encerra um aparelho",
+        "tags" : [ "person-session-controller" ]
       }
     },
     "/pet-id/import-pet-id-card" : {

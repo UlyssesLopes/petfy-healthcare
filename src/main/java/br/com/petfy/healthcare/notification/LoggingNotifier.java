@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@org.springframework.beans.factory.annotation.Qualifier("canalExterno")
 @ConditionalOnProperty(name = "petfy.notifications.channel", havingValue = "log", matchIfMissing = true)
 public class LoggingNotifier implements Notifier {
 

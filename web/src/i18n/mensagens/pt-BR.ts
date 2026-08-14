@@ -226,6 +226,11 @@ export const mensagens = {
   "erro.190":
     "Dê um destino a cada animal antes de encerrar a conta. Passe cada um para outra pessoa — a vida registrada deles vai junto e não se apaga com a sua conta.",
   "erro.191": "Escreva ao menos três letras para buscar.",
+  // Os dois dizem "não encontramos", e não "não é seu": o servidor responde 404 para aviso e
+  // sessão de outra pessoa justamente para não confirmar que existem. A frase da tela não pode
+  // desfazer isso.
+  "erro.192": "Não encontramos este aviso.",
+  "erro.193": "Não encontramos esta sessão.",
 
   // -------------------------------------------------------------------- os tres gerais
   //

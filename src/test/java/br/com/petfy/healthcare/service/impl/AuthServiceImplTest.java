@@ -23,6 +23,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,6 +57,10 @@ class AuthServiceImplTest {
     @Mock
     private JwtService jwtService;
 
+    /* Toda entrada vira um aparelho na lista da Tela 36, desde a V50. */
+    @Mock
+    private br.com.petfy.healthcare.domain.repository.PersonSessionRepository personSessionRepository;
+
     /**
      * A metrica de tentativa de login e efeito colateral, nao regra: mockada para
      * os testes seguirem falando so sobre autenticacao.
@@ -83,7 +88,8 @@ class AuthServiceImplTest {
     void deveAutenticarQualquerPessoaPelaMesmaBusca() {
         when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
         when(passwordEncoder.matches("s3nhaForte", HASH)).thenReturn(true);
-        when(jwtService.generateToken(EMAIL, PERSON_ID)).thenReturn("token");
+        when(jwtService.generateToken(eq(EMAIL), eq(PERSON_ID), any())).thenReturn("token");
+        when(personSessionRepository.save(any())).thenAnswer(invocacao -> invocacao.getArgument(0));
         when(jwtService.getExpirationMinutes()).thenReturn(120L);
 
         var result = authService.login(request("s3nhaForte"));
@@ -102,7 +108,8 @@ class AuthServiceImplTest {
     void respostaDeveDizerSeHaCredencialAtiva() {
         when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
         when(passwordEncoder.matches("s3nhaForte", HASH)).thenReturn(true);
-        when(jwtService.generateToken(EMAIL, PERSON_ID)).thenReturn("token");
+        when(jwtService.generateToken(eq(EMAIL), eq(PERSON_ID), any())).thenReturn("token");
+        when(personSessionRepository.save(any())).thenAnswer(invocacao -> invocacao.getArgument(0));
         when(credentialRepository.existsAtivaPorEmail(EMAIL, CredentialStatus.SUSPENSO)).thenReturn(true);
 
         assertThat(authService.login(request("s3nhaForte")).isProfessional()).isTrue();
@@ -113,7 +120,8 @@ class AuthServiceImplTest {
     void semCredencialNaoEProfissional() {
         when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
         when(passwordEncoder.matches("s3nhaForte", HASH)).thenReturn(true);
-        when(jwtService.generateToken(EMAIL, PERSON_ID)).thenReturn("token");
+        when(jwtService.generateToken(eq(EMAIL), eq(PERSON_ID), any())).thenReturn("token");
+        when(personSessionRepository.save(any())).thenAnswer(invocacao -> invocacao.getArgument(0));
         when(credentialRepository.existsAtivaPorEmail(EMAIL, CredentialStatus.SUSPENSO)).thenReturn(false);
 
         assertThat(authService.login(request("s3nhaForte")).isProfessional()).isFalse();
@@ -139,7 +147,7 @@ class AuthServiceImplTest {
                 .extracting("code", "httpStatus")
                 .containsExactly(401, HttpStatus.UNAUTHORIZED);
 
-        verify(jwtService, never()).generateToken(any(), any());
+        verify(jwtService, never()).generateToken(any(), any(), any());
     }
 
     @Test
@@ -153,7 +161,7 @@ class AuthServiceImplTest {
                 .isEqualTo(HttpStatus.UNAUTHORIZED);
 
         verify(passwordEncoder, never()).matches(any(), any());
-        verify(jwtService, never()).generateToken(any(), any());
+        verify(jwtService, never()).generateToken(any(), any(), any());
     }
 
     @Test

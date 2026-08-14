@@ -85,4 +85,16 @@ public class AnimalCostRequestDTO {
     /** De qual antiparasitario, pela mesma razao. */
     private UUID sourceAntiparasiticId;
 
+    /**
+     * De qual tratamento — o remedio que o animal ESTA TOMANDO.
+     *
+     * <b>E o que faz remedio deixar de ser custo e nada mais.</b> Quem lanca a compra na Tela 42
+     * declara o tratamento primeiro, e manda o id aqui: a partir dai o remedio existe nos dois
+     * lugares — na conta, como gasto, e na vida do animal, com prazo e cumprimento.
+     *
+     * Opcional de proposito. Racao nao e tratamento, e o remedio de dose unica que ninguem quer
+     * acompanhar tambem nao — obrigar transformaria os tres toques da tela num formulario.
+     */
+    private UUID sourceCareInstructionId;
+
 }

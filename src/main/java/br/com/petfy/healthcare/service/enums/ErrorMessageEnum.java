@@ -242,6 +242,12 @@ public enum ErrorMessageEnum {
     ANIMALS_STILL_UNDER_YOUR_RESPONSIBILITY(190, "Give each animal a destination before closing your account"),
     // Buscar com uma letra devolveria meio cadastro. E a mesma trava da busca de profissional.
     SEARCH_TERM_TOO_SHORT(191, "Type at least three characters"),
+    // O aviso de outra pessoa responde 404, e nao 403: confirmar que ele existe ja diria algo
+    // sobre a vida de quem o recebeu.
+    NOTIFICATION_NOT_FOUND(192, "Notification not found"),
+    // Sessao de outra pessoa responde 404 pela mesma razao do aviso: confirmar que ela existe ja
+    // diria que aquela conta esta em uso.
+    SESSION_NOT_FOUND(193, "Session not found"),
     INVALID_REQUEST(400, "Invalid request"),
     INVALID_CREDENTIALS(401, "Invalid email or password"),
     // estava escrito a mao dentro do handler generico, fora deste enum - ou seja, uma

@@ -139,6 +139,26 @@ public class AnimalCost extends AnimalEvent {
     @Column(name = "source_antiparasitic_id")
     private UUID sourceAntiparasiticId;
 
+    /**
+     * De qual tratamento, quando o gasto e um remedio que o animal ESTA TOMANDO.
+     *
+     * <b>Ate a V49, remedio virava custo e nada mais.</b> A Tela 42 lancava "Remedio, R$ 90" e o
+     * produto guardava um numero na categoria SAUDE — quem cuidasse do animal naquela semana nao
+     * tinha como saber que havia um comprimido as 8h, e a linha do tempo nao mostrava tratamento
+     * nenhum. O gasto e o tratamento sao a mesma coisa vista de dois lados, e faltava o lado de
+     * saude.
+     *
+     * <b>Nao houve entidade nova:</b> a {@link CareInstruction} ja e "prescricao, medicacao e tema
+     * de casa" desde o P3, e nao exige credencial — o tutor sempre pode dizer "o Code esta tomando
+     * isto". O que faltava era esta ligacao.
+     *
+     * Nula em racao, em higiene e no remedio de dose unica que ninguem quer acompanhar: <b>declarar
+     * um tratamento e escolha de quem lanca</b>, e obrigar transformaria os tres toques da Tela 42
+     * num formulario — "quanto mais campos, menos gente lanca, e menos verdadeiro fica o custo".
+     */
+    @Column(name = "source_care_instruction_id")
+    private UUID sourceCareInstructionId;
+
     @Column(name = "creation_date", nullable = false)
     private LocalDateTime creationDate;
 

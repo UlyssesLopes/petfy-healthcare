@@ -23,7 +23,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AsyncNotificationDispatcher {
 
-    private final Notifier notifier;
+    /*
+     * O tipo e `Canais`, e nao `Notifier`, para que o NOME DO EVENTO chegue ao canal in-app: ele
+     * grava o aviso, e "tutor que entrou no animal" e o que permite agrupar e depurar depois. Pela
+     * interface o evento morreria aqui, que e onde ele ja e conhecido.
+     */
+    private final Canais notifier;
 
     /**
      * Falha e apenas logada. Quem chamou ja seguiu adiante - nao ha mais para
@@ -33,7 +38,7 @@ public class AsyncNotificationDispatcher {
     @Async("notificationExecutor")
     public void dispatch(Notification notification, String evento) {
         try {
-            notifier.send(notification);
+            notifier.send(notification, evento);
         } catch (Exception e) {
             log.error("Falha ao notificar o tutor sobre {}", evento, e);
         }
