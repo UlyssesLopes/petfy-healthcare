@@ -281,6 +281,8 @@ export const mensagens = {
   "entrar.cartao.semSenha": "Sem senha, para quando não dá tempo.",
 
   "entrar.continuarConectado": "Continuar conectado neste aparelho",
+  "entrar.continuarConectado.marcado": "Você fica conectado por 30 dias, mesmo fechando o navegador.",
+  "entrar.continuarConectado.desmarcado": "Ao fechar o navegador, você sai. Use num computador emprestado.",
   "entrar.link.acao": "Receber um link por e-mail",
   "entrar.link.apoio": "Sem senha. Você clica no link e entra — serve quando a senha não vem à cabeça.",
   "entrar.criarConta": "Ainda não tem conta? {acao}",
@@ -289,10 +291,8 @@ export const mensagens = {
   // e não o nome da funcionalidade: ninguém procura por "consulta de microchip".
   "entrar.achouUmAnimal": "Achou um animal na rua? Procure pelo microchip, sem criar conta",
 
-  // As quatro frases de "por que esta desabilitado". A secao 06 pede que o desabilitado
-  // nunca apareca mudo, e que o motivo venha ANTES do gesto — nao depois.
+  // O desabilitado nunca aparece mudo (secao 06), e o motivo vem ANTES do gesto.
   "entrar.cartao.porque": "Ainda não dá para abrir daqui: o cartão abre por um link que quem responde pelo animal gera e envia.",
-  "entrar.continuarConectado.porque": "Ainda não guardamos a sessão entre visitas — ao recarregar a página é preciso entrar de novo.",
   "entrar.link.porque": "Entrar por link ainda não existe. Por enquanto, só com senha.",
   "entrar.email.faltando": "Informe o seu e-mail.",
   "entrar.email.incompleto": "Esse e-mail não parece completo — falta o @",

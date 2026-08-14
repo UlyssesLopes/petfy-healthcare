@@ -13,10 +13,19 @@ import { encerrarNoServidor, encerrarSessao, iniciarSessao } from "./sessao.ts";
 
 export function useEntrar() {
   return useMutation({
-    mutationFn: async (credenciais: { email: string; senha: string }) => {
+    mutationFn: async (credenciais: {
+      email: string;
+      senha: string;
+      /** Desmarcado, o cookie do refresh morre quando o navegador fecha. */
+      manterConectado: boolean;
+    }) => {
       return corpoDe(
         await cliente.POST("/auth/login", {
-          body: { email: credenciais.email, password: credenciais.senha },
+          body: {
+            email: credenciais.email,
+            password: credenciais.senha,
+            keepSignedIn: credenciais.manterConectado,
+          },
         }),
       );
     },
@@ -77,7 +86,8 @@ export function useCriarConta() {
         }),
       );
 
-      await entrar.mutateAsync({ email: conta.email, senha: conta.senha });
+      // quem acabou de criar a conta fica conectado: e o aparelho dela, e ela escolheu vir
+      await entrar.mutateAsync({ email: conta.email, senha: conta.senha, manterConectado: true });
 
       return criada;
     },

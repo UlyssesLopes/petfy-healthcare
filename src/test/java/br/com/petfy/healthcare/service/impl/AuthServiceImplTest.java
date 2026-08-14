@@ -154,11 +154,45 @@ class AuthServiceImplTest {
 
     /** O request nunca teve como declarar papel, e continua sem ter o que declarar. */
     @Test
-    @DisplayName("o request de login deve carregar apenas email e senha")
+    @DisplayName("o request de login deve carregar credencial e preferencia, nunca papel")
     void requestDeveCarregarApenasEmailESenha() {
         assertThat(LoginRequestDTO.class.getDeclaredFields())
                 .extracting(java.lang.reflect.Field::getName)
-                .containsExactlyInAnyOrder("email", "password");
+                .containsExactlyInAnyOrder("email", "password", "keepSignedIn");
+    }
+
+    @Test
+    @DisplayName("continuar conectado desmarcado deve ficar gravado na entrada")
+    void escolhaDeNaoContinuarConectadoFicaGravada() {
+        when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+        when(passwordEncoder.matches("s3nhaForte", HASH)).thenReturn(true);
+        when(jwtService.generateToken(eq(EMAIL), eq(PERSON_ID), any())).thenReturn("token");
+        when(personSessionRepository.save(any())).thenAnswer(invocacao -> invocacao.getArgument(0));
+        when(jwtService.getExpirationMinutes()).thenReturn(120L);
+
+        var pedido = LoginRequestDTO.builder()
+                .email(EMAIL).password("s3nhaForte").keepSignedIn(false).build();
+
+        assertThat(authService.login(pedido).manterConectado()).isFalse();
+
+        /* Gravado na entrada, e nao so respondido: e o refresh que le isto depois. */
+        var gravada = org.mockito.ArgumentCaptor
+                .forClass(br.com.petfy.healthcare.domain.entity.PersonSession.class);
+        org.mockito.Mockito.verify(personSessionRepository).save(gravada.capture());
+        assertThat(gravada.getValue().persistente()).isFalse();
+    }
+
+    /** Cliente que nao manda o campo continua entrando como sempre entrou. */
+    @Test
+    @DisplayName("sem o campo, a entrada e persistente")
+    void ausenciaDoCampoMantemConectado() {
+        when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+        when(passwordEncoder.matches("s3nhaForte", HASH)).thenReturn(true);
+        when(jwtService.generateToken(eq(EMAIL), eq(PERSON_ID), any())).thenReturn("token");
+        when(personSessionRepository.save(any())).thenAnswer(invocacao -> invocacao.getArgument(0));
+        when(jwtService.getExpirationMinutes()).thenReturn(120L);
+
+        assertThat(authService.login(request("s3nhaForte")).manterConectado()).isTrue();
     }
 
     @Test

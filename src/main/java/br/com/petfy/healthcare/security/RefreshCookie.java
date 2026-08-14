@@ -58,16 +58,21 @@ public class RefreshCookie {
         return validade;
     }
 
-    /** O cookie que leva o refresh novo. */
-    public String paraDefinir(String token) {
-        return ResponseCookie.from(NOME, token)
+    /**
+     * O cookie que leva o refresh novo.
+     *
+     * <b>Sem {@code maxAge} ele vira cookie de sessao</b> e o navegador o descarta ao fechar — e o
+     * que "Continuar conectado neste aparelho" desmarcado significa, e o unico jeito de a escolha
+     * ter efeito num computador emprestado.
+     */
+    public String paraDefinir(String token, boolean persistente) {
+        ResponseCookie.ResponseCookieBuilder cookie = ResponseCookie.from(NOME, token)
                 .httpOnly(true)
                 .secure(secure)
                 .sameSite(sameSite)
-                .path(CAMINHO)
-                .maxAge(validade)
-                .build()
-                .toString();
+                .path(CAMINHO);
+
+        return (persistente ? cookie.maxAge(validade) : cookie).build().toString();
     }
 
     /**

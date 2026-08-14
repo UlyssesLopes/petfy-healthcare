@@ -14,13 +14,9 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
  * O MARKUP VEM DO ARQUIVO: os estilos foram convertidos por script — `style="..."` vira
  * `style={{...}}` e nada mais. O que muda e o conteudo e o comportamento.
  *
- * <b>QUATRO AFORDANCIAS DO DESENHO NAO TEM BACKEND</b>, e elas ficam na tela desabilitadas
- * em vez de sumirem ou de fingirem funcionar. A propria secao 06 da identidade manda:
- * "o desabilitado nunca aparece mudo — ao lado dele, sempre a frase que diz por que". Sao
- * elas: o link por e-mail (nao ha login sem senha na API), o "continuar conectado" (o token
- * vive em memoria e o refresh em cookie foi adiado com gatilho escrito), o cartao de
- * emergencia (o `/share/{token}` exige um token que so quem tem custodia gera) e as duas
- * navegacoes para telas que ainda nao existem.
+ * O que segue desabilitado fica na tela com a frase que diz por que, e nao sumido nem
+ * fingindo funcionar (secao 06 da identidade): o link por e-mail, que nao existe na API, e o
+ * cartao de emergencia, que abre por um token que so quem tem custodia gera.
  */
 
 /**
@@ -120,6 +116,7 @@ function Entrar() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [manterConectado, setManterConectado] = useState(true);
   const [erros, setErros] = useState<ErrosDeCampo>({});
 
   const principal = useHover();
@@ -146,7 +143,7 @@ function Entrar() {
        produto e a sessao fechada e o normal, entao perder o token aqui faria o clique morrer
        na porta — que era exatamente o buraco que o aceite com conta existente veio fechar. */
     entrar.mutate(
-      { email: email.trim(), senha },
+      { email: email.trim(), senha, manterConectado },
       {
         onSuccess: () =>
           void (convite === undefined
@@ -325,13 +322,28 @@ function Entrar() {
               )}
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", opacity: 0.55 }}>
-              <div style={{ width: "20px", height: "20px", borderRadius: "4px", background: "oklch(0.72 0.012 150)", flex: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: "oklch(1 0 0)" }}></div>
-              </div>
-              <span style={{ fontSize: "15px" }}>{intl.formatMessage({ id: "entrar.continuarConectado" })}</span>
+            {/* Marcada por padrao: e o que o login sempre fez. Desmarcar entrega um cookie de
+                sessao, que morre ao fechar o navegador — a saida de quem esta num computador
+                emprestado. */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <input
+                id="manter-conectado"
+                type="checkbox"
+                checked={manterConectado}
+                onChange={(evento) => setManterConectado(evento.target.checked)}
+                style={{ width: "20px", height: "20px", flex: "none", accentColor: "oklch(0.46 0.085 150)", cursor: "pointer" }}
+              />
+              <label htmlFor="manter-conectado" style={{ fontSize: "15px", cursor: "pointer" }}>
+                {intl.formatMessage({ id: "entrar.continuarConectado" })}
+              </label>
             </div>
-            <PorQueDesabilitado semRecuo>{intl.formatMessage({ id: "entrar.continuarConectado.porque" })}</PorQueDesabilitado>
+            <div style={{ fontSize: "13px", lineHeight: 1.5, color: "oklch(0.5 0.015 150)", marginTop: "-12px" }}>
+              {intl.formatMessage({
+                id: manterConectado
+                  ? "entrar.continuarConectado.marcado"
+                  : "entrar.continuarConectado.desmarcado",
+              })}
+            </div>
 
             {/*
               O erro do servidor vive fora dos campos: ele nao pertence a nenhum deles — o

@@ -3647,6 +3647,7 @@ export interface components {
         };
         LoginRequestDTO: {
             email: string;
+            keepSignedIn?: boolean;
             password: string;
         };
         LoginResponseDTO: {

@@ -2405,6 +2405,9 @@
           "email" : {
             "type" : "string"
           },
+          "keepSignedIn" : {
+            "type" : "boolean"
+          },
           "password" : {
             "type" : "string"
           }

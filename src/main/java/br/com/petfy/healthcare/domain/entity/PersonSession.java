@@ -14,8 +14,8 @@ import java.util.UUID;
  * valendo pelo prazo dele sem que ninguem consulte nada para emitir. O que esta linha permite e o
  * inverso: dizer que um token especifico deixou de valer <b>antes da hora</b>.
  *
- * <b>E nao e refresh token.</b> Recarregar a pagina continua deslogando — o token vive em memoria no
- * cliente, e isso e decisao contra XSS. Esta tabela e pre-requisito do refresh, e nao substituto.
+ * Desde a V51 ela tambem guarda o refresh: o token vive em memoria no cliente, por decisao contra
+ * XSS, e e daqui que ele e reemitido quando a pagina recarrega.
  */
 @Entity
 @Table(name = "person_sessions")
@@ -85,6 +85,20 @@ public class PersonSession {
      */
     @Column(name = "refresh_expires_at")
     private LocalDateTime refreshExpiresAt;
+
+    /**
+     * Se o cookie desta entrada sobrevive ao fechamento do navegador.
+     *
+     * Guardado porque o navegador devolve o cookie mas nao o maxAge dele: sem isto, o refresh
+     * reemitiria como persistente a sessao que a pessoa pediu que fosse temporaria.
+     */
+    @Column(name = "refresh_persistent")
+    private Boolean refreshPersistent;
+
+    /** Nulo e persistente — e o que toda sessao anterior a V52 era. */
+    public boolean persistente() {
+        return refreshPersistent == null || refreshPersistent;
+    }
 
     public boolean vigente() {
         return revokedAt == null;
