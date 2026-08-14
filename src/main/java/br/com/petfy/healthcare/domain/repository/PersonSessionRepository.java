@@ -34,6 +34,24 @@ public interface PersonSessionRepository extends JpaRepository<PersonSession, UU
      */
     Optional<PersonSession> findByRefreshTokenHash(String refreshTokenHash);
 
+    /** Se esta pessoa ja entrou alguma vez. O primeiro login de todos nao avisa ninguem. */
+    boolean existsByPersonPersonId(UUID personId);
+
+    /**
+     * Se ja houve entrada deste mesmo aparelho — a pergunta do aviso da Tela 28.
+     *
+     * <b>Encerrada conta como conhecida.</b> Quem encerrou a entrada do proprio celular e entrou
+     * de novo dele nao esta diante de um aparelho novo, e receber um alerta de seguranca por isso
+     * ensinaria a pessoa a ignorar o alerta.
+     *
+     * <b>O nulo precisa do `is null` explicito:</b> em SQL, `user_agent = null` nunca e verdade, e
+     * a comparacao direta faria todo cliente sem User-Agent parecer um aparelho novo a cada login.
+     */
+    @Query("select count(s) > 0 from PersonSession s where s.person.personId = :personId "
+            + "and ((:userAgent is null and s.userAgent is null) or s.userAgent = :userAgent)")
+    boolean conheceOAparelho(@Param("personId") UUID personId,
+                             @Param("userAgent") String userAgent);
+
     /**
      * Encerra TODAS as entradas de uma pessoa — o que a troca de senha faz.
      *
