@@ -307,6 +307,9 @@ export const mensagens = {
   "home.nav.quemCuida": "Quem cuida",
   "home.custodia": "Sob sua custódia",
   "home.cadastrarAnimal": "Cadastrar animal",
+  // Quem chega com um código na mão acabou de criar a conta para aceitar um convite, e não tem
+  // animal nenhum — é para ele que esta linha existe.
+  "home.tenhoUmConvite": "Tenho um código de convite",
   "home.hoje": "Hoje",
   // "Três coisas pedem você" — o desenho conta, e a contagem e o que da hierarquia:
   // sem numero, quinze pendencias e uma lista; com numero, e um dia.
@@ -501,17 +504,20 @@ export const mensagens = {
   // preencher o e-mail nunca mais convidava ninguém para aquele animal. O backend estava inteiro
   // desde o P4 — convidar, listar, revogar, aceitar e recusar. Faltava a porta.
   //
-  // NENHUMA FRASE DIZ "ENVIAMOS UM E-MAIL", e é de propósito: o `invite` do
-  // `PetTutorServiceImpl` grava o convite e devolve o token — não há envio em lugar nenhum. Quem
-  // convida é quem entrega o link, e a tela precisa dizer isso; senão o convite fica esperando
-  // uma mensagem que nunca sai, e o silêncio parece do outro lado.
+  // O E-MAIL SAI AGORA, e por muito tempo não saía: o `invite` gravava o convite e devolvia o
+  // token, e não havia envio em lugar nenhum. O `InviteNotifier` fechou esse buraco.
+  //
+  // O LINK CONTINUA NA TELA MESMO ASSIM, e não é redundância. O e-mail pode cair na caixa de spam,
+  // o endereço pode ter um dedo trocado, e quem convida costuma mandar por mensagem de qualquer
+  // jeito. A frase promete só o que o servidor faz — enviamos —, e entrega o link para o caso de
+  // ele não chegar.
   "acesso.convidar.rotulo": "Convidar outra pessoa para cuidar",
   "acesso.convidar.oQueElaGanha":
     "Quem aceitar responde pelo animal com você: vê tudo e registra em nome próprio. Uma clínica ou creche, que vê só o que você marcar, entra por “Conceder acesso”.",
   "acesso.convidar.botao": "Convidar",
   "acesso.convidar.enviando": "Convidando…",
   "acesso.convidar.enviado":
-    "O convite de {email} está de pé. Mande este link para ela — o Petfy não envia o convite por e-mail, e sem o link não há como aceitar:",
+    "Mandamos o convite para {email}, com um código para ela colar no Petfy. Se não chegar, este link abre o mesmo convite:",
   "acesso.convidar.copiar": "Copiar o link",
   "acesso.convidar.copiado": "Link copiado",
   "acesso.convidar.oQueE": "o convite",
@@ -691,11 +697,11 @@ export const mensagens = {
   "onboarding.p4.pessoa.apoio": "Quem também dá remédio e leva ao veterinário. Vê tudo e registra junto com você.",
   "onboarding.p4.pessoa.campo": "e-mail",
   "onboarding.p4.convidar": "Convidar",
-  // "Convite enviado" era mentira, e ficou anos assim: o backend grava o convite e devolve o
-  // token, e não existe envio de e-mail em lugar nenhum. Quem chegava aqui saía achando que
-  // tinha convidado alguém.
+  // "Convite enviado" era mentira quando foi escrito, e passou a ser verdade agora: até o
+  // `InviteNotifier`, o backend gravava o convite, devolvia o token e não mandava nada. Quem
+  // chegava aqui saía achando que tinha convidado alguém.
   "onboarding.p4.convidado":
-    "O convite de {email} está de pé. Mande este link para ela — sem ele não há como aceitar. A pessoa aparece na rede quando aceitar.",
+    "Mandamos o convite para {email}, com um código para ela colar no Petfy. Se não chegar, este link abre o mesmo convite. Ela aparece na rede quando aceitar.",
   "onboarding.p4.organizacao": "Uma clínica ou creche",
   "onboarding.p4.organizacao.apoio": "Vê só o que você marcar, pelo prazo que você definir. Nada de tudo ou nada.",
   "onboarding.p4.organizacao.semAnimal": "Primeiro cadastre o animal, no passo 1.",
@@ -967,10 +973,10 @@ export const mensagens = {
   "equipe.comoAceita": "Quem ainda não tem conta entra criando a conta com o convite. Quem já é do Petfy abre o link do convite e aceita com a conta que já tem — sem precisar de um segundo cadastro.",
 
   // O LINK APARECE UMA VEZ SÓ, e a frase precisa dizer isso: o token existe fora do servidor
-  // apenas nesta resposta. Sair da tela sem copiá-lo custa um convite novo — e é melhor cobrar a
-  // cópia agora do que deixar alguém esperando um e-mail que o Petfy não manda.
+  // apenas nesta resposta. O e-mail com o código já saiu — o link aqui é para quando ele não
+  // chega, e sair da tela sem copiá-lo custa um convite novo.
   "equipe.convite.link":
-    "Mande este link para {email}. Ele aparece uma vez só, e o Petfy não envia o convite por e-mail — sem o link não há como aceitar.",
+    "Mandamos o convite para {email}, com um código para colar no Petfy. Se não chegar, este link abre o mesmo convite — e ele aparece uma vez só.",
 
   // ------------------------------------------------- aceitar o convite (Tela 16, o outro lado)
   //
@@ -2221,6 +2227,31 @@ export const mensagens = {
   "registrar.feito.vacina": "{vacina} entrou na carteira.",
   "registrar.feito.peso": "{peso} kg entrou no acompanhamento de peso.",
   "registrar.feito.observacao": "A observação entrou na linha do tempo.",
+
+  // ---------------------------------------------------- onde se cola o código de um convite
+  //
+  // Existe porque o e-mail de convite manda um CÓDIGO, e não um link: nenhuma notificação deste
+  // produto carrega link, e a confirmação de e-mail já manda "Código: ...". Sem esta tela o código
+  // não teria onde ser colado.
+  //
+  // UMA PORTA, E NÃO DUAS: "convite de animal" e "convite de organização" é vocabulário de quem
+  // escreveu o backend. Quem recebe um código não sabe de que tipo ele é, e não deveria precisar
+  // saber — a tela pergunta ao servidor e leva a pessoa ao lugar certo.
+  "colarConvite.titulo": "Cole o código do convite",
+  "colarConvite.apoio":
+    "Quem convidou você recebeu um código e mandou junto com o convite. Cole aqui e nós abrimos o convite certo.",
+  "colarConvite.rotulo": "Código",
+  "colarConvite.exemplo": "cole aqui",
+  "colarConvite.abrir": "Abrir o convite",
+  "colarConvite.procurando": "Procurando…",
+  // O mesmo estado único das duas telas de aceite: o servidor responde igual para código
+  // inexistente, expirado, revogado, já usado e endereçado a outra pessoa. Distinguir diria a quem
+  // tenta adivinhar qual parte errou.
+  "colarConvite.naoAchou":
+    "Não encontramos um convite com este código. Ele pode ter expirado, já ter sido usado, ou ser de outro endereço de e-mail. Peça um novo a quem convidou você.",
+  "colarConvite.lerNaoAceita":
+    "Abrir não aceita nada: você vê de que convite se trata e o que ele muda antes de decidir.",
+  "colarConvite.inicio": "Voltar para o início",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;

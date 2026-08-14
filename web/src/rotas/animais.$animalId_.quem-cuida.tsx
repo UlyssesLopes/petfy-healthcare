@@ -67,12 +67,13 @@ function QuemCuida() {
   const [copiado, setCopiado] = useState(false);
 
   /*
-   * O LINK DO CONVITE, e ele e a unica copia que existe.
+   * O LINK DO CONVITE, e ele e a unica copia que fica na tela.
    *
-   * O `invite` do backend grava o convite e devolve o token — e <b>nao envia e-mail nenhum</b>. O
-   * comentario do servico diz o que isso significa: "unico momento em que o token existe fora do
-   * cliente". Se a tela nao mostrar o link, ele se perde no recarregamento e o convite fica de pe
-   * esperando alguem que nunca soube dele.
+   * O `InviteNotifier` manda o codigo por e-mail desde que este fluxo existe — antes dele o convite
+   * nao chegava a ninguem, e o token morria aqui. <b>O link continua sendo mostrado assim mesmo:</b>
+   * o e-mail pode cair no spam, o endereco pode ter um dedo trocado, e quem convida costuma mandar
+   * por mensagem de qualquer jeito. E ele so existe nesta resposta — "unico momento em que o token
+   * existe fora do cliente" —, entao recarregar a pagina o perde.
    */
   const linkDoConvite =
     convidar.data?.token === undefined || convidar.data.token === null

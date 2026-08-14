@@ -320,13 +320,13 @@ function PrimeiroAnimal() {
                       {intl.formatMessage({ id: "onboarding.p4.convidado" }, { email: convidar.data?.email ?? "" })}
 
                       {/*
-                       * O LINK, porque nao existe e-mail de convite.
+                       * O LINK, para quando o e-mail nao chega.
                        *
-                       * Esta caixa dizia "Convite enviado para {email}" desde o primeiro dia, e
-                       * nada era enviado: o `invite` do backend grava o convite e devolve o token —
-                       * "unico momento em que o token existe fora do cliente". Quem seguia o passo 4
-                       * ate o fim saia daqui achando que tinha convidado alguem, e o convite ficava
-                       * de pe esperando uma pessoa que nunca soube dele.
+                       * Esta caixa dizia "Convite enviado para {email}" desde o primeiro dia, e nada
+                       * era enviado: o `invite` gravava o convite e devolvia o token — "unico
+                       * momento em que o token existe fora do cliente". Quem seguia o passo 4 ate o
+                       * fim saia daqui achando que tinha convidado alguem. O `InviteNotifier` fez a
+                       * frase virar verdade; o link fica porque spam e dedo trocado existem.
                        */}
                       {linkDoConvite !== undefined && (
                         <div

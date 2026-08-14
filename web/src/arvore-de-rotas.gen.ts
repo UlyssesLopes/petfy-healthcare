@@ -24,6 +24,7 @@ import { Route as EntrarRouteImport } from './rotas/entrar'
 import { Route as PacientesRouteImport } from './rotas/pacientes'
 import { Route as AnimaisAnimalIdRouteImport } from './rotas/animais.$animalId'
 import { Route as AnimaisNovoRouteImport } from './rotas/animais.novo'
+import { Route as ConvitesIndexRouteImport } from './rotas/convites.index'
 import { Route as ConvitesAceitarRouteImport } from './rotas/convites.aceitar'
 import { Route as ConvitesAnimalRouteImport } from './rotas/convites.animal'
 import { Route as OrganizacoesNovaRouteImport } from './rotas/organizacoes.nova'
@@ -123,6 +124,11 @@ const AnimaisAnimalIdRoute = AnimaisAnimalIdRouteImport.update({
 const AnimaisNovoRoute = AnimaisNovoRouteImport.update({
   id: '/animais/novo',
   path: '/animais/novo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConvitesIndexRoute = ConvitesIndexRouteImport.update({
+  id: '/convites/',
+  path: '/convites/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConvitesAceitarRoute = ConvitesAceitarRouteImport.update({
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/convites/animal': typeof ConvitesAnimalRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
   '/pacientes/$animalId': typeof PacientesAnimalIdRouteWithChildren
+  '/convites/': typeof ConvitesIndexRoute
   '/animais/$animalId/adocao': typeof AnimaisAnimalIdAdocaoRoute
   '/animais/$animalId/adotar': typeof AnimaisAnimalIdAdotarRoute
   '/animais/$animalId/ano': typeof AnimaisAnimalIdAnoRoute
@@ -327,6 +334,7 @@ export interface FileRoutesByTo {
   '/convites/animal': typeof ConvitesAnimalRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
   '/pacientes/$animalId': typeof PacientesAnimalIdRouteWithChildren
+  '/convites': typeof ConvitesIndexRoute
   '/animais/$animalId/adocao': typeof AnimaisAnimalIdAdocaoRoute
   '/animais/$animalId/adotar': typeof AnimaisAnimalIdAdotarRoute
   '/animais/$animalId/ano': typeof AnimaisAnimalIdAnoRoute
@@ -370,6 +378,7 @@ export interface FileRoutesById {
   '/convites/animal': typeof ConvitesAnimalRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
   '/pacientes/$animalId': typeof PacientesAnimalIdRouteWithChildren
+  '/convites/': typeof ConvitesIndexRoute
   '/animais/$animalId_/adocao': typeof AnimaisAnimalIdAdocaoRoute
   '/animais/$animalId_/adotar': typeof AnimaisAnimalIdAdotarRoute
   '/animais/$animalId_/ano': typeof AnimaisAnimalIdAnoRoute
@@ -414,6 +423,7 @@ export interface FileRouteTypes {
     | '/convites/animal'
     | '/organizacoes/nova'
     | '/pacientes/$animalId'
+    | '/convites/'
     | '/animais/$animalId/adocao'
     | '/animais/$animalId/adotar'
     | '/animais/$animalId/ano'
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/convites/animal'
     | '/organizacoes/nova'
     | '/pacientes/$animalId'
+    | '/convites'
     | '/animais/$animalId/adocao'
     | '/animais/$animalId/adotar'
     | '/animais/$animalId/ano'
@@ -498,6 +509,7 @@ export interface FileRouteTypes {
     | '/convites/animal'
     | '/organizacoes/nova'
     | '/pacientes/$animalId'
+    | '/convites/'
     | '/animais/$animalId_/adocao'
     | '/animais/$animalId_/adotar'
     | '/animais/$animalId_/ano'
@@ -540,6 +552,7 @@ export interface RootRouteChildren {
   ConvitesAceitarRoute: typeof ConvitesAceitarRoute
   ConvitesAnimalRoute: typeof ConvitesAnimalRoute
   OrganizacoesNovaRoute: typeof OrganizacoesNovaRoute
+  ConvitesIndexRoute: typeof ConvitesIndexRoute
   AnimaisAnimalIdAdocaoRoute: typeof AnimaisAnimalIdAdocaoRoute
   AnimaisAnimalIdAdotarRoute: typeof AnimaisAnimalIdAdotarRoute
   AnimaisAnimalIdAnoRoute: typeof AnimaisAnimalIdAnoRoute
@@ -666,6 +679,13 @@ declare module '@tanstack/react-router' {
       path: '/animais/novo'
       fullPath: '/animais/novo'
       preLoaderRoute: typeof AnimaisNovoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/convites/': {
+      id: '/convites/'
+      path: '/convites'
+      fullPath: '/convites/'
+      preLoaderRoute: typeof ConvitesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/convites/aceitar': {
@@ -890,6 +910,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConvitesAceitarRoute: ConvitesAceitarRoute,
   ConvitesAnimalRoute: ConvitesAnimalRoute,
   OrganizacoesNovaRoute: OrganizacoesNovaRoute,
+  ConvitesIndexRoute: ConvitesIndexRoute,
   AnimaisAnimalIdAdocaoRoute: AnimaisAnimalIdAdocaoRoute,
   AnimaisAnimalIdAdotarRoute: AnimaisAnimalIdAdotarRoute,
   AnimaisAnimalIdAnoRoute: AnimaisAnimalIdAnoRoute,

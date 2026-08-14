@@ -59,6 +59,9 @@ class OrganizationInviteServiceImplTest {
     @Mock
     private ProfessionalCredentialRepository professionalCredentialRepository;
 
+    @Mock
+    private br.com.petfy.healthcare.notification.InviteNotifier inviteNotifier;
+
     private OrganizationInviteServiceImpl service;
 
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
@@ -73,7 +76,7 @@ class OrganizationInviteServiceImplTest {
         service = new OrganizationInviteServiceImpl(organizationInviteRepository, personRepository,
                 membershipRepository, professionalCredentialRepository, currentProfessionalProvider,
                 currentPersonProvider, new OpaqueTokenService(),
-                new MembershipResponseFactory(professionalCredentialRepository));
+                new MembershipResponseFactory(professionalCredentialRepository), inviteNotifier);
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 7);
     }
 

@@ -42,6 +42,7 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
     private final CurrentPersonProvider currentPersonProvider;
     private final OpaqueTokenService opaqueTokenService;
     private final MembershipResponseFactory membershipResponseFactory;
+    private final br.com.petfy.healthcare.notification.InviteNotifier inviteNotifier;
 
     @Value("${petfy.organization-invite.default-expiration-days:7}")
     private int defaultExpirationDays;
@@ -65,6 +66,16 @@ public class OrganizationInviteServiceImpl implements OrganizationInviteService 
                 .expiresAt(LocalDateTime.now().plusDays(validade))
                 .creationDate(LocalDateTime.now())
                 .build());
+
+        /*
+         * O convite chega a quem foi convidado — e ate aqui nao chegava.
+         *
+         * <b>Nem todo convite tem endereco:</b> o `email` e nulo quando a organizacao gera um
+         * convite aberto, para entregar por outro caminho. O notificador nao tem a quem escrever
+         * nesse caso, e sai calado.
+         */
+        inviteNotifier.conviteDeOrganizacao(invite.getOrganization(), emissor, invite.getEmail(),
+                invite.getRole(), token, validade);
 
         // unico momento em que o token existe fora do cliente
         return toResponse(invite, token);

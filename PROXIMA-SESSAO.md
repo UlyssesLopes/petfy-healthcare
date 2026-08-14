@@ -12,8 +12,8 @@
 Não há mais tela desenhada por construir — isso não mudou. O que esta sessão fez foi o que a
 conferência encontrou **depois** de todas elas existirem.
 
-**1005 casos no backend, 51 no front, `Skipped: 0`.** A `main` continua em `bb4df76`; o trabalho
-desta sessão está na branch `fix/o-ponto-e-a-concordancia`, **ainda não commitado**.
+**1015 casos no backend, 51 no front, `Skipped: 0`.** O trabalho desta sessão está no **PR #65**,
+na branch `feat/o-registro-do-tutor-e-a-duracao-do-gasto`.
 
 ## O achado que reordenou a fila
 
@@ -105,7 +105,35 @@ convite ficava de pé esperando alguém que nunca soube dele:
 | equipe da organização (Tela 16) | mostrava "convite aguardando" na lista, e mais nada | mostra o link, com "aparece uma vez só" |
 | quem cuida (Tela 11) | não existia | mostra o link, com botão de copiar |
 
-Nenhuma frase diz "enviamos um e-mail". Elas dizem que **quem convida é quem entrega o link**.
+### 5. E o e-mail de convite passou a existir
+
+O item acima destravou os fluxos, mas deixava o trabalho de entregar o link com quem convida. O
+`InviteNotifier` fechou isso: **o convite agora chega a quem foi convidado**, nos dois tipos.
+
+**Manda código, e não link** — e essa foi a decisão que definiu o resto. Nenhuma notificação deste
+produto carrega link: a confirmação de e-mail já manda `"Codigo: " + token` e a pessoa cola. Um link
+exigiria uma URL pública configurada por ambiente, que **não existe em lugar nenhum** — e a primeira
+delas não deveria nascer dentro de um notificador.
+
+Isso criou a `/convites`: **onde se cola o código**. Uma porta e não duas, porque "convite de animal"
+e "convite de organização" é vocabulário de quem escreveu o backend — quem recebe um código não sabe
+de que tipo ele é. A tela pergunta ao servidor e leva à tela de aceite certa. As duas prévias são de
+leitura, então dá para tentar as duas sem risco: **ler não aceita**.
+
+**Ele é o único notificador que escreve para um endereço que não é de ninguém.** Os outros recebem
+`Person` e recusam quem não confirmou o e-mail — *"o nome do animal e dos tutores não vai para a
+caixa de um estranho"*. Aqui a regra não pode valer: o caso comum é o cônjuge que **ainda não tem
+conta**, e exigir endereço confirmado seria exigir que a pessoa se cadastrasse para receber o convite
+que a chama a se cadastrar. O que sustenta a exceção é que ninguém sorteou o endereço — **um tutor o
+digitou**, olhando para ele.
+
+O assunto nomeia quem convidou e o animal, e é o que separa este e-mail de um golpe: sem os dois
+nomes não há como reconhecer o convite, e um e-mail irreconhecível com um código dentro é exatamente
+a forma de uma fraude. O preço está medido — dedo trocado no endereço manda o nome do animal para um
+desconhecido — e é menor que o de um convite em que ninguém acredita.
+
+O link continua na tela mesmo assim, e não é redundância: spam existe, dedo trocado existe, e quem
+convida manda por mensagem de qualquer jeito.
 
 ## O QUE FICOU DEVENDO
 
@@ -115,15 +143,16 @@ Nenhuma frase diz "enviamos um e-mail". Elas dizem que **quem convida é quem en
 (senha `Petfy!2026`), animal **Code** `a44cad1e-6d94-4f56-8818-f60304fe5fc7`, com uma vacina V10, uma
 pesagem, uma observação, uma ração de dois meses e uma mensalidade de creche.
 
-As telas que esta sessão mexeu e ninguém abriu ainda: `/animais/{id}/registrar` (nova),
-`/animais/{id}/compra`, `/animais/{id}/quem-cuida`, `/animais/novo` e
+As telas que esta sessão mexeu e ninguém abriu ainda: `/animais/{id}/registrar` (nova), `/convites`
+(nova), `/animais/{id}/compra`, `/animais/{id}/quem-cuida`, `/animais/novo` e
 `/organizacoes/{id}/equipe`.
 
-### 2. O e-mail de convite não existe
+### 2. Não há URL pública configurada, e por isso o convite vai por código
 
-As telas agora dizem a verdade, mas **a verdade é ruim**: entregar o link é trabalho manual de quem
-convida. O Resend funciona desde o P4 e o `AnimalDeathNotifier` prova que dá para mandar e-mail — o
-convite simplesmente nunca foi ligado nele. É a próxima coisa que vale mais que uma tela.
+Foi uma escolha consciente e ela tem preço: quem recebe o convite copia um código e cola na
+`/convites`, em vez de clicar. O dia em que existir `petfy.app.base-url` por ambiente, o
+`InviteNotifier` passa a mandar link em uma linha — e a `/convites` continua valendo para quem
+recebeu o código por outro caminho.
 
 ### 3. "Aparelhos conectados" (Tela 36)
 

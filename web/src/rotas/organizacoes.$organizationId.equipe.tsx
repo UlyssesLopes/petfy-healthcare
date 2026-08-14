@@ -163,12 +163,12 @@ function Equipe() {
                 </div>
 
                 {/*
-                 * O LINK DO CONVITE, e sem ele o convite nao chega a ninguem.
+                 * O LINK DO CONVITE, para quando o e-mail nao chega.
                  *
-                 * O `invite` do `OrganizationInviteServiceImpl` grava e devolve o token — "unico
-                 * momento em que o token existe fora do cliente" —, e <b>nao ha envio de e-mail</b>.
-                 * A tela mostrava "convite aguardando" na lista e nunca mostrava o link: quem
-                 * convidava saia daqui achando que a pessoa seria avisada, e ela nunca era.
+                 * Ate o `InviteNotifier`, o `create` gravava e devolvia o token — "unico momento em
+                 * que o token existe fora do cliente" — e <b>nao havia envio de e-mail</b>. A tela
+                 * mostrava "convite aguardando" na lista e nunca mostrava o link: quem convidava
+                 * saia daqui achando que a pessoa seria avisada, e ela nunca era.
                  */}
                 {linkDoConvite !== undefined && (
                   <div style={{ marginTop: "14px" }}>

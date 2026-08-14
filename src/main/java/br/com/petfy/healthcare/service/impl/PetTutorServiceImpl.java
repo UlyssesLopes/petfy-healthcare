@@ -74,6 +74,8 @@ public class PetTutorServiceImpl implements PetTutorService {
     private final OpaqueTokenService opaqueTokenService;
     private final PetTutorActivityNotifier petTutorActivityNotifier;
 
+    private final br.com.petfy.healthcare.notification.InviteNotifier inviteNotifier;
+
     @Value("${petfy.pet-tutor-invite.default-expiration-days:7}")
     private int defaultExpirationDays;
 
@@ -110,6 +112,19 @@ public class PetTutorServiceImpl implements PetTutorService {
                 .expiresAt(LocalDateTime.now().plusDays(validade))
                 .creationDate(LocalDateTime.now())
                 .build());
+
+        /*
+         * O CONVITE PASSA A CHEGAR A QUEM FOI CONVIDADO.
+         *
+         * Ate aqui ele nao chegava: o token so existia nesta resposta, e nenhuma tela o mostrava.
+         * O convite ficava de pe esperando alguem que nunca soube dele — e quem convidou saia da
+         * tela achando que a pessoa seria avisada.
+         *
+         * O envio vem DEPOIS do save e nao desfaz nada se falhar: quem convidou continua com o
+         * codigo na resposta, que e a razao de a tela mostra-lo mesmo agora.
+         */
+        inviteNotifier.conviteDeAnimal(animal, emissor, invite.getEmail(), invite.getRole(), token,
+                validade);
 
         // unico momento em que o token existe fora do cliente
         return toResponse(invite, token);

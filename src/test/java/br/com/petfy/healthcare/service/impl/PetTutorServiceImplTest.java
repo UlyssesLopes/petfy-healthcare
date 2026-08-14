@@ -88,6 +88,9 @@ class PetTutorServiceImplTest {
     @Mock
     private PetTutorActivityNotifier petTutorActivityNotifier;
 
+    @Mock
+    private br.com.petfy.healthcare.notification.InviteNotifier inviteNotifier;
+
     private PetTutorServiceImpl petTutorService;
 
     private final OpaqueTokenService tokens = new OpaqueTokenService();
@@ -101,7 +104,7 @@ class PetTutorServiceImplTest {
     void setUp() {
         petTutorService = new PetTutorServiceImpl(custodyRepository, grantRepository,
                 petTutorInviteRepository, personRepository, currentPersonProvider,
-                animalAccessGuard, tokens, petTutorActivityNotifier);
+                animalAccessGuard, tokens, petTutorActivityNotifier, inviteNotifier);
         ReflectionTestUtils.setField(petTutorService, "defaultExpirationDays", 7);
     }
 

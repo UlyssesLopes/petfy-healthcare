@@ -194,6 +194,23 @@ function Inicio() {
               {intl.formatMessage({ id: "home.cadastrarAnimal" })}
             </Link>
 
+            {/*
+             * A PORTA DO CODIGO DE CONVITE, e ela precisa estar aqui e nao no cabecalho.
+             *
+             * O e-mail de convite manda um CODIGO — nenhuma notificacao deste produto carrega link
+             * —, e sem um lugar para cola-lo ele nao serve para nada. Quem chega com um codigo na
+             * mao acabou de criar a conta para aceitar um convite: <b>nao tem animal nenhum</b>, e
+             * por isso a barra de navegacao do animal ativo nao aparece para ele. Este trilho
+             * aparece sempre, e aqui as duas coisas que essa pessoa pode querer ficam lado a lado:
+             * cadastrar o proprio animal, ou entrar no de outra pessoa.
+             */}
+            <Link
+              to="/convites"
+              style={{ display: "block", fontSize: "14px", color: "oklch(0.46 0.085 150)", padding: "12px", minHeight: "44px" }}
+            >
+              {intl.formatMessage({ id: "home.tenhoUmConvite" })}
+            </Link>
+
             <QuemJaEsteve />
           </div>
 
