@@ -81,6 +81,10 @@ class AuthServiceImplTest {
      * A metrica de tentativa de login e efeito colateral, nao regra: mockada para
      * os testes seguirem falando so sobre autenticacao.
      */
+    /* O aviso de aparelho novo e efeito colateral do login, e nao regra dele. */
+    @Mock
+    private br.com.petfy.healthcare.notification.NovoAparelhoNotifier novoAparelhoNotifier;
+
     @Mock
     private PetfyMetrics petfyMetrics;
 
@@ -180,6 +184,80 @@ class AuthServiceImplTest {
                 .forClass(br.com.petfy.healthcare.domain.entity.PersonSession.class);
         org.mockito.Mockito.verify(personSessionRepository).save(gravada.capture());
         assertThat(gravada.getValue().persistente()).isFalse();
+    }
+
+    /* ------------------------------------------- o aviso de aparelho novo (estado da Tela 28) */
+
+    private void loginPossivel() {
+        when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+        when(passwordEncoder.matches("s3nhaForte", HASH)).thenReturn(true);
+        when(jwtService.generateToken(eq(EMAIL), eq(PERSON_ID), any())).thenReturn("token");
+        when(personSessionRepository.save(any())).thenAnswer(invocacao -> invocacao.getArgument(0));
+        when(jwtService.getExpirationMinutes()).thenReturn(120L);
+    }
+
+    /**
+     * O primeiro login de todos nao avisa ninguem.
+     *
+     * Quem acabou de criar a conta receberia um alerta de seguranca sobre a propria entrada — e
+     * alerta que chega quando nao ha nada errado ensina a pessoa a ignorar o proximo.
+     */
+    @Test
+    @DisplayName("a primeira entrada da conta nao dispara aviso")
+    void primeiraEntradaNaoAvisa() {
+        loginPossivel();
+        when(personSessionRepository.existsByPersonPersonId(PERSON_ID)).thenReturn(false);
+
+        authService.login(request("s3nhaForte"), "Chrome/141 Windows");
+
+        org.mockito.Mockito.verifyNoInteractions(novoAparelhoNotifier);
+    }
+
+    @Test
+    @DisplayName("aparelho ja conhecido nao dispara aviso")
+    void aparelhoConhecidoNaoAvisa() {
+        loginPossivel();
+        when(personSessionRepository.existsByPersonPersonId(PERSON_ID)).thenReturn(true);
+        when(personSessionRepository.conheceOAparelho(eq(PERSON_ID), any())).thenReturn(true);
+
+        authService.login(request("s3nhaForte"), "Chrome/141 Windows");
+
+        org.mockito.Mockito.verifyNoInteractions(novoAparelhoNotifier);
+    }
+
+    @Test
+    @DisplayName("entrada de aparelho desconhecido avisa, com a entrada ja gravada")
+    void aparelhoNovoAvisa() {
+        loginPossivel();
+        when(personSessionRepository.existsByPersonPersonId(PERSON_ID)).thenReturn(true);
+        when(personSessionRepository.conheceOAparelho(eq(PERSON_ID), any())).thenReturn(false);
+
+        authService.login(request("s3nhaForte"), "Firefox/130 Android");
+
+        /* A sessao vai junto porque o e-mail manda encerra-la: sem ela, o aviso nao teria o que
+           apontar. */
+        var avisada = org.mockito.ArgumentCaptor
+                .forClass(br.com.petfy.healthcare.domain.entity.PersonSession.class);
+        org.mockito.Mockito.verify(novoAparelhoNotifier)
+                .entrou(any(), avisada.capture());
+        assertThat(avisada.getValue().getUserAgent()).isEqualTo("Firefox/130 Android");
+    }
+
+    /**
+     * <b>Senha errada nao avisa</b>, e a ordem no codigo garante isso: o aviso sai depois de a
+     * entrada existir. Avisar aqui transformaria o alerta de seguranca em eco de quem tenta
+     * adivinhar senha — e o alarme tocaria justamente quando ninguem entrou.
+     */
+    @Test
+    @DisplayName("tentativa recusada nao dispara aviso")
+    void senhaErradaNaoAvisa() {
+        when(personRepository.findByEmail(EMAIL)).thenReturn(Optional.of(person()));
+        when(passwordEncoder.matches("errada", HASH)).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.login(request("errada"), "Firefox/130 Android"))
+                .isInstanceOf(PetfyHealthcareException.class);
+
+        org.mockito.Mockito.verifyNoInteractions(novoAparelhoNotifier);
     }
 
     /** Cliente que nao manda o campo continua entrando como sempre entrou. */

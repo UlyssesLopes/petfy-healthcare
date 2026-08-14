@@ -32,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
     private final PersonSessionRepository personSessionRepository;
     private final br.com.petfy.healthcare.security.OpaqueTokenService opaqueTokenService;
     private final br.com.petfy.healthcare.security.RefreshCookie refreshCookie;
+    private final br.com.petfy.healthcare.notification.NovoAparelhoNotifier novoAparelhoNotifier;
     private final PetfyMetrics petfyMetrics;
 
     /**
@@ -89,11 +90,19 @@ public class AuthServiceImpl implements AuthService {
          */
         String refresh = opaqueTokenService.generate();
         LocalDateTime agora = LocalDateTime.now();
+        String aparelho = recortar(userAgent);
+
+        /*
+         * A PERGUNTA VEM ANTES DE GRAVAR, senao a propria entrada que acabou de nascer responde
+         * "ja conheco este aparelho" e o aviso nunca sai.
+         */
+        boolean aparelhoNovo = personSessionRepository.existsByPersonPersonId(person.getPersonId())
+                && !personSessionRepository.conheceOAparelho(person.getPersonId(), aparelho);
 
         PersonSession sessao = personSessionRepository.save(PersonSession.builder()
                 .person(person)
                 .createdAt(agora)
-                .userAgent(recortar(userAgent))
+                .userAgent(aparelho)
                 .refreshTokenHash(opaqueTokenService.hash(refresh))
                 .refreshExpiresAt(agora.plus(refreshCookie.getValidade()))
                 // o prazo do servidor e o mesmo nos dois casos; o que muda e o cookie
@@ -109,6 +118,12 @@ public class AuthServiceImpl implements AuthService {
                 .professional(credentialRepository.existsAtivaPorEmail(
                         person.getEmail(), CredentialStatus.SUSPENSO))
                 .build();
+
+        /* Aviso, e nao bloqueio (Tela 28): quem esta com pressa entra, quem foi invadido descobre.
+           Depois de a entrada existir — o e-mail manda encerra-la, e ela precisa estar la. */
+        if (aparelhoNovo) {
+            novoAparelhoNotifier.entrou(person, sessao);
+        }
 
         return new Autenticada(corpo, refresh, sessao.persistente());
     }
