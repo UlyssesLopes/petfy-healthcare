@@ -37,7 +37,7 @@ public class PersonNotificationController {
                              + "o aviso e um FATO, e continua sendo o que a pessoa leu mesmo depois "
                              + "de o fato deixar de valer. E o mesmo texto que foi por e-mail.")
     @GetMapping
-    public ResponseEntity<Page<PersonNotificationResponseDTO>> listMine(
+    public ResponseEntity<Page<PersonNotificationResponseDTO>> listMyNotifications(
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(personNotificationService.listMine(pageable));
     }

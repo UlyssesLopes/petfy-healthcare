@@ -5170,7 +5170,7 @@
     "/animals/{animalId}/care-instructions/{careInstructionId}" : {
       "delete" : {
         "description" : "Tira das pendencias sem apagar do historico. Idempotente: a segunda chamada nao mexe na data nem em quem encerrou. Nao existe PUT - mudar a dose e emitir orientacao nova, porque editar o texto reescreveria o que os cumprimentos anteriores atestam.",
-        "operationId" : "revoke_3",
+        "operationId" : "revoke_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "animalId",
@@ -5997,7 +5997,7 @@
     "/animals/{animalId}/organization-access/{organizationId}" : {
       "delete" : {
         "description" : "Idempotente. O que a organizacao ja registrou fica: revogar acesso nao apaga historico, porque o registro e do animal.",
-        "operationId" : "revoke_2",
+        "operationId" : "revoke_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "animalId",
@@ -8117,7 +8117,7 @@
     "/organizations/invites/{organizationInviteId}" : {
       "delete" : {
         "description" : "Idempotente.",
-        "operationId" : "revoke_1",
+        "operationId" : "revoke",
         "parameters" : [ {
           "in" : "path",
           "name" : "organizationInviteId",
@@ -8434,7 +8434,7 @@
     "/persons/me/notifications" : {
       "get" : {
         "description" : "O texto vem pronto do banco, e nao remontado a partir do estado atual: o aviso e um FATO, e continua sendo o que a pessoa leu mesmo depois de o fato deixar de valer. E o mesmo texto que foi por e-mail.",
-        "operationId" : "listMine_1",
+        "operationId" : "listMyNotifications",
         "parameters" : [ {
           "description" : "Zero-based page index (0..N)",
           "in" : "query",
@@ -8610,7 +8610,7 @@
     "/persons/me/sessions" : {
       "get" : {
         "description" : "Das mais novas para as mais velhas, incluindo as ja encerradas. NAO HA LOCALIZACAO: o produto nao guarda de onde alguem entra, e um IP nao ajudaria ninguem a reconhecer o proprio aparelho. O que identifica e o navegador e quando comecou.",
-        "operationId" : "listMine",
+        "operationId" : "listMySessions",
         "responses" : {
           "200" : {
             "content" : {
@@ -8633,7 +8633,7 @@
     "/persons/me/sessions/{personSessionId}" : {
       "delete" : {
         "description" : "O token daquela entrada para de valer na proxima requisicao. ENCERRAR NAO APAGA: a linha fica com a data, porque quem encerra por suspeita de acesso indevido quer que o registro permaneca. Encerrar a sessao atual e sair, e e permitido — a tela avisa antes, o servidor nao impede.",
-        "operationId" : "revoke",
+        "operationId" : "revokeSession",
         "parameters" : [ {
           "in" : "path",
           "name" : "personSessionId",

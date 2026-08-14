@@ -35,7 +35,7 @@ public class PersonSessionController {
                              + "ajudaria ninguem a reconhecer o proprio aparelho. O que identifica e "
                              + "o navegador e quando comecou.")
     @GetMapping
-    public ResponseEntity<List<PersonSessionResponseDTO>> listMine() {
+    public ResponseEntity<List<PersonSessionResponseDTO>> listMySessions() {
         return ResponseEntity.ok(personSessionService.listMine());
     }
 
@@ -46,7 +46,7 @@ public class PersonSessionController {
                              + "atual e sair, e e permitido — a tela avisa antes, o servidor nao "
                              + "impede.")
     @DeleteMapping("/{personSessionId}")
-    public ResponseEntity<Void> revoke(@PathVariable UUID personSessionId) {
+    public ResponseEntity<Void> revokeSession(@PathVariable UUID personSessionId) {
         personSessionService.revoke(personSessionId);
         return ResponseEntity.noContent().build();
     }

@@ -1764,6 +1764,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/persons/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Os seus avisos, do mais novo para o mais velho
+         * @description O texto vem pronto do banco, e nao remontado a partir do estado atual: o aviso e um FATO, e continua sendo o que a pessoa leu mesmo depois de o fato deixar de valer. E o mesmo texto que foi por e-mail.
+         */
+        get: operations["listMyNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/persons/me/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marca todos como lidos
+         * @description Uma escrita so, e nao uma por aviso. Devolve quantos deixaram de estar por ler.
+         */
+        post: operations["markAllAsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/persons/me/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quantos avisos ainda nao foram lidos
+         * @description Rota propria porque a marca no sino e perguntada de qualquer tela: carregar uma pagina de avisos so para contar seria pagar a leitura inteira para mostrar um numero.
+         */
+        get: operations["countMineUnread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/persons/me/notifications/{personNotificationId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marca um aviso como lido
+         * @description Ler duas vezes nao reescreve a data: 'quando ela viu' e a PRIMEIRA vez que viu. Aviso de outra pessoa responde 404.
+         */
+        post: operations["markAsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/persons/me/password": {
         parameters: {
             query?: never;
@@ -1799,6 +1879,46 @@ export interface paths {
          */
         post: operations["declararCredencial"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/persons/me/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Os aparelhos conectados a sua conta
+         * @description Das mais novas para as mais velhas, incluindo as ja encerradas. NAO HA LOCALIZACAO: o produto nao guarda de onde alguem entra, e um IP nao ajudaria ninguem a reconhecer o proprio aparelho. O que identifica e o navegador e quando comecou.
+         */
+        get: operations["listMySessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/persons/me/sessions/{personSessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Encerra um aparelho
+         * @description O token daquela entrada para de valer na proxima requisicao. ENCERRAR NAO APAGA: a linha fica com a data, porque quem encerra por suspeita de acesso indevido quer que o registro permaneca. Encerrar a sessao atual e sair, e e permitido — a tela avisa antes, o servidor nao impede.
+         */
+        delete: operations["revokeSession"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2604,6 +2724,8 @@ export interface components {
             /** Format: uuid */
             sourceAntiparasiticId?: string;
             /** Format: uuid */
+            sourceCareInstructionId?: string;
+            /** Format: uuid */
             sourceEnrollmentId?: string;
             /** Format: uuid */
             sourceHealthRecordId?: string;
@@ -2628,6 +2750,8 @@ export interface components {
             recordedByName?: string;
             /** @enum {string} */
             recurrence?: "MENSAL";
+            /** Format: uuid */
+            sourceCareInstructionId?: string;
             /** Format: uuid */
             sourceEnrollmentId?: string;
             /** Format: uuid */
@@ -3671,6 +3795,24 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
         };
+        PagePersonNotificationResponseDTO: {
+            content?: components["schemas"]["PersonNotificationResponseDTO"][];
+            empty?: boolean;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            number?: number;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            size?: number;
+            sort?: components["schemas"]["SortObject"][];
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
         PageSensitiveAccessLogResponseDTO: {
             content?: components["schemas"]["SensitiveAccessLogResponseDTO"][];
             empty?: boolean;
@@ -3780,6 +3922,17 @@ export interface components {
             limitacoes?: string[];
             tutor?: components["schemas"]["TutorDTO"];
         };
+        PersonNotificationResponseDTO: {
+            body?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            event?: string;
+            /** Format: uuid */
+            personNotificationId?: string;
+            /** Format: date-time */
+            readAt?: string;
+            subject?: string;
+        };
         PersonRequestDTO: {
             acceptedTerms: boolean;
             address?: string;
@@ -3803,6 +3956,16 @@ export interface components {
             phone?: string;
             /** Format: date-time */
             updateDate?: string;
+        };
+        PersonSessionResponseDTO: {
+            /** Format: date-time */
+            createdAt?: string;
+            current?: boolean;
+            /** Format: uuid */
+            personSessionId?: string;
+            /** Format: date-time */
+            revokedAt?: string;
+            userAgent?: string;
         };
         PesagemDTO: {
             /** Format: date */
@@ -5941,7 +6104,9 @@ export interface operations {
     login: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "User-Agent"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -7031,6 +7196,95 @@ export interface operations {
             };
         };
     };
+    listMyNotifications: {
+        parameters: {
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PagePersonNotificationResponseDTO"];
+                };
+            };
+        };
+    };
+    markAllAsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": number;
+                };
+            };
+        };
+    };
+    countMineUnread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": number;
+                };
+            };
+        };
+    };
+    markAsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                personNotificationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonNotificationResponseDTO"];
+                };
+            };
+        };
+    };
     changePassword: {
         parameters: {
             query?: never;
@@ -7074,6 +7328,46 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AccountOverviewDTO"];
                 };
+            };
+        };
+    };
+    listMySessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PersonSessionResponseDTO"][];
+                };
+            };
+        };
+    };
+    revokeSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                personSessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
