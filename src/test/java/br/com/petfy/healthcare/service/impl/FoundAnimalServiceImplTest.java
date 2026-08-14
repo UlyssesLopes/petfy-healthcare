@@ -79,9 +79,12 @@ class FoundAnimalServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        /* AnimalContacts real, sobre os mesmos mocks: quem responde pelo animal e a ordem
+           em que os contatos saem continuam sendo afirmados aqui, onde o desenho os pede. */
         service = new FoundAnimalServiceImpl(animalRepository, animalDeathRepository,
                 conditionRepository, careInstructionRepository, custodyRepository,
-                grantRepository, vaccineRepository, vaccineStatusCalculator,
+                new br.com.petfy.healthcare.service.AnimalContacts(custodyRepository, grantRepository),
+                vaccineRepository, vaccineStatusCalculator,
                 sensitiveAccessLogger);
 
         lenient().when(animalRepository.findComMicrochip(CHIP)).thenReturn(List.of(code));

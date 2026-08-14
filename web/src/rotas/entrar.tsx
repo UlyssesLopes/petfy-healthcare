@@ -121,7 +121,6 @@ function Entrar() {
 
   const principal = useHover();
   const secundario = useHover();
-  const cartao = useHover();
 
   /*
    * Lido uma vez, na montagem: depois de entrar a sessao passa a existir, e o aviso
@@ -201,15 +200,7 @@ function Entrar() {
                 {intl.formatMessage({ id: "entrar.agora.texto" })}
               </div>
 
-              <button
-                type="button"
-                disabled
-                {...cartao.props}
-                style={{ fontFamily: "inherit", display: "inline-flex", alignItems: "center", fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "14px 20px", minHeight: "48px", cursor: "not-allowed", opacity: 0.55 }}
-              >
-                {intl.formatMessage({ id: "entrar.cartao.acao" })}
-              </button>
-              <PorQueDesabilitado>{intl.formatMessage({ id: "entrar.cartao.porque" })}</PorQueDesabilitado>
+              <AbrirCartao />
             </div>
           </div>
         )}
@@ -395,18 +386,10 @@ function Entrar() {
              */}
             {estreito && (
               <div style={{ borderTop: "1px solid oklch(0.92 0.006 150)", paddingTop: "18px", display: "flex", flexDirection: "column", gap: "12px" }}>
-                <button
-                  type="button"
-                  disabled
-                  {...cartao.props}
-                  style={{ fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "16px", minHeight: "56px", cursor: "not-allowed", opacity: 0.55 }}
-                >
-                  {intl.formatMessage({ id: "entrar.cartao.acao" })}
-                </button>
                 <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", lineHeight: 1.55, textAlign: "center" }}>
                   {intl.formatMessage({ id: "entrar.cartao.semSenha" })}
                 </div>
-                <PorQueDesabilitado semRecuo>{intl.formatMessage({ id: "entrar.cartao.porque" })}</PorQueDesabilitado>
+                <AbrirCartao />
               </div>
             )}
 
@@ -451,6 +434,58 @@ function Entrar() {
         </div>
       </div>
     </main>
+  );
+}
+
+/**
+ * A saida de emergencia da porta, e ela abre sem senha.
+ *
+ * <b>Pede o codigo, e nao um clique.</b> O cartao vive num token que so quem responde pelo animal
+ * gera — e como nao ha URL publica configurada, o que chega a quem precisa abrir e o codigo, nao
+ * um link clicavel. Colar aqui e a unica forma que existe hoje, e a tela diz isso em vez de
+ * oferecer um botao que nao teria para onde ir.
+ */
+function AbrirCartao() {
+  const intl = useIntl();
+  const navegar = useNavigate();
+  const [codigo, setCodigo] = useState("");
+
+  const limpo = codigo.trim();
+
+  return (
+    <form
+      onSubmit={(evento) => {
+        evento.preventDefault();
+        if (limpo !== "") {
+          void navegar({ to: "/cartao/$token", params: { token: limpo } });
+        }
+      }}
+      style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+    >
+      <label htmlFor="codigo-do-cartao" style={{ fontSize: "13px", fontWeight: 500, color: "oklch(0.42 0.015 150)" }}>
+        {intl.formatMessage({ id: "entrar.cartao.codigo" })}
+      </label>
+      <div style={{ display: "flex", gap: "8px" }}>
+        <input
+          id="codigo-do-cartao"
+          type="text"
+          autoComplete="off"
+          value={codigo}
+          onChange={(evento) => setCodigo(evento.target.value)}
+          style={{ fontFamily: "'DM Mono', monospace", flex: 1, minWidth: 0, border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "13px 14px", fontSize: "15px", minHeight: "48px", background: "oklch(1 0 0)", color: "oklch(0.25 0.02 150)" }}
+        />
+        <button
+          type="submit"
+          disabled={limpo === ""}
+          style={{ fontFamily: "inherit", fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "13px 20px", minHeight: "48px", flex: "none", cursor: limpo === "" ? "not-allowed" : "pointer", opacity: limpo === "" ? 0.55 : 1 }}
+        >
+          {intl.formatMessage({ id: "entrar.cartao.abrir" })}
+        </button>
+      </div>
+      <div style={{ fontSize: "13px", lineHeight: 1.5, color: "oklch(0.5 0.015 150)" }}>
+        {intl.formatMessage({ id: "entrar.cartao.ajuda" })}
+      </div>
+    </form>
   );
 }
 

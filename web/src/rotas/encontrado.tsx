@@ -2,11 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useIntl } from "react-intl";
 
-import {
-  useProcurarPorMicrochip,
-  type CartaoDeEncontrado,
-  type ContatoDeEncontrado,
-} from "../dados/fim.ts";
+import { CartaoDoAnimal } from "../componentes/CartaoDoAnimal.tsx";
+import { useProcurarPorMicrochip, type CartaoDeEncontrado } from "../dados/fim.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
@@ -152,56 +149,27 @@ function Encontrado() {
  */
 function Cartao({ cartao }: { cartao: CartaoDeEncontrado }) {
   const intl = useIntl();
-
   const nome = cartao.animalName ?? "";
-  const contatos = cartao.contacts ?? [];
 
   return (
-    <div style={{ background: "oklch(1 0 0)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
-      <div style={{ background: "oklch(0.46 0.085 150)", padding: "20px 22px", color: "oklch(1 0 0)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "9px", marginBottom: "14px" }}>
-          <span aria-hidden style={{ width: "20px", height: "20px", borderRadius: "999px", border: "2px solid oklch(1 0 0)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "999px", background: "oklch(1 0 0)" }}></span>
-          </span>
-          <span style={{ fontSize: "13px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-            {intl.formatMessage({ id: "encontrado.cartao.marca" })}
-          </span>
-        </div>
-
-        <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "30px", fontWeight: 500, letterSpacing: "-0.02em" }}>
-          {nome}
-        </div>
-        <div style={{ fontSize: "15px", opacity: 0.9, marginTop: "4px" }}>{descricao(cartao, intl)}</div>
-      </div>
-
-      <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: "18px" }}>
-        {contatos.map((contato, indice) => (
-          <Contato key={`${contato.name ?? ""}-${indice}`} contato={contato} destaque={indice === 0} />
-        ))}
-
-        <Bloco titulo={intl.formatMessage({ id: "encontrado.alergias" })} linhas={cartao.allergies ?? []} forte />
-        <Bloco titulo={intl.formatMessage({ id: "encontrado.condicoes" })} linhas={cartao.conditions ?? []} />
-        <Bloco titulo={intl.formatMessage({ id: "encontrado.medicacao" })} linhas={cartao.ongoingCare ?? []} />
-
-        <Separador />
-        <div>
-          <Rotulo>{intl.formatMessage({ id: "encontrado.vacinacao" })}</Rotulo>
-          {(cartao.vaccines ?? []).length === 0 ? (
-            <Nada />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "16px" }}>
-              {(cartao.vaccines ?? []).map((vacina, indice) => (
-                <Vacina key={`${vacina.vaccineName ?? ""}-${indice}`} vacina={vacina} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={{ borderTop: "1px solid oklch(0.92 0.006 150)", paddingTop: "14px", fontSize: "13px", color: "oklch(0.5 0.015 150)", lineHeight: 1.55 }}>
-          {intl.formatMessage({ id: "encontrado.rodape" }, { nome })}
-        </div>
-      </div>
-    </div>
+    <CartaoDoAnimal
+      marca={intl.formatMessage({ id: "encontrado.cartao.marca" })}
+      nome={nome}
+      descricao={descricao(cartao, intl)}
+      contatos={(cartao.contacts ?? []).map((contato) => ({
+        nome: contato.name ?? "",
+        telefone: contato.phone,
+      }))}
+      alergias={cartao.allergies ?? []}
+      condicoes={cartao.conditions ?? []}
+      medicacao={cartao.ongoingCare ?? []}
+      vacinas={(cartao.vaccines ?? []).map((vacina) => ({
+        nome: vacina.vaccineName ?? "",
+        status: vacina.status,
+        proximaDose: vacina.nextDoseDate,
+      }))}
+      rodape={intl.formatMessage({ id: "encontrado.rodape" }, { nome })}
+    />
   );
 }
 
@@ -228,130 +196,3 @@ function descricao(cartao: CartaoDeEncontrado, intl: ReturnType<typeof useIntl>)
   return partes.join(" · ");
 }
 
-function Contato({ contato, destaque }: { contato: ContatoDeEncontrado; destaque: boolean }) {
-  const intl = useIntl();
-  const quem = contato.name ?? "";
-
-  /*
-   * Sem telefone o contato nao vira botao morto: vira uma linha de texto.
-   *
-   * Um `tel:` sem numero e um botao que nao faz nada — e nesta tela um botao que nao faz nada e o
-   * pior defeito possivel, porque quem toca nele esta contando com ele.
-   */
-  if (contato.phone === undefined || contato.phone === null || contato.phone === "") {
-    return (
-      <div style={{ fontSize: "15px", color: "oklch(0.42 0.015 150)" }}>
-        {intl.formatMessage({ id: "encontrado.semTelefone" }, { quem })}
-      </div>
-    );
-  }
-
-  return (
-    <a
-      href={`tel:${contato.phone}`}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        textDecoration: "none",
-        fontSize: "17px",
-        fontWeight: 500,
-        borderRadius: "8px",
-        padding: "17px",
-        minHeight: "58px",
-        color: destaque ? "oklch(1 0 0)" : "oklch(0.25 0.02 150)",
-        background: destaque ? "oklch(0.46 0.085 150)" : "transparent",
-        border: destaque ? "none" : "1px solid oklch(0.82 0.012 150)",
-      }}
-    >
-      {intl.formatMessage({ id: "encontrado.ligar" }, { quem })}
-    </a>
-  );
-}
-
-function Vacina({ vacina }: { vacina: NonNullable<CartaoDeEncontrado["vaccines"]>[number] }) {
-  const intl = useIntl();
-  const nome = vacina.vaccineName ?? "";
-  const vencida = vacina.status === "OVERDUE";
-
-  const texto = (() => {
-    if (vencida) {
-      return intl.formatMessage({ id: "encontrado.vacina.vencida" }, { nome });
-    }
-    if (vacina.status === "DUE_SOON" && vacina.nextDoseDate !== undefined) {
-      return intl.formatMessage(
-        { id: "encontrado.vacina.chegando" },
-        { nome, data: intl.formatDate(vacina.nextDoseDate, { day: "2-digit", month: "2-digit" }) },
-      );
-    }
-    if (vacina.status === "NO_NEXT_DOSE") {
-      return intl.formatMessage({ id: "encontrado.vacina.semProxima" }, { nome });
-    }
-    return intl.formatMessage({ id: "encontrado.vacina.emDia" }, { nome });
-  })();
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-      {/*
-       * O losango da vencida e o circulo da em dia, como em todo o produto — a forma carrega o
-       * estado, e nao so a cor. Aqui isso vale duplamente: esta tela e lida na rua, no celular,
-       * possivelmente no sol.
-       */}
-      <span
-        aria-hidden
-        style={{
-          width: "12px",
-          height: "12px",
-          flex: "none",
-          background: vencida ? "oklch(0.55 0.14 30)" : "oklch(0.46 0.085 150)",
-          borderRadius: vencida ? 0 : "999px",
-          transform: vencida ? "rotate(45deg)" : "none",
-        }}
-      ></span>
-      {texto}
-    </div>
-  );
-}
-
-function Bloco({ titulo, linhas, forte = false }: { titulo: string; linhas: string[]; forte?: boolean }) {
-  /* Bloco sem nada nao aparece: uma lista vazia de alergias diria "nao tem alergia", e o que o
-     produto sabe e "ninguem registrou alergia" — que e outra coisa, e perigosa de confundir. */
-  if (linhas.length === 0) {
-    return null;
-  }
-
-  return (
-    <>
-      <Separador />
-      <div>
-        <Rotulo>{titulo}</Rotulo>
-        <div style={{ fontSize: forte ? "18px" : "17px", fontWeight: forte ? 500 : 400, display: "flex", flexDirection: "column", gap: "4px" }}>
-          {linhas.map((linha) => (
-            <span key={linha}>{linha}</span>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function Rotulo({ children }: { children: string }) {
-  return (
-    <div style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)", marginBottom: "8px" }}>
-      {children}
-    </div>
-  );
-}
-
-function Nada() {
-  const intl = useIntl();
-  return (
-    <div style={{ fontSize: "15px", color: "oklch(0.5 0.015 150)" }}>
-      {intl.formatMessage({ id: "encontrado.nada" })}
-    </div>
-  );
-}
-
-function Separador() {
-  return <div aria-hidden style={{ height: "1px", background: "oklch(0.92 0.006 150)" }}></div>;
-}

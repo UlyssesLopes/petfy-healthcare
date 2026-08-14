@@ -58,22 +58,42 @@ const SEM_NAVEGACAO = ["/comecar", "/animais/novo"];
  * uma porta e o comeco de uma sessao, e esta tela nao leva a sessao nenhuma — quem digita um
  * microchip as 23h com um animal no colo nao esta a caminho de criar conta.
  *
- * O efeito hoje e a moldura reduzida, e ela serve pela mesma razao das portas: a tela desenha a
- * propria marca dentro do cartao. <b>A variante MINIMA do desenho — "sem rodape institucional
- * entre o dedo e o telefone do veterinario" — ainda nao existe aqui</b>, e quando existir e esta
- * lista que muda, num lugar so.
+ * O efeito e a moldura reduzida, e ela serve pela mesma razao das portas: a tela desenha a
+ * propria marca dentro do cartao.
  */
 const PUBLICAS = ["/encontrado"];
 
-type Variante = "completa" | "reduzida";
+/**
+ * O cartao de emergencia, e a variante MINIMA do desenho.
+ *
+ * "Quem abre o cartao nao tem sessao, nao tem para onde navegar e esta com pressa. Cabecalho com
+ * 'Agindo como' nao faz sentido, e um rodape de quatro colunas seria uma parede entre o dedo e o
+ * telefone do veterinario."
+ *
+ * <b>Prefixo, e nao caminho exato</b>, porque o token viaja na URL.
+ */
+const MINIMAS = ["/cartao/"];
+
+type Variante = "completa" | "reduzida" | "minima";
 
 export function Moldura({ children }: { children: ReactNode }) {
   const caminho = useRouterState({ select: (estado) => estado.location.pathname });
 
-  const variante: Variante =
-    PORTAS.includes(caminho) || SEM_NAVEGACAO.includes(caminho) || PUBLICAS.includes(caminho)
-      ? "reduzida"
-      : "completa";
+  const variante: Variante = (() => {
+    if (MINIMAS.some((prefixo) => caminho.startsWith(prefixo))) {
+      return "minima";
+    }
+    if (PORTAS.includes(caminho) || SEM_NAVEGACAO.includes(caminho) || PUBLICAS.includes(caminho)) {
+      return "reduzida";
+    }
+    return "completa";
+  })();
+
+  /* Nada entre quem le e o telefone: sem cabecalho, sem rodape. A propria tela diz quem gerou o
+     cartao, ate quando ele vale e o que nao esta ali. */
+  if (variante === "minima") {
+    return <div style={{ minHeight: "100dvh" }}>{children}</div>;
+  }
 
   /* As portas desenham a propria marca dentro do cartao, e o desenho delas ja e a moldura
      reduzida. Repetir a marca aqui daria duas. */
