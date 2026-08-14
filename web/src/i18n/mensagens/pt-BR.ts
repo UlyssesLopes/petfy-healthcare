@@ -1126,8 +1126,10 @@ export const mensagens = {
   "moldura.busca": "Buscar animal",
   "moldura.busca.indisponivel":
     "A busca ainda não existe: não há rota de busca no servidor, e o RGA nem é um campo do cadastro.",
-  "moldura.avisos.indisponivel":
-    "Não há canal de aviso no produto ainda, então este marcador nunca acende. Ele fica visível para não sumir da tela quando passar a funcionar.",
+  // O marcador acende desde a V48. Ele ficou visível e desabilitado até aqui, com a frase "não há
+  // canal de aviso no produto ainda" — que era verdade, e o dia em que deixou de ser é este.
+  "moldura.avisos": "Avisos",
+  "moldura.avisos.ha": "Avisos — há coisa por ler",
 
   // A faixa. "Faixa é aviso de sessão, nunca de animal" — pendência de saúde vive no feed, e se
   // subir para o cabeçalho o produto vira cobrador.
@@ -1390,6 +1392,26 @@ export const mensagens = {
   "compra.dura.nota":
     "{vezes, plural, one {A previsão do ano conta uma compra dessas} other {A previsão do ano conta # compras dessas}}.",
   "compra.dura.nota.avulsa": "Entra no que já foi gasto, e não na previsão do ano.",
+
+  // O REMÉDIO QUE O ANIMAL ESTÁ TOMANDO.
+  //
+  // Até a V49 remédio virava custo e nada mais: quem cuidasse do animal naquela semana não tinha
+  // como saber que havia um comprimido às 8h. É opcional de propósito — um antipulgas de dose
+  // única não é tratamento a acompanhar, e obrigar transformaria os três toques num formulário.
+  "compra.tratamento.declarar": "O {nome} está tomando isto",
+  "compra.tratamento.nota":
+    "Marque só se for um tratamento a acompanhar. Ele entra na vida do animal com prazo, e quem cuida dele vê o que fazer e quando.",
+  "compra.tratamento.comoDar": "O que fazer",
+  "compra.tratamento.exemplo": "Meio comprimido de manhã, com comida",
+  // O nome do remédio e o "como dar" no mesmo campo: quem lê a pendência precisa ver "junto com a
+  // comida" ao lado do nome, e separá-los faria a instrução chegar pela metade.
+  "compra.tratamento.comoDar.nota":
+    "Escreva como quem vai dar precisa ler — o nome do remédio e o jeito de dar, na mesma frase.",
+  "compra.tratamento.aCada": "De quanto em quanto tempo",
+  "compra.tratamento.aCada.dias": "{dias, plural, one {Todo dia} other {A cada # dias}}",
+  "compra.tratamento.por": "Por quanto tempo",
+  "compra.tratamento.por.dias": "{dias, plural, one {Um dia} other {# dias}}",
+  "compra.tratamento.oQueE": "o tratamento",
 
   "compra.lancar": "Lançar",
   "compra.lancando": "Lançando…",
@@ -2161,11 +2183,27 @@ export const mensagens = {
   "conta.registro.salvar": "Salvar registro",
   "conta.registro.informado":
     "Entra como informado: o Petfy não consulta o conselho, e o registro carrega essa informação em vez de fingir uma garantia que não tem.",
+  // A ÚNICA LINHA DE TELA QUE FALTAVA, e ela passou a existir na V50.
+  //
+  // Aqui estava escrito que o Petfy não guardava a lista, e a justificativa era o JWT sem estado.
+  // A premissa estava errada: o filtro já consultava o banco em toda requisição autenticada.
   "conta.aparelhos": "Aparelhos conectados",
-  // O produto não sabe, e diz que não sabe — um número estimado faria a pessoa clicar em "encerrar"
-  // acreditando ter encerrado.
-  "conta.aparelhos.naoSabemos":
-    "O Petfy não guarda a lista de aparelhos conectados, então não conseguimos mostrá-la nem encerrar sessões uma a uma. Trocar a senha derruba todas de uma vez.",
+  "conta.aparelhos.quantos":
+    "{quantos, plural, =0 {Nenhuma entrada aberta} one {# entrada aberta} other {# entradas abertas}} na sua conta.",
+  "conta.aparelhos.carregando": "Carregando…",
+  // Sem palpite: user agent que não dá para reconhecer vira "não identificado", e não um chute que
+  // faria a pessoa encerrar a sessão errada.
+  "conta.aparelhos.desconhecido": "Aparelho não identificado",
+  "conta.aparelhos.este": "· este aqui",
+  "conta.aparelhos.desde": "Desde {data}",
+  "conta.aparelhos.encerradoEm": "Encerrado em {data}",
+  "conta.aparelhos.encerrar": "Encerrar",
+  // A frase vem ANTES do gesto: cair na tela de entrada sem aviso pareceria defeito.
+  "conta.aparelhos.esteEhSair":
+    "Este é o aparelho que você está usando agora. Encerrar aqui é sair do Petfy neste aparelho. Quer continuar?",
+  "conta.aparelhos.oQueE": "o encerramento",
+  "conta.aparelhos.trocarSenha":
+    "Não guardamos de onde você entrou — um endereço de rede não ajudaria você a reconhecer o próprio aparelho. Se não reconhecer alguma entrada, trocar a senha derruba todas de uma vez.",
   "conta.levarDados": "Levar meus dados embora",
   "conta.levarDados.nota":
     "Baixa a vida registrada dos seus animais em arquivo legível, sem pedir motivo.",
@@ -2232,6 +2270,22 @@ export const mensagens = {
   "registrar.feito.vacina": "{vacina} entrou na carteira.",
   "registrar.feito.peso": "{peso} kg entrou no acompanhamento de peso.",
   "registrar.feito.observacao": "A observação entrou na linha do tempo.",
+
+  // ------------------------------------------------------- o que o Petfy te contou (a V48)
+  //
+  // O produto avisa por e-mail desde o P4 e nunca avisou aqui dentro. O sino da moldura existia
+  // desabilitado, com "não há canal de aviso" escrito ao lado — esta tela é o destino dele.
+  "avisos.titulo": "Avisos",
+  "avisos.oQueE": "os avisos",
+  "avisos.apoio":
+    "O que aconteceu nos seus animais, com o mesmo texto que foi para o seu e-mail. Fica guardado aqui mesmo que o e-mail não chegue.",
+  "avisos.marcarTodos": "Marcar todos como lidos",
+  "avisos.marcarLido": "Marcar como lido",
+  // O VAZIO AQUI É BOA NOTÍCIA, e a frase diz isso. "Nada encontrado" ensinaria a pessoa a temer
+  // a tela — num produto de saúde animal, nenhum aviso significa que nada mudou de mão.
+  "avisos.vazio":
+    "Nada por aqui, e isso é uma boa notícia: ninguém entrou nos seus animais e nada mudou de mão.",
+  "avisos.inicio": "Voltar para o início",
 
   // ---------------------------------------------------- onde se cola o código de um convite
   //

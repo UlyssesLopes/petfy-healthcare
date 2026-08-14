@@ -4,6 +4,7 @@ import { useIntl } from "react-intl";
 
 import { ErroAoGravar } from "../componentes/Estados.tsx";
 import { useAnimal } from "../dados/carteira.ts";
+import { usePrescrever } from "../dados/atendimento.ts";
 import { useLancarCusto, type CategoriaDeCusto } from "../dados/custo.ts";
 import { lerSessao } from "../dados/sessao.ts";
 
@@ -82,20 +83,73 @@ function Compra() {
   const [quando, setQuando] = useState(hoje);
   const [lancado, setLancado] = useState<string | undefined>(undefined);
 
+  /*
+   * O REMEDIO QUE O ANIMAL ESTA TOMANDO — e ate a V49 ele virava custo e nada mais.
+   *
+   * Lancar "Remedio, R$ 90" guardava um numero na categoria SAUDE e mais nada: quem cuidasse do
+   * animal naquela semana nao tinha como saber que havia um comprimido as 8h, e a linha do tempo
+   * nao mostrava tratamento nenhum.
+   *
+   * <b>E OPCIONAL, e isso e a regra da tela.</b> "Quanto mais campos, menos gente lanca, e menos
+   * verdadeiro fica o custo" — entao o bloco so aparece em REMEDIO, e so quando a pessoa pede. Um
+   * antipulgas de dose unica nao e tratamento a acompanhar, e obrigar transformaria os tres toques
+   * num formulario.
+   */
+  const [declararTratamento, setDeclararTratamento] = useState(false);
+  const [comoDar, setComoDar] = useState("");
+  const [aCadaDias, setACadaDias] = useState(1);
+  const [porDias, setPorDias] = useState(7);
+
+  const prescrever = usePrescrever();
+
+  const ehRemedio = oQueFoi === "remedio";
+  const vaiDeclarar = ehRemedio && declararTratamento && comoDar.trim() !== "";
+
   const nome = animal.data?.name ?? "";
   const quanto = Number(valor.replace(/[^\d,.-]/g, "").replace(",", "."));
-  const podeLancar = valor.trim() !== "" && !Number.isNaN(quanto) && quanto >= 0 && !lancar.isPending;
+  /* O tratamento grava antes do custo, entao o botao tem de esperar os DOIS: sem o `prescrever`
+     aqui, um segundo toque durante a primeira gravacao criaria duas orientacoes. */
+  const gravando = lancar.isPending || prescrever.isPending;
+  const podeLancar = valor.trim() !== "" && !Number.isNaN(quanto) && quanto >= 0 && !gravando;
 
-  const enviar = () => {
+  const enviar = async () => {
     if (!podeLancar) {
       return;
     }
 
     setLancado(undefined);
 
+    /*
+     * O TRATAMENTO NASCE PRIMEIRO, e o custo aponta para ele.
+     *
+     * A ordem e a mesma da dose de vacina com o `sourceVaccineId`: o fato de saude existe por si,
+     * e o gasto se liga a ele. Invertida, um erro ao gravar a orientacao deixaria um custo apontando
+     * para nada.
+     *
+     * <b>E se a orientacao falhar, o lancamento PARA.</b> Gravar so o custo entregaria em silencio
+     * a metade que a pessoa nao pediu — ela declarou um tratamento, e sairia da tela achando que o
+     * animal tem um remedio acompanhado quando nao tem.
+     */
+    let tratamentoId: string | undefined = undefined;
+
+    if (vaiDeclarar) {
+      const tratamento = await prescrever.mutateAsync({
+        animalId,
+        descricao: comoDar.trim(),
+        intervaloEmDias: aCadaDias,
+        comecaEm: quando,
+        terminaEm: new Date(new Date(quando + "T00:00:00").getTime() + porDias * 86_400_000)
+          .toISOString()
+          .slice(0, 10),
+      });
+
+      tratamentoId = tratamento?.careInstructionId;
+    }
+
     lancar.mutate(
       {
         animalId,
+        tratamentoId,
         descricao: intl.formatMessage({ id: `compra.oQue.${oQueFoi}` }),
         valor: quanto,
         /* COMPRA e o unico tipo que nasce de um gesto do tutor: os outros tres saem de eventos
@@ -115,6 +169,8 @@ function Compra() {
           setValor("");
           setDuraMeses(0);
           setQuando(hoje);
+          setDeclararTratamento(false);
+          setComoDar("");
         },
       },
     );
@@ -238,6 +294,107 @@ function Compra() {
               </div>
             </div>
 
+            {/*
+             * ================================= O REMEDIO QUE O ANIMAL ESTA TOMANDO
+             *
+             * <b>So aparece em REMEDIO, e so quando a pessoa pede.</b> Um antipulgas de dose unica
+             * nao e tratamento a acompanhar, e o custo de perguntar sempre e o que esta escrito no
+             * cartao ao lado: "quanto mais campos, menos gente lanca, e menos verdadeiro fica o
+             * custo".
+             *
+             * <b>Nao ha entidade nova por tras disto.</b> A orientacao de cuidado ja e "prescricao,
+             * medicacao e tema de casa" desde o P3, e nao exige credencial — de proposito, porque
+             * so a prescricao envolve CRMV. O tutor sempre pode dizer "o Code esta tomando isto";
+             * o que faltava era o gasto e o tratamento serem a mesma coisa vista de dois lados.
+             */}
+            {ehRemedio && (
+              <div style={{ borderTop: "1px solid oklch(0.94 0.006 150)", paddingTop: "18px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "15px", cursor: "pointer", minHeight: "44px" }}>
+                  <input
+                    type="checkbox"
+                    checked={declararTratamento}
+                    onChange={(evento) => setDeclararTratamento(evento.target.checked)}
+                    style={{ width: "20px", height: "20px", accentColor: "oklch(0.46 0.085 150)" }}
+                  />
+                  {intl.formatMessage({ id: "compra.tratamento.declarar" }, { nome })}
+                </label>
+
+                <div style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)", marginTop: "4px", lineHeight: 1.55 }}>
+                  {intl.formatMessage({ id: "compra.tratamento.nota" })}
+                </div>
+
+                {declararTratamento && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "16px" }}>
+                    <div>
+                      <label htmlFor="comoDar" style={rotulo}>
+                        {intl.formatMessage({ id: "compra.tratamento.comoDar" })}
+                      </label>
+                      <input
+                        id="comoDar"
+                        value={comoDar}
+                        onChange={(evento) => setComoDar(evento.target.value)}
+                        placeholder={intl.formatMessage({ id: "compra.tratamento.exemplo" })}
+                        style={{ border: "1px solid oklch(0.82 0.012 150)", borderRadius: "4px", padding: "13px 14px", fontSize: "16px", minHeight: "48px", width: "100%", background: "oklch(1 0 0)", fontFamily: "inherit" }}
+                      />
+                      {/*
+                       * O nome do remedio e o "como dar" no MESMO campo, e nao em dois: quem le a
+                       * pendencia precisa ver "junto com a comida" ao lado do nome — separa-los
+                       * faria a instrucao chegar pela metade.
+                       */}
+                      <div style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)", marginTop: "7px", lineHeight: 1.55 }}>
+                        {intl.formatMessage({ id: "compra.tratamento.comoDar.nota" })}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label htmlFor="aCada" style={rotulo}>
+                          {intl.formatMessage({ id: "compra.tratamento.aCada" })}
+                        </label>
+                        <select
+                          id="aCada"
+                          value={String(aCadaDias)}
+                          onChange={(evento) => setACadaDias(Number(evento.target.value))}
+                          style={{ border: "1px solid oklch(0.82 0.012 150)", borderRadius: "4px", padding: "13px 14px", fontSize: "16px", minHeight: "48px", width: "100%", background: "oklch(1 0 0)", fontFamily: "inherit", cursor: "pointer" }}
+                        >
+                          {[1, 2, 3, 7, 15, 30].map((dias) => (
+                            <option key={dias} value={String(dias)}>
+                              {intl.formatMessage({ id: "compra.tratamento.aCada.dias" }, { dias })}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="porDias" style={rotulo}>
+                          {intl.formatMessage({ id: "compra.tratamento.por" })}
+                        </label>
+                        <select
+                          id="porDias"
+                          value={String(porDias)}
+                          onChange={(evento) => setPorDias(Number(evento.target.value))}
+                          style={{ border: "1px solid oklch(0.82 0.012 150)", borderRadius: "4px", padding: "13px 14px", fontSize: "16px", minHeight: "48px", width: "100%", background: "oklch(1 0 0)", fontFamily: "inherit", cursor: "pointer" }}
+                        >
+                          {[3, 5, 7, 10, 14, 21, 30, 60, 90].map((dias) => (
+                            <option key={dias} value={String(dias)}>
+                              {intl.formatMessage({ id: "compra.tratamento.por.dias" }, { dias })}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {prescrever.error !== null && prescrever.error !== undefined && (
+              <ErroAoGravar
+                erro={prescrever.error}
+                oQue={intl.formatMessage({ id: "compra.tratamento.oQueE" })}
+              />
+            )}
+
             {lancar.error !== null && lancar.error !== undefined && (
               <ErroAoGravar erro={lancar.error} oQue={intl.formatMessage({ id: "compra.oQueE" })} />
             )}
@@ -245,10 +402,10 @@ function Compra() {
             <button
               type="button"
               disabled={!podeLancar}
-              onClick={enviar}
+              onClick={() => void enviar()}
               style={{ fontFamily: "inherit", fontSize: "17px", fontWeight: 500, color: "oklch(1 0 0)", background: podeLancar ? "oklch(0.46 0.085 150)" : "oklch(0.62 0.05 150)", border: "none", borderRadius: "8px", padding: "17px", minHeight: "58px", cursor: podeLancar ? "pointer" : "not-allowed" }}
             >
-              {intl.formatMessage({ id: lancar.isPending ? "compra.lancando" : "compra.lancar" })}
+              {intl.formatMessage({ id: gravando ? "compra.lancando" : "compra.lancar" })}
             </button>
 
             {lancado !== undefined && !lancar.isPending && (

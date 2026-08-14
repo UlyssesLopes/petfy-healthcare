@@ -115,19 +115,31 @@ class PetTutorActivityNotifierTest {
                     .noneSatisfy(linha -> assertThat(linha).contains("VIEWER"));
         }
 
-        /**
-         * Enquanto o e-mail nao for confirmado nada sai: o nome do animal e dos tutores
-         * nao vai para a caixa de um estranho.
+        /*
+         * ESTE TESTE MUDOU DE LADO NA V48, e o que ele guardava continua guardado.
+         *
+         * Ele dizia "nao envia para e-mail nao confirmado", com `verifyNoInteractions(dispatcher)`.
+         * A razao era certa — o nome do animal e dos tutores nao vai para a caixa de um estranho —,
+         * e o e-mail continua nao saindo por ela.
+         *
+         * <b>O que mudou e que o dispatcher deixou de ser sinonimo de e-mail.</b> Atras dele ha
+         * agora dois canais, e o in-app so aparece para quem ja entrou na conta: nao ha caixa de
+         * estranho nenhuma. Suprimir aqui em cima calava tambem esse, e deixava sem aviso justamente
+         * quem nao le e-mail do produto.
          */
         @Test
-        @DisplayName("nao envia para e-mail nao confirmado")
-        void naoEnviaParaEmailNaoConfirmado() {
+        @DisplayName("o tutor sem e-mail confirmado recebe no app, e so o e-mail dele nao sai")
+        void semEmailConfirmadoRecebeSoNoApp() {
             var ulysses = naoConfirmado(ULYSSES_ID, "Ulysses");
             var maria = confirmado(MARIA_ID, "Maria");
 
             notifier.tutorEntrou(rex(), List.of(ulysses, maria), maria, PetTutorRole.EDITOR);
 
-            verifyNoInteractions(dispatcher);
+            var enviadas = enviadas();
+
+            assertThat(enviadas).hasSize(1);
+            assertThat(enviadas.get(0).getToEmail()).isEqualTo("ulysses@petfy.com.br");
+            assertThat(enviadas.get(0).isPorEmail()).isFalse();
         }
 
         /** Falhar para um tutor nao pode calar os outros. */

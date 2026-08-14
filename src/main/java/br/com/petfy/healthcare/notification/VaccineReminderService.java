@@ -95,19 +95,18 @@ public class VaccineReminderService {
         // indexar por um dono unico que nao existe mais.
         Map<Person, List<Vaccine>> vacinasPorTutor = new LinkedHashMap<>();
         for (Vaccine v : vacinasPendentes) {
+            // TODOS os tutores entram desde a V48: o aviso in-app alcanca quem nao confirmou o
+            // e-mail, e e o canal que decide depois se o e-mail tambem sai. Filtrar aqui deixava
+            // sem lembrete nenhum justamente quem nao le e-mail do produto.
             for (Person tutor : animalReach.pessoas(v.getAnimal().getAnimalId())) {
-                if (tutor.podeReceberNotificacao()) {
-                    vacinasPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(v);
-                }
+                vacinasPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(v);
             }
         }
 
         Map<Person, List<Antiparasitic>> antisPorTutor = new LinkedHashMap<>();
         for (Antiparasitic a : antisPendentes) {
             for (Person tutor : animalReach.pessoas(a.getAnimal().getAnimalId())) {
-                if (tutor.podeReceberNotificacao()) {
-                    antisPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(a);
-                }
+                antisPorTutor.computeIfAbsent(tutor, k -> new ArrayList<>()).add(a);
             }
         }
 
@@ -178,6 +177,8 @@ public class VaccineReminderService {
                 .toName(person.getName())
                 .subject(temVencida ? "Aplicacao em atraso no Petfy" : "Aplicacao chegando no Petfy")
                 .lines(linhas)
+                // quem nao confirmou o endereco recebe o lembrete NO APP, e nao na caixa de e-mail
+                .porEmail(person.podeReceberNotificacao())
                 .build();
     }
 

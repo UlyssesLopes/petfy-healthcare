@@ -55,7 +55,17 @@ public class Canais implements Notifier {
             log.error("Falha ao guardar o aviso in-app de {}", evento, e);
         }
 
-        externo.send(notification);
+        /*
+         * O ENDERECO NAO CONFIRMADO PARA O E-MAIL, E NAO O AVISO.
+         *
+         * Ate a V48 essa decisao morava nos notificadores do dominio, que PULAVAM o destinatario
+         * nao confirmado antes de montar a mensagem. Com o in-app isso virou defeito: ele so aparece
+         * para quem ja entrou na conta — nao vaza nada —, e quem nao confirmou o e-mail e exatamente
+         * quem mais precisa dele. Pular la em cima matava os dois canais para essa pessoa.
+         */
+        if (notification.isPorEmail()) {
+            externo.send(notification);
+        }
     }
 
 }

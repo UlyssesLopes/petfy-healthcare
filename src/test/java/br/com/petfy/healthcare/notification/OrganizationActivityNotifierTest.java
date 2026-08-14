@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -124,23 +125,37 @@ class OrganizationActivityNotifierTest {
                 .last().asString().contains("revogue o acesso da clinica");
     }
 
-    /**
-     * O risco de notificar endereco nao confirmado nao e incomodo: e o nome do
-     * animal e do tutor chegando na caixa de um estranho.
+    /*
+     * ESTES DOIS AFIRMAVAM O CONTRARIO ATE A V48, E MUDARAM DE LADO DE PROPOSITO.
+     *
+     * Eles diziam "nao deve notificar tutor que ainda nao confirmou o e-mail", e o `verify(never())`
+     * era sobre o DISPATCHER. Estava certo enquanto o e-mail era o unico canal: o risco de escrever
+     * para endereco nao confirmado nao e incomodo, e o nome do animal e do tutor chegando na caixa
+     * de um estranho.
+     *
+     * <b>O risco continua sendo esse, e por isso o e-mail continua nao saindo.</b> O que mudou e que
+     * suprimir no DOMINIO passou a calar tambem o aviso in-app — que so aparece para quem ja entrou
+     * na conta, e portanto nao vaza nada. Quem nao confirmou o e-mail era justamente quem ficava sem
+     * canal nenhum.
+     *
+     * A assercao nova e mais forte que a antiga: prova que o aviso EXISTE e que o e-mail NAO sai.
      */
     @Test
-    @DisplayName("nao deve notificar tutor que ainda nao confirmou o e-mail")
-    void naoDeveNotificarTutorSemEmailConfirmado() {
+    @DisplayName("o tutor sem e-mail confirmado recebe o aviso no app, e nao por e-mail")
+    void semEmailConfirmadoRecebeSoNoApp() {
         var semEmail = tutor(false);
         quemAlcanca(semEmail);
         notifier.vaccineRecorded(vacina(semEmail));
 
-        verify(dispatcher, never()).dispatch(any(), anyString());
+        var captor = ArgumentCaptor.forClass(Notification.class);
+        verify(dispatcher).dispatch(captor.capture(), anyString());
+
+        assertThat(captor.getValue().isPorEmail()).isFalse();
     }
 
     @Test
-    @DisplayName("a supressao deve valer para os quatro avisos, nao so para a vacina")
-    void supressaoDeveValerParaOsQuatroAvisos() {
+    @DisplayName("os quatro avisos chegam ao app, e nenhum dos quatro sai por e-mail")
+    void osQuatroAvisosValemNoApp() {
         var dono = tutor(false);
         quemAlcanca(dono);
 
@@ -149,7 +164,12 @@ class OrganizationActivityNotifierTest {
         notifier.healthRecordRecorded(atendimento(dono));
         notifier.healthRecordCorrected(atendimento(dono));
 
-        verify(dispatcher, never()).dispatch(any(), anyString());
+        var captor = ArgumentCaptor.forClass(Notification.class);
+        verify(dispatcher, times(4)).dispatch(captor.capture(), anyString());
+
+        assertThat(captor.getAllValues())
+                .hasSize(4)
+                .allSatisfy(aviso -> assertThat(aviso.isPorEmail()).isFalse());
     }
 
     /**

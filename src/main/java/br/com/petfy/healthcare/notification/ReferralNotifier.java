@@ -174,10 +174,13 @@ public class ReferralNotifier {
             return;
         }
 
-        if (!destinatario.podeReceberNotificacao()) {
-            log.info("Pessoa {} ainda nao confirmou o e-mail; aviso de {} suprimido",
+        /* O e-mail nao sai para endereco nao confirmado; o aviso in-app sai — ele so aparece para
+           quem ja entrou na conta. Ate a V48 isto era um `return`, e calava os dois canais. */
+        boolean porEmail = destinatario.podeReceberNotificacao();
+
+        if (!porEmail) {
+            log.info("Pessoa {} ainda nao confirmou o e-mail; aviso de {} fica so no app",
                     destinatario.getPersonId(), EVENTO);
-            return;
         }
 
         despachar(() -> Notification.builder()
@@ -185,6 +188,7 @@ public class ReferralNotifier {
                 .toName(destinatario.getName())
                 .subject(assunto)
                 .lines(linhas)
+                .porEmail(porEmail)
                 .build());
     }
 
