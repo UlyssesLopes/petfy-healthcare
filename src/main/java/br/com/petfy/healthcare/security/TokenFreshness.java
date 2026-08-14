@@ -32,7 +32,27 @@ public class TokenFreshness {
 
     private final PersonRepository personRepository;
 
+    private final br.com.petfy.healthcare.domain.repository.PersonSessionRepository personSessionRepository;
+
     public boolean isStale(JwtPrincipal principal) {
+        /*
+         * A SESSAO ENCERRADA VEM PRIMEIRO, e e a Tela 36 funcionando.
+         *
+         * Ate a V50 a unica forma de derrubar uma entrada era trocar a senha, que derruba TODAS — e
+         * a tela dizia isso porque era verdade. Encerrar um aparelho so passou a existir aqui.
+         *
+         * <b>A consulta a mais nao muda a natureza do filtro:</b> ele ja ia ao banco em toda rota
+         * autenticada, pelo `passwordChangedAt`. O argumento de que sessao persistida "faria o
+         * produto deixar de ser stateless" descrevia um custo que ja estava pago.
+         *
+         * <b>Token sem `sid` passa</b> — e o anterior a V50, e derruba-lo seria deslogar todo mundo
+         * numa migracao. Ele continua sujeito a troca de senha, que era a unica trava que tinha.
+         */
+        if (principal.getSessionId() != null
+                && Boolean.TRUE.equals(personSessionRepository.estaEncerrada(principal.getSessionId()))) {
+            return true;
+        }
+
         Optional<LocalDateTime> trocaDeSenha =
                 personRepository.findPasswordChangedAtByEmail(principal.getEmail());
 

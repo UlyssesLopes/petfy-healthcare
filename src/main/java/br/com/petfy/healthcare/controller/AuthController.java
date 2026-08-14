@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,9 +33,19 @@ public class AuthController {
                description = "Devolve o JWT. Trocar a senha invalida os tokens emitidos antes, entao o "
                              + "cliente recebe 401 num token que ainda nao expirou - e precisa "
                              + "distinguir isso de expiracao.")
+    /*
+     * O USER AGENT VEM PELO CONTROLLER, e nao por um `HttpServletRequest` injetado no servico.
+     *
+     * Ele e a unica coisa que a Tela 36 tem para a pessoa reconhecer o proprio aparelho, e chega
+     * aqui como o que e: um cabecalho. Injetar o request no servico faria toda a regra de login
+     * depender do servlet para ler uma string, e os testes teriam de montar um mundo HTTP para
+     * afirmar sobre senha.
+     */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<LoginResponseDTO> login(
+            @Valid @RequestBody LoginRequestDTO request,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent) {
+        return ResponseEntity.ok(authService.login(request, userAgent));
     }
 
     /**

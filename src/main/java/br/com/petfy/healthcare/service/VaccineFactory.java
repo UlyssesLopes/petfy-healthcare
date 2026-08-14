@@ -51,7 +51,7 @@ public class VaccineFactory {
         }
 
         String nome = resolverNome(request, catalog);
-        recusarDoseDuplicada(animal, catalog, nome, request.getApplicationDate());
+        recusarDoseDuplicada(animal, catalog, nome, request.getApplicationDate(), null);
 
         return Vaccine.builder()
                 .animal(animal)
@@ -85,13 +85,24 @@ public class VaccineFactory {
      * ausencias nao provam que sao a mesma coisa — recusar ai seria barrar registro legitimo por
      * falta de um campo.
      *
-     * O que ela NAO cobre, de proposito: a edicao. Mudar a data de um registro para bater com
-     * outro cria a duplicata sem passar por aqui. E raro e tem rastro (o
-     * {@link VaccineCorrectionLog} grava a versao anterior), enquanto a gravacao dupla e comum e
-     * silenciosa.
+     * ------------------------------------------------------------------ a edicao entrou
+     *
+     * <b>Aqui estava escrito que a edicao ficava de fora de proposito</b>, com o argumento de que
+     * mudar a data para bater com outro registro e raro e deixa rastro no
+     * {@link VaccineCorrectionLog}. O argumento nao se sustentou: <b>rastro nao e guarda</b>. A
+     * duplicata criada por edicao produz exatamente o mesmo estrago que a criada por gravacao — dose
+     * dobrada no historico, reforco contado duas vezes na agenda — e "da para descobrir depois lendo
+     * o log" nao e o que o produto promete a quem le a carteira.
+     *
+     * E ela deixou de ser rara: a tela de registro do tutor existe desde a V47, entao a mesma pessoa
+     * que erra a data ao lancar a carteirinha de papel e a que a corrige em seguida.
+     *
+     * <b>{@code excluindo} e o proprio registro sendo editado</b>, e sem ele a guarda se acharia:
+     * salvar uma vacina sem mexer na data encontraria a si mesma e recusaria toda edicao de
+     * descricao. Nulo na criacao, porque ali ainda nao ha o que excluir.
      */
-    private void recusarDoseDuplicada(Animal animal, VaccineCatalog catalog, String nome,
-                                      LocalDate applicationDate) {
+    public void recusarDoseDuplicada(Animal animal, VaccineCatalog catalog, String nome,
+                                     LocalDate applicationDate, UUID excluindo) {
         if (applicationDate == null) {
             return;
         }
@@ -99,6 +110,7 @@ public class VaccineFactory {
         boolean jaRegistrada = vaccineRepository
                 .findByAnimalAnimalIdAndApplicationDate(animal.getAnimalId(), applicationDate)
                 .stream()
+                .filter(existente -> excluindo == null || !excluindo.equals(existente.getVaccineId()))
                 .anyMatch(existente -> ehAMesmaVacina(existente, catalog, nome));
 
         if (jaRegistrada) {

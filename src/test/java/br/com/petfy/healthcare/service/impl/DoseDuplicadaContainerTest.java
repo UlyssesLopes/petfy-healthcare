@@ -122,4 +122,61 @@ class DoseDuplicadaContainerTest extends PostgresContainerTest {
         assertThat(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(code.getAnimalId()))
                 .hasSize(2);
     }
+
+    /**
+     * A EDICAO PASSOU A PASSAR PELA GUARDA, e ate aqui nao passava.
+     *
+     * Estava escrito no {@code VaccineFactory} que a omissao era de proposito: mudar a data para
+     * bater com outro registro seria raro, e deixaria rastro no log de correcao. <b>Rastro nao e
+     * guarda</b> — a duplicata nascida de uma edicao dobra a dose no historico exatamente como a
+     * nascida de duas gravacoes, e "da para descobrir depois lendo o log" nao e o que o produto
+     * promete a quem le a carteira.
+     */
+    @Test
+    @DisplayName("a edicao que move a data para cima de outra dose e recusada")
+    void edicaoNaoCriaDuplicata() {
+        var primeira = vaccineService.createVaccine(dose("Antirrabica canina", ONTEM));
+        var segunda = vaccineService.createVaccine(dose("Antirrabica canina", LocalDate.now()));
+
+        assertThatThrownBy(() -> vaccineService.updateVaccine(
+                segunda.getVaccineId(),
+                VaccineRequestDTO.builder().applicationDate(ONTEM).build()))
+                .isInstanceOf(PetfyHealthcareException.class)
+                .satisfies(e -> assertThat(((PetfyHealthcareException) e).getCode()).isEqualTo(149));
+
+        // as duas continuam nas datas em que estavam
+        assertThat(vaccineRepository.findById(segunda.getVaccineId()))
+                .get()
+                .satisfies(v -> assertThat(v.getApplicationDate()).isEqualTo(LocalDate.now()));
+
+        /*
+         * E NAO SOBROU CORRECAO NENHUMA. O `updateVaccine` nao e transacional: o log grava na hora,
+         * e recusar depois dele deixaria uma correcao registrada para uma edicao que nunca
+         * aconteceu. O rastro passaria a mentir, que e pior do que nao existir.
+         */
+        assertThat(vaccineService.listCorrections(segunda.getVaccineId())).isEmpty();
+        assertThat(vaccineService.listCorrections(primeira.getVaccineId())).isEmpty();
+    }
+
+    /**
+     * Sem excluir o proprio registro da busca, a guarda se acharia — e toda edicao de descricao
+     * seria recusada por conflito com ela mesma.
+     */
+    @Test
+    @DisplayName("a edicao que nao mexe na data passa, porque a guarda nao se acha")
+    void edicaoQueNaoMexeNaDataPassa() {
+        var vacina = vaccineService.createVaccine(dose("Antirrabica canina", ONTEM));
+
+        assertThatCode(() -> vaccineService.updateVaccine(
+                vacina.getVaccineId(),
+                VaccineRequestDTO.builder().description("lote 42, pata traseira").build()))
+                .doesNotThrowAnyException();
+
+        assertThat(vaccineRepository.findById(vacina.getVaccineId()))
+                .get()
+                .satisfies(v -> {
+                    assertThat(v.getDescription()).isEqualTo("lote 42, pata traseira");
+                    assertThat(v.getApplicationDate()).isEqualTo(ONTEM);
+                });
+    }
 }

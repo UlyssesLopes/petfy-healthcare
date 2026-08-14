@@ -5,7 +5,9 @@ import br.com.petfy.healthcare.domain.dto.LoginRequestDTO;
 import br.com.petfy.healthcare.domain.dto.LoginResponseDTO;
 import br.com.petfy.healthcare.domain.entity.CredentialStatus;
 import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.entity.PersonSession;
 import br.com.petfy.healthcare.domain.repository.PersonRepository;
+import br.com.petfy.healthcare.domain.repository.PersonSessionRepository;
 import br.com.petfy.healthcare.domain.repository.ProfessionalCredentialRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.JwtService;
@@ -16,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -26,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final ProfessionalCredentialRepository credentialRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final PersonSessionRepository personSessionRepository;
     private final PetfyMetrics petfyMetrics;
 
     /**
@@ -44,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
      * carimbado dentro do token.
      */
     @Override
-    public LoginResponseDTO login(LoginRequestDTO request) {
+    public LoginResponseDTO login(LoginRequestDTO request, String userAgent) {
         Optional<Person> encontrado = personRepository.findByEmail(request.getEmail());
 
         // a mesma resposta para e-mail inexistente e para senha errada: distinguir
@@ -63,14 +67,45 @@ public class AuthServiceImpl implements AuthService {
         Person person = validas.get();
         petfyMetrics.loginAttempt("success");
 
+        /*
+         * A ENTRADA FICA REGISTRADA, e e o que a Tela 36 pedia desde o bloco 9.
+         *
+         * A sessao e gravada ANTES do token porque o `sid` dela entra dentro dele: e a linha no
+         * banco que passa a poder ser encerrada, e o token so aponta para ela.
+         *
+         * <b>O user agent e o unico rotulo, e nao ha IP.</b> "189.4.x.x" nao ajuda ninguem a
+         * reconhecer o proprio aparelho, e guardar por onde alguem entra e o que a Tela 34 recusa
+         * quando diz "nao guardamos quem fez a busca, e por onde".
+         */
+        PersonSession sessao = personSessionRepository.save(PersonSession.builder()
+                .person(person)
+                .createdAt(LocalDateTime.now())
+                .userAgent(recortar(userAgent))
+                .build());
+
         return LoginResponseDTO.builder()
-                .token(jwtService.generateToken(person.getEmail(), person.getPersonId()))
+                .token(jwtService.generateToken(person.getEmail(), person.getPersonId(),
+                        sessao.getPersonSessionId()))
                 .tokenType("Bearer")
                 .expiresInMinutes(jwtService.getExpirationMinutes())
                 .personId(person.getPersonId())
                 .professional(credentialRepository.existsAtivaPorEmail(
                         person.getEmail(), CredentialStatus.SUSPENSO))
                 .build();
+    }
+
+    /**
+     * O user agent cabe em 400, e um mais comprido e recortado em vez de recusado.
+     *
+     * Nenhum navegador chega perto disso; quem chega e coletor automatizado. Recusar o login por
+     * causa do tamanho de um ROTULO seria trocar o essencial pelo acessorio.
+     */
+    private String recortar(String userAgent) {
+        if (userAgent == null || userAgent.isBlank()) {
+            return null;
+        }
+
+        return userAgent.length() <= 400 ? userAgent : userAgent.substring(0, 400);
     }
 
 }

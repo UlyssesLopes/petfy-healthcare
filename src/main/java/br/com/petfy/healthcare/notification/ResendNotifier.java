@@ -28,6 +28,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
+@org.springframework.beans.factory.annotation.Qualifier("canalExterno")
 @ConditionalOnProperty(name = "petfy.notifications.channel", havingValue = "resend")
 public class ResendNotifier implements Notifier {
 

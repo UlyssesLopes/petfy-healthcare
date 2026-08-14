@@ -363,6 +363,14 @@
   "codigo" : 191,
   "mensagemDaApi" : "Type at least three characters"
 }, {
+  "nome" : "NOTIFICATION_NOT_FOUND",
+  "codigo" : 192,
+  "mensagemDaApi" : "Notification not found"
+}, {
+  "nome" : "SESSION_NOT_FOUND",
+  "codigo" : 193,
+  "mensagemDaApi" : "Session not found"
+}, {
   "nome" : "INVALID_REQUEST",
   "codigo" : 400,
   "mensagemDaApi" : "Invalid request"

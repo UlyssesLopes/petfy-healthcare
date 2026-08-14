@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticatedPrincipal;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * O que o token carrega sobre quem esta autenticado.
@@ -31,6 +32,20 @@ public class JwtPrincipal implements AuthenticatedPrincipal {
      * troca de senha - sem isso, trocar a senha nao expulsaria sessao alguma.
      */
     private final Instant issuedAt;
+
+    /**
+     * Qual entrada na conta emitiu este token (Tela 36).
+     *
+     * <b>Nulo em token anterior a V50</b>, e ele continua autenticando: quem estava logado nao e
+     * deslogado por uma migracao. O que ele perde e poder ser encerrado individualmente — so a
+     * troca de senha o alcanca, que era a unica ferramenta antes.
+     */
+    private final UUID sessionId;
+
+    /** O token de antes da V50, e os testes que nao tem sessao a declarar. */
+    public JwtPrincipal(String email, Instant issuedAt) {
+        this(email, issuedAt, null);
+    }
 
     @Override
     public String getName() {

@@ -148,7 +148,9 @@ class SecurityFilterChainTest {
                         .content("{\"email\":\"ulysses@petfy.com.br\",\"password\":\"s3nhaForte\"}"))
                 .andExpect(status().isOk());
 
-        verify(authService).login(any());
+        // o segundo argumento e o user agent, que a Tela 36 usa como rotulo do aparelho: nulo aqui
+        // porque o MockMvc nao manda o cabecalho, e o login nao depende dele para acontecer
+        verify(authService).login(any(), any());
     }
 
     @Test
