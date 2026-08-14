@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useIntl } from "react-intl";
 
 import { useEntrar, usePedirNovaSenha } from "../dados/autenticacao.ts";
@@ -14,9 +14,10 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
  * O MARKUP VEM DO ARQUIVO: os estilos foram convertidos por script — `style="..."` vira
  * `style={{...}}` e nada mais. O que muda e o conteudo e o comportamento.
  *
- * O que segue desabilitado fica na tela com a frase que diz por que, e nao sumido nem
- * fingindo funcionar (secao 06 da identidade): o link por e-mail, que nao existe na API, e o
- * cartao de emergencia, que abre por um token que so quem tem custodia gera.
+ * <b>Nao ha mais nada desabilitado aqui.</b> O "continuar conectado" virou escolha de verdade
+ * (V52), o cartao de emergencia abre pelo codigo em `/cartao/{token}`, e o login por link saiu
+ * da tela — sem URL publica ele nao seria link, e um controle cinza com uma frase pedindo
+ * desculpa ocupa a porta sem servir a ninguem. Fica registrado no `ROADMAP.md`.
  */
 
 /**
@@ -120,7 +121,6 @@ function Entrar() {
   const [erros, setErros] = useState<ErrosDeCampo>({});
 
   const principal = useHover();
-  const secundario = useHover();
 
   /*
    * Lido uma vez, na montagem: depois de entrar a sessao passa a existir, e o aviso
@@ -358,31 +358,10 @@ function Entrar() {
               {intl.formatMessage({ id: entrar.isPending ? "entrar.enviando" : "entrar.acao" })}
             </button>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", padding: "4px 0" }}>
-              <div style={{ flex: 1, height: "1px", background: "oklch(0.92 0.006 150)" }}></div>
-              <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>{intl.formatMessage({ id: "entrar.ou" })}</span>
-              <div style={{ flex: 1, height: "1px", background: "oklch(0.92 0.006 150)" }}></div>
-            </div>
-
-            <button
-              type="button"
-              disabled
-              {...secundario.props}
-              style={{ fontFamily: "inherit", fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "16px", minHeight: "56px", cursor: "not-allowed", opacity: 0.55 }}
-            >
-              {intl.formatMessage({ id: "entrar.link.acao" })}
-            </button>
-            <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", lineHeight: 1.55, marginTop: "-8px" }}>
-              {intl.formatMessage({ id: "entrar.link.apoio" })}
-            </div>
-            <PorQueDesabilitado semRecuo>{intl.formatMessage({ id: "entrar.link.porque" })}</PorQueDesabilitado>
-
             {/*
              * Na mao, o cartao de emergencia vem AQUI e nao no espelho: a Tela 29 poe ele
              * embaixo do formulario, "a um polegar de distancia", porque quem chega as 3h da
-             * manha com o animal passando mal nao deveria enfrentar um formulario. Segue
-             * desabilitado pelo mesmo motivo do desktop — o /share/{token} exige um token que
-             * so quem tem custodia gera.
+             * manha com o animal passando mal nao deveria enfrentar um formulario.
              */}
             {estreito && (
               <div style={{ borderTop: "1px solid oklch(0.92 0.006 150)", paddingTop: "18px", display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -489,16 +468,3 @@ function AbrirCartao() {
   );
 }
 
-/**
- * A frase que acompanha todo controle desabilitado.
- *
- * A secao 06 da identidade e explicita: "o desabilitado nunca aparece mudo — ao lado dele,
- * sempre a frase que diz por que". Dito ANTES do gesto, e nao depois.
- */
-function PorQueDesabilitado({ children, semRecuo }: { children: ReactNode; semRecuo?: boolean }) {
-  return (
-    <div style={{ fontSize: "13px", lineHeight: 1.5, color: "oklch(0.5 0.015 150)", marginTop: semRecuo ? "-12px" : "10px" }}>
-      {children}
-    </div>
-  );
-}
