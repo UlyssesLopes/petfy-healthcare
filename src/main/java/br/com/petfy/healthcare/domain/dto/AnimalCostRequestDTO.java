@@ -52,8 +52,18 @@ public class AnimalCostRequestDTO {
     /** "Ja foi pago". Nulo e "ninguem disse", e nao "nao foi pago". */
     private Boolean paid;
 
-    /** "Dura cerca de um mes." */
+    /** "Isto se repete" — hoje so a mensalidade da creche, que chega todo mes pelo valor cheio. */
     private CostRecurrence recurrence;
+
+    /**
+     * De quantos em quantos meses este gasto volta. Nulo em gasto que nao se repete.
+     *
+     * <b>"A racao dura dois meses" e o que esta pergunta responde</b>, e o que a caixinha booleana da
+     * Tela 42 nao sabia dizer: marcar dizia "todo mes", que e o dobro do que o tutor gasta.
+     */
+    @jakarta.validation.constraints.Min(value = 1, message = "coversMonths deve ser ao menos 1")
+    @jakarta.validation.constraints.Max(value = 12, message = "coversMonths nao pode passar de 12")
+    private Integer coversMonths;
 
     /** Nulo e agora. Quem lanca hoje a nota de ontem informa ontem. */
     private LocalDateTime occurredAt;

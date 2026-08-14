@@ -85,6 +85,12 @@ function Equipe() {
   const desligar = useDesligarDaEquipe();
   const acao = useHover();
 
+  /* A unica copia do token do convite: o backend nao envia e-mail, e ele nao volta em consulta. */
+  const linkDoConvite =
+    convidar.data?.token === undefined || convidar.data.token === null
+      ? undefined
+      : `${window.location.origin}/convites/aceitar?token=${convidar.data.token}`;
+
   const [email, setEmail] = useState("");
   /* ADMINISTRADOR nao e o default: promover alguem tem de ser um ato escolhido, e nao o que
      acontece quando ninguem mexe no campo. VOLUNTARIO e a funcao que pode menos. */
@@ -155,6 +161,25 @@ function Equipe() {
                 <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.42 0.015 150)", marginTop: "12px" }}>
                   {intl.formatMessage({ id: "equipe.convidar.apoio" })}
                 </div>
+
+                {/*
+                 * O LINK DO CONVITE, e sem ele o convite nao chega a ninguem.
+                 *
+                 * O `invite` do `OrganizationInviteServiceImpl` grava e devolve o token — "unico
+                 * momento em que o token existe fora do cliente" —, e <b>nao ha envio de e-mail</b>.
+                 * A tela mostrava "convite aguardando" na lista e nunca mostrava o link: quem
+                 * convidava saia daqui achando que a pessoa seria avisada, e ela nunca era.
+                 */}
+                {linkDoConvite !== undefined && (
+                  <div style={{ marginTop: "14px" }}>
+                    <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.35 0.018 150)", marginBottom: "8px" }}>
+                      {intl.formatMessage({ id: "equipe.convite.link" }, { email: convidar.data?.email ?? "" })}
+                    </div>
+                    <div style={{ padding: "12px 14px", background: "oklch(0.975 0.008 150)", border: "1px solid oklch(0.90 0.008 150)", borderRadius: "6px", fontFamily: "'DM Mono', monospace", fontSize: "13px", lineHeight: 1.5, wordBreak: "break-all", color: "oklch(0.3 0.02 150)" }}>
+                      {linkDoConvite}
+                    </div>
+                  </div>
+                )}
 
                 {convidar.isError && (
                   <div style={{ marginTop: "14px" }}>

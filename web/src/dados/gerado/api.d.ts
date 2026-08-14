@@ -2591,6 +2591,8 @@ export interface components {
             amount: number;
             /** @enum {string} */
             category?: "SAUDE" | "ALIMENTACAO" | "CRECHE" | "HIGIENE" | "OUTRO";
+            /** Format: int32 */
+            coversMonths?: number;
             description: string;
             /** @enum {string} */
             kind?: "ATENDIMENTO" | "VACINA" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";
@@ -2614,6 +2616,8 @@ export interface components {
             animalCostId?: string;
             /** @enum {string} */
             category?: "SAUDE" | "ALIMENTACAO" | "CRECHE" | "HIGIENE" | "OUTRO";
+            /** Format: int32 */
+            coversMonths?: number;
             description?: string;
             /** @enum {string} */
             kind?: "ATENDIMENTO" | "VACINA" | "CRECHE_MENSALIDADE" | "CRECHE_DIARIA" | "COMPRA";

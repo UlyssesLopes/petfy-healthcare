@@ -71,7 +71,15 @@ function Compra() {
 
   const [oQueFoi, setOQueFoi] = useState<OQueFoi>("racao");
   const [valor, setValor] = useState("");
-  const [duraUmMes, setDuraUmMes] = useState(false);
+  /*
+   * O intervalo em MESES, e zero e "nao se repete". A caixinha booleana anterior nao sabia dizer
+   * "dura dois meses", e marcar afirmava o dobro do que o tutor gasta.
+   */
+  const [duraMeses, setDuraMeses] = useState(0);
+
+  /* Hoje, porque e o caso comum de quem lanca a nota do mercado ao voltar dele. */
+  const hoje = new Date().toISOString().slice(0, 10);
+  const [quando, setQuando] = useState(hoje);
   const [lancado, setLancado] = useState<string | undefined>(undefined);
 
   const nome = animal.data?.name ?? "";
@@ -94,7 +102,10 @@ function Compra() {
            que uma organizacao ja estava registrando. */
         tipo: "COMPRA",
         categoria: O_QUE_FOI.find((opcao) => opcao.chave === oQueFoi)!.categoria,
-        mensal: duraUmMes,
+        // COBRIR e REPETIR sao coisas diferentes desde a V47: o intervalo e o que volta
+        duraMeses: duraMeses === 0 ? undefined : duraMeses,
+        // meia-noite do dia escolhido: o gasto e do DIA, e a hora nao e um fato que alguem saiba
+        quando: quando + "T00:00:00",
       },
       {
         onSuccess: () => {
@@ -102,7 +113,8 @@ function Compra() {
           /* O formulario volta ao zero porque quem lanca racao lanca remedio em seguida — e
              deixar o valor anterior no campo e como o segundo lancamento sai errado. */
           setValor("");
-          setDuraUmMes(false);
+          setDuraMeses(0);
+          setQuando(hoje);
         },
       },
     );
@@ -165,19 +177,66 @@ function Compra() {
             </div>
 
             {/*
-             * A CAIXINHA QUE PARECE DETALHE E O CAMPO MAIS IMPORTANTE DA TELA. E ela que transforma
-             * uma compra avulsa em custo mensal previsivel — sem ela o produto so saberia somar o
-             * passado, e o abrigo nao teria como dizer ao adotante quanto a racao custa por mes.
+             * QUANDO FOI.
+             *
+             * <b>O campo nao existia, e a tela sempre lancava AGORA.</b> Quem lanca a nota do mercado
+             * a noite registrava hoje; quem lanca a de sabado na segunda registrava errado — e a
+             * previsao, que le "quando foi a ultima vez", herdava o erro.
+             *
+             * Vem preenchido com hoje porque esse e o caso comum, e nao pode ser no futuro: uma compra
+             * que ainda nao aconteceu nao e um gasto.
              */}
-            <label style={{ display: "flex", alignItems: "center", gap: "12px", padding: "2px 0", fontSize: "15px", cursor: "pointer", minHeight: "44px" }}>
+            <div>
+              <label htmlFor="quando" style={rotulo}>
+                {intl.formatMessage({ id: "compra.quando" })}
+              </label>
               <input
-                type="checkbox"
-                checked={duraUmMes}
-                onChange={(evento) => setDuraUmMes(evento.target.checked)}
-                style={{ width: "20px", height: "20px", accentColor: "oklch(0.46 0.085 150)" }}
+                id="quando"
+                type="date"
+                value={quando}
+                max={hoje}
+                onChange={(evento) => setQuando(evento.target.value)}
+                style={{ border: "1px solid oklch(0.82 0.012 150)", borderRadius: "4px", padding: "13px 14px", fontSize: "16px", minHeight: "48px", width: "100%", background: "oklch(1 0 0)", fontFamily: "inherit" }}
               />
-              {intl.formatMessage({ id: "compra.duraUmMes" })}
-            </label>
+            </div>
+
+            {/*
+             * O CAMPO MAIS IMPORTANTE DA TELA, e ele era uma caixinha booleana ate a V47.
+             *
+             * "Dura cerca de um mes" gravava `recurrence = MENSAL`, e com isso "a racao dura um mes" e
+             * "a mensalidade chega todo mes" viraram o mesmo fato. Enquanto so existia um mes, os dois
+             * coincidiam por acidente. A racao que dura DOIS meses nao tinha resposta: marcar dizia
+             * "todo mes", que e o dobro do que o tutor gasta — e a previsao planejava para cima.
+             *
+             * Agora a pergunta e o intervalo, e "nao se repete" e a primeira opcao porque a compra
+             * avulsa e o caso mais comum.
+             */}
+            <div>
+              <label htmlFor="dura" style={rotulo}>
+                {intl.formatMessage({ id: "compra.dura" })}
+              </label>
+              <select
+                id="dura"
+                value={String(duraMeses)}
+                onChange={(evento) => setDuraMeses(Number(evento.target.value))}
+                style={{ border: "1px solid oklch(0.82 0.012 150)", borderRadius: "4px", padding: "13px 14px", fontSize: "16px", minHeight: "48px", width: "100%", background: "oklch(1 0 0)", fontFamily: "inherit", cursor: "pointer" }}
+              >
+                <option value="0">{intl.formatMessage({ id: "compra.dura.naoSeRepete" })}</option>
+                {[1, 2, 3, 4, 6, 12].map((meses) => (
+                  <option key={meses} value={String(meses)}>
+                    {intl.formatMessage({ id: "compra.dura.meses" }, { meses })}
+                  </option>
+                ))}
+              </select>
+              <div style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)", marginTop: "7px", lineHeight: 1.55 }}>
+                {duraMeses > 0
+                  ? intl.formatMessage(
+                      { id: "compra.dura.nota" },
+                      { vezes: Math.floor(12 / duraMeses) },
+                    )
+                  : intl.formatMessage({ id: "compra.dura.nota.avulsa" })}
+              </div>
+            </div>
 
             {lancar.error !== null && lancar.error !== undefined && (
               <ErroAoGravar erro={lancar.error} oQue={intl.formatMessage({ id: "compra.oQueE" })} />

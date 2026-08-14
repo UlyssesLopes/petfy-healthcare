@@ -89,6 +89,24 @@ public class AnimalCost extends AnimalEvent {
     @Column(length = 16)
     private CostRecurrence recurrence;
 
+    /**
+     * De quantos em quantos meses este gasto volta. Nulo em gasto que nao se repete.
+     *
+     * <b>REPETIR e COBRIR sao coisas diferentes, e o produto as confundia.</b> A mensalidade da creche
+     * REPETE: chega todo mes, e o valor de cada mes e o valor cheio. A racao COBRE um periodo: um
+     * gasto unico de R$ 190 que atende dois meses custa R$ 95 por mes, e volta a acontecer daqui a
+     * dois meses.
+     *
+     * Enquanto a caixinha da Tela 42 era booleana — "dura cerca de um mes" — os dois coincidiam por
+     * acidente e ninguem via. A pergunta que o tutor faz, "e a racao que dura dois meses?", nao tinha
+     * resposta: marcar a caixinha dizia "todo mes", que e o dobro do que ele gasta.
+     *
+     * <b>Em meses, e nao em dias</b>, porque a previsao pensa em doze meses e ninguem sabe se a racao
+     * dura 28 ou 31 dias.
+     */
+    @Column(name = "covers_months")
+    private Integer coversMonths;
+
     /** Quando o gasto aconteceu. Quem lanca hoje a nota de ontem lancou ontem. */
     @Column(name = "occurred_at", nullable = false)
     private LocalDateTime occurredAt;

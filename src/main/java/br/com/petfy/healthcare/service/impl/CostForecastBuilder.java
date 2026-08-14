@@ -172,7 +172,9 @@ public class CostForecastBuilder {
         Map<String, AnimalCost> maisRecentePorDescricao = new HashMap<>();
 
         for (AnimalCost custo : custos) {
-            if (custo.getRecurrence() != CostRecurrence.MENSAL) {
+            // COBRIR e REPETIR sao coisas diferentes, e ate a V47 o produto as confundia. O que entra
+            // aqui e o que VOLTA — pelo intervalo declarado, ou pela recorrencia de quem repete
+            if (custo.getCoversMonths() == null && custo.getRecurrence() != CostRecurrence.MENSAL) {
                 continue;
             }
 
@@ -188,11 +190,36 @@ public class CostForecastBuilder {
                         .sourceId(custo.getAnimalCostId())
                         .description(custo.getDescription())
                         .category(custo.getCategory())
-                        .timesInTwelveMonths(MESES)
+                        /*
+                         * QUANTAS VEZES NO ANO, e nao doze fixas.
+                         *
+                         * Uma racao que dura dois meses volta seis vezes; uma que dura tres, quatro
+                         * vezes. Doze para todas era o que a caixinha booleana produzia — e afirmava
+                         * que quem compra racao a cada dois meses gasta o dobro do que gasta.
+                         *
+                         * <b>Divisao inteira, e para BAIXO de proposito:</b> algo que dura cinco meses
+                         * cabe duas vezes no ano com folga, e arredondar para cima prometeria uma
+                         * terceira compra que nao acontece dentro da janela. A previsao erra por menos.
+                         */
+                        .timesInTwelveMonths(MESES / intervalo(custo))
                         .amount(custo.getAmount())
                         .amountFrom("COMPRA_MENSAL_ANTERIOR")
                         .build())
                 .toList();
+    }
+
+    /**
+     * De quantos em quantos meses este gasto volta.
+     *
+     * <b>Um, quando ninguem disse</b> — e esse e o caso das compras lancadas antes da V47, e o da
+     * mensalidade da creche, que repete todo mes pelo valor cheio. O backfill da migracao ja deu
+     * {@code coversMonths = 1} as compras que tinham a caixinha marcada, entao este {@code orElse} nao
+     * esta reinterpretando o passado: ele cobre o que repete de verdade.
+     */
+    private int intervalo(AnimalCost custo) {
+        Integer meses = custo.getCoversMonths();
+
+        return meses == null || meses < 1 ? 1 : Math.min(meses, MESES);
     }
 
     /* --------------------------------------------------------------------- o preco anterior */

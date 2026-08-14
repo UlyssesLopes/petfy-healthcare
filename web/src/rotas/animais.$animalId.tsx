@@ -188,9 +188,20 @@ function VidaDoAnimal() {
              */}
             {!encerrada && (
               <>
-                <button disabled style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(1 0 0)", background: "oklch(0.46 0.085 150)", border: "none", borderRadius: "8px", padding: "12px 20px", minHeight: "44px", cursor: "pointer", opacity: 0.6 }}>
+                {/*
+                 * ELE FICOU `disabled` ATE AGORA, e nao era descuido de estilo: era a porta de um
+                 * caminho que nunca foi construido. O tutor nao tinha como registrar NADA no
+                 * proprio animal — nem vacina, nem peso, nem observacao —, so discordar de um
+                 * registro que ja existia. O unico lugar do produto que registrava era a tela da
+                 * clinica, e os hooks do tutor nao eram chamados por rota nenhuma.
+                 */}
+                <Link
+                  to="/animais/$animalId/registrar"
+                  params={{ animalId }}
+                  style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none", fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(1 0 0)", background: "oklch(0.46 0.085 150)", border: "none", borderRadius: "8px", padding: "12px 20px", minHeight: "44px", cursor: "pointer" }}
+                >
                   {intl.formatMessage({ id: "animal.acao.registrar" })}
-                </button>
+                </Link>
                 <button
                   disabled
                   {...compartilhar.props}

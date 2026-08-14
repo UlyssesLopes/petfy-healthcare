@@ -42,6 +42,9 @@ public class AnimalCostResponseDTO {
 
     private CostRecurrence recurrence;
 
+    /** De quantos em quantos meses o gasto volta. Nulo em gasto que nao se repete. */
+    private Integer coversMonths;
+
     private LocalDateTime occurredAt;
 
     private String recordedByName;
