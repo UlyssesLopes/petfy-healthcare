@@ -82,6 +82,12 @@ function PrimeiroAnimal() {
   /* O animal existe a partir do fim do passo 1, e o id e o que os passos seguintes usam. */
   const animalId = criar.data?.animalId;
 
+  /* O link do convite, que e a unica copia que existe dele — o backend nao envia e-mail. */
+  const linkDoConvite =
+    convidar.data?.token === undefined || convidar.data.token === null
+      ? undefined
+      : `${window.location.origin}/convites/animal?token=${convidar.data.token}`;
+
   const irParaOAnimal = async () => {
     if (animalId !== undefined) {
       await navegar({ to: "/animais/$animalId", params: { animalId } });
@@ -312,6 +318,23 @@ function PrimeiroAnimal() {
                   {convidar.isSuccess ? (
                     <div style={{ fontSize: "15px", color: "oklch(0.38 0.07 150)" }}>
                       {intl.formatMessage({ id: "onboarding.p4.convidado" }, { email: convidar.data?.email ?? "" })}
+
+                      {/*
+                       * O LINK, para quando o e-mail nao chega.
+                       *
+                       * Esta caixa dizia "Convite enviado para {email}" desde o primeiro dia, e nada
+                       * era enviado: o `invite` gravava o convite e devolvia o token — "unico
+                       * momento em que o token existe fora do cliente". Quem seguia o passo 4 ate o
+                       * fim saia daqui achando que tinha convidado alguem. O `InviteNotifier` fez a
+                       * frase virar verdade; o link fica porque spam e dedo trocado existem.
+                       */}
+                      {linkDoConvite !== undefined && (
+                        <div
+                          style={{ marginTop: "10px", padding: "12px 14px", background: "oklch(0.975 0.008 150)", border: "1px solid oklch(0.90 0.008 150)", borderRadius: "6px", fontFamily: "'DM Mono', monospace", fontSize: "13px", lineHeight: 1.5, wordBreak: "break-all", color: "oklch(0.3 0.02 150)" }}
+                        >
+                          {linkDoConvite}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <Principal

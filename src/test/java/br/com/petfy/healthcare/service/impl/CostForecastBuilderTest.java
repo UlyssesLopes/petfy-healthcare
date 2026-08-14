@@ -246,6 +246,64 @@ class CostForecastBuilderTest {
         assertThat(previsao.getTotal()).isEqualByComparingTo("4428.00");
     }
 
+    /**
+     * <b>COBRIR NAO E REPETIR, e ate a V47 o produto tratava os dois como a mesma coisa.</b>
+     *
+     * A racao que dura dois meses volta SEIS vezes no ano, e nao doze. Com a caixinha booleana, marcar
+     * "dura cerca de um mes" numa racao que dura dois afirmava que o tutor gasta o dobro do que gasta
+     * — e a previsao, que existe para ele planejar, planejava errado para cima.
+     */
+    @Test
+    @DisplayName("o gasto que cobre dois meses volta seis vezes no ano, e nao doze")
+    void oQueDuraDoisMesesVoltaSeisVezes() {
+        AnimalCost racaoDeDoisMeses = compraMensal("Racao grande", "190.00", HOJE.minusMonths(1));
+        racaoDeDoisMeses.setCoversMonths(2);
+
+        CostForecastResponseDTO previsao = builder.montar(
+                HOJE, List.of(), List.of(), List.of(), List.of(racaoDeDoisMeses));
+
+        assertThat(previsao.getItems())
+                .singleElement()
+                .satisfies(item -> assertThat(item.getTimesInTwelveMonths()).isEqualTo(6));
+
+        // 190 x 6, e nao 190 x 12
+        assertThat(previsao.getTotal()).isEqualByComparingTo("1140.00");
+    }
+
+    /**
+     * <b>A divisao e para BAIXO de proposito.</b> Algo que dura cinco meses cabe duas vezes no ano com
+     * folga; arredondar para cima prometeria uma terceira compra que nao acontece dentro da janela. A
+     * previsao erra por menos, e nunca por mais.
+     */
+    @Test
+    @DisplayName("o intervalo que nao divide o ano arredonda para baixo")
+    void oIntervaloQueNaoDivideOAno() {
+        AnimalCost aCadaCincoMeses = compraMensal("Antipulgas grande", "120.00", HOJE.minusMonths(1));
+        aCadaCincoMeses.setCoversMonths(5);
+
+        assertThat(builder.montar(HOJE, List.of(), List.of(), List.of(), List.of(aCadaCincoMeses))
+                .getItems())
+                .singleElement()
+                .satisfies(item -> assertThat(item.getTimesInTwelveMonths()).isEqualTo(2));
+    }
+
+    /**
+     * O que existia antes da V47 continua valendo o que valia: a compra marcada como mensal, sem
+     * intervalo declarado, volta doze vezes. O backfill deu {@code coversMonths = 1} a elas, e este
+     * caso guarda o {@code orElse} que cobre a mensalidade da creche.
+     */
+    @Test
+    @DisplayName("sem intervalo declarado, o que se repete continua voltando doze vezes")
+    void semIntervaloDeclaradoContinuaMensal() {
+        AnimalCost mensalSemIntervalo = compraMensal("Racao", "289.00", HOJE.minusMonths(1));
+        mensalSemIntervalo.setCoversMonths(null);
+
+        assertThat(builder.montar(HOJE, List.of(), List.of(), List.of(), List.of(mensalSemIntervalo))
+                .getItems())
+                .singleElement()
+                .satisfies(item -> assertThat(item.getTimesInTwelveMonths()).isEqualTo(12));
+    }
+
     /** Compra avulsa nao entra: sem a caixinha marcada, ela nao afirma que se repete. */
     @Test
     @DisplayName("compra sem recorrencia nao deve entrar na previsao")

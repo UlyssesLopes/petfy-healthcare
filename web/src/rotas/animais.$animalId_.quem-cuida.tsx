@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
 import { useAnimal } from "../dados/carteira.ts";
-import { useTutores } from "../dados/animal.ts";
+import { useConvidarCoTutor, useTutores } from "../dados/animal.ts";
 import {
   FRASE_DA_LEITURA,
   FRASE_DO_ESCOPO,
@@ -13,7 +13,7 @@ import {
   type AcessoDeOrganizacao,
   type Leitura,
 } from "../dados/acessos.ts";
-import { ErroDeCarga } from "../componentes/Estados.tsx";
+import { ErroAoGravar, ErroDeCarga } from "../componentes/Estados.tsx";
 import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
@@ -61,6 +61,24 @@ function QuemCuida() {
   const acessos = useAcessosDeOrganizacao(animalId);
   const leituras = useLeituras(animalId);
   const tutores = useTutores(animalId);
+  const convidar = useConvidarCoTutor();
+
+  const [emailConvidado, setEmailConvidado] = useState("");
+  const [copiado, setCopiado] = useState(false);
+
+  /*
+   * O LINK DO CONVITE, e ele e a unica copia que fica na tela.
+   *
+   * O `InviteNotifier` manda o codigo por e-mail desde que este fluxo existe — antes dele o convite
+   * nao chegava a ninguem, e o token morria aqui. <b>O link continua sendo mostrado assim mesmo:</b>
+   * o e-mail pode cair no spam, o endereco pode ter um dedo trocado, e quem convida costuma mandar
+   * por mensagem de qualquer jeito. E ele so existe nesta resposta — "unico momento em que o token
+   * existe fora do cliente" —, entao recarregar a pagina o perde.
+   */
+  const linkDoConvite =
+    convidar.data?.token === undefined || convidar.data.token === null
+      ? undefined
+      : `${window.location.origin}/convites/animal?token=${convidar.data.token}`;
 
   const nome = animal.data?.name ?? "";
 
@@ -167,6 +185,113 @@ function QuemCuida() {
                     ))}
                   </div>
                 )}
+
+                {/*
+                 * ================================================== CONVIDAR QUEM CUIDA
+                 *
+                 * <b>O convite de co-tutor so existia no CADASTRO do animal, e nao existia depois.</b>
+                 * O `useConvidarCoTutor` era chamado por um unico arquivo do produto inteiro — o
+                 * passo 4 do onboarding —, entao quem passasse dali sem preencher o e-mail nunca mais
+                 * conseguia convidar ninguem para aquele animal. Nao havia caminho: nem aqui, nem no
+                 * perfil, nem em lugar nenhum.
+                 *
+                 * <b>O backend estava inteiro</b> — convidar, listar, revogar, e desde o bloco 8
+                 * aceitar e recusar. Faltava a porta, e ela e aqui: "quem cuida deste animal" e
+                 * exatamente a pergunta que esta tela responde.
+                 */}
+                <div style={{ borderTop: "1px solid oklch(0.94 0.006 150)", marginTop: "18px", paddingTop: "18px" }}>
+                  {convidar.isSuccess ? (
+                    <div style={{ fontSize: "14px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
+                      {intl.formatMessage(
+                        { id: "acesso.convidar.enviado" },
+                        { email: convidar.data?.email ?? emailConvidado },
+                      )}
+
+                      {linkDoConvite !== undefined && (
+                        <>
+                          {/*
+                           * O link inteiro, e nao um botao que so copia: quem vai mandar por
+                           * mensagem precisa VER o que esta mandando, e a copia falha em silencio
+                           * quando o navegador nega a area de transferencia.
+                           */}
+                          <div
+                            style={{ marginTop: "10px", padding: "12px 14px", background: "oklch(0.975 0.008 150)", border: "1px solid oklch(0.90 0.008 150)", borderRadius: "6px", fontFamily: "'DM Mono', monospace", fontSize: "13px", lineHeight: 1.5, wordBreak: "break-all", color: "oklch(0.3 0.02 150)" }}
+                          >
+                            {linkDoConvite}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void navigator.clipboard
+                                ?.writeText(linkDoConvite)
+                                .then(() => setCopiado(true))
+                                .catch(() => setCopiado(false));
+                            }}
+                            style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "10px 16px", minHeight: "44px", cursor: "pointer", marginTop: "10px" }}
+                          >
+                            {intl.formatMessage({
+                              id: copiado ? "acesso.convidar.copiado" : "acesso.convidar.copiar",
+                            })}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <label htmlFor="convidar" style={{ display: "block", fontSize: "13px", fontWeight: 500, color: "oklch(0.42 0.015 150)", marginBottom: "7px" }}>
+                        {intl.formatMessage({ id: "acesso.convidar.rotulo" })}
+                      </label>
+                      <input
+                        id="convidar"
+                        type="email"
+                        value={emailConvidado}
+                        onChange={(evento) => setEmailConvidado(evento.target.value)}
+                        placeholder="nome@exemplo.com"
+                        style={{ border: "1px solid oklch(0.82 0.012 150)", borderRadius: "4px", padding: "12px 14px", fontSize: "16px", minHeight: "48px", width: "100%", background: "oklch(1 0 0)", fontFamily: "inherit" }}
+                      />
+                      <div style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)", marginTop: "7px", lineHeight: 1.55 }}>
+                        {intl.formatMessage({ id: "acesso.convidar.oQueElaGanha" })}
+                      </div>
+
+                      {convidar.error !== null && convidar.error !== undefined && (
+                        <div style={{ marginTop: "10px" }}>
+                          <ErroAoGravar
+                            erro={convidar.error}
+                            oQue={intl.formatMessage({ id: "acesso.convidar.oQueE" })}
+                          />
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        disabled={emailConvidado.trim() === "" || convidar.isPending}
+                        onClick={() =>
+                          convidar.mutate({ animalId, email: emailConvidado.trim() })
+                        }
+                        style={{
+                          fontFamily: "inherit",
+                          fontSize: "15px",
+                          fontWeight: 500,
+                          color: "oklch(1 0 0)",
+                          background:
+                            emailConvidado.trim() === "" ? "oklch(0.72 0.02 150)" : "oklch(0.46 0.085 150)",
+                          border: "none",
+                          borderRadius: "8px",
+                          padding: "12px 20px",
+                          minHeight: "48px",
+                          cursor: emailConvidado.trim() === "" ? "not-allowed" : "pointer",
+                          marginTop: "12px",
+                          width: "100%",
+                        }}
+                      >
+                        {intl.formatMessage({
+                          id: convidar.isPending ? "acesso.convidar.enviando" : "acesso.convidar.botao",
+                        })}
+                      </button>
+                    </>
+                  )}
+                </div>
 
                 {/* A Tela 11 mora aqui: e das pessoas que ela trata, e nao dos acessos. */}
                 <Link

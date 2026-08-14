@@ -191,6 +191,12 @@
             "enum" : [ "SAUDE", "ALIMENTACAO", "CRECHE", "HIGIENE", "OUTRO" ],
             "type" : "string"
           },
+          "coversMonths" : {
+            "format" : "int32",
+            "maximum" : 12,
+            "minimum" : 1,
+            "type" : "integer"
+          },
           "description" : {
             "maxLength" : 200,
             "minLength" : 0,
@@ -243,6 +249,10 @@
           "category" : {
             "enum" : [ "SAUDE", "ALIMENTACAO", "CRECHE", "HIGIENE", "OUTRO" ],
             "type" : "string"
+          },
+          "coversMonths" : {
+            "format" : "int32",
+            "type" : "integer"
           },
           "description" : {
             "type" : "string"

@@ -62,6 +62,17 @@ export function useLancarCusto() {
       categoria?: CategoriaDeCusto;
       pago?: boolean;
       mensal?: boolean;
+      /**
+       * De quantos em quantos meses o gasto volta. Indefinido em gasto que não se repete.
+       *
+       * <b>COBRIR e REPETIR são coisas diferentes, e até a V47 o produto as tratava como a mesma.</b>
+       * A mensalidade da creche repete — chega todo mês pelo valor cheio. A ração cobre um período:
+       * R$ 190 que atendem dois meses custam R$ 95 por mês, e voltam daqui a dois meses. A caixinha
+       * booleana anterior dizia "todo mês" para as duas, e a previsão planejava o dobro.
+       */
+      duraMeses?: number;
+      /** Quando o gasto aconteceu. Indefinido deixa o servidor usar agora. */
+      quando?: string;
       atendimentoId?: string;
       matriculaId?: string;
       /* A dose de onde o valor saiu. É esta ligação que faz o reforço do ano que vem ter preço
@@ -79,6 +90,15 @@ export function useLancarCusto() {
              afirmaria "nao foi pago" sobre algo que ninguem afirmou. */
           ...(lancamento.pago === true ? { paid: true } : {}),
           ...(lancamento.mensal === true ? { recurrence: "MENSAL" as const } : {}),
+          /*
+           * O intervalo viaja junto com a recorrência, e não no lugar dela: `recurrence` continua
+           * dizendo "isto volta", e `coversMonths` diz de quantos em quantos meses. Separar os dois
+           * foi o que permitiu à ração de dois meses parar de afirmar que custa o dobro.
+           */
+          ...(lancamento.duraMeses === undefined
+            ? {}
+            : { recurrence: "MENSAL" as const, coversMonths: lancamento.duraMeses }),
+          ...(lancamento.quando === undefined ? {} : { occurredAt: lancamento.quando }),
           ...(lancamento.atendimentoId === undefined
             ? {}
             : { sourceHealthRecordId: lancamento.atendimentoId }),

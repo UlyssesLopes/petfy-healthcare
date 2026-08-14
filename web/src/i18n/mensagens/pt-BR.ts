@@ -307,6 +307,9 @@ export const mensagens = {
   "home.nav.quemCuida": "Quem cuida",
   "home.custodia": "Sob sua custódia",
   "home.cadastrarAnimal": "Cadastrar animal",
+  // Quem chega com um código na mão acabou de criar a conta para aceitar um convite, e não tem
+  // animal nenhum — é para ele que esta linha existe.
+  "home.tenhoUmConvite": "Tenho um código de convite",
   "home.hoje": "Hoje",
   // "Três coisas pedem você" — o desenho conta, e a contagem e o que da hierarquia:
   // sem numero, quinze pendencias e uma lista; com numero, e um dia.
@@ -495,6 +498,30 @@ export const mensagens = {
   "acesso.revogar.titulo": "O que revogar faz",
   "acesso.revogar.texto": "Fecha a porta a partir de agora. O que a organização registrou continua na linha do tempo, assinado por quem registrou — revogar acesso não apaga trabalho feito.",
 
+  // --------------------------------------------- convidar quem cuida (a Tela 11 ganhou a porta)
+  //
+  // O convite de co-tutor só existia no passo 4 do cadastro do animal: quem passasse dali sem
+  // preencher o e-mail nunca mais convidava ninguém para aquele animal. O backend estava inteiro
+  // desde o P4 — convidar, listar, revogar, aceitar e recusar. Faltava a porta.
+  //
+  // O E-MAIL SAI AGORA, e por muito tempo não saía: o `invite` gravava o convite e devolvia o
+  // token, e não havia envio em lugar nenhum. O `InviteNotifier` fechou esse buraco.
+  //
+  // O LINK CONTINUA NA TELA MESMO ASSIM, e não é redundância. O e-mail pode cair na caixa de spam,
+  // o endereço pode ter um dedo trocado, e quem convida costuma mandar por mensagem de qualquer
+  // jeito. A frase promete só o que o servidor faz — enviamos —, e entrega o link para o caso de
+  // ele não chegar.
+  "acesso.convidar.rotulo": "Convidar outra pessoa para cuidar",
+  "acesso.convidar.oQueElaGanha":
+    "Quem aceitar responde pelo animal com você: vê tudo e registra em nome próprio. Uma clínica ou creche, que vê só o que você marcar, entra por “Conceder acesso”.",
+  "acesso.convidar.botao": "Convidar",
+  "acesso.convidar.enviando": "Convidando…",
+  "acesso.convidar.enviado":
+    "Mandamos o convite para {email}, com um código para ela colar no Petfy. Se não chegar, este link abre o mesmo convite:",
+  "acesso.convidar.copiar": "Copiar o link",
+  "acesso.convidar.copiado": "Link copiado",
+  "acesso.convidar.oQueE": "o convite",
+
   // ------------------------------------------------------- conceder acesso (Tela 09)
   //
   // O desenho nomeia o problema: "o problema de design mais difícil da área do tutor é
@@ -670,7 +697,11 @@ export const mensagens = {
   "onboarding.p4.pessoa.apoio": "Quem também dá remédio e leva ao veterinário. Vê tudo e registra junto com você.",
   "onboarding.p4.pessoa.campo": "e-mail",
   "onboarding.p4.convidar": "Convidar",
-  "onboarding.p4.convidado": "Convite enviado para {email}. Ele aparece na rede quando a pessoa aceitar.",
+  // "Convite enviado" era mentira quando foi escrito, e passou a ser verdade agora: até o
+  // `InviteNotifier`, o backend gravava o convite, devolvia o token e não mandava nada. Quem
+  // chegava aqui saía achando que tinha convidado alguém.
+  "onboarding.p4.convidado":
+    "Mandamos o convite para {email}, com um código para ela colar no Petfy. Se não chegar, este link abre o mesmo convite. Ela aparece na rede quando aceitar.",
   "onboarding.p4.organizacao": "Uma clínica ou creche",
   "onboarding.p4.organizacao.apoio": "Vê só o que você marcar, pelo prazo que você definir. Nada de tudo ou nada.",
   "onboarding.p4.organizacao.semAnimal": "Primeiro cadastre o animal, no passo 1.",
@@ -940,6 +971,12 @@ export const mensagens = {
   // passou a ser instrução: os dois caminhos existem, e quem convida precisa saber o que dizer
   // a quem convidou.
   "equipe.comoAceita": "Quem ainda não tem conta entra criando a conta com o convite. Quem já é do Petfy abre o link do convite e aceita com a conta que já tem — sem precisar de um segundo cadastro.",
+
+  // O LINK APARECE UMA VEZ SÓ, e a frase precisa dizer isso: o token existe fora do servidor
+  // apenas nesta resposta. O e-mail com o código já saiu — o link aqui é para quando ele não
+  // chega, e sair da tela sem copiá-lo custa um convite novo.
+  "equipe.convite.link":
+    "Mandamos o convite para {email}, com um código para colar no Petfy. Se não chegar, este link abre o mesmo convite — e ele aparece uma vez só.",
 
   // ------------------------------------------------- aceitar o convite (Tela 16, o outro lado)
   //
@@ -1330,7 +1367,25 @@ export const mensagens = {
   "compra.oQue.remedio": "Remédio",
   "compra.oQue.outro": "Outro",
   "compra.valor": "Valor",
-  "compra.duraUmMes": "Dura cerca de um mês",
+
+  // QUANDO FOI: o campo não existia, e a tela sempre lançava agora. Quem lança a nota do mercado à
+  // noite registrava hoje; quem lança a de sábado na segunda registrava errado — e a previsão, que
+  // lê "quando foi a última vez", herdava o erro.
+  "compra.quando": "Quando foi",
+
+  // DE QUANTO EM QUANTO TEMPO, e não uma caixinha.
+  //
+  // "Dura cerca de um mês" gravava `recurrence = MENSAL`, e com isso "a ração dura um mês" e "a
+  // mensalidade chega todo mês" viraram o mesmo fato. Enquanto só existia um mês, os dois
+  // coincidiam por acidente. A ração que dura DOIS meses não tinha resposta: marcar dizia "todo
+  // mês", que é o dobro do que o tutor gasta — e a previsão planejava para cima.
+  "compra.dura": "De quanto em quanto tempo isto se repete",
+  "compra.dura.naoSeRepete": "Não se repete — foi uma vez só",
+  "compra.dura.meses": "{meses, plural, one {Dura cerca de um mês} other {Dura cerca de # meses}}",
+  "compra.dura.nota":
+    "{vezes, plural, one {A previsão do ano conta uma compra dessas} other {A previsão do ano conta # compras dessas}}.",
+  "compra.dura.nota.avulsa": "Entra no que já foi gasto, e não na previsão do ano.",
+
   "compra.lancar": "Lançar",
   "compra.lancando": "Lançando…",
   "compra.lancado": "{valor} entrou no custo do {nome}.",
@@ -1345,9 +1400,9 @@ export const mensagens = {
   "compra.unico.p2":
     "Por isso este é o único formulário de dinheiro em todo o Petfy, e ele cabe em três toques. Quanto mais campos, menos gente lança, e menos verdadeiro fica o custo.",
 
-  "compra.mensal.titulo": "“Dura cerca de um mês”",
+  "compra.mensal.titulo": "Durar não é repetir",
   "compra.mensal.texto":
-    "Essa caixinha é o que transforma uma compra avulsa em custo mensal previsível — e é também o que permite a um abrigo dizer ao adotante que a ração dele custa R$ 190 por mês, todo mês. Sem ela, o produto só saberia somar o passado.",
+    "Este é o campo que transforma uma compra avulsa em custo previsível — e é ele que permite a um abrigo dizer ao adotante quanto a ração custa por mês. Uma ração de R$ 190 que dura dois meses custa R$ 95 por mês, e volta daqui a dois meses. A caixinha que existia aqui antes só sabia dizer “todo mês”, e planejava o dobro para quem compra a cada dois.",
 
   "compra.naoExiste.titulo": "O que não existe aqui",
   "compra.naoExiste.banco":
@@ -2121,6 +2176,82 @@ export const mensagens = {
   "conta.encerrar.confirmar": "Confirmar — isto não tem volta",
   "conta.encerrar.disponivelQuando":
     "Disponível quando nenhum animal estiver sob sua responsabilidade.",
+
+  // ------------------------------------------------- o que o tutor registra no próprio animal
+  //
+  // <b>O buraco mais largo do produto, e ele estava à vista.</b> O botão "Registrar evento" ficava
+  // `disabled` no cabeçalho do animal — sem condição, sem destino, sem handler. Os hooks
+  // `useRegistrarDose`, `useDoseAnterior` e `useCorrecoes` existiam e nenhuma rota os chamava: o
+  // único lugar que registrava vacina ou peso era a tela da CLÍNICA. O tutor tinha um produto que
+  // promete "cada dose entrou aqui com o nome de quem fez", e nenhum jeito de fazer.
+  //
+  // ATENDIMENTO NÃO ESTÁ AQUI, e a ausência é a regra mais importante da tela: diagnóstico e
+  // prescrição são ato clínico, e ato clínico exige credencial. O tutor registra o que VIU.
+  "registrar.titulo": "O que aconteceu com o {nome}",
+  "registrar.apoio":
+    "Vacina, peso e observação são o que você registra sozinho, sem organização por trás. Diagnóstico e prescrição são ato clínico — quem os registra assina com o próprio registro profissional.",
+  "registrar.carregando": "o animal",
+  "registrar.oQueE": "o registro",
+  "registrar.oQue": "O que aconteceu",
+  "registrar.oQue.vacina": "Vacina",
+  "registrar.oQue.peso": "Peso",
+  "registrar.oQue.observacao": "Observação",
+
+  // A data vem antes do conteúdo, e nunca "agora" implícito: quem lança a carteirinha de papel de
+  // 2019 está registrando 2019, e um formulário que assume hoje transformaria a vida inteira do
+  // animal num único dia.
+  "registrar.quando.vacina": "Quando foi aplicada",
+  "registrar.quando.peso": "Quando foi pesado",
+  "registrar.quando.observacao": "Quando aconteceu",
+
+  "registrar.vacina.qual": "Qual vacina",
+  "registrar.vacina.nota":
+    "A lista vem do que a carteira já acompanha. Escrever o mesmo nome de outro jeito cria uma segunda série, e o mesmo reforço passa a aparecer duas vezes.",
+  "registrar.vacina.proxima": "Próxima dose (opcional)",
+  "registrar.vacina.proxima.nota":
+    "Sem ela o Petfy não tem como avisar que a dose está chegando, e o lembrete é metade do que ele faz.",
+
+  "registrar.peso.quanto": "Quanto pesou, em quilos",
+  "registrar.peso.nota": "Vírgula para os gramas: 8,6 são oito quilos e seiscentos.",
+
+  "registrar.observacao.oQue": "O que você viu",
+  // A mesma frase da Tela 18, e pela mesma razão: "a distinção entre o que alguém viu e o que
+  // alguém concluiu é a mais importante do produto".
+  "registrar.observacao.nota":
+    "Observação é o que você viu, e não uma conclusão: “mancou depois do parque” é registro; “tem displasia” é diagnóstico, e quem diagnostica assina.",
+
+  "registrar.gravar": "Registrar",
+  "registrar.autoria":
+    "O que você registrar leva o seu nome, para sempre — quem cuida deste animal vê o registro e vê quem o fez.",
+  "registrar.voltar": "Voltar para o {nome}",
+  "registrar.feito.vacina": "{vacina} entrou na carteira.",
+  "registrar.feito.peso": "{peso} kg entrou no acompanhamento de peso.",
+  "registrar.feito.observacao": "A observação entrou na linha do tempo.",
+
+  // ---------------------------------------------------- onde se cola o código de um convite
+  //
+  // Existe porque o e-mail de convite manda um CÓDIGO, e não um link: nenhuma notificação deste
+  // produto carrega link, e a confirmação de e-mail já manda "Código: ...". Sem esta tela o código
+  // não teria onde ser colado.
+  //
+  // UMA PORTA, E NÃO DUAS: "convite de animal" e "convite de organização" é vocabulário de quem
+  // escreveu o backend. Quem recebe um código não sabe de que tipo ele é, e não deveria precisar
+  // saber — a tela pergunta ao servidor e leva a pessoa ao lugar certo.
+  "colarConvite.titulo": "Cole o código do convite",
+  "colarConvite.apoio":
+    "Quem convidou você recebeu um código e mandou junto com o convite. Cole aqui e nós abrimos o convite certo.",
+  "colarConvite.rotulo": "Código",
+  "colarConvite.exemplo": "cole aqui",
+  "colarConvite.abrir": "Abrir o convite",
+  "colarConvite.procurando": "Procurando…",
+  // O mesmo estado único das duas telas de aceite: o servidor responde igual para código
+  // inexistente, expirado, revogado, já usado e endereçado a outra pessoa. Distinguir diria a quem
+  // tenta adivinhar qual parte errou.
+  "colarConvite.naoAchou":
+    "Não encontramos um convite com este código. Ele pode ter expirado, já ter sido usado, ou ser de outro endereço de e-mail. Peça um novo a quem convidou você.",
+  "colarConvite.lerNaoAceita":
+    "Abrir não aceita nada: você vê de que convite se trata e o que ele muda antes de decidir.",
+  "colarConvite.inicio": "Voltar para o início",
 } as const;
 
 export type ChaveDeMensagem = keyof typeof mensagens;
