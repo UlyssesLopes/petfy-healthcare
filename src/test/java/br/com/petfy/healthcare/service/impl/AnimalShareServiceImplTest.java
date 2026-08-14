@@ -7,6 +7,8 @@ import br.com.petfy.healthcare.domain.dto.VaccineStatus;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
+import br.com.petfy.healthcare.domain.entity.CareInstruction;
+import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
 import br.com.petfy.healthcare.domain.entity.Organization;
@@ -18,6 +20,7 @@ import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
+import br.com.petfy.healthcare.service.AnimalContacts;
 import br.com.petfy.healthcare.service.SensitiveAccessLogger;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -41,7 +44,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -68,6 +73,12 @@ class AnimalShareServiceImplTest {
     @Mock
     private CurrentPersonProvider currentPersonProvider;
 
+    @Mock
+    private CareInstructionRepository careInstructionRepository;
+
+    @Mock
+    private AnimalContacts animalContacts;
+
     private AnimalShareServiceImpl service;
 
     private static final UUID ANIMAL_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
@@ -80,7 +91,8 @@ class AnimalShareServiceImplTest {
         // calculator real: o valor do teste esta em conferir o status que o link
         // mostra, e nao em repetir a regra num mock
         service = new AnimalShareServiceImpl(grantRepository, vaccineRepository,
-                conditionRepository, animalAccessGuard, currentPersonProvider,
+                conditionRepository, careInstructionRepository, animalContacts,
+                animalAccessGuard, currentPersonProvider,
                 new VaccineStatusCalculator(), new OpaqueTokenService(), sensitiveAccessLogger);
         ReflectionTestUtils.setField(service, "defaultExpirationDays", 30);
         ReflectionTestUtils.setField(service, "windowDays", 30);
@@ -363,32 +375,78 @@ class AnimalShareServiceImplTest {
         void contatoDoTutorSoSaiComEscopo() {
             assertThat(SharedVaccineCardDTO.class.getDeclaredFields())
                     .extracting(Field::getName)
-                    .contains("personName", "personPhone")
+                    .contains("personName", "contacts")
                     .doesNotContain("personEmail", "personAddress", "personId");
         }
 
         @Test
-        @DisplayName("sem o escopo CONTATO o telefone do tutor nao aparece")
+        @DisplayName("sem o escopo CONTATO nao sai contato nenhum")
         void semEscopoContatoNaoSaiTelefone() {
             var semContato = shareAtivo();
             when(grantRepository.findByTokenHash(any())).thenReturn(Optional.of(semContato));
             when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of());
 
-            assertThat(service.viewSharedCard("token-qualquer").getPersonPhone()).isNull();
+            assertThat(service.viewSharedCard("token-qualquer").getContacts()).isEmpty();
+            // sem o escopo nem se pergunta a quem ligar
+            verifyNoInteractions(animalContacts);
         }
 
         @Test
-        @DisplayName("com o escopo CONTATO o telefone do tutor aparece")
+        @DisplayName("com o escopo CONTATO sai o tutor e a clinica que atende")
         void comEscopoContatoSaiTelefone() {
             var comContato = shareAtivo();
             comContato.getScopes().add(GrantScope.CONTATO);
             when(grantRepository.findByTokenHash(any())).thenReturn(Optional.of(comContato));
             when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
                     .thenReturn(List.of());
+            when(animalContacts.de(any())).thenReturn(List.of(
+                    new AnimalContacts.Contato("Marcelo Dias", "11999999999", AnimalContacts.Contato.TUTOR),
+                    new AnimalContacts.Contato("Clinica Vet Norte", "1133334444", AnimalContacts.Contato.ORGANIZACAO)));
 
-            assertThat(service.viewSharedCard("token-qualquer").getPersonPhone())
-                    .isEqualTo("11999999999");
+            /* Quem responde pelo animal vem primeiro: e quem pode ir busca-lo. */
+            assertThat(service.viewSharedCard("token-qualquer").getContacts())
+                    .extracting(SharedVaccineCardDTO.SharedContactDTO::getName,
+                                SharedVaccineCardDTO.SharedContactDTO::getPhone)
+                    .containsExactly(
+                            tuple("Marcelo Dias", "11999999999"),
+                            tuple("Clinica Vet Norte", "1133334444"));
+        }
+
+        /**
+         * A medicacao acompanha a condicao, e nao a carteira.
+         *
+         * Quem concede "o que ele tem" concede junto "o que ele esta tomando por causa disso" —
+         * e e o bloco que o desenho da Tela 04 poe entre condicoes e vacinacao.
+         */
+        @Test
+        @DisplayName("a medicacao em curso sai com o escopo CONDICOES, e so ela")
+        void medicacaoEmCursoSaiComCondicoes() {
+            var comCondicoes = shareAtivo();
+            comCondicoes.getScopes().add(GrantScope.CONDICOES);
+            when(grantRepository.findByTokenHash(any())).thenReturn(Optional.of(comCondicoes));
+            when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
+                    .thenReturn(List.of());
+            when(conditionRepository.findByAnimalOrdenadasPorRelevancia(ANIMAL_ID))
+                    .thenReturn(List.of());
+            when(careInstructionRepository.findVigentesNosAnimais(eq(List.of(ANIMAL_ID)), any()))
+                    .thenReturn(List.of(CareInstruction.builder()
+                            .description("Amoxicilina 250 mg, 12/12h").build()));
+
+            assertThat(service.viewSharedCard("token-qualquer").getOngoingCare())
+                    .containsExactly("Amoxicilina 250 mg, 12/12h");
+        }
+
+        @Test
+        @DisplayName("sem o escopo CONDICOES a medicacao em curso nao sai")
+        void semCondicoesNaoSaiMedicacao() {
+            var semCondicoes = shareAtivo();
+            when(grantRepository.findByTokenHash(any())).thenReturn(Optional.of(semCondicoes));
+            when(vaccineRepository.findByAnimalAnimalIdOrderByApplicationDateDesc(ANIMAL_ID))
+                    .thenReturn(List.of());
+
+            assertThat(service.viewSharedCard("token-qualquer").getOngoingCare()).isEmpty();
+            verifyNoInteractions(careInstructionRepository);
         }
 
         @Test

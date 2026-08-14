@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useIntl } from "react-intl";
 
 import { useEntrar, usePedirNovaSenha } from "../dados/autenticacao.ts";
@@ -14,13 +14,10 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
  * O MARKUP VEM DO ARQUIVO: os estilos foram convertidos por script — `style="..."` vira
  * `style={{...}}` e nada mais. O que muda e o conteudo e o comportamento.
  *
- * <b>QUATRO AFORDANCIAS DO DESENHO NAO TEM BACKEND</b>, e elas ficam na tela desabilitadas
- * em vez de sumirem ou de fingirem funcionar. A propria secao 06 da identidade manda:
- * "o desabilitado nunca aparece mudo — ao lado dele, sempre a frase que diz por que". Sao
- * elas: o link por e-mail (nao ha login sem senha na API), o "continuar conectado" (o token
- * vive em memoria e o refresh em cookie foi adiado com gatilho escrito), o cartao de
- * emergencia (o `/share/{token}` exige um token que so quem tem custodia gera) e as duas
- * navegacoes para telas que ainda nao existem.
+ * <b>Nao ha mais nada desabilitado aqui.</b> O "continuar conectado" virou escolha de verdade
+ * (V52), o cartao de emergencia abre pelo codigo em `/cartao/{token}`, e o login por link saiu
+ * da tela — sem URL publica ele nao seria link, e um controle cinza com uma frase pedindo
+ * desculpa ocupa a porta sem servir a ninguem. Fica registrado no `ROADMAP.md`.
  */
 
 /**
@@ -120,11 +117,10 @@ function Entrar() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [manterConectado, setManterConectado] = useState(true);
   const [erros, setErros] = useState<ErrosDeCampo>({});
 
   const principal = useHover();
-  const secundario = useHover();
-  const cartao = useHover();
 
   /*
    * Lido uma vez, na montagem: depois de entrar a sessao passa a existir, e o aviso
@@ -146,7 +142,7 @@ function Entrar() {
        produto e a sessao fechada e o normal, entao perder o token aqui faria o clique morrer
        na porta — que era exatamente o buraco que o aceite com conta existente veio fechar. */
     entrar.mutate(
-      { email: email.trim(), senha },
+      { email: email.trim(), senha, manterConectado },
       {
         onSuccess: () =>
           void (convite === undefined
@@ -204,15 +200,7 @@ function Entrar() {
                 {intl.formatMessage({ id: "entrar.agora.texto" })}
               </div>
 
-              <button
-                type="button"
-                disabled
-                {...cartao.props}
-                style={{ fontFamily: "inherit", display: "inline-flex", alignItems: "center", fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "14px 20px", minHeight: "48px", cursor: "not-allowed", opacity: 0.55 }}
-              >
-                {intl.formatMessage({ id: "entrar.cartao.acao" })}
-              </button>
-              <PorQueDesabilitado>{intl.formatMessage({ id: "entrar.cartao.porque" })}</PorQueDesabilitado>
+              <AbrirCartao />
             </div>
           </div>
         )}
@@ -325,13 +313,28 @@ function Entrar() {
               )}
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", opacity: 0.55 }}>
-              <div style={{ width: "20px", height: "20px", borderRadius: "4px", background: "oklch(0.72 0.012 150)", flex: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: "oklch(1 0 0)" }}></div>
-              </div>
-              <span style={{ fontSize: "15px" }}>{intl.formatMessage({ id: "entrar.continuarConectado" })}</span>
+            {/* Marcada por padrao: e o que o login sempre fez. Desmarcar entrega um cookie de
+                sessao, que morre ao fechar o navegador — a saida de quem esta num computador
+                emprestado. */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <input
+                id="manter-conectado"
+                type="checkbox"
+                checked={manterConectado}
+                onChange={(evento) => setManterConectado(evento.target.checked)}
+                style={{ width: "20px", height: "20px", flex: "none", accentColor: "oklch(0.46 0.085 150)", cursor: "pointer" }}
+              />
+              <label htmlFor="manter-conectado" style={{ fontSize: "15px", cursor: "pointer" }}>
+                {intl.formatMessage({ id: "entrar.continuarConectado" })}
+              </label>
             </div>
-            <PorQueDesabilitado semRecuo>{intl.formatMessage({ id: "entrar.continuarConectado.porque" })}</PorQueDesabilitado>
+            <div style={{ fontSize: "13px", lineHeight: 1.5, color: "oklch(0.5 0.015 150)", marginTop: "-12px" }}>
+              {intl.formatMessage({
+                id: manterConectado
+                  ? "entrar.continuarConectado.marcado"
+                  : "entrar.continuarConectado.desmarcado",
+              })}
+            </div>
 
             {/*
               O erro do servidor vive fora dos campos: ele nao pertence a nenhum deles — o
@@ -355,46 +358,17 @@ function Entrar() {
               {intl.formatMessage({ id: entrar.isPending ? "entrar.enviando" : "entrar.acao" })}
             </button>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", padding: "4px 0" }}>
-              <div style={{ flex: 1, height: "1px", background: "oklch(0.92 0.006 150)" }}></div>
-              <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>{intl.formatMessage({ id: "entrar.ou" })}</span>
-              <div style={{ flex: 1, height: "1px", background: "oklch(0.92 0.006 150)" }}></div>
-            </div>
-
-            <button
-              type="button"
-              disabled
-              {...secundario.props}
-              style={{ fontFamily: "inherit", fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "16px", minHeight: "56px", cursor: "not-allowed", opacity: 0.55 }}
-            >
-              {intl.formatMessage({ id: "entrar.link.acao" })}
-            </button>
-            <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", lineHeight: 1.55, marginTop: "-8px" }}>
-              {intl.formatMessage({ id: "entrar.link.apoio" })}
-            </div>
-            <PorQueDesabilitado semRecuo>{intl.formatMessage({ id: "entrar.link.porque" })}</PorQueDesabilitado>
-
             {/*
              * Na mao, o cartao de emergencia vem AQUI e nao no espelho: a Tela 29 poe ele
              * embaixo do formulario, "a um polegar de distancia", porque quem chega as 3h da
-             * manha com o animal passando mal nao deveria enfrentar um formulario. Segue
-             * desabilitado pelo mesmo motivo do desktop — o /share/{token} exige um token que
-             * so quem tem custodia gera.
+             * manha com o animal passando mal nao deveria enfrentar um formulario.
              */}
             {estreito && (
               <div style={{ borderTop: "1px solid oklch(0.92 0.006 150)", paddingTop: "18px", display: "flex", flexDirection: "column", gap: "12px" }}>
-                <button
-                  type="button"
-                  disabled
-                  {...cartao.props}
-                  style={{ fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "16px", minHeight: "56px", cursor: "not-allowed", opacity: 0.55 }}
-                >
-                  {intl.formatMessage({ id: "entrar.cartao.acao" })}
-                </button>
                 <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", lineHeight: 1.55, textAlign: "center" }}>
                   {intl.formatMessage({ id: "entrar.cartao.semSenha" })}
                 </div>
-                <PorQueDesabilitado semRecuo>{intl.formatMessage({ id: "entrar.cartao.porque" })}</PorQueDesabilitado>
+                <AbrirCartao />
               </div>
             )}
 
@@ -443,15 +417,54 @@ function Entrar() {
 }
 
 /**
- * A frase que acompanha todo controle desabilitado.
+ * A saida de emergencia da porta, e ela abre sem senha.
  *
- * A secao 06 da identidade e explicita: "o desabilitado nunca aparece mudo — ao lado dele,
- * sempre a frase que diz por que". Dito ANTES do gesto, e nao depois.
+ * <b>Pede o codigo, e nao um clique.</b> O cartao vive num token que so quem responde pelo animal
+ * gera — e como nao ha URL publica configurada, o que chega a quem precisa abrir e o codigo, nao
+ * um link clicavel. Colar aqui e a unica forma que existe hoje, e a tela diz isso em vez de
+ * oferecer um botao que nao teria para onde ir.
  */
-function PorQueDesabilitado({ children, semRecuo }: { children: ReactNode; semRecuo?: boolean }) {
+function AbrirCartao() {
+  const intl = useIntl();
+  const navegar = useNavigate();
+  const [codigo, setCodigo] = useState("");
+
+  const limpo = codigo.trim();
+
   return (
-    <div style={{ fontSize: "13px", lineHeight: 1.5, color: "oklch(0.5 0.015 150)", marginTop: semRecuo ? "-12px" : "10px" }}>
-      {children}
-    </div>
+    <form
+      onSubmit={(evento) => {
+        evento.preventDefault();
+        if (limpo !== "") {
+          void navegar({ to: "/cartao/$token", params: { token: limpo } });
+        }
+      }}
+      style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+    >
+      <label htmlFor="codigo-do-cartao" style={{ fontSize: "13px", fontWeight: 500, color: "oklch(0.42 0.015 150)" }}>
+        {intl.formatMessage({ id: "entrar.cartao.codigo" })}
+      </label>
+      <div style={{ display: "flex", gap: "8px" }}>
+        <input
+          id="codigo-do-cartao"
+          type="text"
+          autoComplete="off"
+          value={codigo}
+          onChange={(evento) => setCodigo(evento.target.value)}
+          style={{ fontFamily: "'DM Mono', monospace", flex: 1, minWidth: 0, border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "13px 14px", fontSize: "15px", minHeight: "48px", background: "oklch(1 0 0)", color: "oklch(0.25 0.02 150)" }}
+        />
+        <button
+          type="submit"
+          disabled={limpo === ""}
+          style={{ fontFamily: "inherit", fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "13px 20px", minHeight: "48px", flex: "none", cursor: limpo === "" ? "not-allowed" : "pointer", opacity: limpo === "" ? 0.55 : 1 }}
+        >
+          {intl.formatMessage({ id: "entrar.cartao.abrir" })}
+        </button>
+      </div>
+      <div style={{ fontSize: "13px", lineHeight: 1.5, color: "oklch(0.5 0.015 150)" }}>
+        {intl.formatMessage({ id: "entrar.cartao.ajuda" })}
+      </div>
+    </form>
   );
 }
+

@@ -48,11 +48,12 @@ public class SharedVaccineCardDTO {
     private String personName;
 
     /**
-     * Telefone de quem responde pelo animal. So aparece com o escopo CONTATO, que
-     * o tutor precisa conceder de propria vontade - e o unico dado pessoal dele
-     * que o link pode carregar, e existe para o caso de emergencia.
+     * Para quem ligar: quem responde pelo animal, e as organizacoes que o atendem.
+     *
+     * Vazio sem o escopo CONTATO, que o tutor concede de propria vontade - e o unico
+     * dado pessoal dele que o link pode carregar, e existe para o caso de emergencia.
      */
-    private String personPhone;
+    private List<SharedContactDTO> contacts;
 
     /** O que este link alcanca. Vem junto para o leitor distinguir vazio de negado. */
     private Set<GrantScope> scopes;
@@ -65,6 +66,32 @@ public class SharedVaccineCardDTO {
 
     /** Alergias e condicoes cronicas. Vazio sem o escopo CONDICOES. */
     private List<SharedConditionDTO> conditions;
+
+    /**
+     * "Amoxicilina 250 mg, 12/12h, ate 12/08" — so o que esta em curso hoje.
+     *
+     * A orientacao ja encerrada diria a quem socorre que o animal toma um remedio que
+     * ele nao toma mais. Vazio sem o escopo CONDICOES, que e onde a medicacao mora:
+     * quem concede "o que ele tem" concede junto "o que ele esta tomando por causa disso".
+     */
+    private List<String> ongoingCare;
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SharedContactDTO {
+
+        private String name;
+
+        /** Nulo quando o cadastro nao tem telefone. O cartao mostra o nome mesmo assim. */
+        private String phone;
+
+        /** TUTOR ou ORGANIZACAO — muda o que quem liga espera do outro lado. */
+        private String kind;
+
+    }
 
     @Getter
     @Setter

@@ -96,6 +96,8 @@ public class AuthServiceImpl implements AuthService {
                 .userAgent(recortar(userAgent))
                 .refreshTokenHash(opaqueTokenService.hash(refresh))
                 .refreshExpiresAt(agora.plus(refreshCookie.getValidade()))
+                // o prazo do servidor e o mesmo nos dois casos; o que muda e o cookie
+                .refreshPersistent(request.manterConectado())
                 .build());
 
         LoginResponseDTO corpo = LoginResponseDTO.builder()
@@ -108,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
                         person.getEmail(), CredentialStatus.SUSPENSO))
                 .build();
 
-        return new Autenticada(corpo, refresh);
+        return new Autenticada(corpo, refresh, sessao.persistente());
     }
 
     @Override

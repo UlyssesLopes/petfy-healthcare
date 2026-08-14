@@ -13,7 +13,7 @@ public interface AuthService {
      * JavaScript nenhum le. Poe-lo no corpo devolveria ao XSS exatamente o que o cookie existe para
      * tirar do alcance dele.
      */
-    record Autenticada(LoginResponseDTO corpo, String refreshToken) { }
+    record Autenticada(LoginResponseDTO corpo, String refreshToken, boolean manterConectado) { }
 
     /**
      * Entra na conta, e a entrada fica registrada (Tela 36).

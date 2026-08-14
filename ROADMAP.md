@@ -1906,6 +1906,13 @@ Especificá-los agora, sem interface, é convite a refazer.
   baixa; WhatsApp e push são o canal real. A arquitetura já ajuda — `Notifier` é
   interface e não conhece o domínio, então é canal novo e não refatoração. Depende de
   saber onde o usuário está.
+- **Entrar sem senha.** A Tela 28 desenhou "Receber um link por e-mail", e o botão ficou
+  desabilitado desde que a tela subiu — saiu em 2026-08-14, junto com a frase que pedia
+  desculpa por ele. **Não seria link:** sem `petfy.app.base-url` por ambiente, o que chega a
+  quem precisa entrar é um código, como já acontece com o convite e com o cartão. Então é
+  recurso próprio, e não um botão: tabela de token de uso único, expiração curta, limite de
+  tentativa e a tela de digitar o código. Quem esquece a senha já tem saída — a recuperação
+  resolve na própria porta, sem trocar de tela.
 - **ZIP no export**, com os arquivos dentro em vez de só os links.
 - **Leitura de anexo pelo veterinário.** É o que fecha o ciclo do laudo. O
   `AccessedResource.ATTACHMENTS` já existe no enum esperando o gancho.

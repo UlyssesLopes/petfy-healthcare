@@ -2405,6 +2405,9 @@
           "email" : {
             "type" : "string"
           },
+          "keepSignedIn" : {
+            "type" : "boolean"
+          },
           "password" : {
             "type" : "string"
           }
@@ -3906,6 +3909,20 @@
         },
         "type" : "object"
       },
+      "SharedContactDTO" : {
+        "properties" : {
+          "kind" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "SharedVaccineCardDTO" : {
         "properties" : {
           "animalBornDate" : {
@@ -3930,14 +3947,23 @@
             },
             "type" : "array"
           },
+          "contacts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SharedContactDTO"
+            },
+            "type" : "array"
+          },
           "expiresAt" : {
             "format" : "date-time",
             "type" : "string"
           },
-          "personName" : {
-            "type" : "string"
+          "ongoingCare" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           },
-          "personPhone" : {
+          "personName" : {
             "type" : "string"
           },
           "referenceDate" : {

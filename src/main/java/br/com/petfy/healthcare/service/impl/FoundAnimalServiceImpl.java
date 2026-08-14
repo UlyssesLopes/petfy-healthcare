@@ -5,17 +5,14 @@ import br.com.petfy.healthcare.domain.entity.Animal;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthCondition;
 import br.com.petfy.healthcare.domain.entity.AnimalHealthConditionKind;
 import br.com.petfy.healthcare.domain.entity.CareInstruction;
-import br.com.petfy.healthcare.domain.entity.Grant;
-import br.com.petfy.healthcare.domain.entity.Organization;
-import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.repository.AnimalDeathRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
 import br.com.petfy.healthcare.domain.repository.AnimalRepository;
 import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
 import br.com.petfy.healthcare.domain.repository.CustodyRepository;
-import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.service.AnimalContacts;
 import br.com.petfy.healthcare.service.FoundAnimalService;
 import br.com.petfy.healthcare.service.SensitiveAccessLogger;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
@@ -27,13 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * "Achei um animal na rua" (Tela 34).
@@ -60,7 +52,7 @@ public class FoundAnimalServiceImpl implements FoundAnimalService {
     private final AnimalHealthConditionRepository conditionRepository;
     private final CareInstructionRepository careInstructionRepository;
     private final CustodyRepository custodyRepository;
-    private final GrantRepository grantRepository;
+    private final AnimalContacts animalContacts;
     private final VaccineRepository vaccineRepository;
     private final VaccineStatusCalculator vaccineStatusCalculator;
     private final SensitiveAccessLogger sensitiveAccessLogger;
@@ -144,49 +136,13 @@ public class FoundAnimalServiceImpl implements FoundAnimalService {
      * Norte" —, e ela nao e cosmetica: quem responde pelo animal e quem pode ir busca-lo.
      */
     private List<FoundAnimalCardDTO.FoundContactDTO> contatos(Animal animal) {
-        List<FoundAnimalCardDTO.FoundContactDTO> contatos = new ArrayList<>();
-
-        custodyRepository.findEmCurso(animal.getAnimalId()).ifPresent(custodia -> {
-            Person pessoa = custodia.getHolderPerson();
-            if (pessoa != null) {
-                contatos.add(FoundAnimalCardDTO.FoundContactDTO.builder()
-                        .name(pessoa.getName())
-                        .phone(pessoa.getPhone())
-                        .kind("TUTOR")
-                        .build());
-                return;
-            }
-
-            // quem responde e uma organizacao: o abrigo que resgatou o animal, sem tutor humano
-            Organization abrigo = custodia.getHolderOrganization();
-            if (abrigo != null) {
-                contatos.add(paraOrganizacao(abrigo));
-            }
-        });
-
-        Map<UUID, Organization> organizacoes = new LinkedHashMap<>();
-
-        grantRepository
-                .findVigentesDeOrganizacoesNoAnimal(animal.getAnimalId(), LocalDateTime.now())
-                .stream()
-                .map(Grant::getGranteeOrganization)
-                .forEach(organizacao -> organizacoes.put(organizacao.getOrganizationId(), organizacao));
-
-        organizacoes.values().stream()
-                .filter(organizacao -> contatos.stream()
-                        .noneMatch(ja -> organizacao.getName().equals(ja.getName())))
-                .map(this::paraOrganizacao)
-                .forEach(contatos::add);
-
-        return contatos;
-    }
-
-    private FoundAnimalCardDTO.FoundContactDTO paraOrganizacao(Organization organizacao) {
-        return FoundAnimalCardDTO.FoundContactDTO.builder()
-                .name(organizacao.getName())
-                .phone(organizacao.getPhone())
-                .kind("ORGANIZACAO")
-                .build();
+        return animalContacts.de(animal).stream()
+                .map(contato -> FoundAnimalCardDTO.FoundContactDTO.builder()
+                        .name(contato.name())
+                        .phone(contato.phone())
+                        .kind(contato.kind())
+                        .build())
+                .toList();
     }
 
     private List<String> descricoes(Animal animal, AnimalHealthConditionKind kind) {

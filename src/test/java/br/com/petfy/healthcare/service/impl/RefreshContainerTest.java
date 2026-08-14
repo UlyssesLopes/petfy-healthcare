@@ -81,6 +81,26 @@ class RefreshContainerTest extends PostgresContainerTest {
                 "Mozilla/5.0 (Windows NT 10.0) Chrome/141");
     }
 
+    /**
+     * A renovacao nao promove a entrada temporaria.
+     *
+     * O navegador devolve o cookie, mas nao o prazo dele — se a escolha nao sobrevivesse a
+     * rotacao, o primeiro refresh transformaria em 30 dias a sessao que a pessoa pediu que
+     * durasse ate ela fechar o navegador.
+     */
+    @Test
+    @DisplayName("renovar preserva a escolha de nao continuar conectado")
+    void renovarPreservaAEscolha() {
+        var entrada = authService.login(LoginRequestDTO.builder()
+                .email(meuEmail).password(SENHA).keepSignedIn(false).build(), "Chrome/141");
+
+        assertThat(entrada.manterConectado()).isFalse();
+
+        var renovada = sessionRenewal.renovar(entrada.refreshToken());
+
+        assertThat(renovada.sessao().persistente()).isFalse();
+    }
+
     @Test
     @DisplayName("o refresh troca o token vencido por um novo, sem senha")
     void renovaSemSenha() {

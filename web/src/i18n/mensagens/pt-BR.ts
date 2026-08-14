@@ -268,7 +268,6 @@ export const mensagens = {
   // repete a postura: confirma o envio sem afirmar que a conta existe.
   "entrar.esqueci.enviado": "Se {email} tiver conta aqui, o link para trocar a senha já saiu.",
   "entrar.esqueci.precisaEmail": "Escreva seu e-mail acima para receber o link.",
-  "entrar.ou": "ou",
 
   // A frase da esquerda nao vende o produto — lembra por que a conta existe. E a mesma
   // tese do simbolo: o animal permanece, as pessoas passam.
@@ -277,23 +276,22 @@ export const mensagens = {
 
   "entrar.agora.rotulo": "Precisa de algo agora?",
   "entrar.agora.texto": "Se o animal está passando mal e você não lembra a senha, o cartão de emergência dele abre sem login — alergias, remédios em curso e quem chamar.",
-  "entrar.cartao.acao": "Abrir cartão de emergência",
   "entrar.cartao.semSenha": "Sem senha, para quando não dá tempo.",
+  // O botão pede o código porque não há URL pública: o link que o tutor gera carrega um token,
+  // e é ele que se cola aqui.
+  "entrar.cartao.codigo": "Código do cartão",
+  "entrar.cartao.abrir": "Abrir",
+  "entrar.cartao.ajuda": "Cole aqui o código que quem responde pelo animal enviou.",
 
   "entrar.continuarConectado": "Continuar conectado neste aparelho",
-  "entrar.link.acao": "Receber um link por e-mail",
-  "entrar.link.apoio": "Sem senha. Você clica no link e entra — serve quando a senha não vem à cabeça.",
+  "entrar.continuarConectado.marcado": "Você fica conectado por 30 dias, mesmo fechando o navegador.",
+  "entrar.continuarConectado.desmarcado": "Ao fechar o navegador, você sai. Use num computador emprestado.",
   "entrar.criarConta": "Ainda não tem conta? {acao}",
   "entrar.criarConta.acao": "Criar uma agora",
   // O caminho de quem não vem entrar (Tela 34). A frase é a pergunta que a pessoa tem na cabeça,
   // e não o nome da funcionalidade: ninguém procura por "consulta de microchip".
   "entrar.achouUmAnimal": "Achou um animal na rua? Procure pelo microchip, sem criar conta",
 
-  // As quatro frases de "por que esta desabilitado". A secao 06 pede que o desabilitado
-  // nunca apareca mudo, e que o motivo venha ANTES do gesto — nao depois.
-  "entrar.cartao.porque": "Ainda não dá para abrir daqui: o cartão abre por um link que quem responde pelo animal gera e envia.",
-  "entrar.continuarConectado.porque": "Ainda não guardamos a sessão entre visitas — ao recarregar a página é preciso entrar de novo.",
-  "entrar.link.porque": "Entrar por link ainda não existe. Por enquanto, só com senha.",
   "entrar.email.faltando": "Informe o seu e-mail.",
   "entrar.email.incompleto": "Esse e-mail não parece completo — falta o @",
   "entrar.senha.faltando": "Informe a sua senha.",
@@ -1761,24 +1759,48 @@ export const mensagens = {
     "Não precisa criar conta. Não guardamos quem fez a busca. Quem responde pelo animal vê que ele foi procurado.",
 
   "encontrado.cartao.marca": "Encontrado · só leitura",
-  "encontrado.ligar": "Ligar para {quem}",
-  // Cadastro sem telefone: o nome aparece de todo jeito, porque saber que existe uma clínica
-  // cuidando dele já ajuda quem está com o animal.
-  "encontrado.semTelefone": "{quem} · sem telefone cadastrado",
-  "encontrado.alergias": "Alergias",
-  "encontrado.condicoes": "Condições",
-  "encontrado.medicacao": "Medicação em curso",
-  "encontrado.vacinacao": "Vacinação",
-  "encontrado.vacina.vencida": "{nome} vencida",
-  "encontrado.vacina.emDia": "{nome} em dia",
-  "encontrado.vacina.chegando": "{nome} · próxima dose em {data}",
-  "encontrado.vacina.semProxima": "{nome} · sem próxima dose marcada",
-  "encontrado.nada": "Nada registrado",
   "encontrado.rodape":
     "Quem responde pelo {nome} foi avisado de que ele foi procurado agora. É o mesmo cartão de emergência dele — nada a mais.",
 
   // O vazio que diz o que fazer em seguida. O texto mora em `erro.161`, e este é o título.
   "encontrado.vazio.titulo": "Este número não está no Petfy",
+
+  // ============================================ o cartão do animal, dividido por duas telas
+  // A Tela 04 (link compartilhado) e a Tela 34 (achei na rua) mostram a mesma ficha. O que
+  // muda é a marca do topo e o rodapé, e por isso só esses dois moram fora daqui.
+  "cartao.ligar": "Ligar para {quem}",
+  // Cadastro sem telefone: o nome aparece de todo jeito, porque saber que existe uma clínica
+  // cuidando dele já ajuda quem está com o animal.
+  "cartao.semTelefone": "{quem} · sem telefone cadastrado",
+  "cartao.alergias": "Alergias",
+  "cartao.condicoes": "Condições",
+  "cartao.medicacao": "Medicação em curso",
+  "cartao.vacinacao": "Vacinação",
+  "cartao.vacina.vencida": "{nome} vencida",
+  "cartao.vacina.emDia": "{nome} em dia",
+  "cartao.vacina.chegando": "{nome} · próxima dose em {data}",
+  "cartao.vacina.semProxima": "{nome} · sem próxima dose marcada",
+  "cartao.nada": "Nada registrado",
+
+  // ------------------------------------------ o link compartilhado (Tela 04) e o vencimento
+  "cartao.marca": "Cartão do animal · só leitura",
+  "cartao.carregando": "Abrindo o cartão…",
+  "cartao.idade": "{anos, plural, =0 {menos de 1 ano} one {# ano} other {# anos}}",
+  "cartao.rodape":
+    "Este cartão vale até {data}. Depois disso, peça um novo link a quem responde pelo {nome}. Não é preciso criar conta.",
+  "cartao.semPrazo": "Este cartão não tem prazo. Quem responde pelo {nome} pode revogá-lo quando quiser.",
+  // O que o link NÃO alcança não fica em silêncio: sem isto, um cartão sem alergias parece
+  // dizer "não tem alergia", quando o que houve foi o tutor não conceder esse pedaço.
+  "cartao.foraDoEscopo": "Este link não mostra {o_que}. Quem o gerou escolheu o que ele alcança.",
+  "cartao.escopo.condicoes": "alergias, condições e medicação",
+  "cartao.escopo.contato": "para quem ligar",
+  "cartao.escopo.carteira": "a carteira de vacinação",
+
+  // O cartão vencido (Tela 14). Diz o que fazer, e não só que acabou.
+  "cartao.expirado.marca": "Cartão expirado · sem conta, sem senha",
+  "cartao.expirado.titulo": "Este cartão venceu",
+  "cartao.expirado.texto":
+    "Quem responde por este animal pode gerar um novo link. Se for uma emergência, procure um veterinário — ele saberá o que fazer sem esta ficha.",
 
   // ===================================================== o animal comunitário (Telas 43 e 44)
   "colonia.titulo": "Os animais do grupo",

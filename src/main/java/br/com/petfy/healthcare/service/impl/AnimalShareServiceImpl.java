@@ -4,18 +4,21 @@ import br.com.petfy.healthcare.domain.dto.AnimalShareRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AnimalShareResponseDTO;
 import br.com.petfy.healthcare.domain.dto.SharedVaccineCardDTO;
 import br.com.petfy.healthcare.domain.entity.Animal;
+import br.com.petfy.healthcare.domain.entity.CareInstruction;
 import br.com.petfy.healthcare.domain.entity.Grant;
 import br.com.petfy.healthcare.domain.entity.GrantLevel;
 import br.com.petfy.healthcare.domain.entity.GrantScope;
 import br.com.petfy.healthcare.domain.entity.Person;
 import br.com.petfy.healthcare.domain.entity.Vaccine;
 import br.com.petfy.healthcare.domain.repository.AnimalHealthConditionRepository;
+import br.com.petfy.healthcare.domain.repository.CareInstructionRepository;
 import br.com.petfy.healthcare.domain.repository.GrantRepository;
 import br.com.petfy.healthcare.domain.repository.VaccineRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
 import br.com.petfy.healthcare.security.AnimalAccessGuard;
 import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.OpaqueTokenService;
+import br.com.petfy.healthcare.service.AnimalContacts;
 import br.com.petfy.healthcare.service.AnimalShareService;
 import br.com.petfy.healthcare.service.SensitiveAccessLogger;
 import br.com.petfy.healthcare.service.VaccineStatusCalculator;
@@ -24,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -47,6 +51,8 @@ public class AnimalShareServiceImpl implements AnimalShareService {
     private final GrantRepository grantRepository;
     private final VaccineRepository vaccineRepository;
     private final AnimalHealthConditionRepository conditionRepository;
+    private final CareInstructionRepository careInstructionRepository;
+    private final AnimalContacts animalContacts;
     private final AnimalAccessGuard animalAccessGuard;
     private final CurrentPersonProvider currentPersonProvider;
     private final VaccineStatusCalculator vaccineStatusCalculator;
@@ -111,7 +117,16 @@ public class AnimalShareServiceImpl implements AnimalShareService {
         }
     }
 
+    /**
+     * <b>Transacional porque a sessao precisa estar aberta quando os escopos forem lidos.</b>
+     *
+     * O {@code Grant.scopes} e uma colecao lazy, e todo bloco deste cartao passa por ela — sem
+     * transacao, a primeira pergunta "este link alcanca a carteira?" estoura com
+     * LazyInitializationException e a rota inteira responde 500. Nao e leitura pura: abrir o
+     * cartao grava uma linha no log de acesso do animal.
+     */
     @Override
+    @Transactional
     public SharedVaccineCardDTO viewSharedCard(String token) {
         LocalDateTime agora = LocalDateTime.now();
 
@@ -151,6 +166,26 @@ public class AnimalShareServiceImpl implements AnimalShareService {
                         .collect(Collectors.toList())
                 : List.of();
 
+        // A medicacao acompanha a condicao: quem concede "o que ele tem" concede junto "o
+        // que ele esta tomando por causa disso". So o que vale hoje - orientacao encerrada
+        // faria quem socorre agir sobre um remedio que o animal ja nao toma.
+        List<String> emCurso = grant.alcanca(GrantScope.CONDICOES)
+                ? careInstructionRepository.findVigentesNosAnimais(List.of(animal.getAnimalId()), hoje)
+                        .stream()
+                        .map(CareInstruction::getDescription)
+                        .toList()
+                : List.of();
+
+        List<SharedVaccineCardDTO.SharedContactDTO> contatos = grant.alcanca(GrantScope.CONTATO)
+                ? animalContacts.de(animal).stream()
+                        .map(contato -> SharedVaccineCardDTO.SharedContactDTO.builder()
+                                .name(contato.name())
+                                .phone(contato.phone())
+                                .kind(contato.kind())
+                                .build())
+                        .toList()
+                : List.of();
+
         return SharedVaccineCardDTO.builder()
                 .animalName(animal.getName())
                 .animalType(animal.getType())
@@ -158,14 +193,13 @@ public class AnimalShareServiceImpl implements AnimalShareService {
                 .animalBornDate(animal.getBornDate())
                 .animalGender(animal.getGender())
                 .personName(animal.getHolder().map(Person::getName).orElse(null))
-                .personPhone(grant.alcanca(GrantScope.CONTATO)
-                        ? animal.getHolder().map(Person::getPhone).orElse(null)
-                        : null)
+                .contacts(contatos)
                 .scopes(grant.getScopes())
                 .referenceDate(hoje)
                 .expiresAt(grant.getExpiresAt())
                 .vaccines(vacinas)
                 .conditions(condicoes)
+                .ongoingCare(emCurso)
                 .build();
     }
 

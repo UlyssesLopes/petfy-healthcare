@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -154,9 +155,9 @@ class SecurityFilterChainTest {
     void loginDeveSerPublico() throws Exception {
         // desde a V51 o controller le o refresh do resultado e o poe num cookie
         when(authService.login(any(), any())).thenReturn(new AuthService.Autenticada(
-                LoginResponseDTO.builder().token("t").tokenType("Bearer").build(), "refresh"));
+                LoginResponseDTO.builder().token("t").tokenType("Bearer").build(), "refresh", true));
         when(refreshCookie.header()).thenReturn("Set-Cookie");
-        when(refreshCookie.paraDefinir(any())).thenReturn("petfy_refresh=refresh");
+        when(refreshCookie.paraDefinir(any(), anyBoolean())).thenReturn("petfy_refresh=refresh");
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

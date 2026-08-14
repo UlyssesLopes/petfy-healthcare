@@ -1,0 +1,12 @@
+-- Continuar conectado deixa de ser imposicao e vira escolha de quem entra.
+--
+-- Ate aqui o login sempre gravava um cookie de 30 dias, e a tela de entrar exibia a caixa
+-- "Continuar conectado neste aparelho" desabilitada, com uma nota dizendo que a sessao nao
+-- sobrevivia entre visitas — texto de antes da V51, falso desde ela.
+--
+-- <b>Por que a escolha precisa morar no banco.</b> O navegador devolve o cookie, mas nao devolve o
+-- maxAge dele. Sem guardar aqui, o primeiro /auth/refresh reemitiria o cookie como persistente e
+-- promoveria em silencio a sessao que a pessoa pediu que fosse temporaria.
+--
+-- Nulo e "persistente": e o que as sessoes anteriores a esta migration ja eram.
+ALTER TABLE person_sessions ADD COLUMN refresh_persistent boolean;

@@ -59,7 +59,9 @@ public class AuthController {
          * para tirar do alcance dele.
          */
         return ResponseEntity.ok()
-                .header(refreshCookie.header(), refreshCookie.paraDefinir(autenticada.refreshToken()))
+                .header(refreshCookie.header(),
+                        refreshCookie.paraDefinir(autenticada.refreshToken(),
+                                autenticada.manterConectado()))
                 .body(autenticada.corpo());
     }
 
@@ -76,7 +78,10 @@ public class AuthController {
         var renovada = sessionRenewal.renovar(refreshCookie.ler(request).orElse(""));
 
         return ResponseEntity.ok()
-                .header(refreshCookie.header(), refreshCookie.paraDefinir(renovada.refreshToken()))
+                // a escolha feita no login manda aqui: renovar nao promove a temporaria
+                .header(refreshCookie.header(),
+                        refreshCookie.paraDefinir(renovada.refreshToken(),
+                                renovada.sessao().persistente()))
                 .body(LoginResponseDTO.builder()
                         .token(renovada.token())
                         .tokenType("Bearer")

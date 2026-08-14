@@ -25,6 +25,7 @@ import { Route as EntrarRouteImport } from './rotas/entrar'
 import { Route as PacientesRouteImport } from './rotas/pacientes'
 import { Route as AnimaisAnimalIdRouteImport } from './rotas/animais.$animalId'
 import { Route as AnimaisNovoRouteImport } from './rotas/animais.novo'
+import { Route as CartaoTokenRouteImport } from './rotas/cartao.$token'
 import { Route as ConvitesIndexRouteImport } from './rotas/convites.index'
 import { Route as ConvitesAceitarRouteImport } from './rotas/convites.aceitar'
 import { Route as ConvitesAnimalRouteImport } from './rotas/convites.animal'
@@ -130,6 +131,11 @@ const AnimaisAnimalIdRoute = AnimaisAnimalIdRouteImport.update({
 const AnimaisNovoRoute = AnimaisNovoRouteImport.update({
   id: '/animais/novo',
   path: '/animais/novo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartaoTokenRoute = CartaoTokenRouteImport.update({
+  id: '/cartao/$token',
+  path: '/cartao/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConvitesIndexRoute = ConvitesIndexRouteImport.update({
@@ -294,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/pacientes': typeof PacientesRouteWithChildren
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
+  '/cartao/$token': typeof CartaoTokenRoute
   '/convites/aceitar': typeof ConvitesAceitarRoute
   '/convites/animal': typeof ConvitesAnimalRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
@@ -338,6 +345,7 @@ export interface FileRoutesByTo {
   '/pacientes': typeof PacientesRouteWithChildren
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
+  '/cartao/$token': typeof CartaoTokenRoute
   '/convites/aceitar': typeof ConvitesAceitarRoute
   '/convites/animal': typeof ConvitesAnimalRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
@@ -383,6 +391,7 @@ export interface FileRoutesById {
   '/pacientes': typeof PacientesRouteWithChildren
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
+  '/cartao/$token': typeof CartaoTokenRoute
   '/convites/aceitar': typeof ConvitesAceitarRoute
   '/convites/animal': typeof ConvitesAnimalRoute
   '/organizacoes/nova': typeof OrganizacoesNovaRoute
@@ -429,6 +438,7 @@ export interface FileRouteTypes {
     | '/pacientes'
     | '/animais/$animalId'
     | '/animais/novo'
+    | '/cartao/$token'
     | '/convites/aceitar'
     | '/convites/animal'
     | '/organizacoes/nova'
@@ -473,6 +483,7 @@ export interface FileRouteTypes {
     | '/pacientes'
     | '/animais/$animalId'
     | '/animais/novo'
+    | '/cartao/$token'
     | '/convites/aceitar'
     | '/convites/animal'
     | '/organizacoes/nova'
@@ -517,6 +528,7 @@ export interface FileRouteTypes {
     | '/pacientes'
     | '/animais/$animalId'
     | '/animais/novo'
+    | '/cartao/$token'
     | '/convites/aceitar'
     | '/convites/animal'
     | '/organizacoes/nova'
@@ -562,6 +574,7 @@ export interface RootRouteChildren {
   PacientesRoute: typeof PacientesRouteWithChildren
   AnimaisAnimalIdRoute: typeof AnimaisAnimalIdRoute
   AnimaisNovoRoute: typeof AnimaisNovoRoute
+  CartaoTokenRoute: typeof CartaoTokenRoute
   ConvitesAceitarRoute: typeof ConvitesAceitarRoute
   ConvitesAnimalRoute: typeof ConvitesAnimalRoute
   OrganizacoesNovaRoute: typeof OrganizacoesNovaRoute
@@ -699,6 +712,13 @@ declare module '@tanstack/react-router' {
       path: '/animais/novo'
       fullPath: '/animais/novo'
       preLoaderRoute: typeof AnimaisNovoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cartao/$token': {
+      id: '/cartao/$token'
+      path: '/cartao/$token'
+      fullPath: '/cartao/$token'
+      preLoaderRoute: typeof CartaoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/convites/': {
@@ -928,6 +948,7 @@ const rootRouteChildren: RootRouteChildren = {
   PacientesRoute: PacientesRouteWithChildren,
   AnimaisAnimalIdRoute: AnimaisAnimalIdRoute,
   AnimaisNovoRoute: AnimaisNovoRoute,
+  CartaoTokenRoute: CartaoTokenRoute,
   ConvitesAceitarRoute: ConvitesAceitarRoute,
   ConvitesAnimalRoute: ConvitesAnimalRoute,
   OrganizacoesNovaRoute: OrganizacoesNovaRoute,

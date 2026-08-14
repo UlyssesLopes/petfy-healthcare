@@ -3647,6 +3647,7 @@ export interface components {
         };
         LoginRequestDTO: {
             email: string;
+            keepSignedIn?: boolean;
             password: string;
         };
         LoginResponseDTO: {
@@ -4220,6 +4221,11 @@ export interface components {
             /** @enum {string} */
             severity?: "LEVE" | "MODERADA" | "GRAVE";
         };
+        SharedContactDTO: {
+            kind?: string;
+            name?: string;
+            phone?: string;
+        };
         SharedVaccineCardDTO: {
             /** Format: date */
             animalBornDate?: string;
@@ -4228,10 +4234,11 @@ export interface components {
             animalName?: string;
             animalType?: string;
             conditions?: components["schemas"]["SharedConditionDTO"][];
+            contacts?: components["schemas"]["SharedContactDTO"][];
             /** Format: date-time */
             expiresAt?: string;
+            ongoingCare?: string[];
             personName?: string;
-            personPhone?: string;
             /** Format: date */
             referenceDate?: string;
             scopes?: ("CARTEIRA" | "CONDICOES" | "PRONTUARIO" | "OBSERVACOES" | "PESO" | "ANEXOS" | "CONTATO")[];
