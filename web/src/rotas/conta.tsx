@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useIntl } from "react-intl";
 
 import { Carregando, ErroAoGravar, ErroDeCarga } from "../componentes/Estados.tsx";
+import { apelidoDoAparelho, useAparelhos, useEncerrarAparelho } from "../dados/aparelhos.ts";
 import { useConta, useDeclararCredencial, useEncerrarConta } from "../dados/conta.ts";
 import { encerrarSessao, lerSessao } from "../dados/sessao.ts";
 
@@ -188,14 +189,15 @@ function Conta() {
           )}
 
           {/*
-           * "Aparelhos conectados" não existe, e a tela diz por quê em vez de mostrar um número
-           * inventado — clicar em "encerrar" acreditando ter encerrado seria pior que a ausência.
+           * "APARELHOS CONECTADOS" PASSOU A EXISTIR, e era a única linha de tela não construída.
+           *
+           * Aqui estava escrito que o produto não sabia, e a justificativa era o JWT sem estado:
+           * "o servidor não sabe quantos tokens válidos existem, e não teria como invalidar um
+           * deles". <b>A premissa estava errada</b> — o filtro já consultava o banco em toda
+           * requisição autenticada, desde o P1, para derrubar token anterior a uma troca de senha.
+           * O custo que a justificativa temia já estava pago; faltava uma linha por sessão.
            */}
-          <Linha
-            titulo={intl.formatMessage({ id: "conta.aparelhos" })}
-            explicacao={intl.formatMessage({ id: "conta.aparelhos.naoSabemos" })}
-            acao={null}
-          />
+          <Aparelhos />
 
           <Linha
             titulo={intl.formatMessage({ id: "conta.levarDados" })}
@@ -294,6 +296,117 @@ function Conta() {
             <div style={nota}>{intl.formatMessage({ id: "conta.encerrar.disponivelQuando" })}</div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Os aparelhos conectados, e o que a lista pode e nao pode dizer.
+ *
+ * <b>Nao ha localizacao</b>, e a ausencia e escolha: o produto nao guarda de onde alguem entra, e
+ * um IP nao ajudaria — ninguem reconhece o proprio aparelho por "189.4.x.x". Guardar por onde
+ * alguem entra e o que a Tela 34 recusa quando diz "nao guardamos quem fez a busca, e por onde".
+ *
+ * <b>As encerradas continuam na lista</b>, apagadas. Quem encerrou uma sessao por desconfianca quer
+ * ver que ela existiu — some-la seria apagar a evidencia junto com o acesso.
+ */
+function Aparelhos() {
+  const intl = useIntl();
+
+  const aparelhos = useAparelhos();
+  const encerrar = useEncerrarAparelho();
+
+  const lista = aparelhos.data ?? [];
+  const vigentes = lista.filter((aparelho) => aparelho.revokedAt === undefined);
+
+  return (
+    <div style={{ padding: "18px 22px", borderBottom: "1px solid oklch(0.94 0.006 150)" }}>
+      <div style={{ fontSize: "16px", fontWeight: 500 }}>
+        {intl.formatMessage({ id: "conta.aparelhos" })}
+      </div>
+      <div style={{ fontSize: "14px", color: CINZA, marginTop: "3px", lineHeight: 1.5 }}>
+        {intl.formatMessage({ id: "conta.aparelhos.quantos" }, { quantos: vigentes.length })}
+      </div>
+
+      {aparelhos.isPending ? (
+        <div style={{ fontSize: "14px", color: CINZA, marginTop: "12px" }}>
+          {intl.formatMessage({ id: "conta.aparelhos.carregando" })}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "14px" }}>
+          {lista.map((aparelho) => {
+            const encerrado = aparelho.revokedAt !== undefined;
+            const apelido = apelidoDoAparelho(aparelho.userAgent);
+
+            return (
+              <div
+                key={aparelho.personSessionId}
+                style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "14px", alignItems: "center", border: "1px solid oklch(0.92 0.006 150)", borderRadius: "8px", padding: "12px 14px", opacity: encerrado ? 0.6 : 1 }}
+              >
+                <div>
+                  <div style={{ fontSize: "15px" }}>
+                    {/* o palpite nao existe: sem user agent reconhecivel, a linha diz que nao sabe */}
+                    {apelido ?? intl.formatMessage({ id: "conta.aparelhos.desconhecido" })}
+                    {aparelho.current === true && (
+                      <span style={{ fontSize: "13px", color: "oklch(0.46 0.085 150)", marginLeft: "8px" }}>
+                        {intl.formatMessage({ id: "conta.aparelhos.este" })}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: "13px", color: CINZA, marginTop: "2px" }}>
+                    {encerrado
+                      ? intl.formatMessage(
+                          { id: "conta.aparelhos.encerradoEm" },
+                          { data: intl.formatDate(aparelho.revokedAt!, { dateStyle: "short" }) },
+                        )
+                      : intl.formatMessage(
+                          { id: "conta.aparelhos.desde" },
+                          { data: intl.formatDate(aparelho.createdAt!, { dateStyle: "short" }) },
+                        )}
+                  </div>
+                </div>
+
+                {!encerrado && (
+                  <button
+                    type="button"
+                    disabled={encerrar.isPending}
+                    onClick={() => {
+                      /*
+                       * ENCERRAR A ATUAL E SAIR, e a pessoa precisa saber ANTES do gesto — cair na
+                       * tela de entrada sem aviso pareceria defeito. O servidor nao impede: quem
+                       * esta num aparelho emprestado quer exatamente isto.
+                       */
+                      if (aparelho.current === true
+                          && !window.confirm(intl.formatMessage({ id: "conta.aparelhos.esteEhSair" }))) {
+                        return;
+                      }
+
+                      encerrar.mutate(aparelho.personSessionId!);
+                    }}
+                    style={{ fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.84 0.012 150)", borderRadius: "8px", padding: "9px 14px", minHeight: "44px", cursor: "pointer" }}
+                  >
+                    {intl.formatMessage({ id: "conta.aparelhos.encerrar" })}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {encerrar.error !== null && encerrar.error !== undefined && (
+        <div style={{ marginTop: "12px" }}>
+          <ErroAoGravar
+            erro={encerrar.error}
+            oQue={intl.formatMessage({ id: "conta.aparelhos.oQueE" })}
+          />
+        </div>
+      )}
+
+      {/* A troca de senha continua sendo o botao grande: ela derruba TODAS de uma vez. */}
+      <div style={{ fontSize: "13px", color: CINZA, marginTop: "12px", lineHeight: 1.55 }}>
+        {intl.formatMessage({ id: "conta.aparelhos.trocarSenha" })}
       </div>
     </div>
   );

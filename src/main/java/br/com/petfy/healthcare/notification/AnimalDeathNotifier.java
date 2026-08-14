@@ -65,10 +65,16 @@ public class AnimalDeathNotifier {
                 continue;
             }
 
-            if (!destinatario.podeReceberNotificacao()) {
-                log.info("Pessoa {} ainda nao confirmou o e-mail; aviso de {} suprimido",
+            /*
+             * O e-mail nao sai para endereco nao confirmado, e o AVISO sai assim mesmo — o in-app so
+             * aparece para quem ja entrou na conta. Ate a V48 isto era um `continue`: quem nao tinha
+             * confirmado o e-mail nao ficava sabendo, por canal nenhum, que o animal tinha morrido.
+             */
+            boolean porEmail = destinatario.podeReceberNotificacao();
+
+            if (!porEmail) {
+                log.info("Pessoa {} ainda nao confirmou o e-mail; aviso de {} fica so no app",
                         destinatario.getPersonId(), EVENTO);
-                continue;
             }
 
             despachar(() -> Notification.builder()
@@ -76,6 +82,7 @@ public class AnimalDeathNotifier {
                     .toName(destinatario.getName())
                     .subject("O " + animal.getName() + " morreu")
                     .lines(paraPessoa(animal))
+                    .porEmail(porEmail)
                     .build());
         }
     }

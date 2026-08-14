@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './rotas/__root'
 import { Route as IndexRouteImport } from './rotas/index'
 import { Route as AgendaRouteImport } from './rotas/agenda'
 import { Route as ApadrinhamentosRouteImport } from './rotas/apadrinhamentos'
+import { Route as AvisosRouteImport } from './rotas/avisos'
 import { Route as BuscarRouteImport } from './rotas/buscar'
 import { Route as ColoniaRouteImport } from './rotas/colonia'
 import { Route as ComecarRouteImport } from './rotas/comecar'
@@ -64,6 +65,11 @@ const AgendaRoute = AgendaRouteImport.update({
 const ApadrinhamentosRoute = ApadrinhamentosRouteImport.update({
   id: '/apadrinhamentos',
   path: '/apadrinhamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvisosRoute = AvisosRouteImport.update({
+  id: '/avisos',
+  path: '/avisos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuscarRoute = BuscarRouteImport.update({
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/apadrinhamentos': typeof ApadrinhamentosRoute
+  '/avisos': typeof AvisosRoute
   '/buscar': typeof BuscarRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
@@ -318,6 +325,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/apadrinhamentos': typeof ApadrinhamentosRoute
+  '/avisos': typeof AvisosRoute
   '/buscar': typeof BuscarRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
   '/apadrinhamentos': typeof ApadrinhamentosRoute
+  '/avisos': typeof AvisosRoute
   '/buscar': typeof BuscarRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
@@ -407,6 +416,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/apadrinhamentos'
+    | '/avisos'
     | '/buscar'
     | '/colonia'
     | '/comecar'
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/apadrinhamentos'
+    | '/avisos'
     | '/buscar'
     | '/colonia'
     | '/comecar'
@@ -493,6 +504,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agenda'
     | '/apadrinhamentos'
+    | '/avisos'
     | '/buscar'
     | '/colonia'
     | '/comecar'
@@ -537,6 +549,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
   ApadrinhamentosRoute: typeof ApadrinhamentosRoute
+  AvisosRoute: typeof AvisosRoute
   BuscarRoute: typeof BuscarRoute
   ColoniaRoute: typeof ColoniaRoute
   ComecarRoute: typeof ComecarRoute
@@ -595,6 +608,13 @@ declare module '@tanstack/react-router' {
       path: '/apadrinhamentos'
       fullPath: '/apadrinhamentos'
       preLoaderRoute: typeof ApadrinhamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/avisos': {
+      id: '/avisos'
+      path: '/avisos'
+      fullPath: '/avisos'
+      preLoaderRoute: typeof AvisosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/buscar': {
@@ -895,6 +915,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
   ApadrinhamentosRoute: ApadrinhamentosRoute,
+  AvisosRoute: AvisosRoute,
   BuscarRoute: BuscarRoute,
   ColoniaRoute: ColoniaRoute,
   ComecarRoute: ComecarRoute,

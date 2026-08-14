@@ -127,19 +127,26 @@ public class OrganizationActivityNotifier {
         // apareceu vacina que ninguem da casa reconhece, que e justamente o caso
         // que a orientacao no rodape trata.
         for (Person destinatario : animalReach.pessoas(animal.getAnimalId())) {
-            if (!destinatario.podeReceberNotificacao()) {
-                log.info("Tutor {} ainda nao confirmou o e-mail; aviso de {} suprimido",
-                        destinatario.getPersonId(), evento);
-                continue;
-            }
-
             // o dispatch entra no try junto com a montagem: ele so enfileira, mas
             // enfileirar falha se o pool estiver em shutdown, e uma
             // RejectedExecutionException subindo daqui desfaria o registro que acabou
             // de ser gravado - o problema que esta classe existe para evitar.
             // O try e por destinatario: falhar para um tutor nao pode calar os outros
             try {
-                dispatcher.dispatch(mensagem.apply(destinatario), evento);
+                Notification aviso = mensagem.apply(destinatario);
+
+                /*
+                 * O e-mail nao sai para endereco nao confirmado, e o AVISO sai assim mesmo: o canal
+                 * in-app so aparece para quem ja entrou na conta. Ate a V48 isto era um `continue`,
+                 * e matava os dois canais para quem mais precisava do segundo.
+                 */
+                if (!destinatario.podeReceberNotificacao()) {
+                    log.info("Tutor {} ainda nao confirmou o e-mail; aviso de {} fica so no app",
+                            destinatario.getPersonId(), evento);
+                    aviso = aviso.semEmail();
+                }
+
+                dispatcher.dispatch(aviso, evento);
             } catch (Exception e) {
                 log.error("Falha ao preparar o aviso de {} para o tutor {}",
                         evento, destinatario.getPersonId(), e);

@@ -61,9 +61,20 @@ public class AnimalReach {
         return pessoas;
     }
 
-    /** Alguem alcanca o animal e pode receber aviso. */
+    /**
+     * Alguem alcanca o animal e pode receber aviso.
+     *
+     * <b>Ate a V48 isto perguntava por e-mail confirmado</b>, e era a leitura certa enquanto o
+     * e-mail era o unico canal. Com o aviso in-app deixou de ser: <b>toda pessoa que alcanca o
+     * animal tem conta</b>, e o aviso guardado aparece para ela quando abrir o app. Nao ha mais
+     * ninguem inalcancavel.
+     *
+     * O efeito pratico e no lembrete de vacina: um animal cujos tutores nao confirmaram o e-mail
+     * saia da varredura inteira, e a dose nao era marcada como avisada. Agora ele entra, o aviso
+     * fica no app, e o e-mail sai so para quem confirmou.
+     */
     public boolean temAlguemNotificavel(UUID animalId) {
-        return pessoas(animalId).stream().anyMatch(Person::podeReceberNotificacao);
+        return !pessoas(animalId).isEmpty();
     }
 
 }

@@ -73,6 +73,15 @@ export function useLancarCusto() {
       duraMeses?: number;
       /** Quando o gasto aconteceu. Indefinido deixa o servidor usar agora. */
       quando?: string;
+      /**
+       * O tratamento de que este gasto faz parte — o remédio que o animal está tomando.
+       *
+       * <b>É o que faz remédio deixar de ser custo e nada mais.</b> Até a V49 lançar "Remédio,
+       * R$ 90" guardava um número na categoria SAUDE: quem cuidasse do animal naquela semana não
+       * tinha como saber que havia um comprimido às 8h. A ligação é a mesma que a dose de vacina
+       * já tem — o fato de saúde existe por si, e o gasto aponta para ele.
+       */
+      tratamentoId?: string;
       atendimentoId?: string;
       matriculaId?: string;
       /* A dose de onde o valor saiu. É esta ligação que faz o reforço do ano que vem ter preço
@@ -99,6 +108,9 @@ export function useLancarCusto() {
             ? {}
             : { recurrence: "MENSAL" as const, coversMonths: lancamento.duraMeses }),
           ...(lancamento.quando === undefined ? {} : { occurredAt: lancamento.quando }),
+          ...(lancamento.tratamentoId === undefined
+            ? {}
+            : { sourceCareInstructionId: lancamento.tratamentoId }),
           ...(lancamento.atendimentoId === undefined
             ? {}
             : { sourceHealthRecordId: lancamento.atendimentoId }),

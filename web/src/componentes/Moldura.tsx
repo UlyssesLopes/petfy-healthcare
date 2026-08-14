@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
+import { useAvisosNaoLidos } from "../dados/avisos.ts";
 import { useSair } from "../dados/autenticacao.ts";
 import { useMeuContexto, type MeuContexto } from "../dados/contexto.ts";
 import { useReenviarVerificacao } from "../dados/verificacao.ts";
@@ -395,26 +396,46 @@ function Busca() {
 }
 
 /**
- * O marcador de avisos, <b>sem ponto</b>.
+ * O marcador de avisos, e ele <b>ACENDE</b> desde a V48.
  *
- * O desenho pede que ele use "as mesmas formas de estado do sistema — losango so quando algo
- * venceu". Nao ha canal de aviso nenhum no produto, entao nao ha o que acender: um marcador que
- * nunca muda ensinaria a pessoa a nao olhar para ele, e um que sempre acende seria mentira.
- * Fica visivel e desabilitado, com o motivo.
+ * Aqui estava escrito: "nao ha canal de aviso nenhum no produto, entao nao ha o que acender — um
+ * marcador que nunca muda ensinaria a pessoa a nao olhar para ele, e um que sempre acende seria
+ * mentira". As duas frases continuam verdadeiras, e por isso o marcador so existe agora que ha um
+ * canal: o ponto acende quando ha aviso por ler, e apaga quando nao ha.
+ *
+ * <b>Circulo cheio, e nao losango.</b> O desenho manda usar "as mesmas formas de estado do sistema
+ * — losango so quando algo venceu", e um aviso nao e um vencimento: "Ana entrou no Code" nao pede
+ * acao nem esta atrasado. Pintar de losango faria toda a linguagem de urgencia do produto perder o
+ * sentido no dia em que uma vacina vencesse de verdade.
+ *
+ * <b>E nao ha numero dentro do ponto.</b> Vinte e tres avisos e um aviso pedem a mesma coisa —
+ * abrir a lista —, e um contador transformaria uma marca em divida a zerar.
  */
 function Avisos({ compacto = false }: { compacto?: boolean }) {
   const intl = useIntl();
   const lado = compacto ? 24 : 44;
 
+  const naoLidos = useAvisosNaoLidos();
+  const acende = (naoLidos.data ?? 0) > 0;
+
   return (
-    <div
-      title={intl.formatMessage({ id: "moldura.avisos.indisponivel" })}
-      aria-label={intl.formatMessage({ id: "moldura.avisos.indisponivel" })}
-      aria-disabled
-      style={{ width: `${lado}px`, height: `${lado}px`, border: compacto ? "none" : "1px solid oklch(0.90 0.008 150)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "not-allowed" }}
+    <Link
+      to="/avisos"
+      title={intl.formatMessage({ id: acende ? "moldura.avisos.ha" : "moldura.avisos" })}
+      aria-label={intl.formatMessage({ id: acende ? "moldura.avisos.ha" : "moldura.avisos" })}
+      style={{ width: `${lado}px`, height: `${lado}px`, border: compacto ? "none" : "1px solid oklch(0.90 0.008 150)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
     >
-      <div aria-hidden style={{ width: "15px", height: "15px", borderRadius: "999px", border: "2px solid oklch(0.68 0.012 150)" }}></div>
-    </div>
+      <div
+        aria-hidden
+        style={{
+          width: "15px",
+          height: "15px",
+          borderRadius: "999px",
+          border: `2px solid ${acende ? "oklch(0.46 0.085 150)" : "oklch(0.68 0.012 150)"}`,
+          background: acende ? "oklch(0.46 0.085 150)" : "transparent",
+        }}
+      ></div>
+    </Link>
   );
 }
 
