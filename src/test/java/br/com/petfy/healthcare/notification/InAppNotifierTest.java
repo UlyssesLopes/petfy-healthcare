@@ -38,6 +38,10 @@ class InAppNotifierTest {
     @Mock
     private PersonNotificationRepository personNotificationRepository;
 
+    /* O canal de tempo real, que o notificador aciona depois de gravar. */
+    @Mock
+    private AvisoStream avisoStream;
+
     @InjectMocks
     private InAppNotifier notifier;
 

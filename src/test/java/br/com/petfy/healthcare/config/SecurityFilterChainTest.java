@@ -12,6 +12,7 @@ import br.com.petfy.healthcare.security.JwtAuthenticationFilter;
 import br.com.petfy.healthcare.security.JwtService;
 import br.com.petfy.healthcare.security.ProfessionalAccessManager;
 import br.com.petfy.healthcare.security.TokenFreshness;
+import br.com.petfy.healthcare.domain.dto.LoginResponseDTO;
 import br.com.petfy.healthcare.service.AuthService;
 import br.com.petfy.healthcare.service.EmailVerificationService;
 import br.com.petfy.healthcare.service.PersonExportService;
@@ -73,6 +74,14 @@ class SecurityFilterChainTest {
 
     @MockBean
     private AuthService authService;
+
+    /* O `/auth/refresh` e o `/auth/logout` entraram na V51, e o controller passou a depender dos
+       dois. Mockados: este teste fala sobre o que e publico, e nao sobre renovacao. */
+    @MockBean
+    private br.com.petfy.healthcare.service.SessionRenewal sessionRenewal;
+
+    @MockBean
+    private br.com.petfy.healthcare.security.RefreshCookie refreshCookie;
 
     @MockBean
     private AnimalService animalService;
@@ -143,6 +152,12 @@ class SecurityFilterChainTest {
     @Test
     @DisplayName("o login deve ser publico")
     void loginDeveSerPublico() throws Exception {
+        // desde a V51 o controller le o refresh do resultado e o poe num cookie
+        when(authService.login(any(), any())).thenReturn(new AuthService.Autenticada(
+                LoginResponseDTO.builder().token("t").tokenType("Bearer").build(), "refresh"));
+        when(refreshCookie.header()).thenReturn("Set-Cookie");
+        when(refreshCookie.paraDefinir(any())).thenReturn("petfy_refresh=refresh");
+
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"ulysses@petfy.com.br\",\"password\":\"s3nhaForte\"}"))

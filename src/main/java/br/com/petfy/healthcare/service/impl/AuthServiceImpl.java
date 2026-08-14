@@ -30,6 +30,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final PersonSessionRepository personSessionRepository;
+    private final br.com.petfy.healthcare.security.OpaqueTokenService opaqueTokenService;
+    private final br.com.petfy.healthcare.security.RefreshCookie refreshCookie;
     private final PetfyMetrics petfyMetrics;
 
     /**
@@ -48,7 +50,7 @@ public class AuthServiceImpl implements AuthService {
      * carimbado dentro do token.
      */
     @Override
-    public LoginResponseDTO login(LoginRequestDTO request, String userAgent) {
+    public Autenticada login(LoginRequestDTO request, String userAgent) {
         Optional<Person> encontrado = personRepository.findByEmail(request.getEmail());
 
         // a mesma resposta para e-mail inexistente e para senha errada: distinguir
@@ -76,14 +78,27 @@ public class AuthServiceImpl implements AuthService {
          * <b>O user agent e o unico rotulo, e nao ha IP.</b> "189.4.x.x" nao ajuda ninguem a
          * reconhecer o proprio aparelho, e guardar por onde alguem entra e o que a Tela 34 recusa
          * quando diz "nao guardamos quem fez a busca, e por onde".
+         *
+         * <b>E DESDE A V51 O REFRESH NASCE JUNTO</b> — e a mesma entrada vista pelo outro lado:
+         * enquanto ela vale, o navegador troca um JWT vencido por um novo sem pedir a senha. E o que
+         * faz a sessao sobreviver a recarga da pagina.
+         *
+         * Guardamos o HASH, e nao o token — mesmo criterio do convite e da recuperacao de senha:
+         * quem le o banco nao pode sair usando as sessoes de ninguem. O segredo existe fora do
+         * servidor uma vez so, no cookie que a resposta leva.
          */
+        String refresh = opaqueTokenService.generate();
+        LocalDateTime agora = LocalDateTime.now();
+
         PersonSession sessao = personSessionRepository.save(PersonSession.builder()
                 .person(person)
-                .createdAt(LocalDateTime.now())
+                .createdAt(agora)
                 .userAgent(recortar(userAgent))
+                .refreshTokenHash(opaqueTokenService.hash(refresh))
+                .refreshExpiresAt(agora.plus(refreshCookie.getValidade()))
                 .build());
 
-        return LoginResponseDTO.builder()
+        LoginResponseDTO corpo = LoginResponseDTO.builder()
                 .token(jwtService.generateToken(person.getEmail(), person.getPersonId(),
                         sessao.getPersonSessionId()))
                 .tokenType("Bearer")
@@ -92,6 +107,13 @@ public class AuthServiceImpl implements AuthService {
                 .professional(credentialRepository.existsAtivaPorEmail(
                         person.getEmail(), CredentialStatus.SUSPENSO))
                 .build();
+
+        return new Autenticada(corpo, refresh);
+    }
+
+    @Override
+    public boolean temCredencialAtiva(String email) {
+        return credentialRepository.existsAtivaPorEmail(email, CredentialStatus.SUSPENSO);
     }
 
     /**

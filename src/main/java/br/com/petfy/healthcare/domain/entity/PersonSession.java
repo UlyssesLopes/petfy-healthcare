@@ -61,8 +61,46 @@ public class PersonSession {
     @Column(name = "user_agent", length = 400)
     private String userAgent;
 
+    /**
+     * O hash do refresh token desta entrada.
+     *
+     * <b>Hash, e nao o token</b> — mesmo criterio do convite e da recuperacao de senha: quem le o
+     * banco nao pode sair usando as sessoes de ninguem.
+     *
+     * <b>Um por sessao, e rotacionar SUBSTITUI.</b> Cada troca emite um token novo e apaga o
+     * anterior: um cookie roubado deixa de valer no primeiro refresh legitimo que o dono fizer.
+     *
+     * Nulo nas sessoes anteriores a V51 — elas nasceram sem cookie no navegador de ninguem, e
+     * inventar um hash aqui criaria um refresh que nao existe do outro lado.
+     */
+    @Column(name = "refresh_token_hash", length = 64)
+    private String refreshTokenHash;
+
+    /**
+     * Ate quando esta entrada pode pedir um token novo sem senha.
+     *
+     * <b>Nao confundir com a validade do JWT</b>, que continua sendo de duas horas e e o que
+     * autoriza cada requisicao. Este prazo e o que a pessoa sente: e por quanto tempo o navegador
+     * dela nao vai pedir a senha de novo.
+     */
+    @Column(name = "refresh_expires_at")
+    private LocalDateTime refreshExpiresAt;
+
     public boolean vigente() {
         return revokedAt == null;
+    }
+
+    /**
+     * Se esta entrada ainda pode trocar o token vencido por um novo.
+     *
+     * <b>Encerrada nao renova</b>, e e o que liga a Tela 36 a esta migration: encerrar um aparelho
+     * derruba o token atual na proxima requisicao E impede que aquele navegador consiga outro.
+     */
+    public boolean podeRenovar(LocalDateTime agora) {
+        return vigente()
+                && refreshTokenHash != null
+                && refreshExpiresAt != null
+                && refreshExpiresAt.isAfter(agora);
     }
 
 }

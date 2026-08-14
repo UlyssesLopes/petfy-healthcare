@@ -41,6 +41,7 @@ public class InAppNotifier {
 
     private final PersonRepository personRepository;
     private final PersonNotificationRepository personNotificationRepository;
+    private final AvisoStream avisoStream;
 
     public void registrar(Notification notification, String evento) {
         if (notification.getToEmail() == null || notification.getToEmail().isBlank()) {
@@ -62,6 +63,9 @@ public class InAppNotifier {
                 .event(evento)
                 .createdAt(LocalDateTime.now())
                 .build());
+
+        // depois de gravar: a tela recarrega a contagem ao receber, e precisa achar a linha la
+        avisoStream.publicar(destinatario.getPersonId());
     }
 
     /**

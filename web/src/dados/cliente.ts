@@ -1,5 +1,6 @@
 import createClient, { type Middleware } from "openapi-fetch";
 
+import { API } from "./endereco.ts";
 import type { paths } from "./gerado/api";
 import { encerrarSessao, ensureFresh, lerSessao, organizacaoAtiva } from "./sessao.ts";
 
@@ -15,12 +16,20 @@ import { encerrarSessao, ensureFresh, lerSessao, organizacaoAtiva } from "./sess
  * passaria a ser gerada, e regenera-la no dia do BFF encostaria em toda tela.
  */
 
-/** O `local` do backend libera exatamente esta origem no CORS. */
-const BASE_PADRAO = "http://localhost:8080";
-
 export const cliente = createClient<paths>({
-  baseUrl: import.meta.env.VITE_API_URL ?? BASE_PADRAO,
+  baseUrl: API,
   headers: { "Content-Type": "application/json" },
+  /*
+   * O COOKIE DO REFRESH VIAJA, E O RESTO CONTINUA IGUAL.
+   *
+   * `include` e o que faz o navegador mandar o cookie httpOnly para uma origem diferente — o front
+   * esta em :5173 e a API em :8080. Sem isto o `/auth/refresh` existiria e nunca receberia nada.
+   *
+   * <b>Nao e o mesmo que autenticar por cookie.</b> O que autoriza cada requisicao continua sendo o
+   * JWT no header `Authorization`, e o cookie so e aceito pelas rotas de `/auth` — e o `Path` dele
+   * que garante isso, e nao a boa vontade de quem escreve o cliente.
+   */
+  credentials: "include",
 });
 
 /**

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { cliente } from "./cliente.ts";
 import { corpoDe } from "./resposta.ts";
-import { encerrarSessao, iniciarSessao } from "./sessao.ts";
+import { encerrarNoServidor, encerrarSessao, iniciarSessao } from "./sessao.ts";
 
 /**
  * Entrar e sair, vistos pela tela.
@@ -118,5 +118,19 @@ export function useSair() {
      * instante, os dados da anterior.
      */
     void consultas.clear();
+
+    /*
+     * SAIR PASSOU A TER EFEITO NO SERVIDOR (V51), e antes nao tinha.
+     *
+     * Esquecer o token localmente bastava enquanto ele era a unica coisa que existia — o JWT
+     * seguia valido ate expirar, e nao havia nada a invalidar. Com o refresh no cookie, nao
+     * avisar o servidor deixaria o navegador capaz de pegar um token novo depois de a pessoa
+     * ter clicado em sair. Num computador emprestado, isso e a diferenca entre sair e parecer
+     * que saiu.
+     *
+     * <b>Nao esperamos a resposta</b>: a sessao local ja acabou, e a rede nao pode segurar
+     * quem pediu para sair.
+     */
+    void encerrarNoServidor();
   };
 }

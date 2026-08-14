@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -26,6 +27,8 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
+    private final br.com.petfy.healthcare.service.SessionRenewal sessionRenewal;
+    private final br.com.petfy.healthcare.security.RefreshCookie refreshCookie;
     private final PasswordResetService passwordResetService;
     private final EmailVerificationService emailVerificationService;
 
@@ -45,7 +48,58 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> login(
             @Valid @RequestBody LoginRequestDTO request,
             @RequestHeader(value = "User-Agent", required = false) String userAgent) {
-        return ResponseEntity.ok(authService.login(request, userAgent));
+        var autenticada = authService.login(request, userAgent);
+
+        /*
+         * O JWT VAI NO CORPO E O REFRESH VAI NO COOKIE, e os dois caminhos sao a decisao.
+         *
+         * O cliente precisa LER o JWT para manda-lo no header, entao ele nao pode ser httpOnly. O
+         * refresh, ao contrario, o cliente nunca precisa ler — so precisa que o navegador o guarde e
+         * o reenvie. Poe-lo no corpo devolveria ao XSS exatamente o que o cookie httpOnly existe
+         * para tirar do alcance dele.
+         */
+        return ResponseEntity.ok()
+                .header(refreshCookie.header(), refreshCookie.paraDefinir(autenticada.refreshToken()))
+                .body(autenticada.corpo());
+    }
+
+    @Operation(summary = "Troca o token vencido por um novo, sem pedir a senha",
+               description = "Le o refresh do cookie httpOnly e devolve um JWT novo. E o que faz a "
+                             + "sessao sobreviver a RECARGA DA PAGINA: o JWT vive em memoria no "
+                             + "cliente por decisao contra XSS, e recarregar sempre o perdia. "
+                             + "ROTACIONA SEMPRE — o refresh apresentado morre aqui, entao um cookie "
+                             + "copiado deixa de valer no primeiro refresh legitimo do dono. Recusa "
+                             + "com 401 e um estado so: inexistente, ja rotacionado, expirado e de "
+                             + "sessao encerrada respondem igual.")
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponseDTO> refresh(HttpServletRequest request) {
+        var renovada = sessionRenewal.renovar(refreshCookie.ler(request).orElse(""));
+
+        return ResponseEntity.ok()
+                .header(refreshCookie.header(), refreshCookie.paraDefinir(renovada.refreshToken()))
+                .body(LoginResponseDTO.builder()
+                        .token(renovada.token())
+                        .tokenType("Bearer")
+                        .expiresInMinutes(renovada.expiresInMinutes())
+                        .personId(renovada.pessoa().getPersonId())
+                        // lido AGORA, e nao carimbado: credencial suspensa hoje muda a resposta de
+                        // hoje, e o refresh e justamente onde uma sessao longa reencontra a verdade
+                        .professional(authService.temCredencialAtiva(renovada.pessoa().getEmail()))
+                        .build());
+    }
+
+    @Operation(summary = "Sai da conta",
+               description = "Encerra a entrada no servidor e apaga o cookie. ANTES ISTO NAO "
+                             + "EXISTIA: o cliente jogava o token fora e o JWT seguia valido ate "
+                             + "expirar. Responde 204 mesmo sem cookie — quem entrou antes da V51 "
+                             + "nao tem um, e sair nao pode falhar por isso.")
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        sessionRenewal.sair(refreshCookie.ler(request).orElse(null));
+
+        return ResponseEntity.noContent()
+                .header(refreshCookie.header(), refreshCookie.paraApagar())
+                .build();
     }
 
     /**
