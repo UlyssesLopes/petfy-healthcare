@@ -81,10 +81,18 @@ public class CorsConfig {
         configuracao.setAllowedHeaders(HEADERS_ACEITOS);
         configuracao.setExposedHeaders(HEADERS_EXPOSTOS);
 
-        // Falso enquanto o token viaja no header Authorization. So vira true no dia
-        // do refresh em cookie httpOnly - e ligar antes ampliaria a superficie sem
-        // ninguem estar usando cookie nenhum
-        configuracao.setAllowCredentials(false);
+        /*
+         * CHEGOU O DIA. Aqui estava escrito: "falso enquanto o token viaja no header Authorization.
+         * So vira true no dia do refresh em cookie httpOnly - e ligar antes ampliaria a superficie
+         * sem ninguem estar usando cookie nenhum". O refresh entrou na V51.
+         *
+         * <b>O que isto liga, e o que NAO liga.</b> Sem `allowCredentials`, o navegador nem manda o
+         * cookie no `/auth/refresh` nem deixa o JS ler a resposta — a rota existiria e nunca
+         * funcionaria. O que ele nao liga e origem coringa: o construtor desta classe recusa `*` na
+         * subida, e com credencial ligada essa recusa passa de rigor a necessidade — o proprio
+         * navegador proibe a combinacao.
+         */
+        configuracao.setAllowCredentials(true);
 
         // meia hora de cache do preflight: sem isso, cada requisicao com o header de
         // contexto paga duas viagens ate a API

@@ -61,6 +61,22 @@ class AuthServiceImplTest {
     @Mock
     private br.com.petfy.healthcare.domain.repository.PersonSessionRepository personSessionRepository;
 
+    /*
+     * OS DOIS SAO REAIS, e nao mocks.
+     *
+     * O valor deste teste sobre o refresh esta em conferir que o token nasce e que ele NAO viaja no
+     * corpo — e um mock de `generate()` devolveria nulo, fazendo a asserção passar a falar sobre o
+     * mock em vez de sobre a regra. O `RefreshCookie` entra real pelo mesmo motivo: o que ele
+     * contribui aqui e a validade, que e aritmetica e nao colaboracao.
+     */
+    @org.mockito.Spy
+    private br.com.petfy.healthcare.security.OpaqueTokenService opaqueTokenService =
+            new br.com.petfy.healthcare.security.OpaqueTokenService();
+
+    @org.mockito.Spy
+    private br.com.petfy.healthcare.security.RefreshCookie refreshCookie =
+            new br.com.petfy.healthcare.security.RefreshCookie(30, "Lax", false);
+
     /**
      * A metrica de tentativa de login e efeito colateral, nao regra: mockada para
      * os testes seguirem falando so sobre autenticacao.
@@ -94,8 +110,17 @@ class AuthServiceImplTest {
 
         var result = authService.login(request("s3nhaForte"));
 
-        assertThat(result.getToken()).isEqualTo("token");
-        assertThat(result.getPersonId()).isEqualTo(PERSON_ID);
+        assertThat(result.corpo().getToken()).isEqualTo("token");
+        assertThat(result.corpo().getPersonId()).isEqualTo(PERSON_ID);
+
+        /*
+         * O REFRESH SAI DO LOGIN E NAO ENTRA NO CORPO.
+         *
+         * Ele viaja num cookie httpOnly, e a separacao e a decisao inteira da V51: o cliente
+         * precisa LER o JWT para manda-lo no header, e nunca precisa ler o refresh. Devolve-lo no
+         * JSON o poria ao alcance de um script injetado — exatamente o que o cookie evita.
+         */
+        assertThat(result.refreshToken()).isNotBlank();
     }
 
     /**
@@ -112,7 +137,7 @@ class AuthServiceImplTest {
         when(personSessionRepository.save(any())).thenAnswer(invocacao -> invocacao.getArgument(0));
         when(credentialRepository.existsAtivaPorEmail(EMAIL, CredentialStatus.SUSPENSO)).thenReturn(true);
 
-        assertThat(authService.login(request("s3nhaForte")).isProfessional()).isTrue();
+        assertThat(authService.login(request("s3nhaForte")).corpo().isProfessional()).isTrue();
     }
 
     @Test
@@ -124,7 +149,7 @@ class AuthServiceImplTest {
         when(personSessionRepository.save(any())).thenAnswer(invocacao -> invocacao.getArgument(0));
         when(credentialRepository.existsAtivaPorEmail(EMAIL, CredentialStatus.SUSPENSO)).thenReturn(false);
 
-        assertThat(authService.login(request("s3nhaForte")).isProfessional()).isFalse();
+        assertThat(authService.login(request("s3nhaForte")).corpo().isProfessional()).isFalse();
     }
 
     /** O request nunca teve como declarar papel, e continua sem ter o que declarar. */

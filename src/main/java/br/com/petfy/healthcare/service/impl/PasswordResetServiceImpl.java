@@ -30,6 +30,7 @@ import java.util.Optional;
 public class PasswordResetServiceImpl implements PasswordResetService {
 
     private final PersonRepository personRepository;
+    private final br.com.petfy.healthcare.domain.repository.PersonSessionRepository personSessionRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final OpaqueTokenService opaqueTokenService;
     private final PasswordEncoder passwordEncoder;
@@ -124,6 +125,16 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         person.setPasswordChangedAt(agora);
         person.setUpdateDate(agora);
         personRepository.save(person);
+
+        /*
+         * E ENCERRA AS ENTRADAS, e nao so invalida os tokens (V51).
+         *
+         * Aqui isto pesa mais do que na troca comum, pela razao que ja estava escrita acima: se a
+         * conta foi tomada, quem recupera precisa EXPULSAR quem entrou. Sem esta linha, o navegador
+         * do invasor renovaria o token com o refresh que ninguem invalidou — e a recuperacao de
+         * senha teria devolvido o acesso sem tirar o dele.
+         */
+        personSessionRepository.encerrarTodasDaPessoa(person.getPersonId(), agora);
 
         token.setUsedAt(agora);
         tokenRepository.save(token);

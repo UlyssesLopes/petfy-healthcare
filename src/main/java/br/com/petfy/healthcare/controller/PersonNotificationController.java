@@ -7,12 +7,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.UUID;
 
@@ -31,6 +33,8 @@ import java.util.UUID;
 public class PersonNotificationController {
 
     private final PersonNotificationService personNotificationService;
+    private final br.com.petfy.healthcare.notification.AvisoStream avisoStream;
+    private final br.com.petfy.healthcare.security.CurrentPersonProvider currentPersonProvider;
 
     @Operation(summary = "Os seus avisos, do mais novo para o mais velho",
                description = "O texto vem pronto do banco, e nao remontado a partir do estado atual: "
@@ -58,6 +62,16 @@ public class PersonNotificationController {
     public ResponseEntity<PersonNotificationResponseDTO> markAsRead(
             @PathVariable UUID personNotificationId) {
         return ResponseEntity.ok(personNotificationService.markAsRead(personNotificationId));
+    }
+
+    @Operation(summary = "O canal que empurra o aviso na hora",
+               description = "SSE. O cliente abre com `fetch` e o token no header — nao com "
+                             + "`EventSource`, que nao manda header e obrigaria a mandar credencial "
+                             + "na URL. O evento nao carrega dado: ele diz que ha algo novo, e a "
+                             + "tela recarrega a contagem.")
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream() {
+        return avisoStream.abrir(currentPersonProvider.require().getPersonId());
     }
 
     @Operation(summary = "Marca todos como lidos",

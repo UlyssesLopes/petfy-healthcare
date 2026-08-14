@@ -4154,6 +4154,15 @@
         },
         "type" : "object"
       },
+      "SseEmitter" : {
+        "properties" : {
+          "timeout" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "TimelineEntryResponseDTO" : {
         "properties" : {
           "correctionCount" : {
@@ -7077,6 +7086,20 @@
         "tags" : [ "auth-controller" ]
       }
     },
+    "/auth/logout" : {
+      "post" : {
+        "description" : "Encerra a entrada no servidor e apaga o cookie. ANTES ISTO NAO EXISTIA: o cliente jogava o token fora e o JWT seguia valido ate expirar. Responde 204 mesmo sem cookie — quem entrou antes da V51 nao tem um, e sair nao pode falhar por isso.",
+        "operationId" : "logout",
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Sai da conta",
+        "tags" : [ "auth-controller" ]
+      }
+    },
     "/auth/password-reset" : {
       "post" : {
         "description" : "Responde igual exista ou nao a conta: dizer que o e-mail nao existe entregaria quem tem conta aqui a quem tenta descobrir.",
@@ -7122,6 +7145,27 @@
         },
         "security" : [ ],
         "summary" : "Confirma a nova senha com o token recebido",
+        "tags" : [ "auth-controller" ]
+      }
+    },
+    "/auth/refresh" : {
+      "post" : {
+        "description" : "Le o refresh do cookie httpOnly e devolve um JWT novo. E o que faz a sessao sobreviver a RECARGA DA PAGINA: o JWT vive em memoria no cliente por decisao contra XSS, e recarregar sempre o perdia. ROTACIONA SEMPRE — o refresh apresentado morre aqui, entao um cookie copiado deixa de valer no primeiro refresh legitimo do dono. Recusa com 401 e um estado so: inexistente, ja rotacionado, expirado e de sessao encerrada respondem igual.",
+        "operationId" : "refresh",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoginResponseDTO"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Troca o token vencido por um novo, sem pedir a senha",
         "tags" : [ "auth-controller" ]
       }
     },
@@ -8501,6 +8545,26 @@
           }
         },
         "summary" : "Marca todos como lidos",
+        "tags" : [ "person-notification-controller" ]
+      }
+    },
+    "/persons/me/notifications/stream" : {
+      "get" : {
+        "description" : "SSE. O cliente abre com `fetch` e o token no header — nao com `EventSource`, que nao manda header e obrigaria a mandar credencial na URL. O evento nao carrega dado: ele diz que ha algo novo, e a tela recarrega a contagem.",
+        "operationId" : "stream",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "text/event-stream" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SseEmitter"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "O canal que empurra o aviso na hora",
         "tags" : [ "person-notification-controller" ]
       }
     },

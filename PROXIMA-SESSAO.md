@@ -50,6 +50,24 @@ confirmaram o e-mail **sair da varredura de vacina inteira**. Era o buraco da Te
 
 ## O QUE FICOU DEVENDO
 
+### 0. Higienização dos comentários — pedido do Ulysses, 2026-08-14
+
+> *"A cada linha de código você adiciona uma bíblia de texto em qualquer lugar. Não, aqui não é um
+> livro de receitas."*
+
+O código acumulou trechos com dez linhas de justificativa para duas de lógica. É um trabalho de
+varredura, e tem duas partes:
+
+1. **Avaliar cada comentário**: ele precisa existir ali? O código não se explica sozinho?
+2. **O que for aviso de verdade sai do arquivo** e vai para um documento próprio, que liga o texto
+   ao fluxo / trecho / classe / decisão a que pertence.
+
+O critério que fica: comentário no código é curto e factual. A história longa da decisão pertence ao
+commit, ao PR, ou a esse documento.
+
+**Ainda por decidir:** o formato do documento (um arquivo só? um por bloco?) e como o link é feito
+(âncora por nome de classe? por migration?).
+
 ### 1. A conferência no navegador — continua sendo a maior dívida
 
 **E agora há muito o que conferir.** O app está de pé com dados: `marcelo@petfy.test` (senha

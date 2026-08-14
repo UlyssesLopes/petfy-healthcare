@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import { cliente } from "./cliente.ts";
+import { API } from "./endereco.ts";
 import type { components } from "./gerado/api";
 import { corpoDe } from "./resposta.ts";
+import { ensureFresh, lerSessao } from "./sessao.ts";
 
 export type Aviso = components["schemas"]["PersonNotificationResponseDTO"];
 
@@ -38,12 +41,84 @@ export function useAvisos() {
  * pagar a leitura inteira pelo enfeite. O servidor tem rota so para isto.
  */
 export function useAvisosNaoLidos() {
-  return useQuery({
+  const consultas = useQueryClient();
+
+  /*
+   * O servidor empurra; a espera de 5 min e so a rede de seguranca de quando a conexao cai sem
+   * avisar. Antes do stream isto era 60s, e o aviso chegava com ate um minuto de atraso.
+   */
+  const consulta = useQuery({
     queryKey: ["avisos", "nao-lidos"],
     queryFn: async () => corpoDe(await cliente.GET("/persons/me/notifications/unread-count")) ?? 0,
-    /* A moldura fica montada a sessao inteira; sem isto a marca so mudaria ao recarregar. */
-    refetchInterval: 60_000,
+    refetchInterval: 300_000,
   });
+
+  useEffect(() => {
+    if (!lerSessao().autenticada) {
+      return;
+    }
+
+    const abortar = new AbortController();
+    let tentativas = 0;
+    let reconectar: number | undefined;
+
+    const ouvir = async () => {
+      try {
+        const token = await ensureFresh();
+
+        if (token === null) {
+          return;
+        }
+
+        /*
+         * `fetch` e nao `EventSource`: o EventSource nao manda header, e o unico jeito de
+         * autenticar com ele seria por cookie ou por credencial na URL.
+         */
+        const resposta = await fetch(`${API}/persons/me/notifications/stream`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "text/event-stream" },
+          signal: abortar.signal,
+        });
+
+        if (!resposta.ok || resposta.body === null) {
+          throw new Error(String(resposta.status));
+        }
+
+        tentativas = 0;
+        const leitor = resposta.body.getReader();
+        const decodificador = new TextDecoder();
+
+        for (;;) {
+          const { done, value } = await leitor.read();
+
+          if (done) {
+            break;
+          }
+
+          // o evento nao carrega dado: a chegada e o sinal, e a contagem vem da rota propria
+          if (decodificador.decode(value, { stream: true }).includes("event:aviso")) {
+            void consultas.invalidateQueries({ queryKey: ["avisos"] });
+          }
+        }
+      } catch {
+        // queda de rede, deploy, timeout do servidor: reconectar e o caminho normal
+      }
+
+      if (!abortar.signal.aborted) {
+        // recuo exponencial ate 30s, para o servidor que caiu nao levar uma enxurrada na volta
+        tentativas += 1;
+        reconectar = window.setTimeout(ouvir, Math.min(1000 * 2 ** tentativas, 30_000));
+      }
+    };
+
+    void ouvir();
+
+    return () => {
+      abortar.abort();
+      window.clearTimeout(reconectar);
+    };
+  }, [consultas]);
+
+  return consulta;
 }
 
 export function useMarcarAvisoLido() {

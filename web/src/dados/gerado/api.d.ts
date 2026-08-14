@@ -1039,6 +1039,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sai da conta
+         * @description Encerra a entrada no servidor e apaga o cookie. ANTES ISTO NAO EXISTIA: o cliente jogava o token fora e o JWT seguia valido ate expirar. Responde 204 mesmo sem cookie — quem entrou antes da V51 nao tem um, e sair nao pode falhar por isso.
+         */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/password-reset": {
         parameters: {
             query?: never;
@@ -1073,6 +1093,26 @@ export interface paths {
          * @description Derruba as sessoes abertas: quem trocou a senha porque desconfiou de acesso indevido nao teria ganhado nada se o token do invasor continuasse valendo.
          */
         post: operations["confirmReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Troca o token vencido por um novo, sem pedir a senha
+         * @description Le o refresh do cookie httpOnly e devolve um JWT novo. E o que faz a sessao sobreviver a RECARGA DA PAGINA: o JWT vive em memoria no cliente por decisao contra XSS, e recarregar sempre o perdia. ROTACIONA SEMPRE — o refresh apresentado morre aqui, entao um cookie copiado deixa de valer no primeiro refresh legitimo do dono. Recusa com 401 e um estado so: inexistente, ja rotacionado, expirado e de sessao encerrada respondem igual.
+         */
+        post: operations["refresh"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1798,6 +1838,26 @@ export interface paths {
          * @description Uma escrita so, e nao uma por aviso. Devolve quantos deixaram de estar por ler.
          */
         post: operations["markAllAsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/persons/me/notifications/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * O canal que empurra o aviso na hora
+         * @description SSE. O cliente abre com `fetch` e o token no header — nao com `EventSource`, que nao manda header e obrigaria a mandar credencial na URL. O evento nao carrega dado: ele diz que ha algo novo, e a tela recarrega a contagem.
+         */
+        get: operations["stream"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4253,6 +4313,10 @@ export interface components {
             /** @enum {string} */
             status?: "ATIVO" | "ENCERRAMENTO_PEDIDO" | "ENCERRADO";
         };
+        SseEmitter: {
+            /** Format: int64 */
+            timeout?: number;
+        };
         TimelineEntryResponseDTO: {
             /** Format: int64 */
             correctionCount?: number;
@@ -6127,6 +6191,24 @@ export interface operations {
             };
         };
     };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     requestReset: {
         parameters: {
             query?: never;
@@ -6168,6 +6250,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LoginResponseDTO"];
+                };
             };
         };
     };
@@ -7239,6 +7341,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": number;
+                };
+            };
+        };
+    };
+    stream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["SseEmitter"];
                 };
             };
         };

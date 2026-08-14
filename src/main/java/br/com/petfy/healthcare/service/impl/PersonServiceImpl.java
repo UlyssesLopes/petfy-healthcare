@@ -53,6 +53,7 @@ public class PersonServiceImpl implements PersonService {
     private static final String CONSELHO_CRMV = "CRMV";
 
     private final PersonRepository personRepository;
+    private final br.com.petfy.healthcare.domain.repository.PersonSessionRepository personSessionRepository;
     private final ProfessionalCredentialRepository credentialRepository;
     private final MembershipRepository membershipRepository;
     private final OrganizationRepository organizationRepository;
@@ -156,7 +157,15 @@ public class PersonServiceImpl implements PersonService {
         return toResponseDTO(personRepository.save(existingPerson));
     }
 
+    /*
+     * @Transactional entrou na V51, com o encerramento das entradas.
+     *
+     * O metodo passou a fazer DUAS escritas que precisam valer juntas: a senha nova e o fim das
+     * sessoes. Sem transacao, a segunda nem roda — a consulta `@Modifying` exige uma — e, pior, uma
+     * falha entre as duas deixaria a senha trocada com as sessoes antigas ainda renovando.
+     */
     @Override
+    @Transactional
     public void changePassword(PasswordChangeRequestDTO request) {
         Person person = currentPersonProvider.require();
 
@@ -178,18 +187,34 @@ public class PersonServiceImpl implements PersonService {
                     HttpStatus.BAD_REQUEST);
         }
 
-        person.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        // "Senha · alterada em 02/2024" (Tela 36). Nao da para derivar do `updateDate`: ele muda
-        // quando a pessoa corrige o telefone, e a tela passaria a dizer que a senha foi trocada no
-        // dia em que ela arrumou o proprio nome — fazendo alguem concluir que trocou e nao trocar.
-        person.setPasswordChangedAt(LocalDateTime.now());
+        LocalDateTime agora = LocalDateTime.now();
 
-        // e isto que derruba as sessoes abertas: o filtro recusa token emitido
-        // antes deste instante. Sem o carimbo, trocar a senha nao expulsaria
-        // quem ja estava dentro, que e justamente o motivo de trocar
-        person.setPasswordChangedAt(LocalDateTime.now());
-        person.setUpdateDate(LocalDateTime.now());
+        person.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        /*
+         * "Senha · alterada em 02/2024" (Tela 36). Nao da para derivar do `updateDate`: ele muda
+         * quando a pessoa corrige o telefone, e a tela passaria a dizer que a senha foi trocada no
+         * dia em que ela arrumou o proprio nome — fazendo alguem concluir que trocou e nao trocar.
+         *
+         * E e isto que derruba os tokens abertos: o filtro recusa token emitido antes deste
+         * instante. Sem o carimbo, trocar a senha nao expulsaria quem ja estava dentro, que e
+         * justamente o motivo de trocar.
+         *
+         * <b>Havia duas chamadas identicas aqui</b>, com dois `now()` de milissegundos diferentes.
+         * Nao dava defeito, e o carimbo que valia era o segundo; ficou uma.
+         */
+        person.setPasswordChangedAt(agora);
+        person.setUpdateDate(agora);
         personRepository.save(person);
+
+        /*
+         * E AS ENTRADAS SAO ENCERRADAS, e nao so os tokens invalidados.
+         *
+         * <b>Ate a V51 a Tela 36 mentia depois de uma troca de senha:</b> os tokens paravam de
+         * autenticar pelo `iat`, mas as sessoes continuavam listadas como abertas — a lista mostrava
+         * aberto o que ja nao abria. E, pior, o refresh de cada uma continuaria emitindo token novo,
+         * contornando a tranca que a pessoa acabou de acionar.
+         */
+        personSessionRepository.encerrarTodasDaPessoa(person.getPersonId(), agora);
     }
 
     /**

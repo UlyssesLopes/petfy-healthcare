@@ -36,6 +36,21 @@ public final class RotasPublicas {
      */
     public static final List<Rota> DE_API = List.of(
             new Rota(HttpMethod.POST, "/auth/login"),
+            /*
+             * O REFRESH E PUBLICO PORQUE QUEM O CHAMA NAO TEM TOKEN — e esse e o ponto dele.
+             *
+             * Quem acabou de recarregar a pagina perdeu o JWT: ele vive em memoria, por decisao
+             * contra XSS. Exigir autenticacao aqui seria exigir justamente o que a rota existe
+             * para devolver.
+             *
+             * <b>Publica nao e sem credencial:</b> a credencial e o cookie httpOnly, que o
+             * navegador manda sozinho e que JavaScript nenhum le. E o mesmo criterio do
+             * `/share/{token}` e do convite — o token no path faz o papel da credencial.
+             */
+            new Rota(HttpMethod.POST, "/auth/refresh"),
+            // sair tambem: quem sai pode estar com o JWT ja vencido, e falhar ao sair deixaria a
+            // sessao aberta no servidor por causa de um token que nao importa mais
+            new Rota(HttpMethod.POST, "/auth/logout"),
             // quem esqueceu a senha nao tem como se autenticar para pedir a troca
             new Rota(HttpMethod.POST, "/auth/password-reset"),
             new Rota(HttpMethod.POST, "/auth/password-reset/confirm"),

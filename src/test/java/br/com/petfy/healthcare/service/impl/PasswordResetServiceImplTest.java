@@ -43,6 +43,10 @@ class PasswordResetServiceImplTest {
     @Mock
     private PersonRepository personRepository;
 
+    /* Encerrar as entradas entrou junto com a troca de senha, na V51. */
+    @Mock
+    private br.com.petfy.healthcare.domain.repository.PersonSessionRepository personSessionRepository;
+
     @Mock
     private PasswordResetTokenRepository tokenRepository;
 

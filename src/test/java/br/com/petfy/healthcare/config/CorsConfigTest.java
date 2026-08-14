@@ -157,12 +157,14 @@ class CorsConfigTest {
         assertThat(configuracao.checkOrigin("https://site-de-terceiro.example")).isNull();
     }
 
+    /* Era `isFalse()` ate a V51: o refresh em cookie httpOnly nao existia, e sem ele o navegador
+       nao manda cookie nem deixa o JS ler a resposta do `/auth/refresh`. */
     @Test
-    @DisplayName("credencial de cookie continua desligada enquanto o token viaja no header")
-    void allowCredentialsSegueDesligado() {
+    @DisplayName("credencial de cookie esta ligada, e a origem continua declarada uma a uma")
+    void allowCredentialsLigado() {
         var configuracao = configuracaoDe(new CorsConfig(List.of(ORIGEM_DO_FRONT)));
 
-        assertThat(configuracao.getAllowCredentials()).isFalse();
+        assertThat(configuracao.getAllowCredentials()).isTrue();
         assertThat(configuracao.getAllowedOrigins()).containsExactly(ORIGEM_DO_FRONT);
     }
 
