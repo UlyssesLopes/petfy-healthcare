@@ -23,6 +23,8 @@ import { Route as EncaminhamentosRouteImport } from './rotas/encaminhamentos'
 import { Route as EncontradoRouteImport } from './rotas/encontrado'
 import { Route as EntrarRouteImport } from './rotas/entrar'
 import { Route as PacientesRouteImport } from './rotas/pacientes'
+import { Route as PrivacidadeRouteImport } from './rotas/privacidade'
+import { Route as TermosRouteImport } from './rotas/termos'
 import { Route as AnimaisAnimalIdRouteImport } from './rotas/animais.$animalId'
 import { Route as AnimaisNovoRouteImport } from './rotas/animais.novo'
 import { Route as CartaoTokenRouteImport } from './rotas/cartao.$token'
@@ -121,6 +123,16 @@ const EntrarRoute = EntrarRouteImport.update({
 const PacientesRoute = PacientesRouteImport.update({
   id: '/pacientes',
   path: '/pacientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnimaisAnimalIdRoute = AnimaisAnimalIdRouteImport.update({
@@ -298,6 +310,8 @@ export interface FileRoutesByFullPath {
   '/encontrado': typeof EncontradoRoute
   '/entrar': typeof EntrarRoute
   '/pacientes': typeof PacientesRouteWithChildren
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
   '/cartao/$token': typeof CartaoTokenRoute
@@ -343,6 +357,8 @@ export interface FileRoutesByTo {
   '/encontrado': typeof EncontradoRoute
   '/entrar': typeof EntrarRoute
   '/pacientes': typeof PacientesRouteWithChildren
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
   '/cartao/$token': typeof CartaoTokenRoute
@@ -389,6 +405,8 @@ export interface FileRoutesById {
   '/encontrado': typeof EncontradoRoute
   '/entrar': typeof EntrarRoute
   '/pacientes': typeof PacientesRouteWithChildren
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/animais/$animalId': typeof AnimaisAnimalIdRoute
   '/animais/novo': typeof AnimaisNovoRoute
   '/cartao/$token': typeof CartaoTokenRoute
@@ -436,6 +454,8 @@ export interface FileRouteTypes {
     | '/encontrado'
     | '/entrar'
     | '/pacientes'
+    | '/privacidade'
+    | '/termos'
     | '/animais/$animalId'
     | '/animais/novo'
     | '/cartao/$token'
@@ -481,6 +501,8 @@ export interface FileRouteTypes {
     | '/encontrado'
     | '/entrar'
     | '/pacientes'
+    | '/privacidade'
+    | '/termos'
     | '/animais/$animalId'
     | '/animais/novo'
     | '/cartao/$token'
@@ -526,6 +548,8 @@ export interface FileRouteTypes {
     | '/encontrado'
     | '/entrar'
     | '/pacientes'
+    | '/privacidade'
+    | '/termos'
     | '/animais/$animalId'
     | '/animais/novo'
     | '/cartao/$token'
@@ -572,6 +596,8 @@ export interface RootRouteChildren {
   EncontradoRoute: typeof EncontradoRoute
   EntrarRoute: typeof EntrarRoute
   PacientesRoute: typeof PacientesRouteWithChildren
+  PrivacidadeRoute: typeof PrivacidadeRoute
+  TermosRoute: typeof TermosRoute
   AnimaisAnimalIdRoute: typeof AnimaisAnimalIdRoute
   AnimaisNovoRoute: typeof AnimaisNovoRoute
   CartaoTokenRoute: typeof CartaoTokenRoute
@@ -698,6 +724,20 @@ declare module '@tanstack/react-router' {
       path: '/pacientes'
       fullPath: '/pacientes'
       preLoaderRoute: typeof PacientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/animais/$animalId': {
@@ -946,6 +986,8 @@ const rootRouteChildren: RootRouteChildren = {
   EncontradoRoute: EncontradoRoute,
   EntrarRoute: EntrarRoute,
   PacientesRoute: PacientesRouteWithChildren,
+  PrivacidadeRoute: PrivacidadeRoute,
+  TermosRoute: TermosRoute,
   AnimaisAnimalIdRoute: AnimaisAnimalIdRoute,
   AnimaisNovoRoute: AnimaisNovoRoute,
   CartaoTokenRoute: CartaoTokenRoute,

@@ -133,6 +133,23 @@ function Comecar() {
           <div style={{ marginTop: "24px", fontSize: "15px", color: "oklch(0.5 0.015 150)", lineHeight: 1.6 }}>
             {intl.formatMessage({ id: "comecar.tese" })}
           </div>
+
+          {/*
+           * A SAIDA, e ela e botao — nao link de menu.
+           *
+           * O desenho e explicito: "o stepper mantem a marca e o 'fazer isso depois', sem
+           * navegacao: sair no meio e botao, nao link de menu". Sem ela esta tela contradizia o
+           * proprio texto, que promete que "nada disso bloqueia o resto" e nao oferecia caminho
+           * nenhum para o resto — os tres comodos so levam para frente.
+           */}
+          <div style={{ marginTop: "32px", borderTop: "1px solid oklch(0.90 0.008 150)", paddingTop: "24px" }}>
+            <Link
+              to="/"
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none", fontFamily: "inherit", fontSize: "16px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "14px 22px", minHeight: "48px" }}
+            >
+              {intl.formatMessage({ id: "comecar.depois" })}
+            </Link>
+          </div>
         </div>
       </div>
     </div>

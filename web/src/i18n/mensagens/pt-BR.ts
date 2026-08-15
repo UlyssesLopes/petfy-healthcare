@@ -585,7 +585,11 @@ export const mensagens = {
   "criarConta.senha.esconder": "Esconder",
   // O desenho escreve 10; o contrato aceita 8. O cliente é mais rigoroso de propósito.
   "criarConta.senha.minimo": "Ao menos {minimo} caracteres.",
-  "criarConta.termos": "Li e aceito os termos de uso e a política de privacidade, inclusive o tratamento de dados de saúde dos animais que eu registrar.",
+  // Os dois documentos são links: o aceite é obrigatório, então eles precisam ser alcançáveis
+  // daqui — pedir aceite do que não dá para ler é o contrário do que o consentimento prova.
+  "criarConta.termos": "Li e aceito os {termos} e a {privacidade}, inclusive o tratamento de dados de saúde dos animais que eu registrar.",
+  "criarConta.termos.oQue": "termos de uso",
+  "criarConta.privacidade.oQue": "política de privacidade",
   "criarConta.faltaAceite": "Falta aceitar os termos para criar a conta.",
   "criarConta.faltaCampo": "Preencha nome, e-mail e uma senha de ao menos 10 caracteres.",
   "criarConta.acao": "Criar conta",
@@ -657,6 +661,9 @@ export const mensagens = {
   "comecar.profissional.texto": "Se você é veterinário, monitor ou voluntário, declare seu registro profissional ou aceite o convite de uma organização.",
   "comecar.profissional.acao": "Criar uma organização",
   "comecar.profissional.indisponivel": "O registro profissional é declarado na criação da conta. Declarar depois, e aceitar convite de organização com uma conta que já existe, ainda não têm caminho.",
+  // A saída do stepper. O desenho pede botão, e não link de menu: sair no meio é decisão, e
+  // quem sai daqui não fica sem nada — a tela já diz que nada disso bloqueia o resto.
+  "comecar.depois": "Fazer isso depois",
   "comecar.tese": "Nenhum passo pergunta se você é tutor ou profissional. Os três cômodos ficam abertos, e a área que você alcança vem do que você tem — um animal sob sua custódia, ou um vínculo com uma organização.",
 
   // ------------------------------------------- o primeiro animal, em quatro passos
@@ -1163,6 +1170,14 @@ export const mensagens = {
     "Guardamos e organizamos o que profissionais e cuidadores registram, e não emitimos diagnóstico. Registros profissionais informados por quem se cadastra não são verificados junto aos conselhos. Em emergência, procure um veterinário.",
   "moldura.rodape.assinatura": "© 2026 Petfy · São Paulo, Brasil",
   "moldura.rodape.lgpd": "Encarregado de dados (LGPD)",
+
+  // ==================================== os documentos que o cadastro obriga a aceitar
+  "documento.voltar": "Voltar para entrar",
+  "documento.versao": "Versão {versao}",
+  "documento.falta": "O que falta aqui",
+  "documento.emElaboracao.titulo": "Este documento ainda está em elaboração",
+  "documento.emElaboracao.texto":
+    "{quantas, plural, one {Uma seção depende} other {# seções dependem}} de decisões que ainda não foram tomadas, e cada uma diz o que falta. O que está escrito descreve o que o Petfy faz hoje, conferido contra o código.",
 
   // ------------------------------------------- o paciente pelos olhos da clínica (Tela 30)
   //

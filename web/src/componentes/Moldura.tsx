@@ -61,7 +61,7 @@ const SEM_NAVEGACAO = ["/comecar", "/animais/novo"];
  * O efeito e a moldura reduzida, e ela serve pela mesma razao das portas: a tela desenha a
  * propria marca dentro do cartao.
  */
-const PUBLICAS = ["/encontrado"];
+const PUBLICAS = ["/encontrado", "/termos", "/privacidade"];
 
 /**
  * O cartao de emergencia, e a variante MINIMA do desenho.
@@ -617,7 +617,15 @@ function Rodape() {
           </Coluna>
 
           <Coluna titulo={intl.formatMessage({ id: "moldura.rodape.dados" })}>
-            {["privacidade", "termos", "quemLe", "exportar"].map((item) => (
+            {/* Os dois primeiros ja tem pagina; "quem le" e por animal, e a exportacao ainda nao
+                tem tela — continuam texto ate terem. */}
+            <ItemDeRodape para="/privacidade">
+              {intl.formatMessage({ id: "moldura.rodape.dados.privacidade" })}
+            </ItemDeRodape>
+            <ItemDeRodape para="/termos">
+              {intl.formatMessage({ id: "moldura.rodape.dados.termos" })}
+            </ItemDeRodape>
+            {["quemLe", "exportar"].map((item) => (
               <ItemDeRodape key={item}>
                 {intl.formatMessage({ id: `moldura.rodape.dados.${item}` })}
               </ItemDeRodape>
@@ -662,10 +670,22 @@ function RodapeDeUmaLinha() {
   const intl = useIntl();
 
   return (
+    /*
+     * TERMOS E PRIVACIDADE VIRARAM LINKS. Eram <span>, e este rodape existe justamente para
+     * carrega-los: a porta pede que a pessoa aceite os dois, e ate agora nao havia como ler
+     * nenhum.
+     *
+     * <b>A "Central de ajuda" saiu.</b> A pagina nao existe, e dois links que clicam ao lado de
+     * um texto que nao clica parece defeito — alem de ensinar que rodape aqui e enfeite. Ela
+     * volta no dia em que tiver para onde levar.
+     */
     <footer style={{ padding: "20px 24px 28px", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px", flexWrap: "wrap", fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
-      <span>{intl.formatMessage({ id: "moldura.rodape.dados.termos" })}</span>
-      <span>{intl.formatMessage({ id: "moldura.rodape.dados.privacidade" })}</span>
-      <span>{intl.formatMessage({ id: "moldura.rodape.ajuda.central" })}</span>
+      <Link to="/termos" style={{ color: "oklch(0.46 0.085 150)" }}>
+        {intl.formatMessage({ id: "moldura.rodape.dados.termos" })}
+      </Link>
+      <Link to="/privacidade" style={{ color: "oklch(0.46 0.085 150)" }}>
+        {intl.formatMessage({ id: "moldura.rodape.dados.privacidade" })}
+      </Link>
     </footer>
   );
 }
@@ -701,8 +721,26 @@ function Coluna({ titulo, children }: { titulo: string; children: ReactNode }) {
   );
 }
 
-function ItemDeRodape({ children }: { children: ReactNode }) {
-  return <div style={{ color: "oklch(0.45 0.015 150)" }}>{children}</div>;
+/**
+ * Item do rodape completo.
+ *
+ * <b>Vira link quando ha para onde ir, e continua texto quando nao ha.</b> Todos eram `<div>` —
+ * as tres colunas inteiras. A diferenca importa mais nesta coluna que em qualquer outra: "num
+ * produto que pede acesso a saude de um ser vivo, esses links sao a garantia", e garantia que nao
+ * abre nao e garantia.
+ */
+function ItemDeRodape({ children, para }: { children: ReactNode; para?: "/termos" | "/privacidade" }) {
+  if (para === undefined) {
+    return <div style={{ color: "oklch(0.45 0.015 150)" }}>{children}</div>;
+  }
+
+  return (
+    <div>
+      <Link to={para} style={{ color: "oklch(0.46 0.085 150)" }}>
+        {children}
+      </Link>
+    </div>
+  );
 }
 
 /** Menu aberto que so fecha no proprio botao vira menu preso quando a pessoa desiste. */
