@@ -219,8 +219,30 @@ function CriarConta() {
                   {aceitou && <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: "oklch(1 0 0)" }}></div>}
                 </div>
               </button>
+              {/*
+               * OS DOIS DOCUMENTOS SAO LINKS, e antes eram texto.
+               *
+               * A caixa sempre dizia "li e aceito", o backend sempre exigiu o aceite — "sem
+               * aceite nao ha base legal para tratar dado de saude" — e nao havia como ler nem
+               * um nem outro. Pedir aceite de documento inalcancavel e o contrario do que o
+               * consentimento existe para provar.
+               */}
               <div style={{ fontSize: "15px", lineHeight: 1.55, color: "oklch(0.35 0.018 150)" }}>
-                {intl.formatMessage({ id: "criarConta.termos" })}
+                {intl.formatMessage(
+                  { id: "criarConta.termos" },
+                  {
+                    termos: (
+                      <Link to="/termos" style={{ color: "oklch(0.46 0.085 150)" }}>
+                        {intl.formatMessage({ id: "criarConta.termos.oQue" })}
+                      </Link>
+                    ),
+                    privacidade: (
+                      <Link to="/privacidade" style={{ color: "oklch(0.46 0.085 150)" }}>
+                        {intl.formatMessage({ id: "criarConta.privacidade.oQue" })}
+                      </Link>
+                    ),
+                  },
+                )}
               </div>
             </div>
 
