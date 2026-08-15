@@ -4,132 +4,134 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-08-14, na sessão que pagou **quatro dívidas antigas** — e descobriu que três
-> delas estavam registradas como "não dá para fazer" com justificativas que não se sustentavam.
+> Escrito em 2026-08-14, no fim da sessão que **fechou a tela de login inteira** e descobriu,
+> no caminho, que um recurso do produto estava morto dos dois lados.
 
 ## Onde o trabalho está agora
 
-**1039 casos no backend, 51 no front, `Skipped: 0`.** Migrations até a **V50**, e as cinquenta
-aplicam do zero em menos de 400 ms.
+**1075 casos no backend, 51 no front, `Skipped: 0`.** Migrations até a **V52**. A `main` está em
+`8e3a755`, e **não há PR aberto**.
 
-| PR | Conteúdo | Estado |
-|---|---|---|
-| **#65** | O registro do tutor, a duração do gasto (V47), os convites sem link | **mergeado** |
-| **#66** | O aviso in-app (V48), o remédio (V49), os aparelhos (V50), a guarda na edição | **mergeado** |
-| **#67** | As três telas do #66, e a correção do canal de aviso | **aberto**, CI verde |
+| PR | Conteúdo |
+|---|---|
+| **#70** | Continuar conectado vira escolha (V52), a tela do cartão `/cartao/{token}`, o `/share` fora do 500, o login por link removido |
+| **#71** | O aviso de entrada em aparelho novo |
+| **#72** | `/termos` e `/privacidade`, o rodapé que para de fingir, a saída do `/comecar` |
 
-## A lição desta sessão, e ela se repetiu três vezes
+## COMECE POR AQUI: a próxima tela
 
-**Justificativa escrita não é prova.** Três dívidas estavam registradas como impossíveis, e duas
-descreviam custos que **já estavam pagos**:
+O trabalho agora é **tela por tela, uma fechada por vez** — pedido do Ulysses, 2026-08-14:
 
-- A **Tela 36** dizia que o produto não podia saber dos aparelhos conectados porque o JWT é
-  stateless. Mas o `TokenFreshness` já consultava o banco em **toda requisição autenticada** desde
-  o P1, para derrubar token anterior a uma troca de senha. Faltava uma linha por sessão.
-- O **`VaccineFactory`** dizia que a edição ficava fora da guarda de dose duplicada de propósito,
-  porque "é raro e tem rastro". **Rastro não é guarda** — a duplicata nascida de uma edição dobra a
-  dose no histórico igual à nascida de duas gravações.
-- O **remédio como fato de saúde** parecia mudança de modelo. A `CareInstruction` já era
-  "prescrição, medicação e tema de casa" desde o P3, e já não exigia credencial. Faltava a ligação.
+> *"vamos ir tela a tela, começando ela e terminando ela completamente, com todas as
+> funcionalidades e pendências que deve ter."*
 
-**Antes de aceitar um "não dá", conferir se o custo que a justificativa teme já não está sendo pago
-em outro lugar.**
+A **Tela 28/29 (a porta)** está fechada. A próxima é dele. O método que funcionou:
 
-## O defeito que só o app de pé mostrou
+1. Ler o `.dc.html` **inteiro** e contar as telas e os **estados** antes de planejar.
+2. Para cada "ainda não" na tela, descobrir de qual dos três tipos ele é (abaixo).
+3. Levantar o que falta, decidir com ele, e só então escrever.
 
-O canal in-app nasceu no #66 para alcançar quem o e-mail não alcança. Mas a supressão de "endereço
-não confirmado" morava nos **notificadores do domínio**, antes do dispatcher: seis deles faziam
-`continue`, e o canal novo nunca via a mensagem. **Ele estava morto exatamente para as pessoas que
-existia para atender**, e nenhum teste dizia o contrário porque nenhum ia do evento até o canal.
+## A lição desta sessão
 
-A regra mudou de lugar, não de conteúdo: **"não mandamos e-mail para endereço não confirmado" é
-propriedade do canal de e-mail**, e não do evento. A `Notification` ganhou `porEmail`.
+**"Ainda não" tem três significados, e só um merece ficar na tela.** A porta exibia três, e
+eram três coisas diferentes:
 
-E desdobrou num sétimo lugar: o `AnimalReach.temAlguemNotificavel` fazia um animal cujos tutores não
-confirmaram o e-mail **sair da varredura de vacina inteira**. Era o buraco da Tela 03.
+- **Texto velho que ninguém apagou.** *"Ainda não guardamos a sessão entre visitas"* era falso
+  desde a V51 — o cookie já durava 30 dias e o login sempre o gravava.
+- **Recurso morto que ninguém testou.** O cartão de emergência não abria porque **não havia tela**
+  no front *e* porque o `/share/{token}` respondia **500 para qualquer token válido, desde
+  sempre**.
+- **Limitação verdadeira.** O login por link não existe, e sem `petfy.app.base-url` nem seria
+  link. Esse saiu da tela e virou item de roadmap.
+
+**Antes de aceitar um "ainda não", conferir qual dos três é.** Vale para todas as telas que faltam.
+
+## O defeito que ninguém via, e por quê
+
+`AnimalShareServiceImpl.viewSharedCard` **nunca foi `@Transactional`**. `Grant.scopes` é lazy, e a
+primeira pergunta "este link alcança a carteira?" estourava com `LazyInitializationException`.
+
+**Por que a suíte não pegava:** os testes de unidade montam o `Grant` com mock, e mock não tem
+sessão do Hibernate para perder. E **nenhuma tela chamava a rota**, então o app de pé também não
+denunciava. O `CartaoCompartilhadoContainerTest` cobre agora — e foi **conferido que ele pega**:
+removendo o `@Transactional` de propósito, 5 dos 6 casos quebram com o erro exato de produção.
+
+**Toda rota pública sem tela é candidata ao mesmo defeito.** Vale varrer as outras.
 
 ## O QUE FICOU DEVENDO
 
-### 0. Higienização dos comentários — pedido do Ulysses, 2026-08-14
+### 1. O texto jurídico de verdade — e é do Ulysses
 
-> *"A cada linha de código você adiciona uma bíblia de texto em qualquer lugar. Não, aqui não é um
-> livro de receitas."*
+`/termos` e `/privacidade` existem e descrevem o que o produto faz, conferido contra o código.
+Mas **sete seções estão marcadas como pendentes** e aparecem na tela dizendo o que falta:
 
-O código acumulou trechos com dez linhas de justificativa para duas de lógica. É um trabalho de
-varredura, e tem duas partes:
+- privacidade: retenção por tipo de dado, identificação do controlador, canal do encarregado,
+  sub-operadores com país de processamento;
+- termos: preço, suspensão de conta, lei aplicável e foro.
 
-1. **Avaliar cada comentário**: ele precisa existir ali? O código não se explica sozinho?
-2. **O que for aviso de verdade sai do arquivo** e vai para um documento próprio, que liga o texto
-   ao fluxo / trecho / classe / decisão a que pertence.
+Enquanto estiverem marcadas, **o aceite do cadastro aponta para um documento que se declara
+incompleto**. É melhor que antes — antes não havia documento nenhum — mas não fecha a base legal.
+O texto mora em `web/src/conteudo/documentos.ts`, fora do `pt-BR.ts` de propósito.
 
-O critério que fica: comentário no código é curto e factual. A história longa da decisão pertence ao
-commit, ao PR, ou a esse documento.
+### 2. A conferência no navegador continua parcial
 
-**Ainda por decidir:** o formato do documento (um arquivo só? um por bloco?) e como o link é feito
-(âncora por nome de classe? por migration?).
+Conferidas com Chrome headless nesta sessão: `/privacidade`, `/termos`, `/criar-conta`.
+**O `/comecar` não foi visto rodando** — exige sessão e o headless cai na porta. O botão
+"Fazer isso depois" está no código e no typecheck, e não em uma tela que alguém olhou.
 
-### 1. A conferência no navegador — continua sendo a maior dívida
-
-**E agora há muito o que conferir.** O app está de pé com dados: `marcelo@petfy.test` (senha
-`Petfy!2026`), animal **Code** `a44cad1e-6d94-4f56-8818-f60304fe5fc7`, com aviso não lido, sete
-aparelhos conectados, um remédio ligado a tratamento, e a previsão de custo com ração de dois meses.
-
-Telas novas ou tocadas e nunca abertas: `/avisos`, `/convites`, `/animais/{id}/registrar`,
+**Telas novas ou tocadas e nunca abertas:** `/avisos`, `/convites`, `/animais/{id}/registrar`,
 `/conta`, `/animais/{id}/compra`, `/animais/{id}/quem-cuida`, `/animais/novo`,
 `/organizacoes/{id}/equipe`.
 
-### 2. O refresh token — e é o que resolve o deslogue ao recarregar
+### 3. Uma duplicação criada de propósito
 
-O token vive em memória (decisão contra XSS registrada no `ROADMAP.md`), então **toda recarga
-desloga**. O `sessao.ts` nomeia o gatilho da troca: *"o domínio próprio pondo front e API sob o
-mesmo site, ou o login a cada recarga se mostrar insuportável no uso real"* — e o segundo aconteceu
-nesta sessão, no uso real.
+`RotuloDoAparelho` (Java) é gêmeo de `apelidoDoAparelho` (`web/src/dados/aparelhos.ts`): o e-mail
+sai do servidor e não pode chamar o do navegador. Os dois têm testes com os mesmos casos. **A
+forma de matar isso** é o backend expor o rótulo no DTO e o front parar de calcular — não foi
+feito porque muda o contrato e a Tela 36, que é outra tela.
 
-A `person_sessions` da V50 é **pré-requisito** disso, e não substituto.
+### 4. O que o rodapé prometia e não tinha
 
-### 3. Não há URL pública configurada
+Os doze itens eram `<div>`: nenhum clicava. Termos e privacidade viraram links; **o resto saiu** e
+está no `ROADMAP.md` — as quatro institucionais, as quatro de ajuda, e o **canal do encarregado de
+dados (LGPD)**, que é exigência legal. `Quem lê o registro` e `Levar meus dados embora` saíram por
+outro motivo: dependem de tela, e não de texto.
 
-Por isso o convite vai por **código**, colado na `/convites`. No dia em que existir
-`petfy.app.base-url` por ambiente, o `InviteNotifier` manda link em uma linha.
+### 5. O banco local está sujo
 
-### 4. O aviso in-app não tem tempo real
+As provas desta sessão deixaram quatro contas de teste (`teste-conectado@`, `cartao-teste@`,
+`cartao2@`, `aparelho-novo@petfy.test`) e dois animais "Code". O Ulysses pediu banco limpo para
+percorrer as telas do zero — **zerar antes de retomar**, se for continuar a conferência.
 
-A marca do sino atualiza a cada 60 s por `refetchInterval`. Quem está com a tela aberta vê o aviso
-com até um minuto de atraso. Websocket ou SSE resolveria, e nenhum dos dois existe no produto.
+### 6. A branch `docs/o-estado-para-a-proxima-sessao`
 
-## O que continua faltando no produto, e por quê
-
-- **Não há foto no apadrinhamento nem no petshop** — anexo vive sob escopo, e não existe "anexo
-  público".
-- **A especialidade é texto livre**, e toda credencial anterior à V42 continua nula.
-- **Espécie é só CANINA e FELINA.**
-- **O escopo do evento de união e do óbito continua sendo um compromisso.**
+O commit `bab7594` continua sozinho lá, sem PR, e **o conteúdo dele foi substituído por este
+arquivo**. Pode ser descartada.
 
 ## Armadilhas desta máquina
 
+- **`TaskStop` não mata o backend.** `mvn spring-boot:run` roda o app num **JVM filho**; parar a
+  tarefa mata só o Maven. O app novo sobe, **aplica o Flyway**, e morre com "Port 8080 was already
+  in use" — a migration aparece aplicada e quem responde é o processo velho. **Custou um
+  diagnóstico invertido nesta sessão.** Matar pelo PID que segura a porta:
+  `Get-NetTCPConnection -LocalPort 8080 -State Listen`.
 - **Rota ou código de erro novo cobra TRÊS artefatos no mesmo commit:** `contract/openapi.json`
   (`-Dpetfy.openapi.update=true`), `web/src/dados/gerado/api.d.ts` (`npm run gerar:api`) e a
-  tradução `erro.<n>` em `pt-BR.ts`. **O CI web tem um passo "O cliente gerado esta atualizado" que
-  o `mvn` e o `vitest` não têm** — verde local não prova nada aqui. Custou dois CI vermelhos.
-- **O nome do método do controller vira o `operationId`.** Um método `listMine` ou `revoke` colide
-  com os que já existem e faz o gerador **renomear o vizinho** para `revoke_1`. Nome único mantém o
-  diff aditivo.
-- **Tela não fala HTTP:** o `regra-da-camada.test.ts` recusa `cliente.GET` fora de `src/dados/`.
-- **O `Set-Location` do PowerShell persiste entre chamadas** — `mvn` depois de um `cd web` falha com
-  "no POM in this directory", e `npx tsc` fora de `web/` **instala um pacote `tsc` falso**.
-- **`vite build` suja o `arvore-de-rotas.gen.ts`** e trava o `git pull`. Pior: **com o dev server
-  rodando, ele regenera o arquivo em loop** e o `checkout` nunca limpa — parar o dev server antes de
-  sincronizar.
-- **`git checkout main` com o `.gen.ts` sujo reverte a árvore** e o `pull` aborta: dá para ficar com
-  o código de antes do merge sem perceber.
-- **Editar arquivo do front desloga quem está usando o app**: HMR recarrega a página, e o token vive
-  em memória.
+  tradução `erro.<n>` em `pt-BR.ts`. **O CI web tem um passo que o `mvn` não tem.**
+- **O CI é filtrado por caminho:** commit que só toca `src/` não roda o CI web, e vice-versa. Um
+  único check verde pode ser o correto — conferir o filtro antes de suspeitar de CI mudo.
+- **O nome do método do controller vira o `operationId`**, e um nome repetido faz o gerador
+  renomear o vizinho para `_1`.
+- **`NoClassDefFoundError` numa classe `$1` é `target/` velho.** `mvn clean` resolve.
+- **Tela não fala HTTP:** o `regra-da-camada.test.ts` recusa `cliente.GET`/`fetch` fora de
+  `src/dados/`.
+- **O `Set-Location` do PowerShell persiste**, e o `cwd` do Bash também deriva entre chamadas —
+  `mvn` com `-f` e caminho absoluto evita o "no POM in this directory".
+- **`vite build` suja o `arvore-de-rotas.gen.ts`**, e com o dev server rodando ele regenera em
+  loop: **parar o dev server antes de sincronizar**.
 - **O banco de teste NÃO é limpo entre casos.**
-- **Precisão de timestamp**: o Postgres guarda microssegundos e o `LocalDateTime` tem nanos —
-  comparar o retorno do serviço com o que está gravado falha por motivo nenhum. Comparar dois
-  valores lidos do banco.
+- **`@MockBean`, e não `@MockitoBean`** — esta versão do Spring Boot não tem o segundo.
 - **A conta ativa do `gh` é a de trabalho**: `gh auth switch --user UlyssesLopes`.
-- **Branch cujo PR já mergeou não roda check nenhum**, e nada avisa.
 - **O merge de PR é comando do Ulysses, sempre.**
 
 ## Como subir, e como regenerar
