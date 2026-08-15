@@ -1913,6 +1913,20 @@ Especificá-los agora, sem interface, é convite a refazer.
   recurso próprio, e não um botão: tabela de token de uso único, expiração curta, limite de
   tentativa e a tela de digitar o código. Quem esquece a senha já tem saída — a recuperação
   resolve na própria porta, sem trocar de tela.
+- **As páginas que o rodapé prometia.** Em 2026-08-14 os doze itens do rodapé eram `<div>`:
+  nenhum clicava. Termos e privacidade passaram a existir; o resto **saiu do rodapé** e volta
+  quando tiver para onde levar — as quatro institucionais (`Para tutores`, `Para clínicas`,
+  `Para creches e petshops`, `Para abrigos`), as quatro de ajuda (`Central de ajuda`,
+  `Falar com a gente`, `Acessibilidade`, `Status do sistema`) e o canal do **encarregado de
+  dados (LGPD)**, que é exigência legal e não conteúdo de marketing — a política de privacidade
+  já declara que ele falta. Duas outras dependem de tela, e não de texto: `Quem lê o registro
+  dos meus animais` hoje é por animal, e `Levar meus dados embora` só existe na API
+  (`/persons/me/export`), sem interface.
+- **O texto jurídico de verdade.** As páginas `/termos` e `/privacidade` descrevem o que o
+  produto faz, conferido contra o código, e marcam as seções que dependem de decisão humana:
+  retenção por tipo de dado, identificação do controlador e do encarregado, sub-operadores com
+  país de processamento, preço, suspensão de conta e foro. Enquanto elas estiverem marcadas, o
+  aceite do cadastro aponta para um documento que se declara incompleto.
 - **ZIP no export**, com os arquivos dentro em vez de só os links.
 - **Leitura de anexo pelo veterinário.** É o que fecha o ciclo do laudo. O
   `AccessedResource.ATTACHMENTS` já existe no enum esperando o gancho.

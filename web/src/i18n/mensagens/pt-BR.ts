@@ -1146,30 +1146,20 @@ export const mensagens = {
   // O rodapé. A tese é a do produto inteiro, e não uma frase de marketing.
   "moldura.rodape.tese":
     "O registro é do animal. Ele atravessa tutores, clínicas e abrigos, e não recomeça quando a responsabilidade muda de mão.",
-  "moldura.rodape.produto": "O produto",
-  "moldura.rodape.produto.tutores": "Para tutores",
-  "moldura.rodape.produto.clinicas": "Para clínicas",
-  "moldura.rodape.produto.creches": "Para creches e petshops",
-  "moldura.rodape.produto.abrigos": "Para abrigos",
   // "Seus dados" não vai para dentro de configurações: num produto que pede acesso à saúde de um
   // ser vivo, esses links são a garantia — e garantia escondida não sossega ninguém.
+  //
+  // A coluna lista o que o rodapé consegue abrir. As institucionais, as de ajuda e o canal do
+  // encarregado saíram em 2026-08-14 — eram texto que não clicava — e estão no `ROADMAP.md`.
   "moldura.rodape.dados": "Seus dados",
   "moldura.rodape.dados.privacidade": "Política de privacidade",
   "moldura.rodape.dados.termos": "Termos de uso",
-  "moldura.rodape.dados.quemLe": "Quem lê o registro dos meus animais",
-  "moldura.rodape.dados.exportar": "Levar meus dados embora",
-  "moldura.rodape.ajuda": "Ajuda",
-  "moldura.rodape.ajuda.central": "Central de ajuda",
-  "moldura.rodape.ajuda.contato": "Falar com a gente",
-  "moldura.rodape.ajuda.acessibilidade": "Acessibilidade",
-  "moldura.rodape.ajuda.status": "Status do sistema",
   // A linha de fé. Não é rodapé jurídico enfiado no fim: é o limite do produto, dito onde
   // qualquer pessoa alcança.
   "moldura.rodape.fe.titulo": "O Petfy não substitui atendimento veterinário.",
   "moldura.rodape.fe.texto":
     "Guardamos e organizamos o que profissionais e cuidadores registram, e não emitimos diagnóstico. Registros profissionais informados por quem se cadastra não são verificados junto aos conselhos. Em emergência, procure um veterinário.",
   "moldura.rodape.assinatura": "© 2026 Petfy · São Paulo, Brasil",
-  "moldura.rodape.lgpd": "Encarregado de dados (LGPD)",
 
   // ==================================== os documentos que o cadastro obriga a aceitar
   "documento.voltar": "Voltar para entrar",

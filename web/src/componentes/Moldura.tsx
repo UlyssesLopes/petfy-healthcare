@@ -608,36 +608,29 @@ function Rodape() {
             </div>
           </div>
 
-          <Coluna titulo={intl.formatMessage({ id: "moldura.rodape.produto" })}>
-            {["tutores", "clinicas", "creches", "abrigos"].map((item) => (
-              <ItemDeRodape key={item}>
-                {intl.formatMessage({ id: `moldura.rodape.produto.${item}` })}
-              </ItemDeRodape>
-            ))}
-          </Coluna>
-
+          {/*
+           * ------------------------------------------- O RODAPE LISTA O QUE ELE CONSEGUE ABRIR
+           *
+           * Os doze itens eram `<div>`: nenhum clicava, nas tres colunas. Um item de rodape que
+           * nao vai a lugar nenhum e uma promessa quebrada repetida em toda pagina do produto —
+           * e, pior, ensina que rodape aqui e enfeite, o que estraga tambem os que funcionam.
+           *
+           * <b>Saiu a coluna "O produto"</b> (quatro paginas institucionais que nao existem) e a
+           * coluna "Ajuda" (central, contato, acessibilidade, status — nenhuma existe). Ficam
+           * registradas no `ROADMAP.md`, e voltam quando tiverem destino.
+           *
+           * <b>Fica "Seus dados"</b>, que e a coluna que importa: "num produto que pede acesso a
+           * saude de um ser vivo, esses links sao a garantia, e garantia escondida nao sossega
+           * ninguem". Garantia que nao abre tambem nao sossega — entao ela lista os dois
+           * documentos, que agora existem.
+           */}
           <Coluna titulo={intl.formatMessage({ id: "moldura.rodape.dados" })}>
-            {/* Os dois primeiros ja tem pagina; "quem le" e por animal, e a exportacao ainda nao
-                tem tela — continuam texto ate terem. */}
             <ItemDeRodape para="/privacidade">
               {intl.formatMessage({ id: "moldura.rodape.dados.privacidade" })}
             </ItemDeRodape>
             <ItemDeRodape para="/termos">
               {intl.formatMessage({ id: "moldura.rodape.dados.termos" })}
             </ItemDeRodape>
-            {["quemLe", "exportar"].map((item) => (
-              <ItemDeRodape key={item}>
-                {intl.formatMessage({ id: `moldura.rodape.dados.${item}` })}
-              </ItemDeRodape>
-            ))}
-          </Coluna>
-
-          <Coluna titulo={intl.formatMessage({ id: "moldura.rodape.ajuda" })}>
-            {["central", "contato", "acessibilidade", "status"].map((item) => (
-              <ItemDeRodape key={item}>
-                {intl.formatMessage({ id: `moldura.rodape.ajuda.${item}` })}
-              </ItemDeRodape>
-            ))}
           </Coluna>
         </div>
 
@@ -656,9 +649,11 @@ function Rodape() {
         <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
           {intl.formatMessage({ id: "moldura.rodape.assinatura" })}
         </div>
+        {/* "Encarregado de dados (LGPD)" saiu junto: o canal ainda nao existe, e a propria
+            politica de privacidade declara que falta. Anunciar aqui um contato que nao atende e
+            pior que nao anunciar — quem procura o encarregado esta exercendo um direito. */}
         <div style={{ display: "flex", alignItems: "center", gap: "22px", fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
           <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px" }}>v1.0</span>
-          <span>{intl.formatMessage({ id: "moldura.rodape.lgpd" })}</span>
         </div>
       </div>
     </footer>
