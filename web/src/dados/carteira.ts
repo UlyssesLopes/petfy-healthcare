@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { cliente } from "./cliente.ts";
 import type { components } from "./gerado/api";
@@ -95,6 +95,87 @@ export function useAnexos(animalId: string | undefined) {
           params: { path: { animalId: animalId! } },
         }),
       ),
+  });
+}
+
+/**
+ * Baixar o arquivo de um anexo — e <b>tinha que ser uma chamada, nao um link</b>.
+ *
+ * A tela apontava para {@code /attachments/{id}/content} relativo, que resolvia contra o
+ * servidor do FRONT e nao abria nada. Mas trocar por endereco absoluto tambem nao resolveria:
+ * a rota e <b>autorizada a cada chamada</b> — "nao ha URL assinada: link encaminhado por engano
+ * daria acesso a dado de saude ate expirar" — e o token deste produto vive em MEMORIA, nao em
+ * cookie. Um {@code <a href>} nao carrega header nenhum, e o servidor responde 401. Conferido.
+ *
+ * Entao o arquivo vem pelo cliente, que poe o {@code Authorization}, e a tela recebe um Blob.
+ * Quem transforma o Blob em download e a tela: object URL e DOM nao sao HTTP, e a regra da
+ * camada continua de pe.
+ */
+export function useBaixarAnexo() {
+  return useMutation({
+    mutationFn: async (attachmentId: string): Promise<Blob> =>
+      corpoDe(
+        await cliente.GET("/attachments/{attachmentId}/content", {
+          params: { path: { attachmentId } },
+          parseAs: "blob",
+        }),
+      ) as unknown as Blob,
+  });
+}
+
+/**
+ * Enviar um arquivo para o animal — a unica escrita de anexo que o produto tem.
+ *
+ * <b>Ate 2026-08-15 nao existia, e a lista de anexos nunca saia do vazio</b>: nenhuma tela
+ * oferecia enviar. O motivo escrito no onboarding era que "o contrato nao descreve o envio de
+ * arquivo" — e era falso, o contrato declara {@code multipart/form-data} nesta rota desde que
+ * ela existe. Faltava esta funcao.
+ *
+ * <b>Duas sutilezas do multipart, e as duas mordem em silencio:</b>
+ *
+ * <ul>
+ *   <li>O {@code bodySerializer} monta o {@code FormData}. Sem ele o openapi-fetch mandaria JSON,
+ *       e o servidor recusaria um corpo que nao tem parte chamada `file`.</li>
+ *   <li>O {@code Content-Type} tem que sair do header. O cliente declara
+ *       {@code application/json} para todas as chamadas, e no multipart quem escreve o
+ *       cabecalho e o navegador — porque so ele conhece o `boundary` que separa as partes.
+ *       Mandar `multipart/form-data` sem boundary quebra o parser do lado de la.</li>
+ * </ul>
+ *
+ * O tipo do arquivo NAO e conferido aqui: o servidor reconhece JPEG, PNG, WEBP e PDF pelo
+ * CONTEUDO e responde `erro.126` para o resto. Repetir a lista no front criaria a segunda fonte
+ * que discorda da primeira no dia em que uma delas mudar.
+ */
+export function useEnviarAnexo() {
+  const consultas = useQueryClient();
+
+  return useMutation({
+    /*
+     * O `animalId` vem na CHAMADA, e nao na criacao do hook.
+     *
+     * O primeiro uso e o onboarding, onde a foto sobe no mesmo clique que criou o animal — e ali
+     * o id nasceu ha um instante, dentro do mesmo handler. Um hook parametrizado no render so
+     * enxergaria o id no proximo, e a foto subiria para `undefined`.
+     */
+    mutationFn: async ({ animalId, arquivo, descricao }: { animalId: string; arquivo: File; descricao?: string }) =>
+      corpoDe(
+        await cliente.POST("/animals/{animalId}/attachments", {
+          params: {
+            path: { animalId },
+            ...(descricao === undefined ? {} : { query: { description: descricao } }),
+          },
+          body: { file: arquivo as unknown as string },
+          bodySerializer: (corpo) => {
+            const forma = new FormData();
+            forma.append("file", (corpo as unknown as { file: File }).file);
+            return forma;
+          },
+          headers: { "Content-Type": null },
+        }),
+      ),
+    onSuccess: async (_resposta, variaveis) => {
+      await consultas.invalidateQueries({ queryKey: ["anexos", variaveis.animalId] });
+    },
   });
 }
 

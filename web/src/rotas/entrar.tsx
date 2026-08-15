@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-ro
 import { useEffect, useState, type FormEvent } from "react";
 import { useIntl } from "react-intl";
 
+import { useTenhoAlgumAnimal } from "../dados/animais.ts";
 import { useEntrar, usePedirNovaSenha } from "../dados/autenticacao.ts";
 import { lerSessao } from "../dados/sessao.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
@@ -111,6 +112,7 @@ function Entrar() {
   const navegar = useNavigate();
   const { convite } = Route.useSearch();
   const entrar = useEntrar();
+  const tenhoAlgumAnimal = useTenhoAlgumAnimal();
   const novaSenha = usePedirNovaSenha();
   const estreito = useEstreito();
 
@@ -128,6 +130,31 @@ function Entrar() {
    */
   const [encerramentoAnterior] = useState(() => lerSessao().ultimoEncerramento);
 
+  /*
+   * Para onde a porta abre, e sao tres destinos e nao dois.
+   *
+   * <b>Quem nao tem animal nenhum vai para o comeco (Tela 08)</b>, e nao para o feed. O
+   * desenho chama aquela tela de "depois do login", mas ate 2026-08-15 so a criacao de conta
+   * levava ate la: quem ja tinha conta e nenhum animal entrava num feed vazio, sem nada que
+   * o levasse aos tres comodos. O feed vazio nao ensina o que fazer; a Tela 08 e feita disso.
+   *
+   * <b>Se a pergunta falhar, o destino e o feed.</b> Uma lista que nao carregou nao e uma
+   * lista vazia, e mandar para o onboarding quem tem cinco animais seria pior que o buraco
+   * que isto fecha.
+   */
+  async function depoisDeEntrar() {
+    if (convite !== undefined) {
+      await navegar({ to: "/convites/aceitar", search: { token: convite } });
+      return;
+    }
+
+    try {
+      await navegar({ to: (await tenhoAlgumAnimal()) ? "/" : "/comecar" });
+    } catch {
+      await navegar({ to: "/" });
+    }
+  }
+
   function enviar(evento: FormEvent) {
     evento.preventDefault();
 
@@ -144,10 +171,7 @@ function Entrar() {
     entrar.mutate(
       { email: email.trim(), senha, manterConectado },
       {
-        onSuccess: () =>
-          void (convite === undefined
-            ? navegar({ to: "/" })
-            : navegar({ to: "/convites/aceitar", search: { token: convite } })),
+        onSuccess: () => void depoisDeEntrar(),
       },
     );
   }

@@ -1,9 +1,10 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
 import { useCriarAnimal, useIdentificarAnimal, type Especie } from "../dados/animais.ts";
 import { useConvidarCoTutor } from "../dados/animal.ts";
+import { useEnviarAnexo } from "../dados/carteira.ts";
 import { lerSessao } from "../dados/sessao.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
 
@@ -18,24 +19,30 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
  * passo 1 e cada passo seguinte grava por conta propria — nao existe rascunho, nao existe
  * "salvar tudo no final", e fechar o navegador no passo 3 nao perde o passo 2.
  *
- * <b>O QUE O DESENHO PEDE E NAO EXISTE NO BACKEND, tudo registrado e nada fingido:</b>
+ * ------------------------------------------------------- o que mudou em 2026-08-15, e por que
+ *
+ * <b>Tres "ainda nao" desta tela eram falsos, e um era verdadeiro.</b> A conferencia veio de
+ * fora: o Ulysses abriu a tela, clicou em "Outro" e listou o que nao funcionava. Vale a regra
+ * que a Tela 08 ja tinha ensinado — "ainda nao" tem tres significados, e a maioria e texto
+ * velho que ninguem apagou.
  *
  * <ul>
- *   <li><b>"Outro" como especie.</b> O enum e `CANINA` e `FELINA`, e mais nada. A opcao
- *       aparece desabilitada com o motivo — esconder faria o tutor de gato-do-mato achar que
- *       nao ha lugar para ele, e mandar `CANINA` seria registrar cachorro.</li>
- *   <li><b>A foto do animal.</b> Nao ha campo de retrato no `AnimalRequestDTO`, e a rota de
- *       anexo existe mas o contrato NAO declara o corpo multipart dela — o cliente gerado
- *       nao tem por onde mandar arquivo. E divida de contrato, nao de tela.</li>
- *   <li><b>O passo 3 inteiro, a carteirinha por OCR.</b> A rota existe e le com Tesseract
- *       (`POST /pet-id/import-pet-id-card`), e o contrato tambem nao declara o multipart
- *       dela. O passo aparece, diz por que nao roda hoje, e o "nao tenho a carteirinha agora"
- *       segue funcionando.</li>
- *   <li><b>RGA e tatuagem.</b> So `microchipNumber` existe. Ver `useIdentificarAnimal`.</li>
- *   <li><b>"O que sobra vira pendencia".</b> O `DueItemKind` tem cinco valores —
- *       `DOSE_DE_VACINA`, `ANTIPARASITARIO`, `ORIENTACAO`, `CONVITE_PENDENTE` e
- *       `CONSENTIMENTO_PENDENTE` — e nenhum e "lancar a carteirinha". Sair no passo 3 nao
- *       gera pendencia nenhuma hoje, e a tela nao promete que gera.</li>
+ *   <li><b>"Outro" como especie: PASSOU A FUNCIONAR.</b> O {@code Species} tinha CANINA e
+ *       FELINA, e a opcao ficava desabilitada com um paragrafo explicando por que o animal da
+ *       pessoa nao cabia. Agora o enum tem oito valores e "Outro" abre um seletor. A coluna
+ *       sempre foi {@code varchar(32)} sem CHECK — nao houve migration.</li>
+ *   <li><b>A foto: o contrato SEMPRE declarou o multipart.</b> Estava escrito aqui que nao, e
+ *       era falso — {@code POST /animals/{animalId}/attachments} e {@code multipart/form-data}
+ *       no contrato e no cliente gerado. O que faltava era a funcao de envio no front.</li>
+ *   <li><b>O passo 3 saiu do stepper.</b> A rota de OCR existe, mas <b>ela CRIA um animal
+ *       novo</b> ({@code importAnimalFromIdCard}) — no passo 3 o animal ja existe desde o passo
+ *       1, e chama-la ali criaria um segundo. E ela nao devolve as doses para conferencia, que
+ *       e o que o desenho pede ("Confira o que lemos · 4 doses"). Esse e backend novo, e o
+ *       passo nao fica na tela prometendo o que nao faz.</li>
+ *   <li><b>RGA e tatuagem.</b> So {@code microchipNumber} existe. Ver {@code useIdentificarAnimal}.
+ *       Continua verdadeiro.</li>
+ *   <li><b>"O que sobra vira pendencia".</b> O {@code DueItemKind} nao tem "lancar a
+ *       carteirinha". Continua verdadeiro, e a tela nao promete que gera.</li>
  * </ul>
  */
 
@@ -48,7 +55,22 @@ export const Route = createFileRoute("/animais/novo")({
   component: PrimeiroAnimal,
 });
 
-type Passo = 1 | 2 | 3 | 4;
+type Passo = 1 | 2 | 3;
+
+/**
+ * As especies que o botao "Outro" abre — todas menos as duas que ja tem botao proprio.
+ *
+ * <b>Derivada do tipo gerado, e nao escrita a mao</b>: quando o backend ganhar uma especie, o
+ * `tsc` acusa aqui em vez de a tela esquecer de oferecer a nova. A ordem e a de quem cadastra,
+ * e `OUTRA` fica por ultimo porque e o fim da lista, nao o comeco dela.
+ */
+const AS_OUTRAS = ["AVE", "ROEDORA", "LAGOMORFA", "REPTIL", "EQUINA", "OUTRA"] as const satisfies
+  readonly Exclude<Especie, "CANINA" | "FELINA">[];
+
+/** Se a especie escolhida e uma das que moram atras do "Outro" — e portanto se o seletor abre. */
+function ehOutra(especie: Especie): boolean {
+  return (AS_OUTRAS as readonly string[]).includes(especie);
+}
 
 function useHover() {
   const [sobre, setSobre] = useState(false);
@@ -70,6 +92,7 @@ function PrimeiroAnimal() {
   const criar = useCriarAnimal();
   const identificar = useIdentificarAnimal();
   const convidar = useConvidarCoTutor();
+  const enviarFoto = useEnviarAnexo();
 
   const [passo, setPasso] = useState<Passo>(1);
 
@@ -78,6 +101,25 @@ function PrimeiroAnimal() {
   const [nascimento, setNascimento] = useState("");
   const [microchip, setMicrochip] = useState("");
   const [email, setEmail] = useState("");
+  const [foto, setFoto] = useState<File | undefined>(undefined);
+
+  /*
+   * A previa e um object URL, e ele e revogado quando a foto troca ou a tela sai — sem isso o
+   * blob fica preso na memoria da aba ate a navegacao dura.
+   */
+  const [previaDaFoto, setPreviaDaFoto] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (foto === undefined) {
+      setPreviaDaFoto(undefined);
+      return;
+    }
+
+    const url = URL.createObjectURL(foto);
+    setPreviaDaFoto(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [foto]);
 
   /* O animal existe a partir do fim do passo 1, e o id e o que os passos seguintes usam. */
   const animalId = criar.data?.animalId;
@@ -119,11 +161,16 @@ function PrimeiroAnimal() {
         </div>
 
         <div style={{ padding: "28px 56px 0" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          {/*
+           * TRES trilhos, e nao quatro: "Carteirinha" saiu junto com o passo dela.
+           *
+           * A barra "mostra o que ja ficou registrado em cada passo, e nao so quantos faltam" —
+           * um trilho para um passo que nao existe mostraria o contrario.
+           */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
             <Trilho ativo={passo >= 1} feito={passo > 1} rotulo={intl.formatMessage({ id: "onboarding.trilho.animal" })} detalhe={criar.data?.name} />
             <Trilho ativo={passo >= 2} feito={passo > 2} rotulo={intl.formatMessage({ id: "onboarding.trilho.identificacao" })} detalhe={identificar.data?.microchipNumber ?? undefined} />
-            <Trilho ativo={passo >= 3} feito={passo > 3} rotulo={intl.formatMessage({ id: "onboarding.trilho.carteirinha" })} />
-            <Trilho ativo={passo >= 4} feito={false} rotulo={intl.formatMessage({ id: "onboarding.trilho.quemCuida" })} />
+            <Trilho ativo={passo >= 3} feito={false} rotulo={intl.formatMessage({ id: "onboarding.trilho.quemCuida" })} />
           </div>
         </div>
 
@@ -159,12 +206,37 @@ function PrimeiroAnimal() {
                       texto={intl.formatMessage({ id: "animal.especie.FELINA" })}
                     />
                     <Opcao
-                      escolhida={false}
+                      escolhida={ehOutra(especie)}
+                      aoEscolher={() => setEspecie(AS_OUTRAS[0])}
                       texto={intl.formatMessage({ id: "onboarding.p1.especie.outro" })}
-                      indisponivel
                     />
                   </div>
-                  <Nota>{intl.formatMessage({ id: "onboarding.p1.especie.outro.porque" })}</Nota>
+
+                  {/*
+                   * "Outro" nao e uma especie: e a porta para as que nao cabem em tres botoes.
+                   * Escolher revela o seletor, e o valor entra no dominio com o nome certo —
+                   * calopsita vira AVE, e nao um CANINA que registraria cachorro.
+                   */}
+                  {ehOutra(especie) && (
+                    <div style={{ marginTop: "12px" }}>
+                      <Rotulo para="novo-especie-qual">
+                        {intl.formatMessage({ id: "onboarding.p1.especie.qual" })}
+                      </Rotulo>
+                      <select
+                        id="novo-especie-qual"
+                        value={especie}
+                        onChange={(evento) => setEspecie(evento.target.value as Especie)}
+                        style={estiloDoCampo}
+                      >
+                        {AS_OUTRAS.map((valor) => (
+                          <option key={valor} value={valor}>
+                            {intl.formatMessage({ id: `animal.especie.${valor}` })}
+                          </option>
+                        ))}
+                      </select>
+                      <Nota>{intl.formatMessage({ id: "onboarding.p1.especie.semProtocolo" })}</Nota>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -186,21 +258,51 @@ function PrimeiroAnimal() {
                   <Nota>{intl.formatMessage({ id: "onboarding.p1.nascimento.apoio" })}</Nota>
                 </div>
 
-                {/* A moldura da foto do desenho, com o motivo no lugar do botao. */}
+                {/*
+                 * A moldura da foto do desenho, agora com o botao que ela sempre pediu.
+                 *
+                 * <b>A foto e escolhida aqui e enviada depois</b>, no "Continuar": anexo pertence
+                 * a um animal, e o animal so passa a existir no fim deste passo. Guardar o
+                 * `File` em estado e o unico jeito de honrar a ordem sem inventar um rascunho.
+                 *
+                 * <b>Falha no envio nao desfaz o passo.</b> O animal ja foi gravado quando a foto
+                 * sobe; perder o cadastro inteiro porque uma imagem falhou seria trocar o que
+                 * importa pelo que pode ficar para depois — e o proprio desenho diz que a foto
+                 * pode. O aviso aparece e o stepper segue.
+                 */}
                 <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "20px", border: "1px dashed oklch(0.84 0.012 150)", borderRadius: "12px", padding: "20px 22px" }}>
-                  <div aria-hidden style={{ width: "64px", height: "64px", borderRadius: "999px", background: "repeating-linear-gradient(135deg, oklch(0.94 0.006 150) 0 8px, oklch(0.96 0.004 150) 8px 16px)", flex: "none" }}></div>
+                  <div aria-hidden style={{ width: "64px", height: "64px", borderRadius: "999px", overflow: "hidden", background: "repeating-linear-gradient(135deg, oklch(0.94 0.006 150) 0 8px, oklch(0.96 0.004 150) 8px 16px)", flex: "none" }}>
+                    {previaDaFoto !== undefined && (
+                      <img src={previaDaFoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    )}
+                  </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: "16px", marginBottom: "4px" }}>
                       {intl.formatMessage({ id: "onboarding.p1.foto" })}
                     </div>
                     <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", lineHeight: 1.5 }}>
-                      {intl.formatMessage({ id: "onboarding.p1.foto.apoio" })}
-                    </div>
-                    <div style={{ fontSize: "14px", color: "oklch(0.42 0.015 150)", lineHeight: 1.5, marginTop: "8px" }}>
-                      {intl.formatMessage({ id: "onboarding.p1.foto.indisponivel" })}
+                      {foto === undefined
+                        ? intl.formatMessage({ id: "onboarding.p1.foto.apoio" })
+                        : foto.name}
                     </div>
                   </div>
+
+                  <label style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "12px 18px", minHeight: "44px", display: "flex", alignItems: "center", cursor: "pointer" }}>
+                    {intl.formatMessage({ id: "onboarding.p1.foto.escolher" })}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      style={{ display: "none" }}
+                      onChange={(evento) => setFoto(evento.target.files?.[0])}
+                    />
+                  </label>
                 </div>
+
+                {enviarFoto.isError && (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <Alerta>{intl.formatMessage({ id: chaveDoErro(enviarFoto.error) })}</Alerta>
+                  </div>
+                )}
               </div>
 
               {criar.isError && <Alerta>{intl.formatMessage({ id: chaveDoErro(criar.error) })}</Alerta>}
@@ -210,11 +312,26 @@ function PrimeiroAnimal() {
                   pendente={criar.isPending}
                   desabilitado={nome.trim() === ""}
                   aoClicar={async () => {
-                    await criar.mutateAsync({
+                    const animal = await criar.mutateAsync({
                       nome: nome.trim(),
                       especie,
                       nascimento: nascimento === "" ? undefined : nascimento,
                     });
+
+                    /* A foto sobe depois do animal, e a falha dela nao segura o passo. */
+                    if (foto !== undefined && animal.animalId !== undefined) {
+                      try {
+                        await enviarFoto.mutateAsync({
+                          animalId: animal.animalId,
+                          arquivo: foto,
+                          descricao: intl.formatMessage({ id: "onboarding.p1.foto" }),
+                        });
+                      } catch {
+                        setPasso(2);
+                        return;
+                      }
+                    }
+
                     setPasso(2);
                   }}
                 >
@@ -273,26 +390,6 @@ function PrimeiroAnimal() {
           )}
 
           {passo === 3 && (
-            <>
-              <Titulo>{intl.formatMessage({ id: "onboarding.p3.titulo" }, { nome: criar.data?.name ?? "" })}</Titulo>
-              <Apoio>{intl.formatMessage({ id: "onboarding.p3.apoio" })}</Apoio>
-
-              <div style={{ border: "1px dashed oklch(0.84 0.012 150)", borderRadius: "12px", padding: "24px 26px", maxWidth: "640px", fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
-                {intl.formatMessage({ id: "onboarding.p3.indisponivel" })}
-              </div>
-
-              <Rodape>
-                <Principal pendente={false} desabilitado={false} aoClicar={async () => setPasso(4)}>
-                  {intl.formatMessage({ id: "onboarding.continuar" })}
-                </Principal>
-                <Secundario aoClicar={() => setPasso(4)}>
-                  {intl.formatMessage({ id: "onboarding.p3.naoTenho" })}
-                </Secundario>
-              </Rodape>
-            </>
-          )}
-
-          {passo === 4 && (
             <>
               <Titulo>{intl.formatMessage({ id: "onboarding.p4.titulo" }, { nome: criar.data?.name ?? "" })}</Titulo>
               <Apoio>{intl.formatMessage({ id: "onboarding.p4.apoio" })}</Apoio>

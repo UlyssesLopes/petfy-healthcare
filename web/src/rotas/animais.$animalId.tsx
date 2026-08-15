@@ -9,8 +9,10 @@ import type { Anexo, Condicao, Pesagem } from "../dados/carteira.ts";
 import {
   useAnexos,
   useAnimal,
+  useBaixarAnexo,
   useCarteira,
   useCondicoes,
+  useEnviarAnexo,
   usePesagens,
   useRedeDeCuidado,
 } from "../dados/carteira.ts";
@@ -70,6 +72,31 @@ function VidaDoAnimal() {
   const condicoes = useCondicoes(animalId);
   const pesagens = usePesagens(animalId);
   const anexos = useAnexos(animalId);
+  const enviarAnexo = useEnviarAnexo();
+  const baixarAnexo = useBaixarAnexo();
+
+  /*
+   * O Blob vem da camada de dados; virar arquivo salvo e trabalho da tela.
+   *
+   * O object URL e revogado no mesmo turno: ele so precisa sobreviver ao clique sintetico, e
+   * deixar vivo prenderia o arquivo inteiro na memoria da aba ate a navegacao dura.
+   */
+  const baixar = async (anexo: Anexo) => {
+    if (anexo.attachmentId === undefined) {
+      return;
+    }
+
+    const arquivo = await baixarAnexo.mutateAsync(anexo.attachmentId);
+    const url = URL.createObjectURL(arquivo);
+
+    const ancora = document.createElement("a");
+    ancora.href = url;
+    ancora.download = anexo.originalFilename ?? "anexo";
+    ancora.click();
+
+    URL.revokeObjectURL(url);
+  };
+
   const linha = useLinhaDoTempo(animalId);
 
   const compartilhar = useHover();
@@ -303,12 +330,58 @@ function VidaDoAnimal() {
                   <Vazio>{intl.formatMessage({ id: "animal.carteira.anexos.vazio" })}</Vazio>
                 ) : (
                   (anexos.data ?? []).map((anexo: Anexo) => (
-                    <a key={anexo.attachmentId} href={`/attachments/${anexo.attachmentId}/content`}>
+                    /*
+                     * BOTAO, e nao link. A rota do arquivo e autorizada a cada chamada e o token
+                     * vive em memoria: um `href` nao manda header e volta 401. O arquivo vem
+                     * pelo cliente e o navegador o salva a partir do Blob.
+                     */
+                    <button
+                      key={anexo.attachmentId}
+                      type="button"
+                      onClick={() => void baixar(anexo)}
+                      style={{ fontFamily: "inherit", fontSize: "15px", textAlign: "left", padding: 0, background: "none", border: "none", color: "oklch(0.46 0.085 150)", textDecoration: "underline", textUnderlineOffset: "3px", cursor: "pointer" }}
+                    >
                       {anexo.description ?? anexo.originalFilename}
-                    </a>
+                    </button>
                   ))
                 )}
               </div>
+
+              {/*
+               * ANEXAR, que ate 2026-08-15 nao existia em lugar nenhum do produto.
+               *
+               * A lista estava aqui desde sempre e nunca podia sair do vazio: nenhuma tela
+               * oferecia enviar arquivo. Quem tinha o laudo do exame no celular nao tinha onde
+               * por — e "guardamos e organizamos o que profissionais e cuidadores registram" e o
+               * que o rodape promete em toda tela.
+               */}
+              <label style={{ marginTop: "12px", display: "inline-flex", alignItems: "center", fontFamily: "inherit", fontSize: "14px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "10px 16px", minHeight: "40px", cursor: enviarAnexo.isPending ? "progress" : "pointer" }}>
+                {intl.formatMessage({
+                  id: enviarAnexo.isPending ? "animal.carteira.anexos.enviando" : "animal.carteira.anexos.enviar",
+                })}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  disabled={enviarAnexo.isPending || animalId === undefined}
+                  style={{ display: "none" }}
+                  onChange={(evento) => {
+                    const arquivo = evento.target.files?.[0];
+
+                    if (arquivo !== undefined && animalId !== undefined) {
+                      enviarAnexo.mutate({ animalId, arquivo });
+                    }
+
+                    /* Limpa para que escolher O MESMO arquivo de novo dispare o evento. */
+                    evento.target.value = "";
+                  }}
+                />
+              </label>
+
+              {enviarAnexo.isError && (
+                <div style={{ marginTop: "8px", fontSize: "14px", color: "oklch(0.45 0.13 30)", lineHeight: 1.5 }}>
+                  {intl.formatMessage({ id: chaveDoErro(enviarAnexo.error) })}
+                </div>
+              )}
             </div>
           </div>
 

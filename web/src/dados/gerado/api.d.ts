@@ -2868,7 +2868,7 @@ export interface components {
             name?: string;
             pesagens?: components["schemas"]["PesagemDTO"][];
             /** @enum {string} */
-            species?: "CANINA" | "FELINA";
+            species?: "CANINA" | "FELINA" | "AVE" | "ROEDORA" | "LAGOMORFA" | "REPTIL" | "EQUINA" | "OUTRA";
             type?: string;
             vacinas?: components["schemas"]["VacinaDTO"][];
             /** Format: double */
@@ -2940,7 +2940,7 @@ export interface components {
             microchipNumber?: string;
             name: string;
             /** @enum {string} */
-            species: "CANINA" | "FELINA";
+            species: "CANINA" | "FELINA" | "AVE" | "ROEDORA" | "LAGOMORFA" | "REPTIL" | "EQUINA" | "OUTRA";
             type?: string;
             /** Format: double */
             weight?: number;
@@ -2968,7 +2968,7 @@ export interface components {
             /** Format: uuid */
             personId?: string;
             /** @enum {string} */
-            species?: "CANINA" | "FELINA";
+            species?: "CANINA" | "FELINA" | "AVE" | "ROEDORA" | "LAGOMORFA" | "REPTIL" | "EQUINA" | "OUTRA";
             type?: string;
             /** Format: date-time */
             updateDate?: string;
@@ -3108,7 +3108,7 @@ export interface components {
             kind?: "DEWORMER" | "FLEA_TICK";
             name?: string;
             /** @enum {string} */
-            species?: "CANINA" | "FELINA";
+            species?: "CANINA" | "FELINA" | "AVE" | "ROEDORA" | "LAGOMORFA" | "REPTIL" | "EQUINA" | "OUTRA";
         };
         AntiparasiticRequestDTO: {
             /** Format: uuid */
@@ -4403,7 +4403,7 @@ export interface components {
             mandatory?: boolean;
             name?: string;
             /** @enum {string} */
-            species?: "CANINA" | "FELINA";
+            species?: "CANINA" | "FELINA" | "AVE" | "ROEDORA" | "LAGOMORFA" | "REPTIL" | "EQUINA" | "OUTRA";
             /** Format: uuid */
             vaccineCatalogId?: string;
         };

@@ -290,7 +290,16 @@ export const mensagens = {
   "entrar.criarConta.acao": "Criar uma agora",
   // O caminho de quem não vem entrar (Tela 34). A frase é a pergunta que a pessoa tem na cabeça,
   // e não o nome da funcionalidade: ninguém procura por "consulta de microchip".
-  "entrar.achouUmAnimal": "Achou um animal na rua? Procure pelo microchip, sem criar conta",
+  // A frase dizia "Achou um animal na rua? Procure pelo microchip, sem criar conta", e pedia a
+  // quem está com o animal no colo um número que ele não tem como saber: chip só se lê com
+  // leitor, em clínica ou ONG.
+  //
+  // <b>Mas o conserto não é exigir o número no rótulo.</b> Quem acabou de achar um animal e não
+  // tem o número é exatamente quem mais precisa clicar — é do outro lado que ele descobre que
+  // uma clínica lê o chip em segundos. Um rótulo que começasse com "tem o número?" filtraria
+  // fora justamente essa pessoa. Então o gancho fica e a promessa sai: o link leva a "como
+  // descobrir", e não a "procure pelo microchip".
+  "entrar.achouUmAnimal": "Achou um animal? Veja como descobrir quem responde por ele, sem criar conta",
 
   "entrar.email.faltando": "Informe o seu e-mail.",
   "entrar.email.incompleto": "Esse e-mail não parece completo — falta o @",
@@ -653,18 +662,23 @@ export const mensagens = {
   "comecar.animal.titulo": "Cadastrar um animal",
   "comecar.animal.texto": "Nome e espécie bastam para começar. A carteirinha de papel você lança depois, com calma.",
   "comecar.animal.acao": "Começar",
-  "comecar.rede.titulo": "Convidar quem mais cuida",
-  "comecar.rede.texto": "Quem divide a casa, a clínica que atende, a creche. Você escolhe o que cada um vê.",
-  "comecar.rede.acao": "Convidar",
-  "comecar.rede.semAnimal": "Convite é sempre para um animal, e você ainda não tem nenhum cadastrado. Comece pelo primeiro cômodo.",
+  // As chaves `comecar.rede.*` — o cômodo "Convidar quem mais cuida" — saíram em 2026-08-15.
+  // Convite é sempre PARA um animal, e esta tela só é alcançada por quem acabou de criar a
+  // conta e portanto não tem nenhum: o cartão não estava vazio "por enquanto", estava vazio
+  // para sempre. O convite continua no passo 4 do stepper, onde há animal para convidar PARA.
   "comecar.profissional.titulo": "Atender animais de outras pessoas",
   "comecar.profissional.texto": "Se você é veterinário, monitor ou voluntário, declare seu registro profissional ou aceite o convite de uma organização.",
+  // As três saídas do cômodo, na ordem que o texto acima promete. Até 2026-08-15 este cartão
+  // dizia que declarar registro depois e aceitar convite com conta existente "ainda não têm
+  // caminho" — e as duas coisas existiam: a `/conta` grava CRMV, UF e especialidade, e a
+  // `/convites` recebe o código dos dois tipos e roteia. Era texto velho, não limitação.
+  "comecar.profissional.registro": "Declarar registro",
+  "comecar.profissional.convite": "Tenho um convite",
   "comecar.profissional.acao": "Criar uma organização",
-  "comecar.profissional.indisponivel": "O registro profissional é declarado na criação da conta. Declarar depois, e aceitar convite de organização com uma conta que já existe, ainda não têm caminho.",
   // A saída do stepper. O desenho pede botão, e não link de menu: sair no meio é decisão, e
   // quem sai daqui não fica sem nada — a tela já diz que nada disso bloqueia o resto.
   "comecar.depois": "Fazer isso depois",
-  "comecar.tese": "Nenhum passo pergunta se você é tutor ou profissional. Os três cômodos ficam abertos, e a área que você alcança vem do que você tem — um animal sob sua custódia, ou um vínculo com uma organização.",
+  "comecar.tese": "Nenhum passo pergunta se você é tutor ou profissional. Os dois cômodos ficam abertos, e a área que você alcança vem do que você tem — um animal sob sua custódia, ou um vínculo com uma organização.",
 
   // ------------------------------------------- o primeiro animal, em quatro passos
   //
@@ -676,19 +690,22 @@ export const mensagens = {
   "onboarding.opcional": "· opcional",
   "onboarding.trilho.animal": "O animal",
   "onboarding.trilho.identificacao": "Identificação",
-  "onboarding.trilho.carteirinha": "Carteirinha",
   "onboarding.trilho.quemCuida": "Quem mais cuida",
   "onboarding.p1.titulo": "Quem é o animal?",
   "onboarding.p1.apoio": "Nome e espécie bastam. O resto pode entrar a qualquer momento, inclusive anos depois.",
   "onboarding.p1.nome": "Como você chama ele",
   "onboarding.p1.especie": "Espécie",
   "onboarding.p1.especie.outro": "Outro",
-  "onboarding.p1.especie.outro.porque": "Hoje o Petfy só registra cão e gato: a espécie é um dado do domínio, e não um texto livre. Outra espécie ficaria registrada errada.",
+  // O que aparece quando "Outro" abre. Nenhuma frase pedindo desculpa: o botão funciona.
+  "onboarding.p1.especie.qual": "Qual?",
+  "onboarding.p1.foto.escolher": "Escolher foto",
+  "onboarding.p1.especie.semProtocolo": "O Petfy não conhece calendário de vacina para essa espécie, então não vai sugerir doses. Tudo que você lançar fica registrado igual.",
   "onboarding.p1.nascimento": "Nascimento",
   "onboarding.p1.nascimento.apoio": "Só o mês e o ano servem. Estimativa também.",
   "onboarding.p1.foto": "Foto do animal",
   "onboarding.p1.foto.apoio": "Ajuda quem cuida a reconhecer ele no balcão. Pode ficar para depois.",
-  "onboarding.p1.foto.indisponivel": "Ainda não dá para enviar a foto: o contrato da API não descreve o envio de arquivo, e o cliente é gerado a partir dele.",
+  // A `onboarding.p1.foto.indisponivel` saiu em 2026-08-15: ela dizia que o contrato não
+  // descrevia o envio de arquivo, e o contrato descrevia. A foto sobe.
   "onboarding.p1.aviso": "O {nome} já fica registrado agora. Os próximos passos são opcionais.",
   "onboarding.p2.titulo": "O {nome} tem algum número de identificação?",
   "onboarding.p2.apoio": "Metade dos animais no Brasil não tem nenhum, e o Petfy funciona igual sem. Se tiver, o microchip é o que permite reconhecer o {nome} se ele se perder e for encontrado por outra pessoa.",
@@ -697,10 +714,9 @@ export const mensagens = {
   "onboarding.p2.semRgaNemTatuagem": "RGA e tatuagem ainda não têm onde ser guardados. Só o microchip tem campo próprio, e usar o dele para outro número faria o registro mentir.",
   "onboarding.p2.naoValida": "O Petfy não emite nem valida esses números — guarda e usa o que você informar.",
   "onboarding.p2.naoTem": "O {nome} não tem nenhum",
-  "onboarding.p3.titulo": "O que o {nome} já tomou",
-  "onboarding.p3.apoio": "É o passo mais trabalhoso e o mais valioso: sem ele, o Petfy não sabe o que vence e quando.",
-  "onboarding.p3.indisponivel": "A leitura da carteirinha por foto existe no servidor, mas o contrato da API não descreve o envio do arquivo — e o cliente desta tela é gerado a partir dele. Enquanto isso, cada dose pode ser lançada uma a uma na tela do animal, e cada uma entra na data em que foi aplicada.",
-  "onboarding.p3.naoTenho": "Não tenho a carteirinha agora",
+  // As chaves `onboarding.p3.*` e o trilho "Carteirinha" saíram em 2026-08-15, com o passo.
+  // A rota de OCR existe, mas cria um animal NOVO e não devolve as doses para conferência —
+  // é backend novo, está no ROADMAP, e o passo não fica na tela prometendo o que não faz.
   "onboarding.p4.titulo": "Quem mais cuida do {nome}?",
   "onboarding.p4.apoio": "Você escolhe o que cada pessoa ou organização vê, e por quanto tempo. Dá para mudar ou revogar depois, a qualquer momento.",
   "onboarding.p4.pessoa": "Alguém que divide o cuidado",
@@ -1051,6 +1067,14 @@ export const mensagens = {
   "animal.voltar": "Ir para o início",
   "animal.especie.CANINA": "Cão",
   "animal.especie.FELINA": "Gato",
+  // O produto deixou de ser só cão e gato em 2026-08-15. Os nomes são os que o dono usa —
+  // "Pássaro", e não "Ave"; "Cavalo", e não "Equina" —, porque quem cadastra é o tutor.
+  "animal.especie.AVE": "Pássaro",
+  "animal.especie.ROEDORA": "Roedor",
+  "animal.especie.LAGOMORFA": "Coelho",
+  "animal.especie.REPTIL": "Réptil",
+  "animal.especie.EQUINA": "Cavalo",
+  "animal.especie.OUTRA": "Outra espécie",
   "animal.genero.MACHO": "macho",
   "animal.genero.FEMEA": "fêmea",
   "animal.nascido": "Nascido em {data}",
@@ -1077,6 +1101,8 @@ export const mensagens = {
   "animal.carteira.peso.resumo": "{peso} kg em {data} · {total, plural, one {# pesagem} other {# pesagens}}",
   "animal.carteira.anexos": "Anexos",
   "animal.carteira.anexos.vazio": "Nenhum documento anexado.",
+  "animal.carteira.anexos.enviar": "Anexar documento",
+  "animal.carteira.anexos.enviando": "Enviando…",
 
   // A linha do tempo: como ele chegou aqui.
   "animal.linha.titulo": "Linha do tempo",

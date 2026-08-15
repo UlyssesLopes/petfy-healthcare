@@ -2,26 +2,40 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
-import { useAnimais } from "../dados/animais.ts";
 import { useMeuContexto } from "../dados/contexto.ts";
 import { lerSessao } from "../dados/sessao.ts";
 
 /* ------------------------------------------------------------------ o que este arquivo e
  *
- * A "Tela 08 · depois do login — Onboarding, tres comodos e nenhum corredor", de
- * `design/IdentidadeVisual/Telas Petfy - Entrada e fluxos.dc.html`.
+ * A "Tela 08 · depois do login", de `design/IdentidadeVisual/Telas Petfy - Entrada e fluxos.dc.html`.
  *
  * <b>A tese esta na ultima linha do desenho, e ela e uma decisao de produto inteira:</b>
- * "nenhum passo pergunta se voce e tutor ou profissional. Os tres comodos ficam abertos, e a
- * area que voce alcanca vem do que voce tem — um animal sob sua custodia, ou um vinculo com
- * uma organizacao". Por isso os tres cartoes aparecem para todo mundo, e nenhum deles esta
- * atras de um papel declarado.
+ * "nenhum passo pergunta se voce e tutor ou profissional. Os comodos ficam abertos, e a area
+ * que voce alcanca vem do que voce tem — um animal sob sua custodia, ou um vinculo com uma
+ * organizacao". Por isso os cartoes aparecem para todo mundo, e nenhum esta atras de um papel
+ * declarado.
  *
- * <b>O terceiro comodo nao tem para onde levar hoje.</b> "Atender animais de outras pessoas"
- * pede declarar registro profissional ou aceitar convite de organizacao: o registro tem
- * campo (`crmv` no `PersonRequestDTO`, e ele esta na Tela 07), mas nao existe tela de conta
- * para declarar depois, e aceitar convite de organizacao e a Tela 16, que ainda nao existe.
- * O cartao explica isso em vez de levar a lugar nenhum.
+ * ------------------------------------------------ O DESENHO TEM TRES COMODOS. A TELA TEM DOIS.
+ *
+ * <b>"Convidar quem mais cuida" saiu em 2026-08-15</b>, e o motivo e que ele nao podia
+ * funcionar nunca: convite e sempre PARA um animal (`/animals/{animalId}/tutors/invites`), e
+ * <b>esta tela so e alcancada por quem acabou de criar a conta</b> — quem, por definicao, nao
+ * tem animal nenhum. O cartao nao estava vazio "por enquanto": estava vazio para sempre.
+ *
+ * O desenho nao errou; ele desenhou uma pessoa que ja tem animal numa tela que so aparece
+ * antes de existir um. <b>E o convite nao se perdeu</b> — ele vive no passo 4 do stepper
+ * (`/animais/novo`), que e onde ha um animal para convidar PARA, e funciona de ponta a ponta.
+ *
+ * <b>A regra que decidiu isso:</b> o que nao abre nao fica na tela. E a mesma do rodape, que
+ * perdeu dez itens pelo mesmo criterio, e vale para toda tela que ainda falta.
+ *
+ * ------------------------------------------------------------ e o que ficou, ficou porque abre
+ *
+ * O terceiro comodo dizia que declarar registro depois e aceitar convite de organizacao "ainda
+ * nao tem caminho" — e os dois tinham: a `/conta` grava CRMV, UF e especialidade, e a
+ * `/convites` recebe o codigo, pergunta ao servidor de que tipo ele e e leva ao aceite certo.
+ * As duas telas nasceram depois daquele texto, e ninguem voltou aqui para apaga-lo. Era texto
+ * velho, nao limitacao.
  */
 
 export const Route = createFileRoute("/comecar")({
@@ -36,9 +50,7 @@ export const Route = createFileRoute("/comecar")({
 function Comecar() {
   const intl = useIntl();
   const contexto = useMeuContexto();
-  const animais = useAnimais();
 
-  const primeiro = (animais.data ?? [])[0];
   const nome = contexto.data?.personName ?? "";
 
   return (
@@ -68,7 +80,8 @@ function Comecar() {
             {intl.formatMessage({ id: "comecar.apoio" })}
           </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+          {/* Duas colunas, e nao tres: o comodo do convite saiu. Ver o cabecalho do arquivo. */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px" }}>
             <Comodo
               destacado
               marca={
@@ -86,45 +99,31 @@ function Comecar() {
             />
 
             <Comodo
-              marca={
-                <div style={{ display: "flex" }}>
-                  <div aria-hidden style={{ width: "30px", height: "30px", borderRadius: "999px", background: "oklch(0.90 0.03 150)" }}></div>
-                  <div aria-hidden style={{ width: "30px", height: "30px", borderRadius: "999px", background: "oklch(0.85 0.03 150)", marginLeft: "-10px", border: "2px solid oklch(1 0 0)" }}></div>
-                  <div aria-hidden style={{ width: "30px", height: "30px", borderRadius: "999px", background: "oklch(0.80 0.03 150)", marginLeft: "-10px", border: "2px solid oklch(1 0 0)" }}></div>
-                </div>
-              }
-              titulo={intl.formatMessage({ id: "comecar.rede.titulo" })}
-              texto={intl.formatMessage({ id: "comecar.rede.texto" })}
-              acao={
-                /*
-                 * Convidar exige um animal: o convite e sempre PARA um animal
-                 * (`/animals/{animalId}/tutors/invites`). Sem nenhum cadastrado, o cartao
-                 * diz isso em vez de abrir uma tela que perguntaria "para qual?".
-                 */
-                primeiro?.animalId === undefined ? (
-                  <Motivo>{intl.formatMessage({ id: "comecar.rede.semAnimal" })}</Motivo>
-                ) : (
-                  <Botao
-                    para="/animais/$animalId/quem-cuida"
-                    parametros={{ animalId: primeiro.animalId }}
-                  >
-                    {intl.formatMessage({ id: "comecar.rede.acao" })}
-                  </Botao>
-                )
-              }
-            />
-
-            <Comodo
               marca={<div aria-hidden style={{ width: "44px", height: "44px", borderRadius: "4px", border: "2px solid oklch(0.72 0.012 150)" }}></div>}
               titulo={intl.formatMessage({ id: "comecar.profissional.titulo" })}
               texto={intl.formatMessage({ id: "comecar.profissional.texto" })}
               acao={
+                /*
+                 * As TRES saidas, e o desenho pedia a primeira delas desde sempre: o botao da
+                 * Tela 08 se chama "Declarar registro".
+                 *
+                 * <b>Ele nao existia porque o cartao afirmava que nao havia caminho</b> — e
+                 * havia: a `/conta` grava CRMV, UF e especialidade, e a `/convites` recebe o
+                 * codigo e roteia sozinha entre convite de animal e de organizacao. O texto
+                 * ficou de uma epoca em que as duas telas nao existiam e ninguem voltou aqui.
+                 * Era texto velho, o primeiro dos tres tipos de "ainda nao".
+                 */
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {/* A Tela 15 passou a existir: criar organizacao e a saida deste comodo. */}
+                  <Botao para="/conta">
+                    {intl.formatMessage({ id: "comecar.profissional.registro" })}
+                  </Botao>
+                  <Botao para="/convites">
+                    {intl.formatMessage({ id: "comecar.profissional.convite" })}
+                  </Botao>
+                  {/* A Tela 15 passou a existir: criar organizacao e a terceira saida. */}
                   <Botao para="/organizacoes/nova">
                     {intl.formatMessage({ id: "comecar.profissional.acao" })}
                   </Botao>
-                  <Motivo>{intl.formatMessage({ id: "comecar.profissional.indisponivel" })}</Motivo>
                 </div>
               }
             />
@@ -140,7 +139,7 @@ function Comecar() {
            * O desenho e explicito: "o stepper mantem a marca e o 'fazer isso depois', sem
            * navegacao: sair no meio e botao, nao link de menu". Sem ela esta tela contradizia o
            * proprio texto, que promete que "nada disso bloqueia o resto" e nao oferecia caminho
-           * nenhum para o resto — os tres comodos so levam para frente.
+           * nenhum para o resto — os comodos so levam para frente.
            */}
           <div style={{ marginTop: "32px", borderTop: "1px solid oklch(0.90 0.008 150)", paddingTop: "24px" }}>
             <Link
@@ -185,53 +184,43 @@ function Comodo({
   );
 }
 
+/**
+ * Os quatro destinos da tela, e <b>nenhum deles pede parametro</b>.
+ *
+ * Era o `/animais/$animalId/quem-cuida` que obrigava este componente a ter dois ramos e um
+ * cast em cada um. Ele saiu com o comodo do convite, e o que sobrou e um `Link` so.
+ */
+type Destino = "/animais/novo" | "/conta" | "/convites" | "/organizacoes/nova";
+
 function Botao({
   para,
-  parametros,
   principal = false,
   children,
 }: {
-  para: "/animais/novo" | "/animais/$animalId/quem-cuida" | "/organizacoes/nova";
-  parametros?: { animalId: string };
+  para: Destino;
   principal?: boolean;
   children: ReactNode;
 }) {
-  const estilo = {
-    fontFamily: "inherit",
-    fontSize: "15px",
-    fontWeight: 500,
-    borderRadius: "8px",
-    padding: "13px",
-    minHeight: "48px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textDecoration: "none",
-    ...(principal
-      ? { color: "oklch(1 0 0)", background: "oklch(0.46 0.085 150)", border: "none" }
-      : { color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)" }),
-  } as const;
-
-  if (parametros === undefined) {
-    return (
-      <Link to={para as "/animais/novo" | "/organizacoes/nova"} style={estilo}>
-        {children}
-      </Link>
-    );
-  }
-
   return (
-    <Link to={para as "/animais/$animalId/quem-cuida"} params={parametros} style={estilo}>
+    <Link
+      to={para}
+      style={{
+        fontFamily: "inherit",
+        fontSize: "15px",
+        fontWeight: 500,
+        borderRadius: "8px",
+        padding: "13px",
+        minHeight: "48px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textDecoration: "none",
+        ...(principal
+          ? { color: "oklch(1 0 0)", background: "oklch(0.46 0.085 150)", border: "none" }
+          : { color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)" }),
+      }}
+    >
       {children}
     </Link>
-  );
-}
-
-/** O lugar do botao quando nao ha para onde ir, com a razao escrita (secao 06). */
-function Motivo({ children }: { children: ReactNode }) {
-  return (
-    <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.42 0.015 150)", border: "1px dashed oklch(0.88 0.008 150)", borderRadius: "8px", padding: "13px 14px" }}>
-      {children}
-    </div>
   );
 }

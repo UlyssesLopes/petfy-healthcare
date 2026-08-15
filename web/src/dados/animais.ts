@@ -15,18 +15,39 @@ export type Especie = NonNullable<components["schemas"]["AnimalRequestDTO"]["spe
  * pagina e a lista inteira na pratica — e quando deixar de ser, quem pagina e a area de
  * organizacao, que le centenas e tem busca e recorte proprios.
  */
+const consultaDeAnimais = {
+  queryKey: ["animais"],
+  queryFn: async () =>
+    corpoDe(
+      // Sem `page` nem `size`: valem os defaults do servidor, e agora o contrato os
+      // declara — 20 itens, ordenados por nome. Ate 2026-08-08 era preciso mandar um
+      // `pageable` vazio aqui para driblar o contrato, que descrevia a paginacao de um
+      // jeito que o Spring nao le.
+      await cliente.GET("/animals"),
+    ).content ?? [],
+};
+
 export function useAnimais() {
-  return useQuery({
-    queryKey: ["animais"],
-    queryFn: async () =>
-      corpoDe(
-        // Sem `page` nem `size`: valem os defaults do servidor, e agora o contrato os
-        // declara — 20 itens, ordenados por nome. Ate 2026-08-08 era preciso mandar um
-        // `pageable` vazio aqui para driblar o contrato, que descrevia a paginacao de um
-        // jeito que o Spring nao le.
-        await cliente.GET("/animals"),
-      ).content ?? [],
-  });
+  return useQuery(consultaDeAnimais);
+}
+
+/**
+ * "Existe algum animal?", perguntado UMA vez e fora de render — o login precisa da resposta
+ * antes de escolher o destino, e nao ha tela montada para um `useQuery` pendurar.
+ *
+ * <b>Por que o login pergunta:</b> a Tela 08 e o "depois do login" do desenho, e ate
+ * 2026-08-15 so a criacao de conta levava ate ela. Quem ja tinha conta, nenhum animal e
+ * entrava pela porta caia num feed vazio — o produto pedia que a pessoa adivinhasse que
+ * existe uma tela de comeco.
+ *
+ * <b>E por que a pergunta mora aqui e nao no feed:</b> mandar o `/` redirecionar para o
+ * comeco faria o "Fazer isso depois" — que leva para o `/` — voltar para o comeco. O laco
+ * seria infinito e a saida da tela, mentira. Perguntar no login acontece uma vez so.
+ */
+export function useTenhoAlgumAnimal() {
+  const consultas = useQueryClient();
+
+  return async () => (await consultas.fetchQuery(consultaDeAnimais)).length > 0;
 }
 
 /**
