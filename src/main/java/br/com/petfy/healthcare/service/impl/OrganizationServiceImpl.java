@@ -2,9 +2,13 @@ package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.OrganizationRequestDTO;
 import br.com.petfy.healthcare.domain.dto.OrganizationResponseDTO;
+import br.com.petfy.healthcare.domain.entity.Membership;
+import br.com.petfy.healthcare.domain.entity.MembershipRole;
 import br.com.petfy.healthcare.domain.entity.Organization;
+import br.com.petfy.healthcare.domain.repository.MembershipRepository;
 import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import br.com.petfy.healthcare.service.OrganizationService;
 import br.com.petfy.healthcare.service.enums.ErrorMessageEnum;
@@ -13,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -23,9 +28,42 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     private final OrganizationRepository organizationRepository;
 
+    private final MembershipRepository membershipRepository;
+
+    private final CurrentPersonProvider currentPersonProvider;
+
     private final CurrentProfessionalProvider currentProfessionalProvider;
 
+    /**
+     * Cria a organizacao <b>e o vinculo de quem a criou</b>.
+     *
+     * <b>O vinculo faltava, e sem ele a organizacao nascia inalcancavel.</b> Ate 2026-08-15 este
+     * metodo salvava a {@link Organization} e mais nada: nenhum {@link Membership}. Como o
+     * contexto ativo lista organizacoes por {@code findAtivosDaPessoa}, a organizacao recem-criada
+     * nao aparecia no "Agindo como" de ninguem — nem de quem acabou de cria-la. O produto levava
+     * a pessoa direto para a equipe da organizacao, e a tela abria com "escolha em nome de qual
+     * esta agindo" sobre uma lista que nao continha a organizacao. Nao havia conserto pela
+     * interface: a unica saida seria um INSERT na mao.
+     *
+     * A tela sempre prometeu "voce fica como responsavel". Agora o servidor cumpre.
+     *
+     * <b>ADMINISTRADOR, e nao VETERINARIO</b>, pelo mesmo criterio do cadastro de pessoa em
+     * {@code PersonServiceImpl.registrarVinculo}: quem chega sem convite e sem credencial declarada
+     * e o dono do negocio, nao o clinico. Quem tem CRMV continua declarando na conta, e as duas
+     * coisas sao independentes — a organizacao nao verifica o registro de ninguem.
+     *
+     * <b>{@link CurrentPersonProvider}, e NAO o {@code CurrentProfessionalProvider}.</b> O
+     * {@code require()} do segundo exige credencial profissional ativa e responde 403 sem ela:
+     * usa-lo aqui faria criar uma organizacao virar privilegio de veterinario, e "criar clinica
+     * nao deve exigir ser veterinario — o tutor precisa registrar onde vacinou" e regra escrita
+     * neste servico desde sempre, com teste proprio. Quem cria pode ser o dono da creche.
+     *
+     * <b>Transacional porque sao duas escritas.</b> Uma organizacao salva sem o vinculo e
+     * exatamente o defeito que este metodo acabou de deixar de ter, e o meio do caminho nao pode
+     * sobreviver a uma falha da segunda escrita.
+     */
     @Override
+    @Transactional
     public OrganizationResponseDTO createOrganization(OrganizationRequestDTO request) {
         Organization organization = Organization.builder()
                 .name(request.getName())
@@ -41,7 +79,16 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .creationDate(LocalDateTime.now())
                 .build();
 
-        return toResponse(organizationRepository.save(organization));
+        Organization salva = organizationRepository.save(organization);
+
+        membershipRepository.save(Membership.builder()
+                .person(currentPersonProvider.require())
+                .organization(salva)
+                .role(MembershipRole.ADMINISTRADOR)
+                .joinedAt(LocalDateTime.now())
+                .build());
+
+        return toResponse(salva);
     }
 
     @Override

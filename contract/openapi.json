@@ -464,7 +464,7 @@
             "type" : "array"
           },
           "species" : {
-            "enum" : [ "CANINA", "FELINA" ],
+            "enum" : [ "CANINA", "FELINA", "AVE", "ROEDORA", "LAGOMORFA", "REPTIL", "EQUINA", "OUTRA" ],
             "type" : "string"
           },
           "type" : {
@@ -649,7 +649,7 @@
             "type" : "string"
           },
           "species" : {
-            "enum" : [ "CANINA", "FELINA" ],
+            "enum" : [ "CANINA", "FELINA", "AVE", "ROEDORA", "LAGOMORFA", "REPTIL", "EQUINA", "OUTRA" ],
             "type" : "string"
           },
           "type" : {
@@ -717,7 +717,7 @@
             "type" : "string"
           },
           "species" : {
-            "enum" : [ "CANINA", "FELINA" ],
+            "enum" : [ "CANINA", "FELINA", "AVE", "ROEDORA", "LAGOMORFA", "REPTIL", "EQUINA", "OUTRA" ],
             "type" : "string"
           },
           "type" : {
@@ -1064,7 +1064,7 @@
             "type" : "string"
           },
           "species" : {
-            "enum" : [ "CANINA", "FELINA" ],
+            "enum" : [ "CANINA", "FELINA", "AVE", "ROEDORA", "LAGOMORFA", "REPTIL", "EQUINA", "OUTRA" ],
             "type" : "string"
           }
         },
@@ -4370,7 +4370,7 @@
             "type" : "string"
           },
           "species" : {
-            "enum" : [ "CANINA", "FELINA" ],
+            "enum" : [ "CANINA", "FELINA", "AVE", "ROEDORA", "LAGOMORFA", "REPTIL", "EQUINA", "OUTRA" ],
             "type" : "string"
           },
           "vaccineCatalogId" : {

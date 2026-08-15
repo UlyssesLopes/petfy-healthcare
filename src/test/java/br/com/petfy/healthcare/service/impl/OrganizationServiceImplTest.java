@@ -1,10 +1,14 @@
 package br.com.petfy.healthcare.service.impl;
 
 import br.com.petfy.healthcare.domain.dto.OrganizationRequestDTO;
+import br.com.petfy.healthcare.domain.entity.Membership;
+import br.com.petfy.healthcare.domain.entity.MembershipRole;
 import br.com.petfy.healthcare.domain.entity.Organization;
 import br.com.petfy.healthcare.domain.entity.Person;
+import br.com.petfy.healthcare.domain.repository.MembershipRepository;
 import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
+import br.com.petfy.healthcare.security.CurrentPersonProvider;
 import br.com.petfy.healthcare.security.CurrentProfessionalProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,10 +41,22 @@ class OrganizationServiceImplTest {
     private OrganizationRepository organizationRepository;
 
     @Mock
+    private MembershipRepository membershipRepository;
+
+    @Mock
+    private CurrentPersonProvider currentPersonProvider;
+
+    @Mock
     private CurrentProfessionalProvider currentProfessionalProvider;
 
     @InjectMocks
     private OrganizationServiceImpl organizationService;
+
+    /** Quem cria a organizacao, e que precisa sair de la com vinculo. */
+    private static final Person QUEM_CRIOU = Person.builder()
+            .personId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+            .email("dona@creche.com.br")
+            .build();
 
     private static final UUID CLINIC_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
     private static final UUID OUTRA_CLINIC_ID = UUID.fromString("aaaaaaaa-5555-5555-5555-555555555555");
@@ -79,10 +95,43 @@ class OrganizationServiceImplTest {
         @DisplayName("criar clinica nao deve exigir ser veterinario - o tutor precisa registrar onde vacinou")
         void criarNaoDeveExigirSerVeterinario() {
             when(organizationRepository.save(any(Organization.class))).thenReturn(existingOrganization());
+            when(currentPersonProvider.require()).thenReturn(QUEM_CRIOU);
 
             organizationService.createOrganization(OrganizationRequestDTO.builder().name("Clinica Bicho Feliz").build());
 
+            /*
+             * O `require()` do provider PROFISSIONAL exige credencial ativa e responde 403 sem
+             * ela. Quem cria a organizacao pode ser o dono da creche sem CRMV nenhum, entao o
+             * caminho continua sendo o provider de PESSOA — e este verify e o que impede alguem
+             * de trocar um pelo outro sem perceber que fechou a porta para o tutor.
+             */
             verify(currentProfessionalProvider, never()).require();
+            verify(currentProfessionalProvider, never()).requireContext();
+        }
+
+        @Test
+        @DisplayName("deve gravar o vinculo de quem criou, como ADMINISTRADOR - senao a organizacao nasce inalcancavel")
+        void deveGravarVinculoDeQuemCriou() {
+            when(organizationRepository.save(any(Organization.class))).thenReturn(existingOrganization());
+            when(currentPersonProvider.require()).thenReturn(QUEM_CRIOU);
+
+            organizationService.createOrganization(OrganizationRequestDTO.builder().name("Clinica Bicho Feliz").build());
+
+            var captor = ArgumentCaptor.forClass(Membership.class);
+            verify(membershipRepository).save(captor.capture());
+
+            var vinculo = captor.getValue();
+            assertThat(vinculo.getPerson()).isEqualTo(QUEM_CRIOU);
+            assertThat(vinculo.getOrganization().getOrganizationId()).isEqualTo(CLINIC_ID);
+            assertThat(vinculo.getRole()).isEqualTo(MembershipRole.ADMINISTRADOR);
+
+            /*
+             * ATIVO, e e isso que o contexto le: `findAtivosDaPessoa` filtra por `leftAt` nulo, e
+             * um vinculo que nascesse encerrado deixaria a organizacao fora do "Agindo como" —
+             * exatamente o defeito que este teste existe para impedir de voltar.
+             */
+            assertThat(vinculo.getJoinedAt()).isNotNull();
+            assertThat(vinculo.estaAtivo()).isTrue();
         }
 
         @Test
@@ -95,6 +144,7 @@ class OrganizationServiceImplTest {
                     .city("Sao Paulo")
                     .build();
             when(organizationRepository.save(any(Organization.class))).thenReturn(existingOrganization());
+            when(currentPersonProvider.require()).thenReturn(QUEM_CRIOU);
 
             var result = organizationService.createOrganization(request);
 
