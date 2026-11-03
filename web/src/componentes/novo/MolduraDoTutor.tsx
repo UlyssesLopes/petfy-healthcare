@@ -102,7 +102,10 @@ function Menu({ animalAtivo, aoNavegar }: { animalAtivo?: string; aoNavegar: () 
           </li>
         ))}
         <li>
-          <Link to="/animais/novo" className="pf-app__item" onClick={aoNavegar}>
+          <Link to="/animais/novo" className="pf-app__item pf-app__novo" onClick={aoNavegar}>
+            <span className="pf-app__mais-um" aria-hidden="true">
+              +
+            </span>
             Cadastrar animal
           </Link>
         </li>
@@ -128,6 +131,9 @@ function Menu({ animalAtivo, aoNavegar }: { animalAtivo?: string; aoNavegar: () 
 
       <div className="pf-app__pessoa">
         <Link to="/conta" className="pf-app__item" onClick={aoNavegar}>
+          <span className="pf-app__sinal" aria-hidden="true">
+            {iniciais(contexto.data?.personName)}
+          </span>
           {contexto.data?.personName ?? "Sua conta"}
         </Link>
         <button
@@ -143,4 +149,15 @@ function Menu({ animalAtivo, aoNavegar }: { animalAtivo?: string; aoNavegar: () 
       </div>
     </>
   );
+}
+
+function iniciais(nome: string | undefined): string {
+  if (!nome) return "";
+  return nome
+    .split(" ")
+    .filter(Boolean)
+    .map((parte) => parte[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
