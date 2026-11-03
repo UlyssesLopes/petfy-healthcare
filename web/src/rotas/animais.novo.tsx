@@ -4,7 +4,7 @@ import { useIntl } from "react-intl";
 
 import { useCriarAnimal, useIdentificarAnimal, type Especie } from "../dados/animais.ts";
 import { useConvidarCoTutor } from "../dados/animal.ts";
-import { useEnviarAnexo } from "../dados/carteira.ts";
+import { useDefinirFotoDoAnimal, useEnviarAnexo } from "../dados/carteira.ts";
 import { lerSessao } from "../dados/sessao.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
 
@@ -93,6 +93,7 @@ function PrimeiroAnimal() {
   const identificar = useIdentificarAnimal();
   const convidar = useConvidarCoTutor();
   const enviarFoto = useEnviarAnexo();
+  const definirFoto = useDefinirFotoDoAnimal();
 
   const [passo, setPasso] = useState<Passo>(1);
 
@@ -321,11 +322,18 @@ function PrimeiroAnimal() {
                     /* A foto sobe depois do animal, e a falha dela nao segura o passo. */
                     if (foto !== undefined && animal.animalId !== undefined) {
                       try {
-                        await enviarFoto.mutateAsync({
+                        const anexo = await enviarFoto.mutateAsync({
                           animalId: animal.animalId,
                           arquivo: foto,
                           descricao: intl.formatMessage({ id: "onboarding.p1.foto" }),
                         });
+                        /* O anexo vira a foto do animal, e nao so mais um arquivo dele. */
+                        if (anexo.attachmentId !== undefined) {
+                          await definirFoto.mutateAsync({
+                            animalId: animal.animalId,
+                            attachmentId: anexo.attachmentId,
+                          });
+                        }
                       } catch {
                         setPasso(2);
                         return;

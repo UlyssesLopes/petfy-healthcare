@@ -621,6 +621,16 @@
         },
         "type" : "object"
       },
+      "AnimalPhotoRequestDTO" : {
+        "properties" : {
+          "attachmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "attachmentId" ],
+        "type" : "object"
+      },
       "AnimalRequestDTO" : {
         "properties" : {
           "bornDate" : {
@@ -713,6 +723,10 @@
             "type" : "string"
           },
           "personId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "photoAttachmentId" : {
             "format" : "uuid",
             "type" : "string"
           },
@@ -6057,6 +6071,38 @@
         },
         "summary" : "Revoga o acesso da organizacao",
         "tags" : [ "organization-access-controller" ]
+      }
+    },
+    "/animals/{animalId}/photo" : {
+      "put" : {
+        "description" : "Marca um anexo do proprio animal como a foto dele. So imagem: um PDF responde 415. Anexo de outro animal responde 404.",
+        "operationId" : "setPhoto",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "animalId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AnimalPhotoRequestDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Define a foto do animal",
+        "tags" : [ "attachment-controller" ]
       }
     },
     "/animals/{animalId}/referral-candidates" : {

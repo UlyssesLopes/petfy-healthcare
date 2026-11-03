@@ -500,4 +500,80 @@ class AttachmentServiceImplTest {
         }
     }
 
+
+    @Nested
+    @DisplayName("setPhoto")
+    class SetPhoto {
+
+        private Attachment imagemDo(Animal dono) {
+            return Attachment.builder()
+                    .attachmentId(ATTACHMENT_ID)
+                    .animal(dono)
+                    .originalFilename("pipoca.jpg")
+                    .contentType("image/jpeg")
+                    .sizeBytes(26L)
+                    .checksumSha256("a".repeat(64))
+                    .storageKey("animals/" + ANIMAL_ID + "/foto")
+                    .creationDate(LocalDateTime.now())
+                    .build();
+        }
+
+        @Test
+        @DisplayName("marca a imagem do proprio animal como a foto dele")
+        void marcaAFoto() {
+            Animal animal = animal();
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal);
+            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(imagemDo(animal)));
+
+            attachmentService.setPhoto(ANIMAL_ID, ATTACHMENT_ID);
+
+            assertThat(animal.getPhotoAttachmentId()).isEqualTo(ATTACHMENT_ID);
+        }
+
+        @Test
+        @DisplayName("anexo de outro animal responde como inexistente, e a foto nao muda")
+        void recusaAnexoDeOutroAnimal() {
+            Animal animal = animal();
+            Animal outro = Animal.builder().animalId(UUID.randomUUID()).name("Outro")
+                    .species(Species.FELINA).build();
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal);
+            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(imagemDo(outro)));
+
+            assertThatThrownBy(() -> attachmentService.setPhoto(ANIMAL_ID, ATTACHMENT_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.ATTACHMENT_NOT_FOUND.getCode(), HttpStatus.NOT_FOUND);
+
+            assertThat(animal.getPhotoAttachmentId()).isNull();
+        }
+
+        @Test
+        @DisplayName("um PDF nao vira foto: 415, e a foto nao muda")
+        void recusaPdf() {
+            Animal animal = animal();
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenReturn(animal);
+            when(attachmentRepository.findById(ATTACHMENT_ID)).thenReturn(Optional.of(anexoDoAnimal()));
+
+            assertThatThrownBy(() -> attachmentService.setPhoto(ANIMAL_ID, ATTACHMENT_ID))
+                    .isInstanceOf(PetfyHealthcareException.class)
+                    .extracting("code", "httpStatus")
+                    .containsExactly(ErrorMessageEnum.ATTACHMENT_TYPE_NOT_ALLOWED.getCode(),
+                            HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+
+            assertThat(animal.getPhotoAttachmentId()).isNull();
+        }
+
+        @Test
+        @DisplayName("sem escrita sobre o animal, nem procura o anexo")
+        void exigeEscrita() {
+            when(animalAccessGuard.requireEscrita(ANIMAL_ID)).thenThrow(new PetfyHealthcareException(
+                    "sem escrita", 403, HttpStatus.FORBIDDEN));
+
+            assertThatThrownBy(() -> attachmentService.setPhoto(ANIMAL_ID, ATTACHMENT_ID))
+                    .isInstanceOf(PetfyHealthcareException.class);
+
+            verifyNoInteractions(attachmentRepository);
+        }
+    }
+
 }
