@@ -1,0 +1,1575 @@
+/* A pagina publica. So tokens de `novo/tokens.css`; nenhuma cor literal aqui.
+ *
+ * A grade: uma margem (`--pf-margem`) dos dois lados em toda largura. A medalha da coleira e a
+ * unica forma da pagina: a capa, a mascara de toda foto, o botao (o furo a esquerda), o marcador
+ * da lista e a marca do rodape. */
+
+.pf-pagina {
+  background: var(--pf-chao);
+  color: var(--pf-tinta);
+  font-family: var(--pf-fonte);
+  font-size: var(--pf-passo-corpo);
+  line-height: 1.5;
+  font-weight: 400;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+}
+
+.pf-pagina a,
+.pf-pagina button {
+  touch-action: manipulation;
+}
+
+/* O pular para o conteudo: fora da tela ate receber o foco. */
+.pf-pular {
+  position: absolute;
+  left: var(--pf-margem);
+  top: 0.75rem;
+  z-index: 10;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+  transform: translateY(-200%);
+}
+
+.pf-pagina a.pf-pular {
+  color: var(--pf-papel);
+}
+
+.pf-pular:focus-visible {
+  transform: none;
+}
+
+.pf-pagina :focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.pf-pagina ::selection {
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+}
+
+.pf-pagina a {
+  color: inherit;
+}
+
+/* Peso zero: zera a margem do navegador sem atropelar a margem de cada secao. */
+:where(.pf-pagina) :where(h1, h2, h3, p) {
+  margin: 0;
+}
+
+.pf-titulo {
+  font-size: var(--pf-passo-titulo);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-wrap: balance;
+}
+
+/* ------------------------------------------------------------------ o botao: pilula com o furo */
+
+.pf-botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  min-height: 3.25rem;
+  padding: 0 1.6em 0 1.1em;
+  border-radius: 999px;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform var(--pf-t-press) var(--pf-ease-out), background-color var(--pf-t-hover) ease;
+}
+
+.pf-pagina a.pf-botao {
+  color: var(--pf-papel);
+}
+
+.pf-botao::before {
+  content: "";
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: var(--pf-chao);
+  flex: none;
+}
+
+.pf-botao:active {
+  transform: scale(0.97);
+}
+
+/* O hover sobe o contraste: o cobalto escurece um degrau. */
+@media (hover: hover) and (pointer: fine) {
+  .pf-botao:hover,
+  .pf-comeco__botao:hover,
+  .pf-escolha__opcao[aria-pressed="true"]:hover {
+    background: var(--pf-cobalto-fundo);
+  }
+
+  .pf-botao--claro:hover {
+    background: var(--pf-areia);
+  }
+
+  .pf-escolha__opcao[aria-pressed="false"]:hover {
+    background: var(--pf-papel);
+  }
+}
+
+.pf-botao--pequeno {
+  min-height: 2.75rem;
+  font-size: var(--pf-passo-pequeno);
+}
+
+.pf-botao--claro,
+.pf-pagina a.pf-botao--claro {
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+}
+
+.pf-botao--claro::before {
+  background: var(--pf-cobalto);
+}
+
+/* ------------------------------------------------------------------ a medalha */
+
+.pf-medalha {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--pf-cobalto);
+}
+
+.pf-medalha__foto {
+  position: absolute;
+  inset: 7%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.pf-medalha__foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* O furo fica na borda, a cima e a esquerda, e a argola passa por ele. */
+.pf-medalha__furo {
+  position: absolute;
+  left: 17%;
+  top: 17%;
+  width: 5.5%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--pf-chao);
+  transform: translate(-50%, -50%);
+}
+
+.pf-medalha__argola {
+  position: absolute;
+  left: 12.5%;
+  top: 12.5%;
+  width: 13%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: max(6px, 1.1vmin) solid var(--pf-cobalto);
+  transform: translate(-50%, -50%);
+}
+
+/* ------------------------------------------------------------------ a capa */
+
+.pf-capa {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+}
+
+.pf-topo {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem var(--pf-margem);
+}
+
+.pf-pagina .pf-marca {
+  font-size: clamp(2rem, 2.8vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+}
+
+.pf-topo__links {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.pf-topo__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 1.1em;
+  border-radius: 999px;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--pf-t-hover) ease;
+}
+
+
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-topo__links a:hover {
+    background: var(--pf-areia);
+  }
+
+
+  .pf-rodape a:hover,
+  .pf-rodape__creditos a:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+.pf-capa__medalha {
+  position: absolute;
+  width: 120vh;
+  left: calc(82vw - 60vh);
+  top: calc(55vh - 60vh);
+}
+
+.pf-capa__medalha .pf-medalha__foto img {
+  object-position: 28% 30%;
+}
+
+.pf-capa__texto {
+  position: relative;
+  z-index: 2;
+  min-height: 100svh;
+  max-width: 46vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 7rem 0 4rem var(--pf-margem);
+}
+
+.pf-capa__titulo {
+  font-size: var(--pf-passo-capa);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+}
+
+.pf-capa__apoio {
+  margin-top: 2.5rem;
+  max-width: 30ch;
+}
+
+.pf-capa__acao {
+  margin-top: 2rem;
+}
+
+/* Na largura deitada a medalha entra pela direita; os links ficam sobre ela. */
+
+
+/* Em pe (telefone, tablet), a medalha desce para o pe da tela. */
+@media (max-aspect-ratio: 1/1) {
+  .pf-capa__medalha {
+    width: 130vw;
+    left: -15vw;
+    top: 58svh;
+  }
+
+  .pf-capa__texto {
+    max-width: none;
+    justify-content: flex-start;
+    padding: 15svh var(--pf-margem) 0;
+  }
+
+  .pf-capa__titulo {
+    font-size: clamp(2.75rem, 11.5vw, 6rem);
+  }
+
+  /* Em pe, o furo vai para o alto da medalha, onde a tela nao o corta. */
+  .pf-capa__medalha .pf-medalha__furo {
+    left: 50%;
+    top: 3.5%;
+  }
+
+  .pf-capa__medalha .pf-medalha__argola {
+    left: 50%;
+    top: -3%;
+  }
+
+  .pf-capa__apoio,
+  .pf-capa__acao {
+    margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  .pf-topo__links {
+    gap: 0.5rem;
+    font-size: var(--pf-passo-pequeno);
+  }
+
+  .pf-topo__links a {
+    padding: 0 0.85em;
+  }
+}
+
+/* ------------------------------------------------------------------ de mao em mao */
+
+.pf-maos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.pf-mao {
+  position: relative;
+  min-height: max(84svh, 46rem);
+  padding: 1.75rem;
+}
+
+.pf-mao--1 {
+  background: var(--pf-areia-funda);
+}
+.pf-mao--2 {
+  background: var(--pf-papel);
+}
+.pf-mao--3 {
+  background: var(--pf-cobalto-suave);
+  color: var(--pf-papel);
+}
+.pf-mao--4 {
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+}
+
+.pf-mao__titulo,
+.pf-mao__frase {
+  font-size: var(--pf-passo-destaque);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+.pf-mao__titulo {
+  font-weight: 600;
+}
+
+.pf-mao__frase {
+  position: absolute;
+  left: 1.75rem;
+  right: 1.75rem;
+  bottom: 1.75rem;
+  font-weight: 500;
+  max-width: 14ch;
+}
+
+/* A ficha: um pedaco real do registro (data-ui), sempre o mesmo animal, mais adiante a cada mao. */
+.pf-ficha {
+  position: absolute;
+  top: 5.5rem;
+  left: 50%;
+  width: min(20rem, calc(100% - 2rem));
+  height: 28.5rem;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-50%);
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font-size: var(--pf-passo-pequeno);
+  line-height: 1.4;
+  transition: transform var(--pf-t-ui) var(--pf-ease-out);
+}
+
+.pf-mao--2 .pf-ficha {
+  background: var(--pf-areia);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-mao:hover .pf-ficha {
+    transform: translate(-50%, -6px);
+  }
+}
+
+.pf-ficha__retrato {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+  object-position: 30% 28%;
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pf-previa__cabeca {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pf-ficha__foto {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 25% 25%;
+  flex: none;
+}
+
+.pf-ficha__nome {
+  font-size: var(--pf-passo-corpo);
+  font-weight: 600;
+}
+
+.pf-ficha__meta,
+.pf-ficha__autor,
+.pf-ficha__total,
+.pf-ficha__quem dt {
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-ficha__quem {
+  margin: 0.875rem 0 0;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.pf-ficha__quem dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.pf-ficha__registros {
+  list-style: none;
+  margin: 0.875rem 0 0;
+  padding: 0.75rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+  border-top: 2px solid var(--pf-areia-funda);
+}
+
+.pf-ficha__registros li {
+  display: grid;
+}
+
+.pf-ficha__texto {
+  font-weight: 500;
+}
+
+.pf-ficha__total {
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+/* ------------------------------------------------------------------ nada se apaga */
+
+.pf-nada {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--pf-margem);
+  min-height: 88svh;
+  padding: clamp(5rem, 10vw, 9rem) var(--pf-margem);
+  align-items: center;
+}
+
+.pf-nada__foto .pf-medalha {
+  width: min(100%, 78svh);
+  margin-inline: auto;
+}
+
+.pf-nada__foto .pf-medalha__foto img {
+  object-position: 50% 35%;
+}
+
+.pf-nada__coluna {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  align-self: stretch;
+  justify-content: space-between;
+}
+
+.pf-nada__texto {
+  margin-top: 1.5rem;
+  max-width: 36ch;
+}
+
+.pf-peso {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: var(--pf-papel);
+}
+
+.pf-peso__animal,
+.pf-peso__quem,
+.pf-peso__antes {
+  font-size: var(--pf-passo-pequeno);
+}
+
+.pf-peso__animal,
+.pf-peso__quem {
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-peso__valor {
+  font-size: var(--pf-passo-titulo);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-peso__motivo {
+  margin-top: 0.75rem;
+}
+
+.pf-peso__antes {
+  margin-top: 1rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--pf-areia);
+  font-weight: 500;
+}
+
+.pf-escolha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.pf-escolha__opcao {
+  min-height: 4.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pf-areia-funda);
+  color: var(--pf-cobalto);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--pf-t-hover) ease, color var(--pf-t-hover) ease,
+    transform var(--pf-t-press) var(--pf-ease-out);
+}
+
+.pf-escolha__opcao[aria-pressed="true"] {
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+}
+
+.pf-escolha__opcao:active {
+  transform: scale(0.97);
+}
+
+/* ------------------------------------------------------------------ quem ve: a placa de pecas ampliadas */
+
+.pf-acesso {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: 6.5rem;
+  gap: 0.5rem;
+  padding: clamp(3rem, 6vw, 6rem) var(--pf-margem);
+}
+
+.pf-placa {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: var(--pf-areia-funda);
+}
+
+.pf-placa--titulo {
+  grid-column: 1 / span 6;
+  grid-row: span 2;
+  padding: 1.5rem;
+  background: var(--pf-chao);
+}
+
+.pf-placa__titulo {
+  font-size: var(--pf-passo-titulo);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  max-width: 11ch;
+}
+
+.pf-placa--agora {
+  grid-column: 7 / span 6;
+  grid-row: span 2;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+}
+
+.pf-placa--partes {
+  grid-column: 1 / span 6;
+  grid-row: span 4;
+  background: var(--pf-papel);
+}
+
+.pf-placa--tempo {
+  grid-column: 7 / span 3;
+  grid-row: span 4;
+  background: var(--pf-cobalto-suave);
+  color: var(--pf-papel);
+}
+
+.pf-placa--pessoa {
+  grid-column: 10 / span 3;
+  grid-row: span 2;
+}
+
+.pf-placa--rastro {
+  grid-column: 10 / span 3;
+  grid-row: span 2;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+}
+
+.pf-placa__legenda {
+  position: absolute;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  right: 1.25rem;
+}
+
+.pf-placa__legenda h3 {
+  font-size: var(--pf-passo-corpo);
+  font-weight: 600;
+}
+
+.pf-placa__legenda p {
+  font-size: var(--pf-passo-pequeno);
+}
+
+/* A peca da interface, em em, ampliada pelo font-size da raiz e cortada pelas bordas da placa. */
+.pf-ampliado {
+  position: absolute;
+  font-size: clamp(2rem, 3.4vw, 3.25rem);
+  line-height: 1.1;
+  white-space: nowrap;
+  display: flex;
+  gap: 0.25em;
+}
+
+.pf-placa--agora .pf-ampliado {
+  top: 1.25rem;
+  left: 38%;
+}
+
+.pf-ampliado__botao {
+  display: inline-flex;
+  align-items: center;
+  height: 1.9em;
+  padding: 0 0.8em;
+  border-radius: 999px;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font-weight: 500;
+}
+
+.pf-placa--partes .pf-ampliado {
+  top: 2rem;
+  left: 1.25rem;
+  font-size: clamp(2rem, 3.6vw, 3.25rem);
+}
+
+.pf-ampliado--coluna {
+  flex-direction: column;
+  gap: 0.45em;
+}
+
+.pf-ampliado__linha--fora {
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-ampliado__linha {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-weight: 500;
+}
+
+.pf-ampliado__chave {
+  position: relative;
+  width: 2em;
+  height: 1.1em;
+  border-radius: 999px;
+  background: var(--pf-cobalto);
+  flex: none;
+}
+
+.pf-ampliado__chave--fora {
+  background: var(--pf-areia-funda);
+}
+
+.pf-ampliado__chave--fora::after {
+  right: auto;
+  left: 0.12em;
+}
+
+.pf-ampliado__chave::after {
+  content: "";
+  position: absolute;
+  top: 0.12em;
+  right: 0.12em;
+  width: 0.86em;
+  height: 0.86em;
+  border-radius: 50%;
+  background: var(--pf-papel);
+}
+
+.pf-placa--tempo .pf-ampliado {
+  top: 1.25rem;
+  left: 1.25rem;
+}
+
+.pf-ampliado__data {
+  display: inline-flex;
+  align-items: center;
+  height: 1.8em;
+  padding: 0 0.6em;
+  border-radius: 999px;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font-weight: 600;
+}
+
+.pf-placa--pessoa .pf-ampliado {
+  top: 0.75rem;
+  left: 1.25rem;
+  font-size: clamp(1.5rem, 2.4vw, 2.25rem);
+}
+
+.pf-ampliado__iniciais {
+  display: inline-grid;
+  place-items: center;
+  width: 2em;
+  height: 2em;
+  border-radius: 50%;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+  font-size: 0.8em;
+  font-weight: 600;
+}
+
+.pf-ampliado__iniciais:nth-child(2) {
+  background: var(--pf-cobalto-suave);
+}
+
+.pf-ampliado__iniciais:nth-child(3) {
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+}
+
+.pf-placa--rastro .pf-ampliado {
+  top: 0.75rem;
+  left: 1.25rem;
+  font-size: clamp(1.25rem, 1.8vw, 1.75rem);
+}
+
+.pf-ampliado__rastro {
+  font-weight: 500;
+  white-space: normal;
+}
+
+/* ------------------------------------------------------------------ o cartao da coleira: a coisa viva
+ * Os controles a esquerda, em tamanho de controle; o cartao a direita, grande, como o celular de
+ * quem achou o animal o mostra. Cada chave liga ou desliga um bloco dele. */
+
+.pf-cartao {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--pf-margem);
+  align-items: center;
+  padding: clamp(5rem, 10vw, 8rem) var(--pf-margem);
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+}
+
+.pf-cartao__apoio {
+  margin-top: 1.5rem;
+  max-width: 36ch;
+}
+
+.pf-partes {
+  margin: 2.5rem 0 0;
+  padding: 0;
+  border: 0;
+  max-width: 26rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pf-partes__rotulo {
+  padding: 0;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.pf-parte {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  min-height: 3.75rem;
+  padding: 0 0.75rem 0 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pf-cobalto-fundo);
+  color: var(--pf-papel);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--pf-t-hover) ease, transform var(--pf-t-press) var(--pf-ease-out);
+}
+
+.pf-parte:active {
+  transform: scale(0.98);
+}
+
+/* A chave: desligada e um contorno de papel; ligada e papel cheio com a bola em cobalto. */
+.pf-parte__trilho {
+  position: relative;
+  width: 3.25rem;
+  height: 1.875rem;
+  border-radius: 999px;
+  border: 2px solid var(--pf-papel);
+  flex: none;
+  transition: background-color var(--pf-t-ui) var(--pf-ease-out);
+}
+
+.pf-parte__bola {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: var(--pf-papel);
+  transition: transform var(--pf-t-ui) var(--pf-ease-out), background-color var(--pf-t-ui) ease;
+}
+
+.pf-parte[aria-checked="true"] .pf-parte__trilho {
+  background: var(--pf-papel);
+}
+
+.pf-parte[aria-checked="true"] .pf-parte__bola {
+  transform: translateX(1.375rem);
+  background: var(--pf-cobalto);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-parte:hover {
+    background: var(--pf-cobalto-suave);
+  }
+}
+
+/* O cartao cheio (invisivel) e o cartao real na mesma celula: o espaco e sempre o do cheio. */
+.pf-previa__palco {
+  display: grid;
+  justify-self: center;
+  width: min(100%, 26rem);
+}
+
+.pf-previa__palco > .pf-previa {
+  grid-area: 1 / 1;
+  align-self: start;
+}
+
+.pf-previa--reserva {
+  visibility: hidden;
+}
+
+.pf-previa {
+  width: 100%;
+  padding: 1.75rem;
+  border-radius: 1.75rem;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  display: grid;
+  gap: 1rem;
+}
+
+.pf-previa__cabeca {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pf-previa__medalha {
+  width: 5.5rem;
+  flex: none;
+}
+
+.pf-previa__nome {
+  font-size: var(--pf-passo-destaque);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.pf-previa__meta,
+.pf-previa__validade {
+  color: var(--pf-cobalto-suave);
+  font-size: var(--pf-passo-pequeno);
+}
+
+.pf-previa__bloco {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pf-previa__alerta {
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+  font-weight: 600;
+}
+
+.pf-previa__subtitulo {
+  font-weight: 600;
+}
+
+.pf-previa__vacinas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.pf-previa__vacinas li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
+  border-radius: 1rem;
+  background: var(--pf-areia);
+  font-weight: 500;
+}
+
+.pf-previa__ligar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pf-previa__so-nome {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--pf-areia);
+}
+
+/* ------------------------------------------------------------------ quem cuida junto: a semana da Pipoca
+ * O cabecalho a esquerda; a direita, a semana contada pelo proprio registro, em duas colunas
+ * desencontradas como um mural. Cada entrada e um pedaco real do registro (data-ui): quem
+ * assinou, o que alcanca, quando, e o que registrou. */
+
+.pf-cuida {
+  display: grid;
+  grid-template-columns: 4fr 8fr;
+  gap: var(--pf-margem);
+  align-items: start;
+  padding: clamp(6rem, 12vw, 10rem) var(--pf-margem) clamp(5rem, 9vw, 8rem);
+}
+
+.pf-cuida__cabeca {
+  position: sticky;
+  top: 3rem;
+}
+
+.pf-cuida__texto {
+  margin-top: 1.5rem;
+  max-width: 30ch;
+}
+
+.pf-semana__titulo {
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.pf-semana__entradas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* A segunda coluna desce meia entrada: o mural, e nao uma grade de cartoes. */
+.pf-semana__entradas > :nth-child(even) {
+  margin-top: 4rem;
+}
+
+.pf-entrada {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 1.5rem;
+  background: var(--pf-papel);
+}
+
+.pf-entrada__autor {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.pf-entrada__medalha {
+  width: 3.5rem;
+  flex: none;
+}
+
+.pf-entrada__iniciais {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+  font-weight: 600;
+  flex: none;
+}
+
+.pf-entrada__nome {
+  font-size: var(--pf-passo-corpo);
+  font-weight: 600;
+}
+
+.pf-entrada__papel,
+.pf-entrada__quando,
+.pf-entrada__assinatura {
+  font-size: var(--pf-passo-pequeno);
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-entrada__tipo {
+  justify-self: start;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: var(--pf-areia);
+  font-size: var(--pf-passo-pequeno);
+  font-weight: 600;
+}
+
+.pf-entrada__texto {
+  font-size: var(--pf-passo-destaque);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.pf-entrada__anexo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: 30% 25%;
+  border-radius: 1rem;
+  margin-top: 0.5rem;
+}
+
+.pf-entrada__assinatura {
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------ o comeco: a frase com a lacuna */
+
+.pf-comeco {
+  padding: clamp(6rem, 12vw, 10rem) var(--pf-margem);
+  background: var(--pf-areia-funda);
+}
+
+.pf-comeco__frase {
+  font-size: var(--pf-passo-capa);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.pf-comeco__titulo {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.pf-comeco__linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2em 0.25em;
+}
+
+.pf-comeco__campo,
+.pf-comeco__botao {
+  height: 1.15em;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  letter-spacing: inherit;
+  padding: 0 0.35em;
+}
+
+.pf-comeco__campo {
+  width: 6.5em;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+}
+
+.pf-comeco__campo::placeholder {
+  color: var(--pf-cobalto-suave);
+  opacity: 1;
+}
+
+/* O "agora" e o botao principal da pagina: o furo da medalha, e a unica seta, que avanca no hover. */
+.pf-comeco__botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18em;
+  padding: 0 0.3em 0 0.28em;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+  cursor: pointer;
+  transition: transform var(--pf-t-press) var(--pf-ease-out), background-color var(--pf-t-hover) ease;
+}
+
+.pf-comeco__furo {
+  width: 0.2em;
+  height: 0.2em;
+  border-radius: 50%;
+  background: var(--pf-chao);
+  flex: none;
+}
+
+.pf-comeco__seta {
+  display: inline-block;
+  transition: transform var(--pf-t-ui) var(--pf-ease-out);
+}
+
+.pf-comeco__botao:active {
+  transform: scale(0.97);
+}
+
+.pf-comeco__botao:focus-visible .pf-comeco__seta {
+  transform: translateX(0.12em);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-comeco__botao:hover {
+    background: var(--pf-cobalto-fundo);
+  }
+
+  .pf-comeco__botao:hover .pf-comeco__seta {
+    transform: translateX(0.12em);
+  }
+}
+
+/* Com o nome escrito, o botao avisa uma vez que esta pronto. A seta, parada, chama: um empurrao
+   curto a cada ciclo; no hover ou no foco ela para la na frente. */
+@media (prefers-reduced-motion: no-preference) {
+  .pf-comeco__seta {
+    animation: pf-chama 2400ms var(--pf-ease-out) infinite;
+  }
+
+  .pf-comeco__botao:hover .pf-comeco__seta,
+  .pf-comeco__botao:focus-visible .pf-comeco__seta {
+    animation: none;
+  }
+
+  .pf-comeco__botao[data-pronto] {
+    animation: pf-pronto 520ms var(--pf-ease-out) 1;
+  }
+}
+
+@keyframes pf-chama {
+  0%,
+  55%,
+  100% {
+    transform: none;
+  }
+  70% {
+    transform: translateX(0.16em);
+  }
+  85% {
+    transform: translateX(0.02em);
+  }
+}
+
+@keyframes pf-pronto {
+  0%,
+  100% {
+    transform: none;
+  }
+  45% {
+    transform: scale(1.06);
+  }
+}
+
+.pf-comeco__nota {
+  margin-top: 1.5rem;
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------ o rodape: a marca, grande */
+
+.pf-rodape {
+  padding: clamp(4rem, 8vw, 7rem) var(--pf-margem) 2rem;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+}
+
+.pf-rodape__marca {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 3rem);
+}
+
+.pf-rodape__medalha {
+  width: clamp(5rem, 22vw, 20rem);
+  background: var(--pf-papel);
+  flex: none;
+}
+
+.pf-rodape__medalha .pf-medalha__foto img {
+  object-position: 50% 38%;
+}
+
+.pf-rodape__medalha .pf-medalha__furo {
+  background: var(--pf-cobalto);
+}
+
+.pf-rodape__medalha .pf-medalha__argola {
+  border-color: var(--pf-papel);
+}
+
+.pf-rodape__nome {
+  font-size: clamp(4.5rem, 21vw, 19rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+}
+
+.pf-rodape__colunas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 14rem));
+  gap: 2rem;
+  margin-top: 3.5rem;
+}
+
+.pf-rodape__grupo {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.pf-rodape ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pf-rodape li a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.25em;
+}
+
+.pf-rodape__creditos {
+  margin-top: 2.5rem;
+  max-width: 80ch;
+  font-size: var(--pf-passo-pequeno);
+}
+
+.pf-rodape__creditos summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.pf-rodape__creditos p {
+  margin-top: 0.5rem;
+}
+
+.pf-rodape__creditos a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.pf-rodape__fim {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+/* ------------------------------------------------------------------ o telefone */
+
+@media (max-width: 56rem) {
+  .pf-cuida {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .pf-cuida__cabeca {
+    position: static;
+  }
+
+  .pf-maos {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pf-mao {
+    min-height: 64svh;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 2rem var(--pf-margem);
+  }
+
+  .pf-mao__frase {
+    position: static;
+    order: 1;
+    max-width: 18ch;
+  }
+
+  .pf-mao__titulo {
+    order: 0;
+  }
+
+  .pf-ficha {
+    position: static;
+    order: 2;
+    transform: none;
+    width: 100%;
+    max-width: 22rem;
+    height: 28.5rem;
+  }
+
+  .pf-nada {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .pf-acesso {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 28vw;
+    gap: 0.375rem;
+  }
+
+  .pf-placa--titulo,
+  .pf-placa--agora,
+  .pf-placa--partes {
+    grid-column: 1 / -1;
+    grid-row: span 2;
+  }
+
+  .pf-placa--partes {
+    grid-row: span 3;
+  }
+
+  .pf-placa--tempo,
+  .pf-placa--pessoa,
+  .pf-placa--rastro {
+    grid-column: span 1;
+    grid-row: span 2;
+  }
+
+  .pf-placa--tempo {
+    grid-column: 1 / -1;
+  }
+
+  .pf-placa--tempo .pf-ampliado {
+    font-size: 13vw;
+  }
+
+  .pf-placa__titulo {
+    font-size: 9vw;
+  }
+
+  .pf-placa__legenda h3 {
+    font-size: 1rem;
+  }
+
+  .pf-placa__legenda p {
+    font-size: 0.875rem;
+  }
+
+  .pf-ampliado {
+    font-size: 7vw;
+  }
+
+  .pf-placa--partes .pf-ampliado {
+    font-size: 9vw;
+  }
+
+  .pf-placa--pessoa .pf-ampliado,
+  .pf-placa--rastro .pf-ampliado {
+    font-size: 5vw;
+  }
+
+  .pf-placa--agora .pf-ampliado {
+    left: 30%;
+  }
+
+  .pf-cartao {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .pf-previa__palco {
+    justify-self: start;
+  }
+
+
+  .pf-rodape__colunas {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pf-rodape__marca {
+    flex-wrap: wrap;
+  }
+}
+
+/* ------------------------------------------------------------------ o movimento */
+
+@media (prefers-reduced-motion: no-preference) {
+  .pf-capa__medalha {
+    animation: pf-medalha-entra 1200ms var(--pf-ease-expo) both;
+  }
+
+  .pf-capa__medalha .pf-medalha__foto img {
+    animation: pf-foto-respira 2200ms var(--pf-ease-soft) both;
+  }
+
+  .pf-capa__titulo,
+  .pf-capa__apoio,
+  .pf-capa__acao {
+    animation: pf-sobe 900ms var(--pf-ease-expo) both;
+  }
+
+  .pf-capa__apoio {
+    animation-delay: 90ms;
+  }
+
+  .pf-capa__acao {
+    animation-delay: 180ms;
+  }
+
+  .pf.js [data-entra] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 700ms var(--pf-ease-out), transform 900ms var(--pf-ease-expo);
+  }
+
+  .pf.js [data-entra].is-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  .pf.js .pf-mao--2[data-entra] {
+    transition-delay: 70ms;
+  }
+  .pf.js .pf-mao--3[data-entra] {
+    transition-delay: 140ms;
+  }
+  .pf.js .pf-mao--4[data-entra] {
+    transition-delay: 210ms;
+  }
+
+  .pf.js .pf-acesso [data-entra]:nth-child(2) {
+    transition-delay: 70ms;
+  }
+  .pf.js .pf-acesso [data-entra]:nth-child(3) {
+    transition-delay: 140ms;
+  }
+  .pf.js .pf-acesso [data-entra]:nth-child(4) {
+    transition-delay: 210ms;
+  }
+  .pf.js .pf-acesso [data-entra]:nth-child(5) {
+    transition-delay: 280ms;
+  }
+  .pf.js .pf-acesso [data-entra]:nth-child(6) {
+    transition-delay: 350ms;
+  }
+
+  .pf.js .pf-nada__foto[data-entra] .pf-medalha__foto img {
+    transform: scale(1.12);
+    transition: transform 1500ms var(--pf-ease-soft);
+  }
+
+  .pf.js .pf-nada__foto[data-entra].is-in .pf-medalha__foto img {
+    transform: none;
+  }
+}
+
+@keyframes pf-medalha-entra {
+  from {
+    transform: translateX(12%) rotate(-8deg);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes pf-foto-respira {
+  from {
+    transform: scale(1.1);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes pf-sobe {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 36rem) {
+  .pf-maos {
+    grid-template-columns: 1fr;
+  }
+
+  /* No telefone o mural vira uma coluna so, na ordem da semana. */
+  .pf-semana__entradas {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-semana__entradas > :nth-child(even) {
+    margin-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf *,
+  .pf *::before,
+  .pf *::after {
+    transition-duration: 1ms !important;
+    animation: none !important;
+  }
+}
