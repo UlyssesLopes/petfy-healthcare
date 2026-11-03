@@ -26,7 +26,9 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
      * Consertar a criacao sem consertar isto teria trocado uma tela quebrada por 500 em toda tela
      * de quem tem organizacao.
      */
-    @Query("select m from Membership m join fetch m.organization "
+    // As capacidades vem junto: o contexto profissional pergunta por elas fora de transacao.
+    @Query("select distinct m from Membership m join fetch m.organization o "
+            + "left join fetch o.capabilities "
             + "where m.person.personId = :personId and m.leftAt is null")
     List<Membership> findAtivosDaPessoa(@Param("personId") UUID personId);
 
@@ -48,9 +50,10 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
      * {@code join fetch} pela mesma razao da consulta acima: quem chama devolve o nome da
      * organizacao para o cliente, fora da transacao.
      */
-    @Query("select m from Membership m join fetch m.organization "
+    @Query("select distinct m from Membership m join fetch m.organization o "
+            + "left join fetch o.capabilities "
             + "where m.person.personId = :personId "
-            + "and m.organization.organizationId = :organizationId and m.leftAt is null")
+            + "and o.organizationId = :organizationId and m.leftAt is null")
     Optional<Membership> findAtivoDaPessoaNaOrganizacao(@Param("personId") UUID personId,
                                                        @Param("organizationId") UUID organizationId);
 

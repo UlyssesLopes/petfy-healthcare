@@ -110,6 +110,22 @@ class OrganizationServiceImplTest {
         }
 
         @Test
+        @DisplayName("sem escolha, nasce com o conjunto de uma clinica - nunca sem capacidade nenhuma")
+        void nasceComOConjuntoDeClinica() {
+            when(organizationRepository.save(any(Organization.class))).thenReturn(existingOrganization());
+            when(currentPersonProvider.require()).thenReturn(QUEM_CRIOU);
+
+            organizationService.createOrganization(OrganizationRequestDTO.builder().name("Clinica Bicho Feliz").build());
+
+            var captor = ArgumentCaptor.forClass(Organization.class);
+            verify(organizationRepository).save(captor.capture());
+            assertThat(captor.getValue().getCapabilities()).containsExactlyInAnyOrder(
+                    br.com.petfy.healthcare.domain.entity.OrganizationCapability.REGISTRAR_ATO_CLINICO,
+                    br.com.petfy.healthcare.domain.entity.OrganizationCapability.REGISTRAR_OBSERVACAO,
+                    br.com.petfy.healthcare.domain.entity.OrganizationCapability.COMUNICAR_COM_TUTOR);
+        }
+
+        @Test
         @DisplayName("deve gravar o vinculo de quem criou, como ADMINISTRADOR - senao a organizacao nasce inalcancavel")
         void deveGravarVinculoDeQuemCriou() {
             when(organizationRepository.save(any(Organization.class))).thenReturn(existingOrganization());

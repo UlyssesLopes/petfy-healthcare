@@ -5,6 +5,7 @@ import br.com.petfy.healthcare.domain.dto.OrganizationResponseDTO;
 import br.com.petfy.healthcare.domain.entity.Membership;
 import br.com.petfy.healthcare.domain.entity.MembershipRole;
 import br.com.petfy.healthcare.domain.entity.Organization;
+import br.com.petfy.healthcare.domain.entity.OrganizationCapability;
 import br.com.petfy.healthcare.domain.repository.MembershipRepository;
 import br.com.petfy.healthcare.domain.repository.OrganizationRepository;
 import br.com.petfy.healthcare.exception.PetfyHealthcareException;
@@ -20,11 +21,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class OrganizationServiceImpl implements OrganizationService {
+
+    private static final List<OrganizationCapability> CONJUNTO_DE_CLINICA = List.of(
+            OrganizationCapability.REGISTRAR_ATO_CLINICO,
+            OrganizationCapability.REGISTRAR_OBSERVACAO,
+            OrganizationCapability.COMUNICAR_COM_TUTOR);
 
     private final OrganizationRepository organizationRepository;
 
@@ -76,6 +84,8 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .state(request.getState())
                 .cep(request.getCep())
                 .description(request.getDescription())
+                // Sem escolha, o conjunto de uma clinica, o mesmo que a V25 deu as existentes.
+                .capabilities(new LinkedHashSet<>(CONJUNTO_DE_CLINICA))
                 .creationDate(LocalDateTime.now())
                 .build();
 

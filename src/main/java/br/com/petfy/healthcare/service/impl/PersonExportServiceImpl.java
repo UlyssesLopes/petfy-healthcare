@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.List;
 import java.util.UUID;
 
@@ -350,7 +351,7 @@ public class PersonExportServiceImpl implements PersonExportService {
                 .filter(g -> g.getTokenHash() != null)
                 .map(g -> PersonExportDTO.LinkCompartilhadoDTO.builder()
                         .grantId(g.getGrantId())
-                        .scopes(g.getScopes())
+                        .scopes(g.getScopes() == null ? Set.of() : Set.copyOf(g.getScopes()))
                         .expiresAt(g.getExpiresAt())
                         .revokedAt(g.getRevokedAt())
                         .active(g.estaVigente(agora))
@@ -367,7 +368,7 @@ public class PersonExportServiceImpl implements PersonExportService {
                 .filter(g -> g.getGranteeOrganization() != null)
                 .map(g -> PersonExportDTO.AcessoDeClinicaDTO.builder()
                         .organizationName(g.getGranteeOrganization().getName())
-                        .scopes(g.getScopes())
+                        .scopes(g.getScopes() == null ? Set.of() : Set.copyOf(g.getScopes()))
                         .grantedAt(g.getGrantedAt())
                         .revokedAt(g.getRevokedAt())
                         .active(g.estaVigente(agora))
