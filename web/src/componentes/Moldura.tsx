@@ -74,13 +74,19 @@ const PUBLICAS = ["/encontrado", "/termos", "/privacidade"];
  */
 const MINIMAS = ["/cartao/"];
 
+/**
+ * As telas da reconstrução (docs/reconstrucao-do-front.md). Trazem a própria moldura, no
+ * visual novo; a antiga não entra nelas.
+ */
+const PROPRIAS = ["/conheca"];
+
 type Variante = "completa" | "reduzida" | "minima";
 
 export function Moldura({ children }: { children: ReactNode }) {
   const caminho = useRouterState({ select: (estado) => estado.location.pathname });
 
   const variante: Variante = (() => {
-    if (MINIMAS.some((prefixo) => caminho.startsWith(prefixo))) {
+    if (MINIMAS.some((prefixo) => caminho.startsWith(prefixo)) || PROPRIAS.includes(caminho)) {
       return "minima";
     }
     if (PORTAS.includes(caminho) || SEM_NAVEGACAO.includes(caminho) || PUBLICAS.includes(caminho)) {

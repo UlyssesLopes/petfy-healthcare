@@ -120,7 +120,7 @@ describe("a paleta", () => {
     const literais = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/g;
 
     for (const [caminho, conteudo] of Object.entries({ ...fontes, ...estilos })) {
-      if (caminho === "/src/estilos/tokens.css") continue;
+      if (caminho === "/src/estilos/tokens.css" || caminho === "/src/estilos/novo/tokens.css") continue;
 
       for (const achada of conteudo.match(literais) ?? []) {
         encontradas.push(`${caminho}: ${achada}`);

@@ -1,0 +1,41 @@
+@import url("https://api.fontshare.com/v2/css?f[]=chillax@400,500,600&display=swap");
+
+/* A paleta da reconstrucao: cobalto sobre areia (docs/reconstrucao-do-front.md).
+ * Nenhuma cor sem o contraste medido ao lado, calculado pela formula WCAG 2.x.
+ * Escopo: so vale dentro de `.pf`, para conviver com o visual antigo ate ele sair. */
+
+/* O chao da pagina inteira, inclusive o que sobra alem do conteudo. */
+body:has(.pf) {
+  background-color: #e6dbc7;
+}
+
+.pf {
+  --pf-areia: #e6dbc7; /* chao */
+  --pf-areia-funda: #ddd0b9; /* um degrau abaixo do chao: campo, ladrilho */
+  --pf-papel: #f3ede2; /* um degrau acima: o que se levanta, o cartao */
+  --pf-cobalto: #062b8a; /* tinta e acao. 8.91 na areia, 8.02 na areia funda, 10.48 no papel */
+  --pf-cobalto-fundo: #041c5c; /* o cobalto do hover e do pressionado. 13.59 sob o papel */
+  --pf-cobalto-suave: #3a5aa8; /* tinta secundaria. 4.78 na areia, 5.62 no papel;
+                                  4.30 na areia funda: ali, so texto grande */
+
+  --pf-chao: var(--pf-areia);
+  --pf-tinta: var(--pf-cobalto);
+  --pf-tinta-suave: var(--pf-cobalto-suave);
+
+  --pf-fonte: "Chillax", ui-sans-serif, system-ui, sans-serif;
+
+  --pf-passo-pequeno: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --pf-passo-corpo: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --pf-passo-destaque: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --pf-passo-titulo: clamp(2rem, 1.3rem + 3.2vw, 4rem);
+  --pf-passo-capa: clamp(3.25rem, 6.4vw, 6.25rem);
+
+  --pf-margem: max(clamp(1rem, 4vw, 3.5rem), env(safe-area-inset-left), env(safe-area-inset-right));
+
+  --pf-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --pf-ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --pf-ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --pf-t-press: 140ms;
+  --pf-t-hover: 180ms;
+  --pf-t-ui: 240ms;
+}

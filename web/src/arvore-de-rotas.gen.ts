@@ -16,6 +16,7 @@ import { Route as AvisosRouteImport } from './rotas/avisos'
 import { Route as BuscarRouteImport } from './rotas/buscar'
 import { Route as ColoniaRouteImport } from './rotas/colonia'
 import { Route as ComecarRouteImport } from './rotas/comecar'
+import { Route as ConhecaRouteImport } from './rotas/conheca'
 import { Route as ContaRouteImport } from './rotas/conta'
 import { Route as CrecheRouteImport } from './rotas/creche'
 import { Route as CriarContaRouteImport } from './rotas/criar-conta'
@@ -88,6 +89,11 @@ const ColoniaRoute = ColoniaRouteImport.update({
 const ComecarRoute = ComecarRouteImport.update({
   id: '/comecar',
   path: '/comecar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConhecaRoute = ConhecaRouteImport.update({
+  id: '/conheca',
+  path: '/conheca',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContaRoute = ContaRouteImport.update({
@@ -303,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/buscar': typeof BuscarRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
+  '/conheca': typeof ConhecaRoute
   '/conta': typeof ContaRoute
   '/creche': typeof CrecheRoute
   '/criar-conta': typeof CriarContaRoute
@@ -350,6 +357,7 @@ export interface FileRoutesByTo {
   '/buscar': typeof BuscarRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
+  '/conheca': typeof ConhecaRoute
   '/conta': typeof ContaRoute
   '/creche': typeof CrecheRoute
   '/criar-conta': typeof CriarContaRoute
@@ -398,6 +406,7 @@ export interface FileRoutesById {
   '/buscar': typeof BuscarRoute
   '/colonia': typeof ColoniaRoute
   '/comecar': typeof ComecarRoute
+  '/conheca': typeof ConhecaRoute
   '/conta': typeof ContaRoute
   '/creche': typeof CrecheRoute
   '/criar-conta': typeof CriarContaRoute
@@ -447,6 +456,7 @@ export interface FileRouteTypes {
     | '/buscar'
     | '/colonia'
     | '/comecar'
+    | '/conheca'
     | '/conta'
     | '/creche'
     | '/criar-conta'
@@ -494,6 +504,7 @@ export interface FileRouteTypes {
     | '/buscar'
     | '/colonia'
     | '/comecar'
+    | '/conheca'
     | '/conta'
     | '/creche'
     | '/criar-conta'
@@ -541,6 +552,7 @@ export interface FileRouteTypes {
     | '/buscar'
     | '/colonia'
     | '/comecar'
+    | '/conheca'
     | '/conta'
     | '/creche'
     | '/criar-conta'
@@ -589,6 +601,7 @@ export interface RootRouteChildren {
   BuscarRoute: typeof BuscarRoute
   ColoniaRoute: typeof ColoniaRoute
   ComecarRoute: typeof ComecarRoute
+  ConhecaRoute: typeof ConhecaRoute
   ContaRoute: typeof ContaRoute
   CrecheRoute: typeof CrecheRoute
   CriarContaRoute: typeof CriarContaRoute
@@ -675,6 +688,13 @@ declare module '@tanstack/react-router' {
       path: '/comecar'
       fullPath: '/comecar'
       preLoaderRoute: typeof ComecarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conheca': {
+      id: '/conheca'
+      path: '/conheca'
+      fullPath: '/conheca'
+      preLoaderRoute: typeof ConhecaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conta': {
@@ -979,6 +999,7 @@ const rootRouteChildren: RootRouteChildren = {
   BuscarRoute: BuscarRoute,
   ColoniaRoute: ColoniaRoute,
   ComecarRoute: ComecarRoute,
+  ConhecaRoute: ConhecaRoute,
   ContaRoute: ContaRoute,
   CrecheRoute: CrecheRoute,
   CriarContaRoute: CriarContaRoute,
