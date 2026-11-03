@@ -80,13 +80,20 @@ const MINIMAS = ["/cartao/"];
  */
 const PROPRIAS = ["/conheca"];
 
+/** A ficha de um animal (`/animais/{id}`), sem pegar `/animais/novo` nem as sub-rotas dela. */
+const FICHA_DO_ANIMAL = /^\/animais\/(?!novo$)[^/]+$/;
+
 type Variante = "completa" | "reduzida" | "minima";
 
 export function Moldura({ children }: { children: ReactNode }) {
   const caminho = useRouterState({ select: (estado) => estado.location.pathname });
 
   const variante: Variante = (() => {
-    if (MINIMAS.some((prefixo) => caminho.startsWith(prefixo)) || PROPRIAS.includes(caminho)) {
+    if (
+      MINIMAS.some((prefixo) => caminho.startsWith(prefixo)) ||
+      PROPRIAS.includes(caminho) ||
+      FICHA_DO_ANIMAL.test(caminho)
+    ) {
       return "minima";
     }
     if (PORTAS.includes(caminho) || SEM_NAVEGACAO.includes(caminho) || PUBLICAS.includes(caminho)) {

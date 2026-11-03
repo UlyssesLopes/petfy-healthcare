@@ -18,6 +18,12 @@ body:has(.pf) {
   --pf-cobalto-suave: #3a5aa8; /* tinta secundaria. 4.78 na areia, 5.62 no papel;
                                   4.30 na areia funda: ali, so texto grande */
 
+  /* Estado, e so estado: o que vence e o que venceu. O vermelho e so do vencido e urgente. */
+  --pf-alerta-fundo: #f3dfae;
+  --pf-alerta-tinta: #5c3d00; /* 7.53 no alerta-fundo, 8.49 no papel */
+  --pf-perigo-fundo: #f5cfc7;
+  --pf-perigo-tinta: #8a1a10; /* 6.54 no perigo-fundo, 8.06 no papel */
+
   --pf-chao: var(--pf-areia);
   --pf-tinta: var(--pf-cobalto);
   --pf-tinta-suave: var(--pf-cobalto-suave);
