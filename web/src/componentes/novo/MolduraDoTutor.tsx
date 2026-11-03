@@ -85,60 +85,69 @@ function Menu({ animalAtivo, aoNavegar }: { animalAtivo?: string; aoNavegar: () 
 
   return (
     <>
-      <p className="pf-app__grupo">Seus animais</p>
-      <ul className="pf-app__lista">
-        {(animais.data ?? []).map((animal) => (
-          <li key={animal.animalId}>
-            <Link
-              to="/animais/$animalId"
-              params={{ animalId: animal.animalId! }}
-              className="pf-app__animal"
-              aria-current={animal.animalId === animalAtivo ? "page" : undefined}
-              onClick={aoNavegar}
-            >
-              <MedalhaDoAnimal animal={animal} className="pf-app__animal-medalha" />
-              <span>{animal.name}</span>
+      <section className="pf-app__secao" aria-labelledby="pf-menu-animais">
+        <h2 id="pf-menu-animais" className="pf-app__grupo">
+          Seus animais
+        </h2>
+        <ul className="pf-app__lista">
+          {(animais.data ?? []).map((animal) => (
+            <li key={animal.animalId}>
+              <Link
+                to="/animais/$animalId"
+                params={{ animalId: animal.animalId! }}
+                className="pf-app__animal"
+                aria-current={animal.animalId === animalAtivo ? "page" : undefined}
+                onClick={aoNavegar}
+              >
+                <MedalhaDoAnimal animal={animal} className="pf-app__animal-medalha" />
+                <span className="pf-app__rotulo">{animal.name}</span>
+              </Link>
+            </li>
+          ))}
+          <li>
+            <Link to="/animais/novo" className="pf-app__animal pf-app__novo" onClick={aoNavegar}>
+              <span className="pf-app__mais-um" aria-hidden="true">
+                +
+              </span>
+              <span className="pf-app__rotulo">Cadastrar animal</span>
             </Link>
           </li>
-        ))}
-        <li>
-          <Link to="/animais/novo" className="pf-app__item pf-app__novo" onClick={aoNavegar}>
-            <span className="pf-app__mais-um" aria-hidden="true">
-              +
-            </span>
-            Cadastrar animal
-          </Link>
-        </li>
-      </ul>
+        </ul>
+      </section>
 
-      <ul className="pf-app__lista">
-        <li>
-          <Link to="/" className="pf-app__item" onClick={aoNavegar}>
-            Início
-          </Link>
-        </li>
-        <li>
-          <Link to="/avisos" className="pf-app__item" onClick={aoNavegar}>
-            Avisos
-          </Link>
-        </li>
-        <li>
-          <Link to="/convites" className="pf-app__item" onClick={aoNavegar}>
-            Convites
-          </Link>
-        </li>
-      </ul>
+      <section className="pf-app__secao" aria-labelledby="pf-menu-petfy">
+        <h2 id="pf-menu-petfy" className="pf-app__grupo">
+          No Petfy
+        </h2>
+        <ul className="pf-app__lista">
+          <li>
+            <Link to="/" className="pf-app__item" onClick={aoNavegar}>
+              Início
+            </Link>
+          </li>
+          <li>
+            <Link to="/avisos" className="pf-app__item" onClick={aoNavegar}>
+              Avisos
+            </Link>
+          </li>
+          <li>
+            <Link to="/convites" className="pf-app__item" onClick={aoNavegar}>
+              Convites
+            </Link>
+          </li>
+        </ul>
+      </section>
 
       <div className="pf-app__pessoa">
-        <Link to="/conta" className="pf-app__item" onClick={aoNavegar}>
+        <Link to="/conta" className="pf-app__conta" onClick={aoNavegar}>
           <span className="pf-app__sinal" aria-hidden="true">
             {iniciais(contexto.data?.personName)}
           </span>
-          {contexto.data?.personName ?? "Sua conta"}
+          <span className="pf-app__rotulo">{contexto.data?.personName ?? "Sua conta"}</span>
         </Link>
         <button
           type="button"
-          className="pf-app__item pf-app__sair"
+          className="pf-app__sair"
           onClick={() => {
             sair();
             void navegar({ to: "/entrar" });
