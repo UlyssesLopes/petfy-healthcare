@@ -255,6 +255,11 @@ export const mensagens = {
   // `campo: motivo` com o nome do campo em ingles, e isso nao e exibivel (DESIGN.md 6,
   // emenda de 2026-08-07). As frases seguem a secao 2: dizem o que falta, sem culpar.
   "entrar.titulo": "Que bom te ver",
+  "entrar.pular": "Pular para o formulário",
+  // A plaquinha do painel de emergência: o que quem acha um animal precisa saber.
+  "entrar.medalha.antes": "Se eu me perder,",
+  "entrar.medalha.destaque": "meu cartão",
+  "entrar.medalha.depois": "abre sem senha",
   "entrar.subtitulo": "Entre para continuar de onde parou.",
   "entrar.email": "E-mail",
   "entrar.senha": "Senha",

@@ -78,7 +78,7 @@ const MINIMAS = ["/cartao/"];
  * As telas da reconstrução (docs/reconstrucao-do-front.md). Trazem a própria moldura, no
  * visual novo; a antiga não entra nelas.
  */
-const PROPRIAS = ["/conheca", "/criar-conta"];
+const PROPRIAS = ["/conheca", "/criar-conta", "/entrar"];
 
 /** A ficha de um animal (`/animais/{id}`), sem pegar `/animais/novo` nem as sub-rotas dela. */
 const FICHA_DO_ANIMAL = /^\/animais\/(?!novo$)[^/]+$/;

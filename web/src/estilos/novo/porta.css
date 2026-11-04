@@ -581,6 +581,189 @@
   }
 }
 
+/* ------------------------------------------------------------------ entrar */
+
+.pf-plaquinha--pequena {
+  width: min(17rem, 58%);
+}
+
+.pf-plaquinha--pequena .pf-plaquinha__aviso {
+  font-size: max(0.8125rem, 6.2cqi);
+}
+
+.pf-plaquinha--pequena .pf-plaquinha__nome {
+  font-size: max(1.125rem, 11.5cqi);
+}
+
+.pf-porta__painel--agora {
+  overflow-y: auto;
+  gap: 2.25rem;
+}
+
+.pf-agora {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  width: 100%;
+  max-width: 26rem;
+}
+
+.pf-agora__titulo {
+  font-size: var(--pf-passo-destaque);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.pf-agora__cartao {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.pf-agora__cartao label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.pf-agora__linha {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pf-agora__linha input {
+  flex: 1;
+  min-width: 0;
+  min-height: 3.25rem;
+  padding: 0 1rem;
+  border: 2px solid var(--pf-papel);
+  border-radius: 0.875rem;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font: inherit;
+  font-size: 1.0625rem;
+}
+
+.pf-agora__abrir {
+  flex: none;
+  min-height: 3.25rem;
+  padding: 0 1.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pf-areia);
+  color: var(--pf-cobalto);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--pf-t-press) var(--pf-ease-out), background-color var(--pf-t-hover) ease;
+}
+
+.pf-agora__abrir:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.pf-agora__abrir:disabled {
+  cursor: not-allowed;
+  background: var(--pf-cobalto-fundo);
+  color: var(--pf-papel);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-agora__abrir:hover:not(:disabled) {
+    background: var(--pf-papel);
+  }
+}
+
+.pf-agora__ajuda {
+  font-size: 0.9375rem;
+}
+
+.pf-pagina .pf-agora__achei {
+  margin-top: 0.5rem;
+  font-weight: 600;
+  text-underline-offset: 0.2em;
+  text-wrap: pretty;
+}
+
+.pf-campo__cabeca {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pf-campo__link {
+  min-height: 1.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pf-cobalto);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.pf-campo__link:disabled {
+  cursor: default;
+  text-decoration: none;
+}
+
+.pf-campo__erro {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--pf-perigo-tinta);
+}
+
+.pf-porta__nota {
+  margin-top: 1.25rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  background: var(--pf-papel);
+}
+
+.pf-campo .pf-porta__nota {
+  margin-top: 0.25rem;
+}
+
+.pf-aceite__rotulo {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pf-aceite__dica {
+  margin-top: 0.25rem;
+  font-size: 0.9375rem;
+  color: var(--pf-tinta-suave);
+}
+
+/* Na mao, quem chega quase sempre vem entrar: o formulario primeiro, a saida logo abaixo. */
+@media (max-width: 56rem) {
+  .pf-porta--entrar {
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "topo"
+      "folha"
+      "painel";
+  }
+
+  .pf-porta--entrar .pf-porta__folha {
+    padding-top: 0.5rem;
+  }
+
+  .pf-porta--entrar .pf-porta__painel {
+    padding: 3rem var(--pf-margem) 3.5rem;
+    gap: 2rem;
+  }
+
+  .pf-plaquinha--pequena {
+    width: min(13rem, 56%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pf-plaquinha {
     animation: none;

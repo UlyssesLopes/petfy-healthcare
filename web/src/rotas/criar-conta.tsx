@@ -2,11 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { useIntl } from "react-intl";
 
+import { Plaquinha } from "../componentes/novo/Plaquinha.tsx";
 import { useCriarConta } from "../dados/autenticacao.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
 import "../estilos/novo/tokens.css";
 import "../estilos/novo/base.css";
-import "../estilos/novo/criar-conta.css";
+import "../estilos/novo/porta.css";
 
 /**
  * A porta de quem ainda não tem conta. Uma conta serve para tudo (PRODUTO.md 9.3): não há
@@ -99,7 +100,7 @@ function CriarConta() {
       </header>
 
       <aside className="pf-porta__painel" aria-label={t("criarConta.medalha.rotulo")}>
-        <Plaquinha animal={animal} nome={nome.trim()} email={email.trim()} face={face} />
+        <PlaquinhaDoCadastro animal={animal} nome={nome.trim()} email={email.trim()} face={face} />
         <button
           type="button"
           className="pf-porta__virar"
@@ -312,11 +313,8 @@ function CriarConta() {
   );
 }
 
-/**
- * A plaquinha da coleira, com as duas faces: o nome do animal na frente e, no verso, como achar
- * quem cuida dele. Ela gira presa na argola; a face escondida sai da árvore acessível.
- */
-function Plaquinha({
+/** As duas faces do cadastro: o nome do animal na frente, como achar quem cuida no verso. */
+function PlaquinhaDoCadastro({
   animal,
   nome,
   email,
@@ -331,56 +329,53 @@ function Plaquinha({
   const t = (id: string) => intl.formatMessage({ id });
   const nomeDoAnimal = animal ?? t("criarConta.medalha.semAnimal");
   const primeiroNome = nome.split(" ")[0] ?? "";
+  const [local, ...dominio] = email.split("@");
 
   return (
-    <div className="pf-plaquinha" data-face={face}>
-      <span className="pf-plaquinha__argola" aria-hidden="true" />
-      <div className="pf-plaquinha__disco">
-        <div className="pf-plaquinha__face" aria-hidden={face !== "frente"}>
-          <span className="pf-plaquinha__furo" aria-hidden="true" />
-          <div className="pf-plaquinha__gravado">
-            <span
-              className="pf-plaquinha__animal"
-              data-longo={nomeDoAnimal.length > 9 ? "" : undefined}
-              data-vazio={animal === undefined ? "" : undefined}
-              translate="no"
-            >
-              {nomeDoAnimal}
-            </span>
-            <span className="pf-plaquinha__marca" translate="no">
-              Petfy
-            </span>
-          </div>
-        </div>
-        <div className="pf-plaquinha__face pf-plaquinha__face--verso" aria-hidden={face !== "verso"}>
-          <span className="pf-plaquinha__furo" aria-hidden="true" />
-          <div className="pf-plaquinha__gravado">
-            <span className="pf-plaquinha__aviso">{t("criarConta.medalha.seMePerder")}</span>
-            <span className="pf-plaquinha__nome" data-vazio={nome === "" ? "" : undefined} translate="no">
-              {primeiroNome === "" ? t("criarConta.medalha.semNome") : primeiroNome}
-            </span>
-            <span
-              className="pf-plaquinha__email"
-              data-vazio={email === "" ? "" : undefined}
-              data-longo={email.length > 22 ? "" : undefined}
-              translate="no"
-            >
-              {email === "" ? (
-                t("criarConta.medalha.semEmail")
-              ) : (
-                <>
-                  {email.split("@")[0]}
-                  {email.includes("@") && (
-                    <>
-                      <wbr />@{email.split("@").slice(1).join("@")}
-                    </>
-                  )}
-                </>
-              )}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Plaquinha
+      face={face}
+      frente={
+        <>
+          <span
+            className="pf-plaquinha__animal"
+            data-longo={nomeDoAnimal.length > 9 ? "" : undefined}
+            data-vazio={animal === undefined ? "" : undefined}
+            translate="no"
+          >
+            {nomeDoAnimal}
+          </span>
+          <span className="pf-plaquinha__marca" translate="no">
+            Petfy
+          </span>
+        </>
+      }
+      verso={
+        <>
+          <span className="pf-plaquinha__aviso">{t("criarConta.medalha.seMePerder")}</span>
+          <span className="pf-plaquinha__nome" data-vazio={nome === "" ? "" : undefined} translate="no">
+            {primeiroNome === "" ? t("criarConta.medalha.semNome") : primeiroNome}
+          </span>
+          <span
+            className="pf-plaquinha__email"
+            data-vazio={email === "" ? "" : undefined}
+            data-longo={email.length > 22 ? "" : undefined}
+            translate="no"
+          >
+            {email === "" ? (
+              t("criarConta.medalha.semEmail")
+            ) : (
+              <>
+                {local}
+                {dominio.length > 0 && (
+                  <>
+                    <wbr />@{dominio.join("@")}
+                  </>
+                )}
+              </>
+            )}
+          </span>
+        </>
+      }
+    />
   );
 }

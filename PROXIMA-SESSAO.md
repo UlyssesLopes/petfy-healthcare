@@ -5,7 +5,7 @@
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
 > Escrito em 2026-11-03 e atualizado em 2026-11-04, depois da segunda tela da reconstrução:
-> **a vida do animal** (`/animais/{id}`). A próxima é `/criar-conta`.
+> **a vida do animal** (`/animais/{id}`), e as duas portas: `/criar-conta` e `/entrar`.
 
 ## Onde o trabalho está agora
 
@@ -82,8 +82,15 @@ Branch `feat/a-foto-do-animal`, a primeira tela do regime "app com rosto".
    - apagar `design/` e os comentários "Tela NN" do código;
    - tirar do `DESIGN.md` as seções 1, 3, 4 e 5, com a nota de que reabriram (a 6, acessibilidade,
      fica; a 2, a voz, fica como ponto de partida);
-2. **A próxima tela é `/criar-conta`**, regime página. O "Comece o registro" da `/conheca`
-   pede o nome do animal e hoje o perde na travessia.
+2. **As portas estão feitas** na branch `feat/criar-conta` (empilhada no #76: o PR dela só
+   depois do merge do #76). Folha de areia com o formulário e painel cobalto com a plaquinha
+   (`componentes/novo/Plaquinha.tsx`, estilos em `novo/porta.css`). No cadastro a plaquinha tem
+   frente (o nome do animal, que agora vem da `/conheca` e chega preenchido em `/animais/novo`)
+   e verso (primeiro nome e e-mail), e gira. No entrar, o painel é a saída de emergência: o
+   cartão sem senha e o "achei um animal".
+   **O que o Ulysses corrigiu**: medalha tem de parecer medalha (borda, furo, argola); falar de
+   frente e verso exige poder virar; o verso leva contato em letra pequena, não um nome gigante.
+3. **A próxima tela é o cadastro do animal** (`/animais/novo`), para onde as duas portas levam.
 
 ## O que ficou devendo
 
