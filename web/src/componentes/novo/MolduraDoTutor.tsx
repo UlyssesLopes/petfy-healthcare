@@ -5,6 +5,9 @@ import { useAnimais } from "../../dados/animais.ts";
 import { useSair } from "../../dados/autenticacao.ts";
 import { useMeuContexto } from "../../dados/contexto.ts";
 import { MedalhaDoAnimal } from "./MedalhaDoAnimal.tsx";
+import "../../estilos/novo/tokens.css";
+import "../../estilos/novo/base.css";
+import "../../estilos/novo/app.css";
 
 /**
  * A moldura das telas do tutor na reconstrução: o menu lateral lista os animais dele, cada um
@@ -121,7 +124,7 @@ function Menu({ animalAtivo, aoNavegar }: { animalAtivo?: string; aoNavegar: () 
         </h2>
         <ul className="pf-app__lista">
           <li>
-            <Link to="/" className="pf-app__item" onClick={aoNavegar}>
+            <Link to="/" className="pf-app__item" activeOptions={{ exact: true }} onClick={aoNavegar}>
               Início
             </Link>
           </li>

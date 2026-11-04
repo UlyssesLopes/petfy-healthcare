@@ -92,6 +92,7 @@ export function Moldura({ children }: { children: ReactNode }) {
     if (
       MINIMAS.some((prefixo) => caminho.startsWith(prefixo)) ||
       PROPRIAS.includes(caminho) ||
+      caminho === "/" ||
       FICHA_DO_ANIMAL.test(caminho)
     ) {
       return "minima";

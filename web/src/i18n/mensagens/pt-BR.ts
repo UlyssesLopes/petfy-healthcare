@@ -328,6 +328,22 @@ export const mensagens = {
   // animal nenhum — é para ele que esta linha existe.
   "home.tenhoUmConvite": "Tenho um código de convite",
   "home.hoje": "Hoje",
+  "hoje.saudacao.manha": "Bom dia, {nome}.",
+  "hoje.saudacao.tarde": "Boa tarde, {nome}.",
+  "hoje.saudacao.noite": "Boa noite, {nome}.",
+  "hoje.resumo": "{total, plural, =0 {Nada pede você agora.} one {Uma coisa pede você.} other {# coisas pedem você.}}",
+  "hoje.animais": "Seus animais",
+  "hoje.cadastrar": "Cadastrar animal",
+  "hoje.animal.emDia": "Nada pendente",
+  "hoje.animal.pelaFrente": "{n, plural, one {Uma coisa pela frente} other {# coisas pela frente}}",
+  "hoje.animal.vencidas": "{n, plural, one {Uma coisa vencida} other {# coisas vencidas}}",
+  "hoje.animal.logo": "{n, plural, one {Uma coisa vence logo} other {# coisas vencem logo}}",
+  "hoje.pede": "O que pede você",
+  "hoje.silenciarNota": "Silenciar tira o pedido daqui, mas não apaga nada do registro.",
+  "hoje.convite.titulo": "Recebeu um código?",
+  "hoje.convite.texto": "Convites de outras pessoas e de clínicas chegam por e-mail, com um código. É aqui que ele vale.",
+  "hoje.convite.acao": "Usar um código",
+  "hoje.pacientes.titulo": "Você também atende animais de outras pessoas.",
   // "Três coisas pedem você" — o desenho conta, e a contagem e o que da hierarquia:
   // sem numero, quinze pendencias e uma lista; com numero, e um dia.
   "home.quantas": "{total, plural, =0 {Nada pede você agora.} one {Uma coisa pede você.} other {# coisas pedem você.}} Silenciar não para o registro.",

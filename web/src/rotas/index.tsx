@@ -1,13 +1,13 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useIntl } from "react-intl";
 
-import { DeRelance } from "../componentes/DeRelance.tsx";
-import { RegistrarDose } from "../componentes/RegistrarDose.tsx";
+import { MedalhaDoAnimal } from "../componentes/novo/MedalhaDoAnimal.tsx";
+import { MolduraDoTutor } from "../componentes/novo/MolduraDoTutor.tsx";
+import { RegistrarDose } from "../componentes/novo/RegistrarDose.tsx";
 import { useAnimais, type Animal } from "../dados/animais.ts";
-import { useQueJaEstiveramComigo } from "../dados/fim.ts";
-import { useRedeDeCuidado } from "../dados/carteira.ts";
 import { useMeuContexto } from "../dados/contexto.ts";
+import { useQueJaEstiveramComigo } from "../dados/fim.ts";
 import {
   podeSilenciar,
   useCumprirOrientacao,
@@ -19,211 +19,106 @@ import {
 import { lerSessao } from "../dados/sessao.ts";
 import { anosDesde, diasAte } from "../i18n/datas.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
+import "../estilos/novo/tokens.css";
+import "../estilos/novo/base.css";
+import "../estilos/novo/app.css";
+import "../estilos/novo/hoje.css";
 
-/* ------------------------------------------------------------------ o que este arquivo e
- *
- * A "Tela 01 · web, tela grande — Area do tutor, o feed de pendencias", de
- * `design/IdentidadeVisual/Telas Petfy.dc.html`, com o backend ligado nela.
- *
- * O markup vem do arquivo: os estilos foram convertidos por script, entao as tres colunas
- * (264 / 1fr / 320), os cartoes de 12 px e os quatro marcadores sao os do desenho.
- *
- * <b>DOIS BLOCOS DO DESENHO NAO ESTAO AQUI, e a ausencia e escolha.</b> "Da Creche
- * Quintal, hoje" (foto, recado e avaliacao do dia) e "Uma leitura do Petfy" (a percepcao)
- * <b>nao tem backend nenhum</b> — nao e uma rota vazia, e um modelo que nao existe.
- * Desenhar a moldura deles agora criaria uma caixa que nunca preenche, e a secao 06 e
- * explicita sobre nao confundir "vazio" com "nao existe". Eles entram junto com o modelo.
+/**
+ * Hoje: a primeira tela de quem entra. Cumprimenta, mostra os animais com o estado de cada um e
+ * lista o que pede a pessoa, de todos eles. Cumprido por outra pessoa não some: conta quem fez.
  */
-
 export const Route = createFileRoute("/")({
-  /*
-   * O token vive em memoria, entao recarregar a pagina derruba a sessao - e a home so
-   * existe autenticada. Sem esta guarda, o recarregamento mostraria a tela vazia
-   * piscando antes de qualquer 401 voltar.
-   */
+  // O token vive em memória: sem a guarda, recarregar mostraria a tela vazia antes do 401.
   beforeLoad: () => {
     if (!lerSessao().autenticada) {
       throw redirect({ to: "/entrar" });
     }
   },
-  component: Inicio,
+  component: Hoje,
 });
 
-/**
- * Quantos dias antes uma pendencia ganha a marca de "a vencer".
- *
- * <b>E decisao de tela, e nao do documento</b> — fica registrado para nao virar numero
- * orfao. O feed ja chega filtrado em 30 dias pelo servidor; marcar as 30 faria toda linha
- * ter marca, e a 5.3 e explicita: "se tudo tiver marca, nada tem". Uma semana e o
- * horizonte em que da para agir — marcar consulta, comprar o remedio.
- */
+/** Uma semana: o horizonte em que dá para agir. Marcar tudo que vence em 30 dias marcaria tudo. */
 const DIAS_DE_ANTECEDENCIA = 7;
 
 type Estado = "vencida" | "venceHoje" | "aVencer" | "semMarca";
 
 function estadoDe(pendencia: Pendencia): Estado {
-  if (pendencia.overdue === true) {
-    return "vencida";
-  }
-  if (pendencia.dueOn === undefined) {
-    // O consentimento nao tem data. Ele ja vem primeiro na ordem do servidor, e o que o
-    // distingue e o proprio texto — nao uma etiqueta de prazo que ele nao tem.
-    return "semMarca";
-  }
-
+  if (pendencia.overdue === true) return "vencida";
+  if (pendencia.dueOn === undefined) return "semMarca";
   const dias = diasAte(pendencia.dueOn);
-
-  if (dias <= 0) {
-    return "venceHoje";
-  }
+  if (dias <= 0) return "venceHoje";
   return dias <= DIAS_DE_ANTECEDENCIA ? "aVencer" : "semMarca";
 }
 
-function useHover() {
-  const [sobre, setSobre] = useState(false);
-  return {
-    sobre,
-    props: {
-      onMouseEnter: () => setSobre(true),
-      onMouseLeave: () => setSobre(false),
-      onFocus: () => setSobre(true),
-      onBlur: () => setSobre(false),
-    },
-  };
+function saudacao(): "manha" | "tarde" | "noite" {
+  const hora = new Date().getHours();
+  if (hora >= 5 && hora < 12) return "manha";
+  if (hora >= 12 && hora < 18) return "tarde";
+  return "noite";
 }
 
-function Inicio() {
+function Hoje() {
   const intl = useIntl();
   const contexto = useMeuContexto();
   const animais = useAnimais();
-
   const [incluirSilenciadas, setIncluirSilenciadas] = useState(false);
-  const [animalEscolhido, setAnimalEscolhido] = useState<string | undefined>(undefined);
-
   const pendencias = usePendencias(incluirSilenciadas);
 
   const lista = animais.data ?? [];
-  const ativo = lista.find((a) => a.animalId === animalEscolhido) ?? lista[0];
-
-  const cadastrar = useHover();
-
-  const doAtivo = (pendencias.data ?? []).filter(
-    (p) => ativo?.animalId === undefined || p.animalId === ativo.animalId,
-  );
-  const pedindo = doAtivo.filter((p) => p.silenced !== true);
+  const todas = pendencias.data ?? [];
+  const pedindo = todas.filter((p) => p.silenced !== true && p.lastFulfilledAt === undefined);
+  const primeiroNome = contexto.data?.personName?.split(" ")[0] ?? "";
 
   return (
-    <div style={{ padding: "40px 24px" }}>
-      <div style={{ maxWidth: "1360px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
+    <MolduraDoTutor titulo={intl.formatMessage({ id: "home.hoje" })}>
+      <div className="pf-hoje">
+        <header className="pf-hoje__cabeca">
+          <h1 className="pf-titulo pf-hoje__titulo">
+            {intl.formatMessage({ id: `hoje.saudacao.${saudacao()}` }, { nome: primeiroNome })}
+          </h1>
+          <p className="pf-hoje__resumo">
+            {pendencias.isPending
+              ? intl.formatMessage({ id: "home.pendencias.carregando" })
+              : intl.formatMessage({ id: "hoje.resumo" }, { total: pedindo.length })}
+          </p>
+        </header>
 
-        {/* ------------------------------------------------------------------------ topo
-         *
-         * <b>A MARCA, O "AGINDO COMO" E O SAIR SAIRAM DAQUI.</b> Eles viraram a moldura do
-         * produto (`componentes/Moldura.tsx`), que veste toda tela autenticada — e era
-         * justamente esta barra, repetida com medidas diferentes em onze rotas, que fazia cada
-         * tela parecer solta no meio da pagina em vez de parte de uma plataforma.
-         *
-         * <b>O que ficou nao e navegacao de produto, e navegacao DESTE animal.</b> A moldura
-         * recusa destinos que dependem de um animal escolhido, e com razao: "Meus animais" e
-         * "Quem cuida" precisam de um `animalId`, e um item de cabecalho global que as vezes
-         * leva a lugar nenhum e pior que a ausencia dele. Aqui eles tem o animal ativo.
-         *
-         * Sem eles a vida do animal fica inalcancavel: nada mais nesta tela leva a Tela 02, e
-         * colar a URL cai no /entrar e volta para ca porque o token vive em memoria.
-         */}
-        {ativo?.animalId !== undefined && (
-          <div style={{ display: "flex", alignItems: "center", gap: "20px", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)", fontSize: "15px" }}>
-            <Link
-              to="/animais/$animalId"
-              params={{ animalId: ativo.animalId }}
-              style={{ color: "oklch(0.46 0.085 150)" }}
-            >
-              {intl.formatMessage({ id: "home.nav.meusAnimais" })}
-            </Link>
-
-            <Link
-              to="/animais/$animalId/quem-cuida"
-              params={{ animalId: ativo.animalId }}
-              style={{ color: "oklch(0.46 0.085 150)" }}
-            >
-              {intl.formatMessage({ id: "home.nav.quemCuida" })}
-            </Link>
-
-            {/*
-             * A porta da area de organizacao (Tela 03) fica aqui, e nao na moldura, por uma
-             * diferenca de condicao que importa: a moldura mostra "Pacientes" quando o CONTEXTO
-             * ATIVO e uma organizacao que registra ato clinico. O autonomo — pessoa com
-             * credencial e sem vinculo (PRODUTO.md 9.3) — nunca satisfaz isso e ficaria sem
-             * porta nenhuma. O `professional` sai de vinculo e credencial, nao de um campo de
-             * cadastro.
-             */}
-            {contexto.data?.professional === true && contexto.data.active?.kind !== "ORGANIZACAO" && (
-              <Link to="/pacientes" style={{ color: "oklch(0.46 0.085 150)" }}>
-                {intl.formatMessage({ id: "pacientes.titulo" })}
-              </Link>
-            )}
-          </div>
-        )}
-
-        <div style={{ display: "grid", gridTemplateColumns: "264px 1fr 320px", minHeight: "720px" }}>
-
-          {/* ------------------------------------------------------ trilho: sob sua custodia */}
-          <div style={{ borderRight: "1px solid oklch(0.90 0.008 150)", padding: "24px 20px", display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)", padding: "0 12px 10px" }}>
-              {intl.formatMessage({ id: "home.custodia" })}
-            </div>
-
+        <section className="pf-hoje__animais" aria-labelledby="pf-hoje-animais">
+          <h2 id="pf-hoje-animais" className="pf-hoje__secao">
+            {intl.formatMessage({ id: "hoje.animais" })}
+          </h2>
+          <ul className="pf-bichos">
             {lista.map((animal) => (
-              <ItemDeAnimal
-                key={animal.animalId}
-                animal={animal}
-                ativo={animal.animalId === ativo?.animalId}
-                pendencias={(pendencias.data ?? []).filter((p) => p.animalId === animal.animalId)}
-                aoEscolher={() => setAnimalEscolhido(animal.animalId)}
-              />
+              <li key={animal.animalId}>
+                <CartaoDoAnimal
+                  animal={animal}
+                  pendencias={todas.filter((p) => p.animalId === animal.animalId)}
+                />
+              </li>
             ))}
+            <li>
+              <Link to="/animais/novo" className="pf-bicho pf-bicho--novo">
+                <span className="pf-bicho__mais" aria-hidden="true">
+                  +
+                </span>
+                <span className="pf-bicho__nome">{intl.formatMessage({ id: "hoje.cadastrar" })}</span>
+              </Link>
+            </li>
+          </ul>
+        </section>
 
-            <div style={{ height: "1px", background: "oklch(0.92 0.006 150)", margin: "12px 0" }}></div>
-
-            {/* Deixou de ser desabilitado quando o onboarding passou a existir. */}
-            <Link
-              to="/animais/novo"
-              {...cadastrar.props}
-              style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: cadastrar.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: `1px solid ${cadastrar.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.84 0.012 150)"}`, borderRadius: "8px", padding: "12px", minHeight: "44px", textAlign: "left", textDecoration: "none", display: "block" }}
-            >
-              {intl.formatMessage({ id: "home.cadastrarAnimal" })}
-            </Link>
-
-            {/*
-             * A PORTA DO CODIGO DE CONVITE, e ela precisa estar aqui e nao no cabecalho.
-             *
-             * O e-mail de convite manda um CODIGO — nenhuma notificacao deste produto carrega link
-             * —, e sem um lugar para cola-lo ele nao serve para nada. Quem chega com um codigo na
-             * mao acabou de criar a conta para aceitar um convite: <b>nao tem animal nenhum</b>, e
-             * por isso a barra de navegacao do animal ativo nao aparece para ele. Este trilho
-             * aparece sempre, e aqui as duas coisas que essa pessoa pode querer ficam lado a lado:
-             * cadastrar o proprio animal, ou entrar no de outra pessoa.
-             */}
-            <Link
-              to="/convites"
-              style={{ display: "block", fontSize: "14px", color: "oklch(0.46 0.085 150)", padding: "12px", minHeight: "44px" }}
-            >
-              {intl.formatMessage({ id: "home.tenhoUmConvite" })}
-            </Link>
-
-            <QuemJaEsteve />
-          </div>
-
-          {/* ---------------------------------------------------------------- centro: hoje */}
-          <div style={{ padding: "32px 36px" }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "8px" }}>
-              <h1 style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "30px", fontWeight: 500, margin: 0, letterSpacing: "-0.02em" }}>
-                {intl.formatMessage({ id: "home.hoje" })}
-              </h1>
+        <div className="pf-hoje__grade">
+          <section className="pf-hoje__pede" aria-labelledby="pf-hoje-pede">
+            <div className="pf-hoje__pede-cabeca">
+              <h2 id="pf-hoje-pede" className="pf-hoje__secao">
+                {intl.formatMessage({ id: "hoje.pede" })}
+              </h2>
               <button
                 type="button"
+                className="pf-texto-botao"
+                aria-pressed={incluirSilenciadas}
                 onClick={() => setIncluirSilenciadas((atual) => !atual)}
-                style={{ fontFamily: "inherit", fontSize: "14px", color: "oklch(0.45 0.015 150)", background: "transparent", border: "none", cursor: "pointer", minHeight: "44px" }}
               >
                 {intl.formatMessage({
                   id: incluirSilenciadas ? "home.ocultarSilenciadas" : "home.mostrarSilenciadas",
@@ -231,370 +126,235 @@ function Inicio() {
               </button>
             </div>
 
-            <p style={{ fontSize: "15px", color: "oklch(0.45 0.015 150)", margin: "0 0 24px" }}>
-              {pendencias.isPending
-                ? intl.formatMessage({ id: "home.pendencias.carregando" })
-                : intl.formatMessage({ id: "home.quantas" }, { total: pedindo.length })}
-            </p>
+            {pendencias.isError && (
+              <p role="alert" className="pf-hoje__erro">
+                {intl.formatMessage({ id: chaveDoErro(pendencias.error) })}
+              </p>
+            )}
 
-            {pendencias.isError ? (
-              <Aviso>{intl.formatMessage({ id: chaveDoErro(pendencias.error) })}</Aviso>
-            ) : null}
+            {!pendencias.isPending && todas.length === 0 ? (
+              <div className="pf-hoje__vazio">
+                <p className="pf-hoje__vazio-titulo">{intl.formatMessage({ id: "home.pendencias.vazio" })}</p>
+                <p>{intl.formatMessage({ id: "home.pendencias.vazio.apoio" })}</p>
+              </div>
+            ) : (
+              <ul className="pf-pedidos">
+                {todas.map((pendencia) => (
+                  <li key={`${pendencia.kind}:${pendencia.sourceId}`}>
+                    <CartaoDePendencia
+                      pendencia={pendencia}
+                      animal={lista.find((a) => a.animalId === pendencia.animalId)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="pf-hoje__nota">{intl.formatMessage({ id: "hoje.silenciarNota" })}</p>
+          </section>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {doAtivo.length === 0 && !pendencias.isPending ? (
-                <Vazio />
-              ) : (
-                doAtivo.map((pendencia) => (
-                  <CartaoDePendencia
-                    key={`${pendencia.kind}:${pendencia.sourceId}`}
-                    pendencia={pendencia}
-                  />
-                ))
-              )}
+          <aside className="pf-hoje__lado">
+            <div className="pf-hoje__cartao">
+              <h2 className="pf-hoje__cartao-titulo">{intl.formatMessage({ id: "hoje.convite.titulo" })}</h2>
+              <p>{intl.formatMessage({ id: "hoje.convite.texto" })}</p>
+              <Link to="/convites" className="pf-botao pf-botao--pequeno">
+                {intl.formatMessage({ id: "hoje.convite.acao" })}
+              </Link>
             </div>
-          </div>
 
-          {/* ------------------------------------------------------------- trilho: de relance */}
-          <div style={{ borderLeft: "1px solid oklch(0.90 0.008 150)", padding: "32px 24px", display: "flex", flexDirection: "column", gap: "24px" }}>
-            {ativo?.animalId !== undefined && ativo.name !== undefined ? (
-              <>
-                <DeRelance animalId={ativo.animalId} nome={ativo.name} />
-                <QuemAlcanca animalId={ativo.animalId} />
-              </>
-            ) : null}
-          </div>
+            {/* A porta da área de organização para o autônomo: credencial sem vínculo. */}
+            {contexto.data?.professional === true && contexto.data.active?.kind !== "ORGANIZACAO" && (
+              <div className="pf-hoje__cartao">
+                <h2 className="pf-hoje__cartao-titulo">{intl.formatMessage({ id: "hoje.pacientes.titulo" })}</h2>
+                <Link to="/pacientes" className="pf-botao pf-botao--pequeno pf-botao--claro">
+                  {intl.formatMessage({ id: "pacientes.titulo" })}
+                </Link>
+              </div>
+            )}
+
+            <QuemJaEsteve />
+          </aside>
         </div>
       </div>
-    </div>
+    </MolduraDoTutor>
   );
 }
 
-/* ------------------------------------------------------------------------------ pedacos */
-
-/**
- * "Quem ja esteve com voce" (Tela 33).
- *
- * <b>Some quando esta vazia, e nao mostra "nenhum animal saiu da sua lista".</b> E a unica lista
- * do produto cujo estado vazio e uma boa noticia, e anuncia-lo seria o produto lembrando, todo
- * dia, de uma perda que ainda nao aconteceu. Quem tem alguem aqui ja sabe.
- *
- * <b>Discreta de proposito:</b> abaixo do "cadastrar animal", em texto menor, sem marcador de
- * pendencia. Estes animais nao pedem nada — e essa e a definicao deles.
- */
-function QuemJaEsteve() {
+function CartaoDoAnimal({ animal, pendencias }: { animal: Animal; pendencias: Pendencia[] }) {
   const intl = useIntl();
-  const anteriores = useQueJaEstiveramComigo();
+  const ativas = pendencias.filter((p) => p.silenced !== true && p.lastFulfilledAt === undefined);
+  const vencidas = ativas.filter((p) => estadoDe(p) === "vencida").length;
+  const logo = ativas.filter((p) => estadoDe(p) === "venceHoje" || estadoDe(p) === "aVencer").length;
 
-  const lista = anteriores.data?.content ?? [];
+  const sobre = [
+    animal.species === undefined ? undefined : intl.formatMessage({ id: `home.especie.${animal.species}` }),
+    animal.bornDate === undefined ? undefined : intl.formatMessage({ id: "home.idade" }, { anos: anosDesde(animal.bornDate) }),
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
-  if (lista.length === 0) {
-    return null;
-  }
+  const [tom, chave, n] =
+    vencidas > 0
+      ? (["perigo", "hoje.animal.vencidas", vencidas] as const)
+      : logo > 0
+        ? (["alerta", "hoje.animal.logo", logo] as const)
+        : ativas.length > 0
+          ? (["calmo", "hoje.animal.pelaFrente", ativas.length] as const)
+          : (["calmo", "hoje.animal.emDia", 0] as const);
 
   return (
-    <>
-      <div style={{ height: "1px", background: "oklch(0.92 0.006 150)", margin: "12px 0" }}></div>
-
-      <div style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)", padding: "0 12px 10px" }}>
-        {intl.formatMessage({ id: "anteriores.titulo" })}
-      </div>
-
-      {lista.map((animal) => (
-        <Link
-          key={animal.animalId}
-          to="/animais/$animalId"
-          params={{ animalId: animal.animalId! }}
-          style={{ display: "block", padding: "10px 12px", borderRadius: "8px", textDecoration: "none", color: "oklch(0.42 0.015 150)" }}
-        >
-          <div style={{ fontSize: "15px" }}>{animal.name}</div>
-          <div style={{ fontSize: "13px", color: "oklch(0.55 0.015 150)", marginTop: "2px" }}>
-            {/*
-             * O transferido tambem esta nesta lista, e sobre ele o produto nao sabe dizer para
-             * onde foi — entao a linha nao inventa: "nao esta mais com voce". So quem tem data de
-             * obito recebe a frase que fala de morte.
-             */}
-            {animal.deceasedOn === undefined || animal.deceasedOn === null
-              ? intl.formatMessage({ id: "anteriores.saiu" })
-              : intl.formatMessage(
-                  { id: "anteriores.morreuEm" },
-                  { data: intl.formatDate(animal.deceasedOn, { month: "2-digit", year: "numeric", timeZone: "UTC" }) },
-                )}
-          </div>
-        </Link>
-      ))}
-    </>
+    <Link to="/animais/$animalId" params={{ animalId: animal.animalId! }} className="pf-bicho">
+      <MedalhaDoAnimal animal={animal} className="pf-bicho__medalha" />
+      <span className="pf-bicho__nome" translate="no">
+        {animal.name}
+      </span>
+      {sobre !== "" && <span className="pf-bicho__sobre">{sobre}</span>}
+      <span className="pf-estado pf-bicho__estado" data-tom={tom}>
+        {intl.formatMessage({ id: chave }, { n })}
+      </span>
+    </Link>
   );
 }
 
-function Aviso({ children }: { children: ReactNode }) {
-  return (
-    <p role="alert" style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.45 0.13 30)", background: "oklch(0.97 0.012 30)", borderRadius: "8px", padding: "12px 14px", margin: "0 0 12px" }}>
-      {children}
-    </p>
-  );
-}
-
-/** O vazio de verdade da secao 06: linha tracejada, e nao fundo cheio. */
-function Vazio() {
+function CartaoDePendencia({ pendencia, animal }: { pendencia: Pendencia; animal?: Animal }) {
   const intl = useIntl();
-
-  return (
-    <div style={{ border: "1px dashed oklch(0.90 0.008 150)", borderRadius: "12px", padding: "24px", fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
-      <div style={{ marginBottom: "4px" }}>{intl.formatMessage({ id: "home.pendencias.vazio" })}</div>
-      <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
-        {intl.formatMessage({ id: "home.pendencias.vazio.apoio" })}
-      </div>
-    </div>
-  );
-}
-
-/** O pior estado entre as pendencias do animal e o que vira marcador no trilho. */
-function marcadorDoAnimal(pendencias: Pendencia[]) {
-  const ativas = pendencias.filter((p) => p.silenced !== true);
-
-  if (ativas.some((p) => estadoDe(p) === "vencida")) {
-    return <div aria-hidden style={{ marginLeft: "auto", width: "12px", height: "12px", background: "oklch(0.55 0.14 30)", transform: "rotate(45deg)", flex: "none" }} />;
-  }
-  if (ativas.some((p) => estadoDe(p) === "venceHoje" || estadoDe(p) === "aVencer")) {
-    return <div aria-hidden style={{ marginLeft: "auto", width: "12px", height: "12px", borderRadius: "999px", border: "2px solid oklch(0.62 0.11 70)", flex: "none" }} />;
-  }
-  return <div aria-hidden style={{ marginLeft: "auto", width: "12px", height: "12px", borderRadius: "999px", background: "oklch(0.46 0.085 150)", flex: "none" }} />;
-}
-
-function ItemDeAnimal({
-  animal,
-  ativo,
-  pendencias,
-  aoEscolher,
-}: {
-  animal: Animal;
-  ativo: boolean;
-  pendencias: Pendencia[];
-  aoEscolher: () => void;
-}) {
-  const intl = useIntl();
-
-  const especie =
-    animal.species === undefined
-      ? undefined
-      : intl.formatMessage({ id: `home.especie.${animal.species}` });
-
-  const idade =
-    animal.bornDate === undefined
-      ? undefined
-      : intl.formatMessage({ id: "home.idade" }, { anos: anosDesde(animal.bornDate) });
-
-  return (
-    <button
-      type="button"
-      onClick={aoEscolher}
-      aria-pressed={ativo}
-      style={{ fontFamily: "inherit", textAlign: "left", width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "12px", borderRadius: "8px", background: ativo ? "oklch(0.94 0.02 150)" : "transparent", border: "none", minHeight: "44px", cursor: "pointer" }}
-    >
-      <div aria-hidden style={{ width: "38px", height: "38px", borderRadius: "999px", background: ativo ? "oklch(0.86 0.03 150)" : "oklch(0.90 0.012 150)", flex: "none" }}></div>
-
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "130px" }}>
-          {animal.name}
-        </div>
-        <div style={{ fontSize: "13px", color: "oklch(0.45 0.015 150)" }}>
-          {[especie, idade].filter(Boolean).join(" · ")}
-        </div>
-      </div>
-
-      {marcadorDoAnimal(pendencias)}
-    </button>
-  );
-}
-
-/**
- * O cartao de pendencia — "o componente mais usado do produto" (secao 06).
- *
- * <b>O terceiro estado e a regra virando componente:</b> quando outra pessoa cumpriu, a
- * pendencia NAO some — ela conta quem fez e quando. E o "nunca cobrar a mesma coisa de
- * duas pessoas em silencio" deixando de ser principio e virando pixel.
- */
-function CartaoDePendencia({ pendencia }: { pendencia: Pendencia }) {
-  const intl = useIntl();
-
   const silenciar = useSilenciar();
   const deixarDeSilenciar = useDeixarDeSilenciar();
   const cumprir = useCumprirOrientacao();
-  const acao = useHover();
   const [registrando, setRegistrando] = useState(false);
 
   const estado = estadoDe(pendencia);
   const cumprida = pendencia.lastFulfilledAt !== undefined;
   const silenciada = pendencia.silenced === true;
-
   const alvo = { kind: pendencia.kind!, sourceId: pendencia.sourceId! };
 
-  const borda =
-    estado === "vencida" && !cumprida ? "oklch(0.86 0.03 30)" : "oklch(0.90 0.008 150)";
-  const fundo =
-    estado === "vencida" && !cumprida
-      ? "oklch(0.985 0.008 30)"
-      : cumprida || silenciada
-        ? "oklch(0.975 0.004 150)"
-        : "oklch(1 0 0)";
+  const tom = cumprida || silenciada ? undefined : estado === "vencida" ? "perigo" : estado === "semMarca" ? undefined : "alerta";
+  const prazo =
+    pendencia.dueOn === undefined
+      ? undefined
+      : intl.formatMessage(
+          { id: `home.estado.${estado === "semMarca" ? "aVencer" : estado}` },
+          { dias: Math.abs(diasAte(pendencia.dueOn)) },
+        );
 
   return (
-    <div style={{ border: `1px solid ${borda}`, background: fundo, borderRadius: "12px", padding: "20px 22px", display: "grid", gridTemplateColumns: "auto 1fr auto", gap: "18px", alignItems: "center" }}>
-      {cumprida ? (
-        <div aria-hidden style={{ width: "13px", height: "13px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }} />
-      ) : estado === "vencida" ? (
-        <div aria-hidden style={{ width: "13px", height: "13px", background: "oklch(0.55 0.14 30)", transform: "rotate(45deg)" }} />
+    <article className="pf-pedido" data-apagado={cumprida || silenciada ? "" : undefined}>
+      {animal !== undefined ? (
+        <MedalhaDoAnimal animal={animal} className="pf-pedido__medalha" />
       ) : (
-        <div aria-hidden style={{ width: "13px", height: "13px", borderRadius: "999px", border: "3px solid oklch(0.62 0.11 70)" }} />
+        <span className="pf-pedido__medalha pf-pedido__medalha--vazia" aria-hidden="true" />
       )}
 
-      <div>
-        <div style={{ fontSize: "17px", fontWeight: 500, marginBottom: "4px", color: cumprida ? "oklch(0.42 0.015 150)" : "oklch(0.25 0.02 150)" }}>
-          {pendencia.animalName === undefined
-            ? pendencia.description
-            : intl.formatMessage(
-                { id: "home.pendencia.titulo" },
-                { o_que: pendencia.description ?? "", animal: pendencia.animalName },
-              )}
-        </div>
-
-        <div style={{ fontSize: "14px", color: "oklch(0.45 0.015 150)" }}>
-          {cumprida
-            ? intl.formatMessage(
+      <div className="pf-pedido__texto">
+        <h3 className="pf-pedido__titulo">{pendencia.description}</h3>
+        <p className="pf-pedido__linha">
+          {pendencia.animalName !== undefined && (
+            <span className="pf-pedido__animal" translate="no">
+              {pendencia.animalName}
+            </span>
+          )}
+          {cumprida ? (
+            <span>
+              {intl.formatMessage(
                 { id: "home.jaFeito" },
                 {
                   nome: pendencia.lastFulfilledByName ?? "",
-                  quando: intl.formatDate(new Date(pendencia.lastFulfilledAt!), {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  }),
+                  quando: intl.formatDate(new Date(pendencia.lastFulfilledAt!), { dateStyle: "short", timeStyle: "short" }),
                 },
-              )
-            : pendencia.dueOn !== undefined
-              ? intl.formatMessage(
-                  { id: `home.estado.${estado === "semMarca" ? "aVencer" : estado}` },
-                  { dias: Math.abs(diasAte(pendencia.dueOn)) },
-                )
-              : ""}
-        </div>
+              )}
+            </span>
+          ) : silenciada ? (
+            <span>{intl.formatMessage({ id: "home.silenciada" })}</span>
+          ) : prazo !== undefined ? (
+            tom !== undefined ? (
+              <span className="pf-estado" data-tom={tom}>
+                {prazo}
+              </span>
+            ) : (
+              <span>{prazo}</span>
+            )
+          ) : null}
+        </p>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div className="pf-pedido__acoes">
         {silenciada ? (
-          <button
-            type="button"
-            onClick={() => deixarDeSilenciar.mutate(alvo)}
-            style={{ fontFamily: "inherit", fontSize: "14px", color: "oklch(0.45 0.015 150)", background: "transparent", border: "none", cursor: "pointer", minHeight: "44px" }}
-          >
+          <button type="button" className="pf-texto-botao" onClick={() => deixarDeSilenciar.mutate(alvo)}>
             {intl.formatMessage({ id: "home.acao.voltarACobrar" })}
           </button>
         ) : cumprida ? (
-          <span style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
-            {intl.formatMessage({ id: "home.silenciada.cumprido" })}
-          </span>
+          <span className="pf-pedido__feito">{intl.formatMessage({ id: "home.silenciada.cumprido" })}</span>
         ) : (
           <>
             {podeSilenciar(pendencia) && (
-              <button
-                type="button"
-                onClick={() => silenciar.mutate(alvo)}
-                style={{ fontFamily: "inherit", fontSize: "14px", color: "oklch(0.45 0.015 150)", background: "transparent", border: "none", cursor: "pointer", minHeight: "44px" }}
-              >
+              <button type="button" className="pf-texto-botao" onClick={() => silenciar.mutate(alvo)}>
                 {intl.formatMessage({ id: "home.acao.silenciar" })}
               </button>
             )}
-
-            {pendencia.kind === "ORIENTACAO" ? (
+            {pendencia.kind === "ORIENTACAO" && (
               <button
                 type="button"
-                onClick={() =>
-                  cumprir.mutate({
-                    careInstructionId: pendencia.sourceId!,
-                    animalId: pendencia.animalId!,
-                  })
-                }
+                className="pf-botao pf-botao--pequeno"
                 disabled={cumprir.isPending}
-                {...acao.props}
-                style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: acao.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: `1px solid ${acao.sobre ? "oklch(0.46 0.085 150)" : "oklch(0.82 0.012 150)"}`, borderRadius: "8px", padding: "12px 20px", minHeight: "44px", cursor: "pointer" }}
+                aria-busy={cumprir.isPending || undefined}
+                onClick={() => cumprir.mutate({ careInstructionId: pendencia.sourceId!, animalId: pendencia.animalId! })}
               >
                 {intl.formatMessage({ id: cumprir.isPending ? "home.acao.cumprindo" : "home.acao.cumprir" })}
               </button>
-            ) : pendencia.kind === "DOSE_DE_VACINA" ? (
-              /* A acao principal do cartao vencido: musgo cheio, e nao contorno. E a
-                 unica cor de acao do produto, e aqui ela esta sobre fundo de telha —
-                 a gravidade e do marcador e do fundo, nunca do botao (secao 02). */
+            )}
+            {pendencia.kind === "DOSE_DE_VACINA" && !registrando && (
               <button
                 type="button"
+                className="pf-botao pf-botao--pequeno"
+                aria-expanded={registrando}
                 onClick={() => setRegistrando(true)}
-                style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(1 0 0)", background: "oklch(0.46 0.085 150)", border: "none", borderRadius: "8px", padding: "12px 20px", minHeight: "44px", cursor: "pointer" }}
               >
                 {intl.formatMessage({ id: "home.acao.registrarDose" })}
               </button>
-            ) : null}
+            )}
           </>
         )}
       </div>
 
-      {registrando && pendencia.animalId !== undefined && pendencia.sourceId !== undefined ? (
-        <div style={{ gridColumn: "1 / -1" }}>
+      {registrando && pendencia.animalId !== undefined && pendencia.sourceId !== undefined && (
+        <div className="pf-pedido__dose">
           <RegistrarDose
             animalId={pendencia.animalId}
             vaccineId={pendencia.sourceId}
             aoFechar={() => setRegistrando(false)}
           />
         </div>
-      ) : null}
-    </div>
+      )}
+    </article>
   );
 }
 
-/** "Quem alcanca o Code" — custodia e concessao, nunca uma lista de contatos (5.4). */
-function QuemAlcanca({ animalId }: { animalId: string }) {
+/** Os animais que já foram da pessoa. Some quando vazia: anunciar o vazio lembraria de uma perda. */
+function QuemJaEsteve() {
   const intl = useIntl();
-  const rede = useRedeDeCuidado(animalId);
-
-  const membros = rede.data ?? [];
+  const anteriores = useQueJaEstiveramComigo();
+  const lista = anteriores.data?.content ?? [];
+  if (lista.length === 0) return null;
 
   return (
-    <div>
-      <div style={{ fontSize: "12px", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase", color: "oklch(0.5 0.015 150)", marginBottom: "14px" }}>
-        {intl.formatMessage({ id: "home.quemAlcanca" })}
-      </div>
-
-      {membros.length === 0 ? (
-        <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)" }}>
-          {intl.formatMessage({ id: "home.quemAlcanca.vazio" })}
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px" }}>
-          {membros.map((membro) => (
-            <div key={membro.personId ?? membro.organizationId}>
-              <div style={{ fontWeight: 500, fontSize: "15px" }}>{membro.name}</div>
-              <div style={{ color: "oklch(0.5 0.015 150)" }}>{alcanceDe(membro, intl)}</div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="pf-hoje__cartao">
+      <h2 className="pf-hoje__cartao-titulo">{intl.formatMessage({ id: "anteriores.titulo" })}</h2>
+      <ul className="pf-anteriores">
+        {lista.map((animal) => (
+          <li key={animal.animalId}>
+            <Link to="/animais/$animalId" params={{ animalId: animal.animalId! }}>
+              <span translate="no">{animal.name}</span>
+              <span className="pf-anteriores__quando">
+                {animal.deceasedOn === undefined || animal.deceasedOn === null
+                  ? intl.formatMessage({ id: "anteriores.saiu" })
+                  : intl.formatMessage(
+                      { id: "anteriores.morreuEm" },
+                      { data: intl.formatDate(animal.deceasedOn, { month: "2-digit", year: "numeric", timeZone: "UTC" }) },
+                    )}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
-}
-
-function alcanceDe(
-  membro: NonNullable<ReturnType<typeof useRedeDeCuidado>["data"]>[number],
-  intl: ReturnType<typeof useIntl>,
-): string {
-  const comoAlcanca = intl.formatMessage({
-    id: membro.reach === "CUSTODIA" ? "home.alcance.custodia" : "home.alcance.concessao",
-  });
-
-  const prazo =
-    membro.expiresAt === undefined
-      ? intl.formatMessage({ id: "home.alcance.semPrazo" })
-      : intl.formatMessage(
-          { id: "home.alcance.ate" },
-          { data: intl.formatDate(new Date(membro.expiresAt), { dateStyle: "short" }) },
-        );
-
-  return `${comoAlcanca} · ${prazo}`;
 }

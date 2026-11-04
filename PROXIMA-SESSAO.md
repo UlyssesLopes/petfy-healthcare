@@ -90,7 +90,13 @@ Branch `feat/a-foto-do-animal`, a primeira tela do regime "app com rosto".
    cartão sem senha e o "achei um animal".
    **O que o Ulysses corrigiu**: medalha tem de parecer medalha (borda, furo, argola); falar de
    frente e verso exige poder virar; o verso leva contato em letra pequena, não um nome gigante.
-3. **A próxima tela é o cadastro do animal** (`/animais/novo`), para onde as duas portas levam.
+3. **A home `/` ("Hoje") está feita**, na mesma branch: saudação, os animais com o estado de
+   cada um e o que pede a pessoa, com "Registrar dose" no próprio cartão
+   (`componentes/novo/RegistrarDose.tsx`). A moldura do tutor mora em `novo/app.css`.
+4. **A próxima é a dupla `/comecar` + `/animais/novo`**: a `/comecar` velha não tem "Sair" e
+   prende quem entra sem animal.
+5. **Defeito anotado, sem correção**: `GET /animals/former` dá 500 (a consulta ordena a custódia
+   por `name`, que ela não tem). A lista "Quem já esteve com você" some calada por causa disso.
 
 ## O que ficou devendo
 

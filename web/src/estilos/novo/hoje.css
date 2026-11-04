@@ -1,0 +1,404 @@
+/* Hoje: a saudacao, os animais com o estado de cada um e o que pede a pessoa. Mesma coluna
+ * editorial de 1100px da vida do animal. So tokens de `novo/tokens.css`. */
+
+.pf-hoje {
+  max-width: 68.75rem;
+  margin-inline: auto;
+  display: grid;
+  gap: 3rem;
+  padding-top: 1rem;
+}
+
+.pf-hoje .pf-hoje__titulo {
+  font-size: clamp(2.25rem, 1.6rem + 2.4vw, 3.75rem);
+}
+
+.pf-hoje__resumo {
+  margin-top: 0.75rem;
+  font-size: var(--pf-passo-destaque);
+  text-wrap: pretty;
+}
+
+.pf-pagina .pf-hoje__secao {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------------------------ os animais */
+
+.pf-bichos {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.pf-pagina .pf-bicho {
+  height: 100%;
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.25rem;
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  text-decoration: none;
+  transition: background-color var(--pf-t-hover) ease, transform var(--pf-t-press) var(--pf-ease-out);
+}
+
+.pf-bicho:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-pagina .pf-bicho:hover {
+    background: var(--pf-areia-funda);
+  }
+}
+
+.pf-hoje .pf-bicho__medalha {
+  width: 4.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.pf-bicho__nome {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pf-bicho__sobre {
+  font-size: 0.9375rem;
+  color: var(--pf-tinta-suave);
+}
+
+.pf-bicho__estado {
+  margin-top: 0.75rem;
+}
+
+/* No cartao de papel, a etiqueta calma desce um degrau para continuar sendo etiqueta. */
+.pf-bicho .pf-estado[data-tom="calmo"] {
+  background: var(--pf-areia);
+}
+
+.pf-pagina .pf-bicho--novo {
+  align-content: center;
+  justify-items: center;
+  gap: 0.75rem;
+  min-height: 12rem;
+  background: none;
+  border: 2px dashed var(--pf-cobalto-suave);
+}
+
+.pf-bicho__mais {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 2px dashed var(--pf-cobalto);
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.pf-bicho--novo .pf-bicho__nome {
+  font-size: 1.0625rem;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------ o que pede */
+
+.pf-hoje__grade {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.pf-hoje__pede {
+  grid-column: span 8;
+}
+
+.pf-hoje__pede-cabeca {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pf-pedidos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pf-pedido {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1.25rem;
+  background: var(--pf-papel);
+}
+
+/* Cumprido por outra pessoa ou silenciado: continua na lista, um degrau abaixo. */
+.pf-pedido[data-apagado] {
+  background: var(--pf-areia-funda);
+}
+
+.pf-hoje .pf-pedido__medalha {
+  width: 3rem;
+}
+
+.pf-pedido__medalha--vazia {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--pf-areia-funda);
+}
+
+.pf-pagina .pf-pedido__titulo {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: pretty;
+}
+
+.pf-pedido__linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.625rem;
+  margin-top: 0.25rem;
+  font-size: 0.9375rem;
+  color: var(--pf-tinta-suave);
+}
+
+.pf-pedido__animal {
+  font-weight: 600;
+  color: var(--pf-tinta);
+}
+
+.pf-pedido__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.pf-pedido__feito {
+  font-weight: 600;
+}
+
+.pf-pedido__dose {
+  grid-column: 1 / -1;
+}
+
+.pf-hoje__vazio {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1.5rem;
+  border: 2px dashed var(--pf-areia-funda);
+  border-radius: 1.25rem;
+  color: var(--pf-tinta-suave);
+}
+
+.pf-hoje__vazio-titulo {
+  font-weight: 600;
+  color: var(--pf-tinta);
+}
+
+.pf-hoje__erro {
+  margin-bottom: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  background: var(--pf-perigo-fundo);
+  color: var(--pf-perigo-tinta);
+  font-weight: 500;
+}
+
+.pf-hoje__nota {
+  margin-top: 1rem;
+  font-size: 0.9375rem;
+  color: var(--pf-tinta-suave);
+}
+
+/* ------------------------------------------------------------------ registrar a dose */
+
+.pf-dose-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: var(--pf-areia);
+}
+
+.pf-dose-form__titulo {
+  font-weight: 600;
+}
+
+.pf-dose-form__campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+}
+
+.pf-dose-form .pf-campo {
+  display: grid;
+  gap: 0.375rem;
+  align-content: start;
+}
+
+.pf-dose-form label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.pf-dose-form input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 0.875rem;
+  border: 2px solid var(--pf-papel);
+  border-radius: 0.75rem;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.pf-pagina .pf-dose-form input:focus-visible {
+  border-color: var(--pf-cobalto);
+  outline-offset: 2px;
+}
+
+.pf-dose-form__nota {
+  font-size: 0.875rem;
+  color: var(--pf-tinta-suave);
+}
+
+.pf-dose-form__erro,
+.pf-dose-form__aviso {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+}
+
+.pf-dose-form__erro {
+  background: var(--pf-perigo-fundo);
+  color: var(--pf-perigo-tinta);
+}
+
+.pf-dose-form__aviso {
+  background: var(--pf-alerta-fundo);
+  color: var(--pf-alerta-tinta);
+}
+
+.pf-dose-form__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ------------------------------------------------------------------ o lado */
+
+.pf-hoje__lado {
+  grid-column: span 4;
+  display: grid;
+  gap: 1rem;
+}
+
+.pf-hoje__cartao {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  background: var(--pf-papel);
+}
+
+.pf-pagina .pf-hoje__cartao-titulo {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: pretty;
+}
+
+.pf-anteriores {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.pf-anteriores a {
+  display: grid;
+  min-height: 2.75rem;
+  align-content: center;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pf-anteriores__quando {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--pf-tinta-suave);
+}
+
+/* ------------------------------------------------------------------ tablet e telefone */
+
+@media (max-width: 64rem) {
+  .pf-hoje__pede,
+  .pf-hoje__lado {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 48rem) {
+  .pf-hoje {
+    gap: 2.25rem;
+  }
+
+  .pf-bichos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .pf-pagina .pf-bicho {
+    padding: 1rem;
+  }
+
+  .pf-hoje .pf-bicho__medalha {
+    width: 3.75rem;
+  }
+
+  .pf-pagina .pf-bicho--novo {
+    min-height: 10rem;
+  }
+
+  .pf-pedido {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    padding: 1rem;
+  }
+
+  .pf-hoje .pf-pedido__medalha {
+    width: 2.5rem;
+    align-self: start;
+  }
+
+  .pf-pedido__acoes {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}

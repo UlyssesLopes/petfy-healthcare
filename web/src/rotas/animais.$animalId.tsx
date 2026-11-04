@@ -21,6 +21,7 @@ import { lerSessao } from "../dados/sessao.ts";
 import { anosDesde, dataLocalDe } from "../i18n/datas.ts";
 import "../estilos/novo/tokens.css";
 import "../estilos/novo/base.css";
+import "../estilos/novo/app.css";
 import "../estilos/novo/vida-do-animal.css";
 
 /**
