@@ -157,6 +157,10 @@ public class Animal {
     @Column(name = "merged_into_animal_id")
     private UUID mergedIntoAnimalId;
 
+    /** Qual dos anexos do animal e a foto dele. Nulo e "sem foto". */
+    @Column(name = "photo_attachment_id")
+    private UUID photoAttachmentId;
+
     /**
      * Este microchip aparece em outro cadastro que <b>alguem afirmou ser outro animal</b>.
      *

@@ -253,6 +253,26 @@ public class AttachmentServiceImpl implements AttachmentService {
         return limpo.length() <= 255 ? limpo : limpo.substring(limpo.length() - 255);
     }
 
+    @Override
+    @Transactional
+    public void setPhoto(UUID animalId, UUID attachmentId) {
+        Animal animal = animalAccessGuard.requireEscrita(animalId);
+
+        // Anexo de outro animal responde como inexistente, igual a vacina e ao atendimento.
+        Attachment anexo = attachmentRepository.findById(attachmentId)
+                .filter(a -> a.getAnimal().getAnimalId().equals(animalId))
+                .orElseThrow(AttachmentServiceImpl::naoEncontrado);
+
+        if (!anexo.getContentType().startsWith("image/")) {
+            throw new PetfyHealthcareException(
+                    ErrorMessageEnum.ATTACHMENT_TYPE_NOT_ALLOWED.getMessage(),
+                    ErrorMessageEnum.ATTACHMENT_TYPE_NOT_ALLOWED.getCode(),
+                    HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        }
+
+        animal.setPhotoAttachmentId(attachmentId);
+    }
+
     private static PetfyHealthcareException naoEncontrado() {
         return new PetfyHealthcareException(
                 ErrorMessageEnum.ATTACHMENT_NOT_FOUND.getMessage(),

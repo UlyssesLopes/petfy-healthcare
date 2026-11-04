@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 import { cliente } from "./cliente.ts";
 import type { components } from "./gerado/api";
@@ -111,6 +112,61 @@ export function useAnexos(animalId: string | undefined) {
  * Quem transforma o Blob em download e a tela: object URL e DOM nao sao HTTP, e a regra da
  * camada continua de pe.
  */
+/** Marca um anexo do animal, que precisa ser imagem, como a foto dele. */
+export function useDefinirFotoDoAnimal() {
+  const consultas = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ animalId, attachmentId }: { animalId: string; attachmentId: string }) => {
+      const { error } = await cliente.PUT("/animals/{animalId}/photo", {
+        params: { path: { animalId } },
+        body: { attachmentId },
+      });
+
+      if (error !== undefined) {
+        throw error;
+      }
+    },
+    onSuccess: async (_resposta, variaveis) => {
+      await consultas.invalidateQueries({ queryKey: ["animal", variaveis.animalId] });
+      await consultas.invalidateQueries({ queryKey: ["animais"] });
+    },
+  });
+}
+
+/**
+ * A foto do animal como endereço que uma `<img>` aceita. O conteúdo exige o token, então ele é
+ * baixado pelo cliente autenticado e vira um object URL, revogado quando a foto troca.
+ */
+export function useFotoDoAnimal(attachmentId: string | undefined) {
+  const foto = useQuery({
+    queryKey: ["foto-do-animal", attachmentId],
+    enabled: attachmentId !== undefined,
+    staleTime: Infinity,
+    queryFn: async () =>
+      corpoDe(
+        await cliente.GET("/attachments/{attachmentId}/content", {
+          params: { path: { attachmentId: attachmentId! } },
+          parseAs: "blob",
+        }),
+      ) as unknown as Blob,
+  });
+
+  const [endereco, setEndereco] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (foto.data === undefined) {
+      setEndereco(undefined);
+      return;
+    }
+    const url = URL.createObjectURL(foto.data);
+    setEndereco(url);
+    return () => URL.revokeObjectURL(url);
+  }, [foto.data]);
+
+  return { endereco, carregando: foto.isPending && attachmentId !== undefined, erro: foto.isError };
+}
+
 export function useBaixarAnexo() {
   return useMutation({
     mutationFn: async (attachmentId: string): Promise<Blob> =>

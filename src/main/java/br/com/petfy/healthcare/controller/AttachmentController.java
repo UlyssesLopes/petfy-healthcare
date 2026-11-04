@@ -1,9 +1,11 @@
 package br.com.petfy.healthcare.controller;
 
+import br.com.petfy.healthcare.domain.dto.AnimalPhotoRequestDTO;
 import br.com.petfy.healthcare.domain.dto.AttachmentResponseDTO;
 import br.com.petfy.healthcare.service.AttachmentContent;
 import br.com.petfy.healthcare.service.AttachmentService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ContentDisposition;
@@ -86,6 +88,16 @@ public class AttachmentController {
                 .contentType(MediaType.parseMediaType(conteudo.contentType()))
                 .contentLength(conteudo.sizeBytes())
                 .body(new InputStreamResource(conteudo.content()));
+    }
+
+    @Operation(summary = "Define a foto do animal",
+               description = "Marca um anexo do proprio animal como a foto dele. So imagem: um PDF "
+                             + "responde 415. Anexo de outro animal responde 404.")
+    @PutMapping("/animals/{animalId}/photo")
+    public ResponseEntity<Void> setPhoto(@PathVariable UUID animalId,
+                                         @Valid @RequestBody AnimalPhotoRequestDTO dto) {
+        attachmentService.setPhoto(animalId, dto.getAttachmentId());
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Apaga o anexo", description = "Apaga a linha e os BYTES no disco. Arquivo orfao com laudo dentro e dado pessoal nao apagado, que e o oposto do que um pedido de exclusao pede.")

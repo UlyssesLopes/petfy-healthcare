@@ -571,6 +571,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/animals/{animalId}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Define a foto do animal
+         * @description Marca um anexo do proprio animal como a foto dele. So imagem: um PDF responde 415. Anexo de outro animal responde 404.
+         */
+        put: operations["setPhoto"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/animals/{animalId}/referral-candidates": {
         parameters: {
             query?: never;
@@ -2929,6 +2949,10 @@ export interface components {
             status?: "PENDENTE" | "ACEITO" | "RECUSADO";
             surviving?: components["schemas"]["LadoDaUniao"];
         };
+        AnimalPhotoRequestDTO: {
+            /** Format: uuid */
+            attachmentId: string;
+        };
         AnimalRequestDTO: {
             /** Format: date */
             bornDate?: string;
@@ -2967,6 +2991,8 @@ export interface components {
             name?: string;
             /** Format: uuid */
             personId?: string;
+            /** Format: uuid */
+            photoAttachmentId?: string;
             /** @enum {string} */
             species?: "CANINA" | "FELINA" | "AVE" | "ROEDORA" | "LAGOMORFA" | "REPTIL" | "EQUINA" | "OUTRA";
             type?: string;
@@ -5458,6 +5484,30 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    setPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnimalPhotoRequestDTO"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

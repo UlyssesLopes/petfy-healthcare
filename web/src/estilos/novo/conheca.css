@@ -4,181 +4,6 @@
  * unica forma da pagina: a capa, a mascara de toda foto, o botao (o furo a esquerda), o marcador
  * da lista e a marca do rodape. */
 
-.pf-pagina {
-  background: var(--pf-chao);
-  color: var(--pf-tinta);
-  font-family: var(--pf-fonte);
-  font-size: var(--pf-passo-corpo);
-  line-height: 1.5;
-  font-weight: 400;
-  overflow-x: clip;
-  -webkit-font-smoothing: antialiased;
-}
-
-.pf-pagina a,
-.pf-pagina button {
-  touch-action: manipulation;
-}
-
-/* O pular para o conteudo: fora da tela ate receber o foco. */
-.pf-pular {
-  position: absolute;
-  left: var(--pf-margem);
-  top: 0.75rem;
-  z-index: 10;
-  padding: 0.75rem 1.25rem;
-  border-radius: 999px;
-  background: var(--pf-cobalto);
-  color: var(--pf-papel);
-  transform: translateY(-200%);
-}
-
-.pf-pagina a.pf-pular {
-  color: var(--pf-papel);
-}
-
-.pf-pular:focus-visible {
-  transform: none;
-}
-
-.pf-pagina :focus-visible {
-  outline: 3px solid currentColor;
-  outline-offset: 3px;
-}
-
-.pf-pagina ::selection {
-  background: var(--pf-cobalto);
-  color: var(--pf-papel);
-}
-
-.pf-pagina a {
-  color: inherit;
-}
-
-/* Peso zero: zera a margem do navegador sem atropelar a margem de cada secao. */
-:where(.pf-pagina) :where(h1, h2, h3, p) {
-  margin: 0;
-}
-
-.pf-titulo {
-  font-size: var(--pf-passo-titulo);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  text-wrap: balance;
-}
-
-/* ------------------------------------------------------------------ o botao: pilula com o furo */
-
-.pf-botao {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6em;
-  min-height: 3.25rem;
-  padding: 0 1.6em 0 1.1em;
-  border-radius: 999px;
-  background: var(--pf-cobalto);
-  color: var(--pf-papel);
-  font-weight: 500;
-  text-decoration: none;
-  transition: transform var(--pf-t-press) var(--pf-ease-out), background-color var(--pf-t-hover) ease;
-}
-
-.pf-pagina a.pf-botao {
-  color: var(--pf-papel);
-}
-
-.pf-botao::before {
-  content: "";
-  width: 0.55em;
-  height: 0.55em;
-  border-radius: 50%;
-  background: var(--pf-chao);
-  flex: none;
-}
-
-.pf-botao:active {
-  transform: scale(0.97);
-}
-
-/* O hover sobe o contraste: o cobalto escurece um degrau. */
-@media (hover: hover) and (pointer: fine) {
-  .pf-botao:hover,
-  .pf-comeco__botao:hover,
-  .pf-escolha__opcao[aria-pressed="true"]:hover {
-    background: var(--pf-cobalto-fundo);
-  }
-
-  .pf-botao--claro:hover {
-    background: var(--pf-areia);
-  }
-
-  .pf-escolha__opcao[aria-pressed="false"]:hover {
-    background: var(--pf-papel);
-  }
-}
-
-.pf-botao--pequeno {
-  min-height: 2.75rem;
-  font-size: var(--pf-passo-pequeno);
-}
-
-.pf-botao--claro,
-.pf-pagina a.pf-botao--claro {
-  background: var(--pf-papel);
-  color: var(--pf-cobalto);
-}
-
-.pf-botao--claro::before {
-  background: var(--pf-cobalto);
-}
-
-/* ------------------------------------------------------------------ a medalha */
-
-.pf-medalha {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--pf-cobalto);
-}
-
-.pf-medalha__foto {
-  position: absolute;
-  inset: 7%;
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.pf-medalha__foto img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* O furo fica na borda, a cima e a esquerda, e a argola passa por ele. */
-.pf-medalha__furo {
-  position: absolute;
-  left: 17%;
-  top: 17%;
-  width: 5.5%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--pf-chao);
-  transform: translate(-50%, -50%);
-}
-
-.pf-medalha__argola {
-  position: absolute;
-  left: 12.5%;
-  top: 12.5%;
-  width: 13%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: max(6px, 1.1vmin) solid var(--pf-cobalto);
-  transform: translate(-50%, -50%);
-}
-
 /* ------------------------------------------------------------------ a capa */
 
 .pf-capa {
@@ -236,7 +61,8 @@
   }
 }
 
-.pf-capa__medalha {
+/* Peso de duas classes: o base.css pode carregar depois deste arquivo. */
+.pf-capa .pf-capa__medalha {
   position: absolute;
   width: 120vh;
   left: calc(82vw - 60vh);
@@ -280,7 +106,7 @@
 
 /* Em pe (telefone, tablet), a medalha desce para o pe da tela. */
 @media (max-aspect-ratio: 1/1) {
-  .pf-capa__medalha {
+  .pf-capa .pf-capa__medalha {
     width: 130vw;
     left: -15vw;
     top: 58svh;
@@ -1237,7 +1063,7 @@
   gap: clamp(1rem, 3vw, 3rem);
 }
 
-.pf-rodape__medalha {
+.pf-rodape .pf-rodape__medalha {
   width: clamp(5rem, 22vw, 20rem);
   background: var(--pf-papel);
   flex: none;
@@ -1452,7 +1278,7 @@
 /* ------------------------------------------------------------------ o movimento */
 
 @media (prefers-reduced-motion: no-preference) {
-  .pf-capa__medalha {
+  .pf-capa .pf-capa__medalha {
     animation: pf-medalha-entra 1200ms var(--pf-ease-expo) both;
   }
 

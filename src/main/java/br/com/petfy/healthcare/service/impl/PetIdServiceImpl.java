@@ -211,6 +211,7 @@ public class PetIdServiceImpl implements PetIdService {
                 .weight(animal.getWeight())
                 .gender(animal.getGender())
                 .personId(animal.getHolder().map(Person::getPersonId).orElse(null))
+                .photoAttachmentId(animal.getPhotoAttachmentId())
                 .creationDate(animal.getCreationDate())
                 .updateDate(animal.getUpdateDate())
                 .build();

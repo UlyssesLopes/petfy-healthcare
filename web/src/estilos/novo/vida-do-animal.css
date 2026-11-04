@@ -1,0 +1,879 @@
+/* A moldura do tutor e a vida do animal. So tokens de `novo/tokens.css`.
+ *
+ * Estilo "editorial": coluna central de 1100px numa grade de 12 (77px de coluna, 16px de calha:
+ * 12 x 77 + 11 x 16 = 1100). Paineis em tom sobre tom, um degrau acima do chao; numeros sem
+ * negrito. A cor de estado so aparece no que vence ou venceu. */
+
+/* ------------------------------------------------------------------ a moldura
+ * O menu e um painel cobalto da altura da tela, o mesmo cobalto cheio do rodape e do cartao da
+ * pagina publica. Letra em tamanho de texto, nunca de titulo; grupos com rotulo e o mesmo
+ * respiro entre eles; a pessoa num bloco proprio no pe. */
+
+.pf-app {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: 19rem minmax(0, 1fr);
+}
+
+.pf-app__barra {
+  display: none;
+}
+
+.pf-app__menu {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100svh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1.75rem 1rem 1rem;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+}
+
+.pf-app__menu-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.75rem;
+}
+
+.pf-pagina .pf-app__marca {
+  font-size: 1.625rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  color: var(--pf-papel);
+}
+
+.pf-app__fechar,
+.pf-app__abrir {
+  min-height: 2.75rem;
+  padding: 0 1.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pf-app__fechar {
+  display: none;
+}
+
+.pf-app__secao {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pf-pagina .pf-app__grupo {
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--pf-papel);
+}
+
+.pf-app__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.pf-pagina .pf-app__animal,
+.pf-pagina .pf-app__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: 0.875rem;
+  color: var(--pf-papel);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: background-color var(--pf-t-hover) ease, color var(--pf-t-hover) ease;
+}
+
+.pf-pagina .pf-app__animal {
+  min-height: 3.25rem;
+  padding: 0 0.5rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.pf-app__rotulo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-pagina .pf-app__animal[aria-current="page"] {
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-pagina .pf-app__animal:hover,
+  .pf-pagina .pf-app__item:hover,
+  .pf-pagina .pf-app__conta:hover,
+  .pf-app__sair:hover {
+    background: var(--pf-cobalto-fundo);
+  }
+
+  .pf-pagina .pf-app__animal[aria-current="page"]:hover {
+    background: var(--pf-papel);
+  }
+}
+
+/* A medalha do menu: aro claro sobre o cobalto, e cobalto quando a linha esta acesa. */
+.pf-app .pf-app__animal-medalha {
+  width: 2.375rem;
+  flex: none;
+  background: var(--pf-papel);
+}
+
+.pf-app .pf-app__animal-medalha .pf-medalha__argola {
+  border-width: 2px;
+  border-color: var(--pf-papel);
+}
+
+.pf-app .pf-app__animal-medalha .pf-medalha__furo {
+  background: var(--pf-cobalto);
+}
+
+.pf-app [aria-current="page"] .pf-app__animal-medalha {
+  background: var(--pf-cobalto);
+}
+
+.pf-app [aria-current="page"] .pf-app__animal-medalha .pf-medalha__argola {
+  border-color: var(--pf-cobalto);
+}
+
+.pf-app [aria-current="page"] .pf-app__animal-medalha .pf-medalha__furo {
+  background: var(--pf-papel);
+}
+
+/* Cadastrar animal na mesma forma das linhas de animal, com o + no lugar da foto. */
+.pf-app__mais-um {
+  display: grid;
+  place-items: center;
+  width: 2.375rem;
+  height: 2.375rem;
+  flex: none;
+  border-radius: 50%;
+  border: 2px dashed var(--pf-papel);
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.pf-pagina .pf-app__novo {
+  font-weight: 500;
+}
+
+/* A pessoa: um bloco proprio no pe, com o Sair ao lado do nome. */
+.pf-app__pessoa {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem;
+  border-radius: 1rem;
+  background: var(--pf-cobalto-fundo);
+}
+
+.pf-pagina .pf-app__conta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  padding: 0 0.5rem;
+  border-radius: 0.75rem;
+  color: var(--pf-papel);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.pf-app__sinal {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 50%;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pf-app__sair {
+  flex: none;
+  min-height: 2.75rem;
+  padding: 0 0.875rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: none;
+  color: var(--pf-papel);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pf-app__tela {
+  min-width: 0;
+  padding: 2rem var(--pf-margem) 4rem;
+}
+
+/* ------------------------------------------------------------------ a tela */
+
+.pf-vida {
+  max-width: 68.75rem; /* 1100px */
+  margin-inline: auto;
+  display: grid;
+  gap: 1rem;
+}
+
+.pf-vida__estado {
+  max-width: 40rem;
+  margin: 4rem auto;
+  display: grid;
+  gap: 1.25rem;
+  justify-items: start;
+}
+
+/* A cabeca: o animal grande na medalha, o nome e o fato do dia ao lado da acao que o resolve. */
+.pf-vida__cabeca {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 2rem;
+  align-items: center;
+  padding: 0.5rem 0 1.5rem;
+}
+
+.pf-vida__medalha {
+  width: clamp(7.5rem, 12vw, 10.5rem);
+}
+
+.pf-vida__nome {
+  font-size: var(--pf-passo-titulo);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.pf-vida__sobre {
+  margin-top: 0.75rem;
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-vida__fato {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.pf-vida__fato[data-tom="perigo"] {
+  background: var(--pf-perigo-fundo);
+  color: var(--pf-perigo-tinta);
+}
+
+.pf-vida__fato[data-tom="alerta"] {
+  background: var(--pf-alerta-fundo);
+  color: var(--pf-alerta-tinta);
+}
+
+.pf-vida__fato[data-tom="calmo"] {
+  padding-inline: 0;
+}
+
+.pf-vida__acoes {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  align-self: start;
+  position: relative;
+}
+
+.pf-mais summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3.25rem;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  background: var(--pf-papel);
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pf-mais summary::-webkit-details-marker {
+  display: none;
+}
+
+.pf-mais ul {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 5;
+  min-width: 15rem;
+  margin: 0;
+  padding: 0.5rem;
+  list-style: none;
+  border-radius: 1rem;
+  background: var(--pf-papel);
+  border: 1px solid var(--pf-areia-funda);
+}
+
+.pf-mais a {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: 0.75rem;
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-mais a:hover {
+    background: var(--pf-areia);
+  }
+
+  .pf-mais summary:hover {
+    background: var(--pf-areia-funda);
+  }
+}
+
+/* A grade: 6/3/3, depois 9/3, e as linhas internas caem nas mesmas colunas. */
+/* Paineis da mesma fileira terminam juntos; o rodape de cada um desce para o pe. */
+.pf-vida__grade {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.pf-painel {
+  grid-column: span 3;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  background: var(--pf-papel);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pf-painel > .pf-painel__nota:last-child,
+.pf-painel > .pf-painel__rodape,
+.pf-painel > .pf-grafico {
+  margin-top: auto;
+}
+
+.pf-painel--vacinas {
+  grid-column: span 6;
+}
+
+.pf-painel--vida {
+  grid-column: span 9;
+}
+
+/* Quem cuida fica do proprio tamanho e acompanha a linha do tempo enquanto ela rola. */
+.pf-painel--rede {
+  grid-column: span 3;
+  align-self: start;
+  position: sticky;
+  top: 1rem;
+}
+
+.pf-painel__cabeca {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.pf-painel__titulo {
+  font-size: var(--pf-passo-destaque);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.pf-painel__vazio {
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-painel__nota {
+  font-size: var(--pf-passo-pequeno);
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-painel__mais,
+.pf-painel__link {
+  align-self: flex-start;
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pf-cobalto);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.pf-painel__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+  padding-top: 0.5rem;
+}
+
+/* ------------------------------------------------------------------ vacinas */
+
+.pf-doses,
+.pf-condicoes,
+.pf-rede,
+.pf-anexos,
+.pf-linha {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pf-doses {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pf-dose {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  min-height: 3.25rem;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  border-radius: 1rem;
+  background: var(--pf-areia);
+}
+
+.pf-dose__nome {
+  font-weight: 500;
+}
+
+.pf-estado {
+  flex: none;
+  white-space: nowrap;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: var(--pf-passo-pequeno);
+  font-weight: 500;
+}
+
+.pf-estado[data-tom="perigo"] {
+  background: var(--pf-perigo-fundo);
+  color: var(--pf-perigo-tinta);
+}
+
+.pf-estado[data-tom="alerta"] {
+  background: var(--pf-alerta-fundo);
+  color: var(--pf-alerta-tinta);
+}
+
+.pf-estado[data-tom="calmo"] {
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+}
+
+/* ------------------------------------------------------------------ alergias, peso */
+
+.pf-condicoes {
+  display: grid;
+  gap: 1rem;
+}
+
+.pf-condicao {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.pf-condicao__tipo {
+  font-size: var(--pf-passo-pequeno);
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-condicao__nome {
+  font-weight: 500;
+}
+
+.pf-peso__valor {
+  font-size: var(--pf-passo-titulo);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-peso__unidade {
+  font-size: var(--pf-passo-destaque);
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-grafico {
+  margin: 0.5rem 0 0;
+}
+
+.pf-grafico svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.pf-grafico__linha {
+  fill: none;
+  stroke: var(--pf-cobalto);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.pf-grafico__base {
+  stroke: var(--pf-areia-funda);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.pf-grafico__guia {
+  stroke: var(--pf-areia-funda);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.pf-grafico__eixo {
+  display: flex;
+  justify-content: space-between;
+  white-space: nowrap;
+  margin-top: 0.375rem;
+  font-size: var(--pf-passo-pequeno);
+  color: var(--pf-cobalto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ a linha do tempo */
+
+.pf-linha {
+  display: grid;
+}
+
+.pf-registro {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--pf-areia-funda);
+}
+
+.pf-registro:first-child {
+  border-top: 0;
+  padding-top: 0.25rem;
+}
+
+.pf-registro__topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pf-registro__tipo {
+  padding: 0.125rem 0.75rem;
+  border-radius: 999px;
+  background: var(--pf-areia);
+  font-size: var(--pf-passo-pequeno);
+  font-weight: 600;
+}
+
+.pf-registro__quando {
+  font-size: var(--pf-passo-pequeno);
+  color: var(--pf-cobalto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-registro__texto {
+  font-size: var(--pf-passo-corpo);
+}
+
+.pf-registro__autor,
+.pf-registro__correcao {
+  font-size: var(--pf-passo-pequeno);
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-registro__acao {
+  justify-self: start;
+  font-size: var(--pf-passo-pequeno);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------ quem cuida */
+
+.pf-rede {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.pf-membro {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.pf-membro__sinal {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+  font-size: var(--pf-passo-pequeno);
+  font-weight: 600;
+}
+
+.pf-membro__sinal[data-kind="ORGANIZACAO"] {
+  background: var(--pf-areia-funda);
+  color: var(--pf-cobalto);
+}
+
+.pf-membro__texto {
+  display: grid;
+  min-width: 0;
+}
+
+.pf-membro__nome {
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------ documentos */
+
+.pf-documentos {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  background: var(--pf-papel);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pf-anexos {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pf-anexo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.pf-anexo__nome {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ o desenho, sem foto */
+
+.pf-desenho {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pf-desenho__chao {
+  fill: var(--pf-areia-funda);
+}
+
+.pf-desenho__rosto {
+  fill: var(--pf-cobalto);
+}
+
+.pf-desenho__olhos {
+  fill: var(--pf-papel);
+}
+
+/* ------------------------------------------------------------------ tablet */
+
+@media (max-width: 80rem) {
+  .pf-vida__grade {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .pf-painel--vacinas,
+  .pf-painel--vida,
+  .pf-painel--rede {
+    grid-column: span 6;
+  }
+
+  .pf-painel--rede {
+    position: static;
+  }
+}
+
+/* ------------------------------------------------------------------ telefone */
+
+@media (max-width: 48rem) {
+  .pf-app {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-app__barra {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 3.5rem;
+    padding: 0.375rem var(--pf-margem);
+    background: var(--pf-cobalto);
+    color: var(--pf-papel);
+  }
+
+  .pf-app__barra .pf-app__marca {
+    font-size: 1.375rem;
+  }
+
+  .pf-app__barra-titulo {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pf-app__menu {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    top: 0;
+    height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+    padding: 1rem var(--pf-margem) 1.5rem;
+    overscroll-behavior: contain;
+  }
+
+  .pf-app__menu[data-aberto] {
+    display: flex;
+  }
+
+  .pf-app__menu-topo {
+    padding: 0;
+  }
+
+  .pf-app__fechar {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .pf-app__tela {
+    padding-top: 1rem;
+  }
+
+  /* No telefone o nome senta ao lado da foto, e o fato do dia ganha a largura toda. */
+  .pf-vida__cabeca {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.75rem 1.25rem;
+  }
+
+  .pf-vida__quem {
+    display: contents;
+  }
+
+  .pf-vida__medalha {
+    width: 6.5rem;
+    grid-row: span 2;
+  }
+
+  .pf-vida__nome {
+    align-self: end;
+  }
+
+  .pf-vida__sobre {
+    align-self: start;
+    margin-top: 0;
+  }
+
+  .pf-vida__fato {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-top: 0.25rem;
+  }
+
+  .pf-vida__acoes {
+    grid-column: 1 / -1;
+  }
+
+  .pf-mais ul {
+    left: 0;
+    right: auto;
+  }
+
+  .pf-vida__grade {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-painel,
+  .pf-painel--vacinas,
+  .pf-painel--vida,
+  .pf-painel--rede {
+    grid-column: 1 / -1;
+  }
+
+  .pf-painel--rede {
+    position: static;
+  }
+
+  .pf-anexo {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .pf-anexo .pf-painel__nota {
+    grid-row: 2;
+  }
+}

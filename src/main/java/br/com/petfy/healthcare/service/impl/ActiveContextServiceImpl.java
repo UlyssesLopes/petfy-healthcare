@@ -108,7 +108,7 @@ public class ActiveContextServiceImpl implements ActiveContextService {
                 .organizationId(organizacao.getOrganizationId())
                 .organizationName(organizacao.getName())
                 .role(papel)
-                .capabilities(organizacao.getCapabilities() == null ? Set.of() : organizacao.getCapabilities())
+                .capabilities(organizacao.getCapabilities() == null ? Set.of() : Set.copyOf(organizacao.getCapabilities()))
                 .build();
     }
 

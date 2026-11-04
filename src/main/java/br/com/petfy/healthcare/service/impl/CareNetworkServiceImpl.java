@@ -139,7 +139,9 @@ public class CareNetworkServiceImpl implements CareNetworkService {
                         : concessao.getGranteeOrganization().getName())
                 .reach(CareNetworkReach.CONCESSAO)
                 .holder(false)
-                .scopes(concessao.getScopes() == null ? Set.of() : concessao.getScopes())
+                // Copia ainda dentro da transacao: a colecao do Grant e preguicosa, e a resposta
+                // vira JSON depois que a sessao fecha.
+                .scopes(concessao.getScopes() == null ? Set.of() : Set.copyOf(concessao.getScopes()))
                 .since(concessao.getGrantedAt())
                 .expiresAt(concessao.getExpiresAt())
                 .lastContributionAt((dePessoa ? porPessoa : porOrganizacao).get(id))

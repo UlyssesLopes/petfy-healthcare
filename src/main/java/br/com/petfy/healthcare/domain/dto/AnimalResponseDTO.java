@@ -47,6 +47,9 @@ public class AnimalResponseDTO {
 
     private UUID personId;
 
+    /** O anexo que e a foto do animal; o conteudo sai de /attachments/{id}/content. */
+    private UUID photoAttachmentId;
+
     private LocalDateTime creationDate;
 
     private LocalDateTime updateDate;

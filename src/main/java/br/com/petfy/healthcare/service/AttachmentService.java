@@ -25,4 +25,7 @@ public interface AttachmentService {
 
     void delete(UUID attachmentId);
 
+    /** Marca um anexo do animal, que precisa ser imagem, como a foto dele. */
+    void setPhoto(UUID animalId, UUID attachmentId);
+
 }

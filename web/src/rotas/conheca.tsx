@@ -14,6 +14,7 @@ import {
   type Foto,
 } from "../conteudo/conheca.ts";
 import "../estilos/novo/tokens.css";
+import "../estilos/novo/base.css";
 import "../estilos/novo/conheca.css";
 
 /**

@@ -241,6 +241,7 @@ public class AnimalServiceImpl implements AnimalService {
                 .castrated(animal.getCastrated())
                 .castratedAt(animal.getCastratedAt())
                 .personId(holderId)
+                .photoAttachmentId(animal.getPhotoAttachmentId())
                 .creationDate(animal.getCreationDate())
                 .updateDate(animal.getUpdateDate())
                 .build();
