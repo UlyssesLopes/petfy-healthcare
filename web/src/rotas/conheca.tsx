@@ -499,7 +499,8 @@ function Comeco() {
   const navegar = useNavigate();
   const enviar = (evento: FormEvent) => {
     evento.preventDefault();
-    void navegar({ to: "/criar-conta" });
+    const animal = nome.trim();
+    void navegar({ to: "/criar-conta", search: animal === "" ? {} : { animal } });
   };
 
   return (

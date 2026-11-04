@@ -1,80 +1,43 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useIntl } from "react-intl";
 
 import { useCriarConta } from "../dados/autenticacao.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
-
-/* ------------------------------------------------------------------ o que este arquivo e
- *
- * A "Tela 07 · a porta — Cadastro e login, uma so para todo mundo", de
- * `design/IdentidadeVisual/Telas Petfy - Entrada e fluxos.dc.html`.
- *
- * O markup vem do arquivo. A tese esta na primeira frase dela: <b>uma conta serve para
- * tudo</b> — cuidar dos seus animais e atender os de outras pessoas. Nao existe escolher
- * "sou tutor" ou "sou veterinario" aqui, e nao e simplificacao: quem responde pela area e o
- * que a pessoa TEM, nao um campo de cadastro (PRODUTO.md 9.3).
- *
- * <b>A SENHA PEDE 10 CARACTERES E O SERVIDOR ACEITA 8.</b> O desenho escreve "ao menos 10
- * caracteres", o `PersonRequestDTO` declara `minLength: 8`. O cliente fica mais rigoroso que
- * o servidor de proposito — a validacao de campo e do cliente porque a do servidor nao e
- * exibivel (DESIGN.md, emenda da secao 6) —, e a divergencia fica registrada: alinhar o
- * servidor em 10 e mudanca de contrato, e nao de tela.
- *
- * <b>O PAINEL "E-MAIL NAO CONFIRMADO" DO DESENHO NAO EXISTE AQUI, e nao da para fingir.</b>
- * Ele pede uma faixa que aparece enquanto o e-mail nao foi confirmado, e nenhuma rota conta
- * se ele foi: o `/me/context` traz pessoa, papeis e capacidades, e o `/persons/me` nao tem o
- * campo. Mostrar a faixa sempre mentiria para quem ja confirmou. Falta um booleano no
- * backend, e esta registrado.
- *
- * O painel de consentimento vive no `__root.tsx`, porque nao e desta tela: ele aparece em
- * qualquer lugar do produto quando o texto muda.
- */
+import "../estilos/novo/tokens.css";
+import "../estilos/novo/base.css";
+import "../estilos/novo/criar-conta.css";
 
 /**
- * O convite de organizacao, quando a pessoa chegou por um.
+ * A porta de quem ainda não tem conta. Uma conta serve para tudo (PRODUTO.md 9.3): não há
+ * escolha de perfil aqui. A medalha ao lado é o verso da plaquinha da coleira, gravado
+ * enquanto a pessoa digita; a frente leva o nome do animal que ela digitou na `/conheca`.
  *
- * <b>O `inviteToken` existia no `PersonRequestDTO` desde sempre e nenhuma tela o preenchia</b> —
- * quem recebia convite sem ter conta dependia de alguem montar a URL na mao. Era a outra metade
- * do buraco que o aceite com conta existente fechou.
- *
- * <b>Nao ha previa aqui, e nao da para fingir que ha.</b> O `/organizations/invites/preview`
- * exige autenticacao e confere o convite contra o e-mail de quem esta logado — e aqui, por
- * definicao, ainda nao ha conta nenhuma. Uma rota publica que devolvesse o nome da organizacao
- * para qualquer portador de token foi considerada e recusada: e superficie publica nova num
- * produto de saude, para poupar um passo. Entao a tela diz o que sabe (ha um convite em vigor)
- * e nao afirma o que nao sabe (de quem ele e).
+ * O convite não tem prévia: a rota de prévia exige sessão (docs/reconstrucao-do-front.md).
  */
 export const Route = createFileRoute("/criar-conta")({
-  validateSearch: (search: Record<string, unknown>): { convite?: string } =>
-    typeof search.convite === "string" && search.convite !== ""
+  validateSearch: (search: Record<string, unknown>): { convite?: string; animal?: string } => ({
+    ...(typeof search.convite === "string" && search.convite !== ""
       ? { convite: search.convite }
-      : {},
+      : {}),
+    ...(typeof search.animal === "string" && search.animal.trim() !== ""
+      ? { animal: search.animal.trim().slice(0, 24) }
+      : {}),
+  }),
   component: CriarConta,
 });
 
-/** O desenho escreve o minimo em texto, e o texto e a regra. */
+/** Mais rigoroso que o contrato (8) de propósito; alinhar o servidor é mudança de contrato. */
 const MINIMO_DA_SENHA = 10;
 
-function useHover() {
-  const [sobre, setSobre] = useState(false);
-  return {
-    sobre,
-    props: {
-      onMouseEnter: () => setSobre(true),
-      onMouseLeave: () => setSobre(false),
-      onFocus: () => setSobre(true),
-      onBlur: () => setSobre(false),
-    },
-  };
-}
+type Campo = "nome" | "email" | "senha" | "aceite";
 
 function CriarConta() {
   const intl = useIntl();
+  const t = (id: string, valores?: Record<string, string>) => intl.formatMessage({ id }, valores);
   const navegar = useNavigate();
-  const { convite } = Route.useSearch();
+  const { convite, animal } = Route.useSearch();
   const criar = useCriarConta();
-  const acao = useHover();
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -85,14 +48,22 @@ function CriarConta() {
   const [crmvUf, setCrmvUf] = useState("");
   const [tocado, setTocado] = useState(false);
 
-  const senhaCurta = senha.length > 0 && senha.length < MINIMO_DA_SENHA;
-  const podeEnviar =
-    nome.trim() !== "" && email.trim() !== "" && senha.length >= MINIMO_DA_SENHA && aceitou;
+  const faltando: Campo[] = [
+    ...(nome.trim() === "" ? (["nome"] as const) : []),
+    ...(email.trim() === "" ? (["email"] as const) : []),
+    ...(senha.length < MINIMO_DA_SENHA ? (["senha"] as const) : []),
+    ...(!aceitou ? (["aceite"] as const) : []),
+  ];
+  const invalido = (campo: Campo) => tocado && faltando.includes(campo);
+  const faltamNaSenha = MINIMO_DA_SENHA - senha.length;
 
-  const enviar = async () => {
+  const enviar = async (evento: FormEvent) => {
+    evento.preventDefault();
     setTocado(true);
 
-    if (!podeEnviar) {
+    const primeiro = faltando[0];
+    if (primeiro !== undefined) {
+      document.getElementById(`criar-${primeiro}`)?.focus();
       return;
     }
 
@@ -105,254 +76,257 @@ function CriarConta() {
       convite,
     });
 
-    // A Tela 08 e literalmente "depois do login": e para la que a conta nova vai.
-    await navegar({ to: "/comecar" });
+    // Quem já disse qual animal quer registrar vai direto para o cadastro dele.
+    if (animal !== undefined) {
+      await navegar({ to: "/animais/novo", search: { nome: animal } });
+    } else {
+      await navegar({ to: "/comecar" });
+    }
   };
 
   return (
-    <div style={{ padding: "40px 24px", display: "flex", gap: "24px", alignItems: "flex-start", justifyContent: "center", flexWrap: "wrap" }}>
-      <div style={{ width: "660px", maxWidth: "100%", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
-        <div style={{ padding: "44px 56px 48px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "40px" }}>
-            <div aria-hidden style={{ width: "30px", height: "30px", borderRadius: "999px", border: "3px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: "9px", height: "9px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
-            </div>
-            <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "20px", fontWeight: 600 }}>Petfy</span>
-          </div>
+    <div className="pf pf-pagina pf-porta">
+      <a className="pf-pular" href="#pf-porta-form">
+        {t("criarConta.pular")}
+      </a>
 
-          <h1 style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "34px", fontWeight: 500, margin: "0 0 10px", letterSpacing: "-0.02em" }}>
-            {intl.formatMessage({ id: "criarConta.titulo" })}
+      <header className="pf-porta__topo">
+        <Link to="/conheca" className="pf-porta__marca" translate="no">
+          Petfy
+        </Link>
+      </header>
+
+      <aside className="pf-porta__painel" aria-label={t("criarConta.medalha.rotulo")}>
+        <Verso animal={animal} nome={nome.trim()} />
+        <p className="pf-porta__legenda">{t("criarConta.medalha.legenda")}</p>
+      </aside>
+
+      <main className="pf-porta__folha">
+        <div className="pf-porta__corpo">
+          <h1 className="pf-titulo pf-porta__titulo">
+            {animal === undefined
+              ? t("criarConta.titulo")
+              : t("criarConta.titulo.comAnimal", { animal })}
           </h1>
-          <p style={{ fontSize: "16px", lineHeight: 1.6, color: "oklch(0.45 0.015 150)", margin: "0 0 30px", maxWidth: "46ch" }}>
-            {intl.formatMessage({ id: "criarConta.apoio" })}
-          </p>
+          <p className="pf-porta__apoio">{t("criarConta.apoio")}</p>
 
-          {/* Diz o que sabe, e nao afirma o que nao sabe. Qual organizacao convidou so aparece
-              a partir do momento em que a conta existe — ver o cabecalho deste arquivo. */}
           {convite !== undefined && (
-            <div role="status" style={{ border: "1px solid oklch(0.86 0.008 150)", background: "oklch(0.975 0.004 150)", borderRadius: "12px", padding: "20px 22px", margin: "0 0 28px", maxWidth: "46ch" }}>
-              <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "18px", fontWeight: 500, marginBottom: "8px" }}>
-                {intl.formatMessage({ id: "criarConta.convite.titulo" })}
-              </div>
-              <div style={{ fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)" }}>
-                {intl.formatMessage({ id: "criarConta.convite.texto" })}
-              </div>
+            <div role="status" className="pf-porta__convite">
+              <p className="pf-porta__convite-titulo">{t("criarConta.convite.titulo")}</p>
+              <p>{t("criarConta.convite.texto")}</p>
             </div>
           )}
 
-          <form
-            onSubmit={(evento) => {
-              evento.preventDefault();
-              void enviar();
-            }}
-            style={{ display: "flex", flexDirection: "column", gap: "18px", maxWidth: "420px" }}
-          >
-            <Campo rotulo={intl.formatMessage({ id: "criarConta.nome" })} para="criar-nome">
+          <form id="pf-porta-form" className="pf-form" onSubmit={(e) => void enviar(e)} noValidate>
+            <div className="pf-campo">
+              <label htmlFor="criar-nome">{t("criarConta.nome")}</label>
               <input
                 id="criar-nome"
+                name="name"
                 type="text"
                 value={nome}
-                onChange={(evento) => setNome(evento.target.value)}
+                onChange={(e) => setNome(e.target.value)}
                 autoComplete="name"
-                style={estiloDoCampo}
+                aria-invalid={invalido("nome") || undefined}
               />
-            </Campo>
+            </div>
 
-            <Campo rotulo={intl.formatMessage({ id: "criarConta.email" })} para="criar-email">
+            <div className="pf-campo">
+              <label htmlFor="criar-email">{t("criarConta.email")}</label>
               <input
                 id="criar-email"
+                name="email"
                 type="email"
+                inputMode="email"
+                spellCheck={false}
                 value={email}
-                onChange={(evento) => setEmail(evento.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
-                style={estiloDoCampo}
+                aria-invalid={invalido("email") || undefined}
               />
-            </Campo>
+            </div>
 
-            <Campo rotulo={intl.formatMessage({ id: "criarConta.senha" })} para="criar-senha">
-              <div style={{ display: "flex", gap: "8px" }}>
+            <div className="pf-campo">
+              <label htmlFor="criar-senha">{t("criarConta.senha")}</label>
+              <div className="pf-campo__senha">
                 <input
                   id="criar-senha"
+                  name="new-password"
                   type={mostrarSenha ? "text" : "password"}
                   value={senha}
-                  onChange={(evento) => setSenha(evento.target.value)}
+                  onChange={(e) => setSenha(e.target.value)}
                   autoComplete="new-password"
                   aria-describedby="criar-senha-minimo"
-                  style={{ ...estiloDoCampo, letterSpacing: mostrarSenha ? "normal" : "0.2em" }}
+                  aria-invalid={invalido("senha") || undefined}
                 />
-                {/*
-                 * O "Mostrar" e o mesmo da Tela 28, e pelo motivo que ela escreve: digitar
-                 * as cegas num teclado de celular, com pressa, e a causa mais comum do erro.
-                 */}
                 <button
                   type="button"
+                  className="pf-campo__mostrar"
+                  aria-pressed={mostrarSenha}
                   onClick={() => setMostrarSenha((antes) => !antes)}
-                  style={{ fontFamily: "inherit", fontSize: "14px", color: "oklch(0.42 0.015 150)", background: "transparent", border: "1px solid oklch(0.84 0.012 150)", borderRadius: "4px", padding: "0 14px", minHeight: "48px", cursor: "pointer", flex: "none" }}
                 >
-                  {intl.formatMessage({ id: mostrarSenha ? "criarConta.senha.esconder" : "criarConta.senha.mostrar" })}
+                  {t(mostrarSenha ? "criarConta.senha.esconder" : "criarConta.senha.mostrar")}
                 </button>
               </div>
-              <div
+              <p
                 id="criar-senha-minimo"
-                style={{ fontSize: "13px", color: senhaCurta ? "oklch(0.45 0.13 30)" : "oklch(0.5 0.015 150)", marginTop: "7px" }}
+                className="pf-campo__dica"
+                data-falta={senha.length > 0 && faltamNaSenha > 0 ? "" : undefined}
               >
-                {intl.formatMessage({ id: "criarConta.senha.minimo" }, { minimo: MINIMO_DA_SENHA })}
-              </div>
-            </Campo>
+                {senha.length > 0 && faltamNaSenha > 0
+                  ? intl.formatMessage({ id: "criarConta.senha.faltam" }, { n: faltamNaSenha })
+                  : intl.formatMessage({ id: "criarConta.senha.minimo" }, { minimo: MINIMO_DA_SENHA })}
+              </p>
+            </div>
 
-            <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", paddingTop: "4px" }}>
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={aceitou}
-                onClick={() => setAceitou((antes) => !antes)}
-                style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer", flex: "none", marginTop: "2px" }}
-              >
-                <div
-                  aria-hidden
-                  style={
-                    aceitou
-                      ? { width: "20px", height: "20px", borderRadius: "4px", background: "oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }
-                      : { width: "20px", height: "20px", borderRadius: "4px", border: "1px solid oklch(0.78 0.012 150)" }
-                  }
-                >
-                  {aceitou && <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: "oklch(1 0 0)" }}></div>}
-                </div>
-              </button>
-              {/*
-               * OS DOIS DOCUMENTOS SAO LINKS, e antes eram texto.
-               *
-               * A caixa sempre dizia "li e aceito", o backend sempre exigiu o aceite — "sem
-               * aceite nao ha base legal para tratar dado de saude" — e nao havia como ler nem
-               * um nem outro. Pedir aceite de documento inalcancavel e o contrario do que o
-               * consentimento existe para provar.
-               */}
-              <div style={{ fontSize: "15px", lineHeight: 1.55, color: "oklch(0.35 0.018 150)" }}>
+            <div className="pf-aceite" data-invalido={invalido("aceite") ? "" : undefined}>
+              <span className="pf-aceite__caixa">
+                <input
+                  id="criar-aceite"
+                  type="checkbox"
+                  checked={aceitou}
+                  onChange={(e) => setAceitou(e.target.checked)}
+                  aria-invalid={invalido("aceite") || undefined}
+                />
+                <span className="pf-aceite__marca" aria-hidden="true" />
+              </span>
+              <label htmlFor="criar-aceite">
                 {intl.formatMessage(
                   { id: "criarConta.termos" },
                   {
                     termos: (
-                      <Link to="/termos" style={{ color: "oklch(0.46 0.085 150)" }}>
-                        {intl.formatMessage({ id: "criarConta.termos.oQue" })}
+                      <Link to="/termos" target="_blank">
+                        {t("criarConta.termos.oQue")}
                       </Link>
                     ),
                     privacidade: (
-                      <Link to="/privacidade" style={{ color: "oklch(0.46 0.085 150)" }}>
-                        {intl.formatMessage({ id: "criarConta.privacidade.oQue" })}
+                      <Link to="/privacidade" target="_blank">
+                        {t("criarConta.privacidade.oQue")}
                       </Link>
                     ),
                   },
                 )}
-              </div>
+              </label>
             </div>
 
-            {/*
-             * O painel "declarar credencial · em qualquer momento" do desenho. Criar a conta
-             * e um desses momentos, e o `PersonRequestDTO` aceita `crmv` e `crmvUf` — entao
-             * o campo mora aqui em vez de esperar por uma tela de conta que nao existe.
-             */}
-            <details style={{ borderTop: "1px solid oklch(0.90 0.008 150)", paddingTop: "18px" }}>
-              <summary style={{ fontSize: "15px", color: "oklch(0.46 0.085 150)", cursor: "pointer" }}>
-                {intl.formatMessage({ id: "criarConta.credencial.abrir" })}
+            <details className="pf-credencial">
+              <summary>
+                <span className="pf-credencial__mais" aria-hidden="true">
+                  +
+                </span>
+                {t("criarConta.credencial.abrir")}
               </summary>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 92px", gap: "10px" }}>
-                  <Campo rotulo={intl.formatMessage({ id: "criarConta.credencial.registro" })} para="criar-crmv">
+              <div className="pf-credencial__corpo">
+                <div className="pf-credencial__linha">
+                  <div className="pf-campo">
+                    <label htmlFor="criar-crmv">{t("criarConta.credencial.registro")}</label>
                     <input
                       id="criar-crmv"
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
                       value={crmv}
-                      onChange={(evento) => setCrmv(evento.target.value)}
-                      placeholder="41.882"
-                      style={{ ...estiloDoCampo, fontFamily: "'DM Mono', monospace", minHeight: "44px" }}
+                      onChange={(e) => setCrmv(e.target.value)}
+                      placeholder="41.882…"
                     />
-                  </Campo>
-                  <Campo rotulo={intl.formatMessage({ id: "criarConta.credencial.uf" })} para="criar-crmv-uf">
+                  </div>
+                  <div className="pf-campo">
+                    <label htmlFor="criar-crmv-uf">{t("criarConta.credencial.uf")}</label>
                     <input
                       id="criar-crmv-uf"
                       type="text"
+                      autoComplete="off"
                       value={crmvUf}
-                      onChange={(evento) => setCrmvUf(evento.target.value.slice(0, 2))}
+                      onChange={(e) => setCrmvUf(e.target.value.slice(0, 2).toUpperCase())}
                       maxLength={2}
                       placeholder="SP"
-                      style={{ ...estiloDoCampo, fontFamily: "'DM Mono', monospace", minHeight: "44px", textTransform: "uppercase" }}
                     />
-                  </Campo>
+                  </div>
                 </div>
-                <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.42 0.015 150)" }}>
-                  {intl.formatMessage({ id: "criarConta.credencial.informado" })}
-                </div>
-                <div style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.5 0.015 150)" }}>
-                  {intl.formatMessage({ id: "criarConta.credencial.semClinica" })}
-                </div>
+                <p>{t("criarConta.credencial.informado")}</p>
+                <p>{t("criarConta.credencial.semClinica")}</p>
               </div>
             </details>
 
-            {criar.isError && (
-              <p role="alert" style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.45 0.13 30)", background: "oklch(0.97 0.012 30)", borderRadius: "8px", padding: "12px 14px", margin: 0 }}>
-                {intl.formatMessage({ id: chaveDoErro(criar.error) })}
-              </p>
-            )}
-
-            {tocado && !podeEnviar && !criar.isError && (
-              <p role="alert" style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.45 0.13 30)", margin: 0 }}>
-                {intl.formatMessage({ id: aceitou ? "criarConta.faltaCampo" : "criarConta.faltaAceite" })}
-              </p>
-            )}
+            <div aria-live="polite">
+              {criar.isError && (
+                <p role="alert" className="pf-porta__erro">
+                  {t(chaveDoErro(criar.error))}
+                </p>
+              )}
+              {tocado && faltando.length > 0 && !criar.isError && (
+                <p role="alert" className="pf-porta__erro">
+                  {t(
+                    faltando.length === 1 && faltando[0] === "aceite"
+                      ? "criarConta.faltaAceite"
+                      : "criarConta.faltaCampo",
+                  )}
+                </p>
+              )}
+            </div>
 
             <button
               type="submit"
+              className="pf-botao pf-porta__acao"
               disabled={criar.isPending}
-              {...acao.props}
-              style={{ fontFamily: "inherit", fontSize: "16px", fontWeight: 500, color: "oklch(1 0 0)", background: criar.isPending ? "oklch(0.62 0.05 150)" : acao.sobre ? "oklch(0.40 0.09 150)" : "oklch(0.46 0.085 150)", border: "none", borderRadius: "8px", padding: "15px", minHeight: "52px", cursor: "pointer" }}
+              aria-busy={criar.isPending || undefined}
             >
-              {intl.formatMessage({
-                id: criar.isPending
+              {t(
+                criar.isPending
                   ? "criarConta.acao.criando"
                   : convite === undefined
                     ? "criarConta.acao"
                     : "criarConta.acao.comConvite",
-              })}
+              )}
             </button>
 
-            {/* O convite acompanha quem descobre aqui que ja tinha conta: perde-lo nesta
-                travessia faria a pessoa voltar para uma porta que nao sabe por que ela veio. */}
-            <div style={{ fontSize: "15px", color: "oklch(0.45 0.015 150)", textAlign: "center" }}>
-              {intl.formatMessage({ id: "criarConta.jaTem" })}{" "}
-              <Link
-                to="/entrar"
-                search={convite === undefined ? {} : { convite }}
-                style={{ color: "oklch(0.46 0.085 150)" }}
-              >
-                {intl.formatMessage({ id: "criarConta.entrar" })}
-              </Link>
-            </div>
+            {animal !== undefined && (
+              <p className="pf-porta__seguinte">{t("criarConta.seguinte", { animal })}</p>
+            )}
           </form>
+
+          {/* O convite atravessa junto: quem descobre aqui que já tinha conta não o perde. */}
+          <p className="pf-porta__ja-tem">
+            {t("criarConta.jaTem")}{" "}
+            <Link to="/entrar" search={convite === undefined ? {} : { convite }}>
+              {t("criarConta.entrar")}
+            </Link>
+          </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
 
-const estiloDoCampo = {
-  fontFamily: "inherit",
-  border: "1px solid oklch(0.82 0.012 150)",
-  borderRadius: "4px",
-  padding: "13px 14px",
-  fontSize: "16px",
-  minHeight: "48px",
-  width: "100%",
-  background: "oklch(1 0 0)",
-} as const;
+/** O verso da plaquinha. Repete o que a pessoa digita, então fica fora da árvore acessível. */
+function Verso({ animal, nome }: { animal?: string; nome: string }) {
+  const intl = useIntl();
+  const medalha = useRef<HTMLDivElement>(null);
+  const gravou = nome !== "";
 
-function Campo({ rotulo, para, children }: { rotulo: string; para: string; children: ReactNode }) {
+  // A medalha balança na argola quando o nome passa a existir ou deixa de existir.
+  useEffect(() => {
+    const el = medalha.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    el.animate(
+      [{ transform: "rotate(0)" }, { transform: "rotate(-4deg)" }, { transform: "rotate(2.5deg)" }, { transform: "rotate(-1deg)" }, { transform: "rotate(0)" }],
+      { duration: 900, easing: "cubic-bezier(0.33, 1, 0.68, 1)" },
+    );
+  }, [gravou]);
+
   return (
-    <div>
-      <label htmlFor={para} style={{ display: "block", fontSize: "13px", fontWeight: 500, color: "oklch(0.42 0.015 150)", marginBottom: "7px" }}>
-        {rotulo}
-      </label>
-      {children}
+    <div ref={medalha} className="pf-medalha pf-verso" aria-hidden="true">
+      <span className="pf-medalha__furo" />
+      <span className="pf-medalha__argola" />
+      <div className="pf-verso__gravado">
+        <span className="pf-verso__animal" translate="no">
+          {animal ?? intl.formatMessage({ id: "criarConta.medalha.semAnimal" })}
+        </span>
+        <span className="pf-verso__mora">{intl.formatMessage({ id: "criarConta.medalha.moraCom" })}</span>
+        <span className="pf-verso__nome" data-vazio={nome === "" ? "" : undefined} translate="no">
+          {nome === "" ? intl.formatMessage({ id: "criarConta.medalha.semNome" }) : nome}
+        </span>
+      </div>
     </div>
   );
 }

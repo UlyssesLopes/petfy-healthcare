@@ -586,6 +586,16 @@ export const mensagens = {
   // "Uma conta serve para tudo" é a tese da tela, e ela é o oposto de um seletor de perfil:
   // quem responde pela área é o que a pessoa TEM, não o que ela declarou no cadastro.
   "criarConta.titulo": "Criar conta",
+  "criarConta.titulo.comAnimal": "Quem cuida de {animal}?",
+  "criarConta.pular": "Pular para o formulário",
+  // O verso da plaquinha da coleira, gravado enquanto a pessoa digita.
+  "criarConta.medalha.rotulo": "O verso da medalha",
+  "criarConta.medalha.semAnimal": "Seu animal",
+  "criarConta.medalha.moraCom": "mora com",
+  "criarConta.medalha.semNome": "o seu nome",
+  "criarConta.medalha.legenda": "Na plaquinha da coleira, a frente leva o nome do animal e o verso, o de quem responde por ele. Criar a conta é gravar o verso.",
+  "criarConta.seguinte": "Em seguida vem o cadastro de {animal}: foto, vacinas e quem cuida junto.",
+  "criarConta.senha.faltam": "{n, plural, one {Falta # caractere.} other {Faltam # caracteres.}}",
   "criarConta.apoio": "Uma conta serve para tudo: cuidar dos seus animais e atender os animais de outras pessoas. Você decide isso depois, e pode mudar quando quiser.",
   "criarConta.nome": "Nome completo",
   "criarConta.email": "E-mail",

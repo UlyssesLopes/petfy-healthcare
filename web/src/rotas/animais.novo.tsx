@@ -47,6 +47,10 @@ import { chaveDoErro } from "../i18n/erroDaApi.ts";
  */
 
 export const Route = createFileRoute("/animais/novo")({
+  validateSearch: (search: Record<string, unknown>): { nome?: string } =>
+    typeof search.nome === "string" && search.nome.trim() !== ""
+      ? { nome: search.nome.trim().slice(0, 24) }
+      : {},
   beforeLoad: () => {
     if (!lerSessao().autenticada) {
       throw redirect({ to: "/entrar" });
@@ -97,7 +101,7 @@ function PrimeiroAnimal() {
 
   const [passo, setPasso] = useState<Passo>(1);
 
-  const [nome, setNome] = useState("");
+  const [nome, setNome] = useState(Route.useSearch().nome ?? "");
   const [especie, setEspecie] = useState<Especie>("CANINA");
   const [nascimento, setNascimento] = useState("");
   const [microchip, setMicrochip] = useState("");
