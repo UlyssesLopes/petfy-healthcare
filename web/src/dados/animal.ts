@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { cliente } from "./cliente.ts";
 import type { components } from "./gerado/api";
@@ -18,7 +18,16 @@ export type AcessoDeOrganizacao = components["schemas"]["OrganizationAccessRespo
  * nada aqui: a cronologia e regra de dominio (ROADMAP.md, P4).
  */
 export function useLinhaDoTempo(animalId: string | undefined) {
-  return useQuery({
+  return useQuery(consultaDaLinhaDoTempo(animalId));
+}
+
+/** As linhas de vários animais de uma vez, na mesma chave de cache da vida de cada um. */
+export function useLinhasDoTempo(animalIds: string[]) {
+  return useQueries({ queries: animalIds.map((id) => consultaDaLinhaDoTempo(id)) });
+}
+
+function consultaDaLinhaDoTempo(animalId: string | undefined) {
+  return {
     queryKey: ["linha-do-tempo", animalId],
     enabled: animalId !== undefined,
     queryFn: async () =>
@@ -34,7 +43,7 @@ export function useLinhaDoTempo(animalId: string | undefined) {
           params: { path: { animalId: animalId! }, query: { size: 200 } },
         }),
       ).content ?? [],
-  });
+  };
 }
 
 /** Os tres botoes do historico da Tela 30, na ordem em que ela os desenha. */
