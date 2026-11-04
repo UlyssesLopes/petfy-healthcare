@@ -41,20 +41,23 @@
   color: var(--pf-papel);
 }
 
-/* Metal claro no cobalto: o disco e papel, o furo deixa ver o painel e a argola e de areia. */
-.pf-porta .pf-verso {
-  width: min(29rem, 84%);
-  background: var(--pf-papel);
+/* A plaquinha: disco de metal claro com borda e uma linha gravada por dentro, furo em cima e a
+ * argola passando por ele. Gira no eixo da argola; a argola fica parada. Medidas em cqi para
+ * a mesma plaquinha servir no painel e na faixa do telefone. */
+.pf-plaquinha {
+  position: relative;
+  width: min(25rem, 74%);
+  margin-top: 9%;
   container-type: inline-size;
-  transform-origin: 12.5% 12.5%;
+  perspective: 1400px;
+  transform-origin: 50% -8%;
   animation: pf-pendura 900ms var(--pf-ease-out) both;
 }
 
-/* A entrada: a medalha chega pendurada na argola, e assenta. */
 @keyframes pf-pendura {
   from {
     opacity: 0;
-    transform: rotate(-6deg) scale(0.97);
+    transform: rotate(-5deg) scale(0.97);
   }
   to {
     opacity: 1;
@@ -62,60 +65,171 @@
   }
 }
 
-.pf-porta .pf-verso .pf-medalha__furo {
-  background: var(--pf-cobalto);
-}
-
-.pf-porta .pf-verso .pf-medalha__argola {
-  border-color: var(--pf-areia);
-}
-
-.pf-verso__gravado {
+.pf-plaquinha__argola {
   position: absolute;
-  inset: 20% 14%;
+  left: 50%;
+  top: -12.5cqi;
+  z-index: 2;
+  width: 22cqi;
+  aspect-ratio: 1;
+  border: 3.4cqi solid var(--pf-areia);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.pf-plaquinha__disco {
+  position: relative;
+  aspect-ratio: 1;
+  transform-style: preserve-3d;
+  transition: transform 800ms var(--pf-ease-expo);
+}
+
+.pf-plaquinha[data-face="verso"] .pf-plaquinha__disco {
+  transform: rotateY(180deg);
+}
+
+.pf-plaquinha__face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3.5cqi solid var(--pf-areia-funda);
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.pf-plaquinha__face--verso {
+  transform: rotateY(180deg);
+}
+
+/* A linha gravada a um dedo da borda, como nas plaquinhas estampadas. */
+.pf-plaquinha__face::after {
+  content: "";
+  position: absolute;
+  inset: 4.5cqi;
+  border-radius: 50%;
+  border: 0.7cqi solid var(--pf-cobalto-suave);
+  pointer-events: none;
+}
+
+.pf-plaquinha__furo {
+  position: absolute;
+  left: 50%;
+  top: 4.2cqi;
+  width: 7cqi;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--pf-cobalto);
+  transform: translateX(-50%);
+}
+
+.pf-plaquinha__gravado {
+  position: absolute;
+  inset: 22% 15% 14%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2.5cqi;
+  gap: 3cqi;
   text-align: center;
-  color: var(--pf-cobalto);
 }
 
-.pf-verso__animal {
+.pf-plaquinha__animal {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: max(0.875rem, 7cqi);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.pf-verso__mora {
-  font-size: max(0.75rem, 4.5cqi);
-  font-weight: 500;
-  color: var(--pf-cobalto-suave);
-}
-
-.pf-verso__nome {
-  max-width: 100%;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-  font-size: max(1.125rem, 11cqi);
+  font-size: max(1.25rem, 16cqi);
   font-weight: 600;
   letter-spacing: -0.03em;
-  line-height: 1.05;
-  text-wrap: balance;
+  line-height: 1.1;
 }
 
-/* O lugar do nome antes de ele existir: tinta suave, so em letra grande (4.30+). */
-.pf-verso__nome[data-vazio] {
+.pf-plaquinha__animal[data-longo] {
+  font-size: max(1rem, 11cqi);
+}
+
+.pf-plaquinha__animal[data-vazio] {
+  color: var(--pf-cobalto-suave);
+  font-size: max(1rem, 12cqi);
+  font-weight: 500;
+}
+
+.pf-plaquinha__marca {
+  font-size: max(0.75rem, 4.5cqi);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-plaquinha__aviso {
+  font-size: max(0.75rem, 4.6cqi);
+  font-weight: 500;
+  color: var(--pf-cobalto-suave);
+}
+
+.pf-plaquinha__nome {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: max(1rem, 9.5cqi);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.pf-plaquinha__email {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  font-size: max(0.75rem, 5cqi);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.pf-plaquinha__email[data-longo] {
+  font-size: max(0.6875rem, 4.2cqi);
+}
+
+.pf-plaquinha__nome[data-vazio],
+.pf-plaquinha__email[data-vazio] {
   color: var(--pf-cobalto-suave);
   font-weight: 500;
+}
+
+/* Virar a medalha: pilula clara no cobalto, a mesma do botao claro da pagina publica. */
+.pf-porta__virar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0 1.25rem 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--pf-t-press) var(--pf-ease-out), background-color var(--pf-t-hover) ease;
+}
+
+.pf-porta__virar:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-porta__virar:hover {
+    background: var(--pf-areia);
+  }
+}
+
+.pf-porta__virar-seta {
+  font-size: 1.125rem;
+  line-height: 1;
 }
 
 .pf-porta__legenda {
@@ -443,11 +557,15 @@
     position: static;
     height: auto;
     padding: 1.25rem var(--pf-margem);
-    gap: 0;
+    gap: 1.25rem;
   }
 
-  .pf-porta .pf-verso {
-    width: min(11.5rem, 52%);
+  .pf-plaquinha {
+    width: min(12.5rem, 56%);
+  }
+
+  .pf-porta__virar {
+    min-height: 2.5rem;
   }
 
   .pf-porta__legenda {
@@ -464,8 +582,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pf-porta .pf-verso {
+  .pf-plaquinha {
     animation: none;
+  }
+
+  .pf-plaquinha__disco {
+    transition: none;
   }
 
   .pf-aceite__marca::after,

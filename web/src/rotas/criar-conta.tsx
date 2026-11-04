@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useIntl } from "react-intl";
 
 import { useCriarConta } from "../dados/autenticacao.ts";
@@ -47,6 +47,8 @@ function CriarConta() {
   const [crmv, setCrmv] = useState("");
   const [crmvUf, setCrmvUf] = useState("");
   const [tocado, setTocado] = useState(false);
+  const [face, setFace] = useState<"frente" | "verso">("frente");
+  const gravarVerso = () => setFace("verso");
 
   const faltando: Campo[] = [
     ...(nome.trim() === "" ? (["nome"] as const) : []),
@@ -97,7 +99,17 @@ function CriarConta() {
       </header>
 
       <aside className="pf-porta__painel" aria-label={t("criarConta.medalha.rotulo")}>
-        <Verso animal={animal} nome={nome.trim()} />
+        <Plaquinha animal={animal} nome={nome.trim()} email={email.trim()} face={face} />
+        <button
+          type="button"
+          className="pf-porta__virar"
+          onClick={() => setFace((antes) => (antes === "frente" ? "verso" : "frente"))}
+        >
+          <span className="pf-porta__virar-seta" aria-hidden="true">
+            ↻
+          </span>
+          {t(face === "frente" ? "criarConta.medalha.verVerso" : "criarConta.medalha.verFrente")}
+        </button>
         <p className="pf-porta__legenda">{t("criarConta.medalha.legenda")}</p>
       </aside>
 
@@ -126,6 +138,7 @@ function CriarConta() {
                 type="text"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
+                onFocus={gravarVerso}
                 autoComplete="name"
                 aria-invalid={invalido("nome") || undefined}
               />
@@ -141,6 +154,7 @@ function CriarConta() {
                 spellCheck={false}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={gravarVerso}
                 autoComplete="email"
                 aria-invalid={invalido("email") || undefined}
               />
@@ -298,34 +312,74 @@ function CriarConta() {
   );
 }
 
-/** O verso da plaquinha. Repete o que a pessoa digita, então fica fora da árvore acessível. */
-function Verso({ animal, nome }: { animal?: string; nome: string }) {
+/**
+ * A plaquinha da coleira, com as duas faces: o nome do animal na frente e, no verso, como achar
+ * quem cuida dele. Ela gira presa na argola; a face escondida sai da árvore acessível.
+ */
+function Plaquinha({
+  animal,
+  nome,
+  email,
+  face,
+}: {
+  animal?: string;
+  nome: string;
+  email: string;
+  face: "frente" | "verso";
+}) {
   const intl = useIntl();
-  const medalha = useRef<HTMLDivElement>(null);
-  const gravou = nome !== "";
-
-  // A medalha balança na argola quando o nome passa a existir ou deixa de existir.
-  useEffect(() => {
-    const el = medalha.current;
-    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    el.animate(
-      [{ transform: "rotate(0)" }, { transform: "rotate(-4deg)" }, { transform: "rotate(2.5deg)" }, { transform: "rotate(-1deg)" }, { transform: "rotate(0)" }],
-      { duration: 900, easing: "cubic-bezier(0.33, 1, 0.68, 1)" },
-    );
-  }, [gravou]);
+  const t = (id: string) => intl.formatMessage({ id });
+  const nomeDoAnimal = animal ?? t("criarConta.medalha.semAnimal");
+  const primeiroNome = nome.split(" ")[0] ?? "";
 
   return (
-    <div ref={medalha} className="pf-medalha pf-verso" aria-hidden="true">
-      <span className="pf-medalha__furo" />
-      <span className="pf-medalha__argola" />
-      <div className="pf-verso__gravado">
-        <span className="pf-verso__animal" translate="no">
-          {animal ?? intl.formatMessage({ id: "criarConta.medalha.semAnimal" })}
-        </span>
-        <span className="pf-verso__mora">{intl.formatMessage({ id: "criarConta.medalha.moraCom" })}</span>
-        <span className="pf-verso__nome" data-vazio={nome === "" ? "" : undefined} translate="no">
-          {nome === "" ? intl.formatMessage({ id: "criarConta.medalha.semNome" }) : nome}
-        </span>
+    <div className="pf-plaquinha" data-face={face}>
+      <span className="pf-plaquinha__argola" aria-hidden="true" />
+      <div className="pf-plaquinha__disco">
+        <div className="pf-plaquinha__face" aria-hidden={face !== "frente"}>
+          <span className="pf-plaquinha__furo" aria-hidden="true" />
+          <div className="pf-plaquinha__gravado">
+            <span
+              className="pf-plaquinha__animal"
+              data-longo={nomeDoAnimal.length > 9 ? "" : undefined}
+              data-vazio={animal === undefined ? "" : undefined}
+              translate="no"
+            >
+              {nomeDoAnimal}
+            </span>
+            <span className="pf-plaquinha__marca" translate="no">
+              Petfy
+            </span>
+          </div>
+        </div>
+        <div className="pf-plaquinha__face pf-plaquinha__face--verso" aria-hidden={face !== "verso"}>
+          <span className="pf-plaquinha__furo" aria-hidden="true" />
+          <div className="pf-plaquinha__gravado">
+            <span className="pf-plaquinha__aviso">{t("criarConta.medalha.seMePerder")}</span>
+            <span className="pf-plaquinha__nome" data-vazio={nome === "" ? "" : undefined} translate="no">
+              {primeiroNome === "" ? t("criarConta.medalha.semNome") : primeiroNome}
+            </span>
+            <span
+              className="pf-plaquinha__email"
+              data-vazio={email === "" ? "" : undefined}
+              data-longo={email.length > 22 ? "" : undefined}
+              translate="no"
+            >
+              {email === "" ? (
+                t("criarConta.medalha.semEmail")
+              ) : (
+                <>
+                  {email.split("@")[0]}
+                  {email.includes("@") && (
+                    <>
+                      <wbr />@{email.split("@").slice(1).join("@")}
+                    </>
+                  )}
+                </>
+              )}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
