@@ -4,12 +4,12 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-11-03, na sessão que **decidiu refazer o front do zero** e fechou a primeira
-> tela da reconstrução: a página pública `/conheca`.
+> Escrito em 2026-11-03 e atualizado em 2026-11-04, depois da segunda tela da reconstrução:
+> **a vida do animal** (`/animais/{id}`). A próxima é `/criar-conta`.
 
 ## Onde o trabalho está agora
 
-O backend não mudou: **1075 casos, migrations até a V52**. O front mudou de rumo.
+Backend: **1090 casos, migrations até a V53** (a foto do animal). O front mudou de rumo.
 
 **O Ulysses reprovou o front inteiro**, em 2026-11-03: *"não consegui dar cara de aplicativo de
 pet pro meu produto, parece que não consegui dar vida pra ele"*. A reconstrução é **do zero**:
@@ -56,6 +56,24 @@ documento**: é o primeiro item da Fase 0 que falta.
 
 **O `/` continua levando ao login.** A página só existe em `/conheca`.
 
+## O que foi feito: a vida do animal
+
+Branch `feat/a-foto-do-animal`, a primeira tela do regime "app com rosto".
+
+- **A foto do animal virou dado**: V53 (`animals.photo_attachment_id`), `PUT /animals/{id}/photo`
+  (só anexo de imagem do próprio animal), e o cadastro já define a foto que sobe.
+- **Três defeitos de produção da mesma família**, que só apareceram com dado de verdade:
+  `LazyInitializationException` em `Organization.capabilities` e em `Grant.scopes`, e organização
+  nascendo sem capacidade nenhuma. Cada um com teste de container que o reproduzia antes.
+- **A semente** `docker-local/semente/semear.mjs` cria pela API ana, luiza (CRMV), joana e rafael
+  (senha `Petfy#2026`), três organizações e Pipoca, Mia e Nino com foto, vacinas, condições,
+  peso, registros e acessos.
+- **A tela**: cabeçalho com a medalha e o fato do dia (vacina vencida ou perto de vencer),
+  vacinas, condições, peso com gráfico, a linha da vida e quem cuida. O menu do tutor
+  (`MolduraDoTutor`) é um painel cobalto da altura da tela, com os animais e suas fotos.
+- **O que o Ulysses corrigiu no menu**: letra de título em menu é defeito; painel estreito
+  "embutido" no fundo pareceu desconexo. Ficou letra de texto, painel cheio, grupos com rótulo.
+
 ## COMECE POR AQUI
 
 1. **Fechar a Fase 0**:
@@ -64,10 +82,8 @@ documento**: é o primeiro item da Fase 0 que falta.
    - apagar `design/` e os comentários "Tela NN" do código;
    - tirar do `DESIGN.md` as seções 1, 3, 4 e 5, com a nota de que reabriram (a 6, acessibilidade,
      fica; a 2, a voz, fica como ponto de partida);
-   - **zerar o banco e semear dados de exemplo honestos**: a Pipoca e mais dois ou três animais,
-     com foto, vacinas, registros assinados por pessoas diferentes e acessos concedidos.
-2. **A próxima tela é "a vida do animal"** (`/animais/{id}`), regime app com rosto. É ela que
-   prova se a identidade sobrevive dentro do app. O cadastro vem depois, na Fase 2.
+2. **A próxima tela é `/criar-conta`**, regime página. O "Comece o registro" da `/conheca`
+   pede o nome do animal e hoje o perde na travessia.
 
 ## O que ficou devendo
 
@@ -91,7 +107,9 @@ documento**: é o primeiro item da Fase 0 que falta.
   bloco novo em arquivo e emendar por marcador.
 - **`.pf-pagina p { margin: 0 }` atropela as margens de cada seção** por especificidade; o reset
   é `:where(...)`, de peso zero.
-- **`TaskStop` não mata o backend**: matar pelo PID que segura a 8080.
+- **A 8080 e a 5433 são da loja `japanese-commerce`.** Nunca parar o java da 8080 nem tocar no
+  `zivora-db-local`. O Petfy local roda na 8081 com o banco `petfy-pg-local` na 5434.
+- **`TaskStop` não mata o backend**: matar pelo PID que segura a 8081.
 - **Rota ou código de erro novo cobra três artefatos no mesmo commit**: `contract/openapi.json`,
   `web/src/dados/gerado/api.d.ts` e a tradução `erro.<n>`.
 - **`vite build` suja o `arvore-de-rotas.gen.ts`**; parar o dev server antes de sincronizar.
@@ -102,9 +120,10 @@ documento**: é o primeiro item da Fase 0 que falta.
 ## Como subir, inspecionar e conferir
 
 ```
-docker start petfy-pg-sessao
-$env:DB_PORT="5433"; mvn spring-boot:run "-Dspring-boot.run.profiles=local"
-cd web; npx vite build; npx vite preview --port 4173      # http://localhost:4173/conheca
+docker start petfy-pg-local
+DB_PORT=5434 SERVER_PORT=8081 CORS_ALLOWED_ORIGINS=http://localhost:4173 mvn spring-boot:run "-Dspring-boot.run.profiles=local"
+PG_CONTAINER=petfy-pg-local node docker-local/semente/semear.mjs   # só com o banco vazio
+cd web; VITE_API_URL=http://localhost:8081 npx vite build; npx vite preview --port 4173
 ```
 
 ```
