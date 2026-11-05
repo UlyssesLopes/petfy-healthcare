@@ -4,8 +4,8 @@
 > não registro histórico — o que vale para sempre mora no `ROADMAP.md`, no `PRODUTO.md`
 > e no `DESIGN.md`. Se este arquivo divergir dos três, **eles mandam**.
 >
-> Escrito em 2026-11-03 e atualizado em 2026-11-04, depois da segunda tela da reconstrução:
-> **a vida do animal** (`/animais/{id}`), e as duas portas: `/criar-conta` e `/entrar`.
+> Escrito em 2026-11-03 e atualizado em 2026-11-05. Feitas na reconstrução: a `/conheca`, a vida
+> do animal, as portas, a home "Hoje", o `/comecar` e o `/animais/novo`.
 
 ## Onde o trabalho está agora
 
@@ -15,8 +15,8 @@ Backend: **1090 casos, migrations até a V53** (a foto do animal). O front mudou
 pet pro meu produto, parece que não consegui dar vida pra ele"*. A reconstrução é **do zero**:
 
 - **A identidade do Claude Design caiu inteira**: paleta musgo/ocre/telha, tipografia, pílulas.
-  As telas de `design/IdentidadeVisual/` **deixaram de ser a especificação**.
-- **Nenhum print ou modelo do projeto serve de base**: nem `design/`, nem o front atual
+  A pasta `design/` saiu do repositório em 2026-11-05.
+- **Nenhum print ou modelo do projeto serve de base**: nem o que estava em `design/`, nem o front atual
   renderizado. Do código atual sai só **o que cada tela faz**, nunca como ela é.
 - **Ficam de pé**: a tese e as quatro invariantes (são produto), `src/dados/`, o contrato
   gerado, o i18n, as guardas de rota e o endereço `/cartao/{token}` (está impresso no QR).
@@ -35,8 +35,7 @@ O mesmo que deu certo na loja `japanese-commerce`: as skills de `.claude/skills/
    `web-design-guidelines` → clicar de verdade com o `playwright-cli` → mostrar ao Ulysses.
 4. **Tela a tela, um PR por tela.** O CSS antigo convive isolado até a última tela velha sair.
 
-**A análise completa (seis seções) foi aprovada nesta sessão e ainda não está escrita em
-documento**: é o primeiro item da Fase 0 que falta.
+**A análise completa (seis seções) foi aprovada e ainda não está escrita em documento.**
 
 ## O que foi feito: a página pública
 
@@ -54,7 +53,7 @@ documento**: é o primeiro item da Fase 0 que falta.
   objeto que a amarre é defeito; botão tem de parecer botão (furo, seta, movimento); fotos de
   animal com rosto centrado e fundo limpo; lista vertical solta não serve.
 
-**O `/` continua levando ao login.** A página só existe em `/conheca`.
+**Quem não tem sessão e abre `/` vai para o `/entrar`.** A página pública só existe em `/conheca`.
 
 ## O que foi feito: a vida do animal
 
@@ -76,27 +75,33 @@ Branch `feat/a-foto-do-animal`, a primeira tela do regime "app com rosto".
 
 ## COMECE POR AQUI
 
-1. **Fechar a Fase 0**:
-   - escrever `docs/design-ferramentas.md` e `docs/reconstrucao-do-front.md` (a análise
-     aprovada, e o inventário e a ideia que hoje estão em `.taste-skill/notas.md`, fora do git);
-   - apagar `design/` e os comentários "Tela NN" do código;
-   - tirar do `DESIGN.md` as seções 1, 3, 4 e 5, com a nota de que reabriram (a 6, acessibilidade,
-     fica; a 2, a voz, fica como ponto de partida);
-2. **As portas estão feitas** na branch `feat/criar-conta` (empilhada no #76: o PR dela só
-   depois do merge do #76). Folha de areia com o formulário e painel cobalto com a plaquinha
-   (`componentes/novo/Plaquinha.tsx`, estilos em `novo/porta.css`). No cadastro a plaquinha tem
-   frente (o nome do animal, que agora vem da `/conheca` e chega preenchido em `/animais/novo`)
-   e verso (primeiro nome e e-mail), e gira. No entrar, o painel é a saída de emergência: o
-   cartão sem senha e o "achei um animal".
-   **O que o Ulysses corrigiu**: medalha tem de parecer medalha (borda, furo, argola); falar de
-   frente e verso exige poder virar; o verso leva contato em letra pequena, não um nome gigante.
-3. **A home `/` ("Hoje") está feita**, na mesma branch: saudação, os animais com o estado de
-   cada um e o que pede a pessoa, com "Registrar dose" no próprio cartão
-   (`componentes/novo/RegistrarDose.tsx`). A moldura do tutor mora em `novo/app.css`.
-4. **A próxima é a dupla `/comecar` + `/animais/novo`**: a `/comecar` velha não tem "Sair" e
-   prende quem entra sem animal.
-5. **Defeito anotado, sem correção**: `GET /animals/former` dá 500 (a consulta ordena a custódia
-   por `name`, que ela não tem). A lista "Quem já esteve com você" some calada por causa disso.
+1. **Mergear o #76** (a vida do animal, CI verde). O merge é do Ulysses; o agente foi barrado
+   pela permissão ao tentar. Depois dele, abrir o PR da `feat/criar-conta` e conferir o CI.
+2. **O que a `feat/criar-conta` leva**, em cinco telas e um conserto:
+   - **as portas** `/criar-conta` e `/entrar`: folha de areia com o formulário e painel cobalto
+     com a plaquinha (`componentes/novo/Plaquinha.tsx`, `novo/porta.css`). No cadastro a
+     plaquinha tem frente (o nome do animal, vindo da `/conheca`) e verso, e gira. No entrar, o
+     painel é a saída de emergência: o cartão sem senha e o "achei um animal".
+     **O Ulysses corrigiu**: medalha tem de parecer medalha (borda, furo, argola); falar de
+     frente e verso exige poder virar; o verso leva contato em letra pequena;
+   - **a home `/` ("Hoje")**, refeita duas vezes. A primeira foi reprovada ("não sei se gostei"):
+     repetia os animais do menu e não destacava nada. A atual: o pedido mais urgente sozinho
+     numa faixa cobalto, com a ação ali; o mural "O que aconteceu" com os seis registros mais
+     recentes de todos os animais; o resto do que pede a pessoa ao lado. **Ainda sem o
+     veredito do Ulysses**;
+   - **`/comecar` + `/animais/novo`**: a mesma porta, com a plaquinha gravada a cada passo (nome
+     e espécie na frente, o microchip no verso). O `/comecar` ganhou Sair e Fazer isso depois,
+     e o nome digitado ali chega preenchido no cadastro. Os textos não presumem mais o gênero
+     do animal. **Ainda sem o veredito do Ulysses**;
+   - **o 500 do `GET /animals/former`**: o `sort=name` padrão caía sobre a custódia; a ordem
+     agora é da consulta, e o teste cobre o sort que o controller manda.
+3. **Fase 0, o que sobra**: escrever `docs/design-ferramentas.md` e
+   `docs/reconstrucao-do-front.md`, seção por seção com o Ulysses (o índice foi proposto em
+   2026-11-05). A `design/` saiu, e o `DESIGN.md` ficou só com a voz e a acessibilidade.
+   **Os comentários "Tela NN" ficam e morrem com cada tela refeita**: são 191, no meio de frases,
+   e apagar em massa estragaria o texto.
+4. **A próxima tela**: escolher com o Ulysses. Candidatas: `/conta`, `/convites`, a
+   `/animais/{id}/conceder-acesso` (o passo 3 do cadastro aponta para ela, ainda no visual velho).
 
 ## O que ficou devendo
 
@@ -106,6 +111,8 @@ Branch `feat/a-foto-do-animal`, a primeira tela do regime "app com rosto".
 - **As fotos pesam 3,1 MB** e não foram otimizadas; a fonte vem do CDN da Fontshare.
 - **A seta do "agora" se move sem parar.** A `web-design-guidelines` pede controle para movimento
   que repete por mais de 5 s; ficou assim por pedido do Ulysses.
+- **Uma conta de teste ficou no banco local** (Bruno Teste, com Tobias e Bartolomeu), criada ao
+  testar o `/comecar`. Não é da semente e pode ser ignorada.
 - **O texto jurídico**: sete seções de `/termos` e `/privacidade` seguem marcadas como pendentes.
 - **`RotuloDoAparelho` (Java) e `apelidoDoAparelho` (TS)** continuam gêmeos.
 - **A branch `docs/o-estado-para-a-proxima-sessao`** pode ser descartada.
