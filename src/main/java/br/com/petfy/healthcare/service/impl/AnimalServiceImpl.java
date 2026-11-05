@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
@@ -110,8 +111,10 @@ public class AnimalServiceImpl implements AnimalService {
     @Override
     @Transactional(readOnly = true)
     public Page<AnimalResponseDTO> queJaEstiveramComigo(Pageable pageable) {
+        // A ordem e da consulta: o sort de fora cairia sobre a custodia, que nao tem nome.
+        var semOrdem = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         return comDataDeObito(custodyRepository.findQueJaEstiveramComAPessoa(
-                currentPersonProvider.require().getPersonId(), LocalDateTime.now(), pageable));
+                currentPersonProvider.require().getPersonId(), LocalDateTime.now(), semOrdem));
     }
 
     /**

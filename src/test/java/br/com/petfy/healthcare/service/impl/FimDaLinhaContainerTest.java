@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -234,7 +235,9 @@ class FimDaLinhaContainerTest extends PostgresContainerTest {
                 .extracting("name")
                 .doesNotContain("Code");
 
-        var anteriores = animalService.queJaEstiveramComigo(PageRequest.of(0, 20)).getContent();
+        // O sort=name e o padrao do controller, e era ele que derrubava a lista com 500.
+        var anteriores = animalService.queJaEstiveramComigo(
+                PageRequest.of(0, 20, Sort.by("name"))).getContent();
 
         assertThat(anteriores).extracting("name").contains("Code");
         assertThat(anteriores).extracting("deceasedOn").contains(LocalDate.now().minusDays(3));

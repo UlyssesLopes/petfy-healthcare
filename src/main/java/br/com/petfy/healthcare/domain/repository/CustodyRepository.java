@@ -120,7 +120,8 @@ public interface CustodyRepository extends JpaRepository<Custody, UUID> {
             + "and not exists ("
             + "  select 1 from Grant g where g.animal = c.animal "
             + "    and g.granteePerson.personId = :personId and g.revokedAt is null "
-            + "    and (g.expiresAt is null or g.expiresAt > :agora))")
+            + "    and (g.expiresAt is null or g.expiresAt > :agora)) "
+            + "order by c.animal.name asc")
     Page<Animal> findQueJaEstiveramComAPessoa(@Param("personId") UUID personId,
                                               @Param("agora") java.time.LocalDateTime agora,
                                               Pageable pageable);
