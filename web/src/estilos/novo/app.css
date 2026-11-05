@@ -257,23 +257,6 @@
   fill: var(--pf-papel);
 }
 
-/* ------------------------------------------------------------------ o botao de texto */
-
-/* Acao secundaria sem caixa: sublinhada, na tinta, com a altura de toque garantida. */
-.pf-texto-botao {
-  min-height: 2.75rem;
-  padding: 0 0.25rem;
-  border: 0;
-  background: none;
-  color: var(--pf-cobalto);
-  font: inherit;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  cursor: pointer;
-}
-
 /* ------------------------------------------------------------------ a etiqueta de estado */
 
 .pf-estado {

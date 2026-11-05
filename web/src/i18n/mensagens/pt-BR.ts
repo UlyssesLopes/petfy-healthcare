@@ -691,88 +691,78 @@ export const mensagens = {
   "discordar.seNaoResponder": "Se ela não responder",
   "discordar.seNaoResponder.texto": "Sua observação continua lá, do lado. Todo veterinário que abrir a linha do tempo do {nome} vai ler as duas coisas.",
 
-  // ----------------------------------------------- os três cômodos (Tela 08)
+  // --------------------------------------------------- o começo, depois da conta
   //
-  // "Nenhum passo pergunta se você é tutor ou profissional." Os três ficam abertos, e a
-  // área que a pessoa alcança vem do que ela tem — não do que declarou.
-  "comecar.agindoComo": "Agindo como",
-  "comecar.titulo": "Bem-vindo, {nome}",
-  "comecar.apoio": "O Petfy fica útil quando existe um animal com histórico aqui. Comece por onde fizer sentido para você — nada aqui é obrigatório, e nada disso bloqueia o resto.",
-  "comecar.animal.titulo": "Cadastrar um animal",
+  // Nenhum passo pergunta se a pessoa é tutora ou profissional: o animal vem primeiro, e o
+  // caminho de quem atende fica logo abaixo.
+  "comecar.titulo": "Por onde começamos, {nome}?",
+  "comecar.titulo.semNome": "Por onde começamos?",
+  "comecar.apoio": "O Petfy fica útil quando existe um animal com história aqui. Nada nesta tela é obrigatório.",
+  "comecar.sair": "Sair",
+  "comecar.medalha.rotulo": "A plaquinha do primeiro animal",
+  "comecar.medalha.legenda": "Cada animal ganha a sua: o nome na frente e, no verso, como chegar até você.",
+  "comecar.animal.campo": "Como se chama o seu animal?",
   "comecar.animal.texto": "Nome e espécie bastam para começar. A carteirinha de papel você lança depois, com calma.",
-  "comecar.animal.acao": "Começar",
-  // As chaves `comecar.rede.*` — o cômodo "Convidar quem mais cuida" — saíram em 2026-08-15.
-  // Convite é sempre PARA um animal, e esta tela só é alcançada por quem acabou de criar a
-  // conta e portanto não tem nenhum: o cartão não estava vazio "por enquanto", estava vazio
-  // para sempre. O convite continua no passo 4 do stepper, onde há animal para convidar PARA.
-  "comecar.profissional.titulo": "Atender animais de outras pessoas",
-  "comecar.profissional.texto": "Se você é veterinário, monitor ou voluntário, declare seu registro profissional ou aceite o convite de uma organização.",
-  // As três saídas do cômodo, na ordem que o texto acima promete. Até 2026-08-15 este cartão
-  // dizia que declarar registro depois e aceitar convite com conta existente "ainda não têm
-  // caminho" — e as duas coisas existiam: a `/conta` grava CRMV, UF e especialidade, e a
-  // `/convites` recebe o código dos dois tipos e roteia. Era texto velho, não limitação.
-  "comecar.profissional.registro": "Declarar registro",
+  "comecar.animal.acao": "Cadastrar um animal",
+  "comecar.animal.acaoCom": "Cadastrar {animal}",
+  "comecar.profissional.titulo": "Atende animais de outras pessoas?",
+  "comecar.profissional.texto": "Veterinário, monitor ou voluntário: aceite o convite de uma organização, declare seu registro ou crie a sua.",
   "comecar.profissional.convite": "Tenho um convite",
+  "comecar.profissional.registro": "Declarar registro",
   "comecar.profissional.acao": "Criar uma organização",
-  // A saída do stepper. O desenho pede botão, e não link de menu: sair no meio é decisão, e
-  // quem sai daqui não fica sem nada — a tela já diz que nada disso bloqueia o resto.
   "comecar.depois": "Fazer isso depois",
-  "comecar.tese": "Nenhum passo pergunta se você é tutor ou profissional. Os dois cômodos ficam abertos, e a área que você alcança vem do que você tem — um animal sob sua custódia, ou um vínculo com uma organização.",
 
-  // ------------------------------------------- o primeiro animal, em quatro passos
+  // ------------------------------------------- o primeiro animal, em três passos
   //
-  // A regra do desenho: "só o passo 1 é obrigatório. Do 2 em diante, 'agora não' é um botão
-  // de verdade". E: "cada etapa deixa algo registrado, e sair no meio não desfaz nada".
+  // Só o passo 1 é obrigatório; cada passo grava sozinho, e sair no meio não desfaz nada.
   "onboarding.depois": "Fazer isso depois",
-  "onboarding.continuar": "Continuar",
   "onboarding.registrando": "Registrando…",
   "onboarding.opcional": "· opcional",
+  "onboarding.passos": "Passos do cadastro",
   "onboarding.trilho.animal": "O animal",
   "onboarding.trilho.identificacao": "Identificação",
   "onboarding.trilho.quemCuida": "Quem mais cuida",
+  "onboarding.medalha.rotulo": "A plaquinha do animal, gravada a cada passo",
+  "onboarding.medalha.chip": "Microchip",
+  "onboarding.medalha.semChip": "sem número ainda",
+  "onboarding.medalha.tutor": "Cuidado por {nome}",
   "onboarding.p1.titulo": "Quem é o animal?",
   "onboarding.p1.apoio": "Nome e espécie bastam. O resto pode entrar a qualquer momento, inclusive anos depois.",
-  "onboarding.p1.nome": "Como você chama ele",
+  "onboarding.p1.nome": "Nome",
+  "onboarding.p1.semNome": "Escreva o nome para continuar.",
   "onboarding.p1.especie": "Espécie",
   "onboarding.p1.especie.outro": "Outro",
-  // O que aparece quando "Outro" abre. Nenhuma frase pedindo desculpa: o botão funciona.
   "onboarding.p1.especie.qual": "Qual?",
-  "onboarding.p1.foto.escolher": "Escolher foto",
   "onboarding.p1.especie.semProtocolo": "O Petfy não conhece calendário de vacina para essa espécie, então não vai sugerir doses. Tudo que você lançar fica registrado igual.",
   "onboarding.p1.nascimento": "Nascimento",
   "onboarding.p1.nascimento.apoio": "Só o mês e o ano servem. Estimativa também.",
   "onboarding.p1.foto": "Foto do animal",
-  "onboarding.p1.foto.apoio": "Ajuda quem cuida a reconhecer ele no balcão. Pode ficar para depois.",
-  // A `onboarding.p1.foto.indisponivel` saiu em 2026-08-15: ela dizia que o contrato não
-  // descrevia o envio de arquivo, e o contrato descrevia. A foto sobe.
-  "onboarding.p1.aviso": "O {nome} já fica registrado agora. Os próximos passos são opcionais.",
-  "onboarding.p2.titulo": "O {nome} tem algum número de identificação?",
-  "onboarding.p2.apoio": "Metade dos animais no Brasil não tem nenhum, e o Petfy funciona igual sem. Se tiver, o microchip é o que permite reconhecer o {nome} se ele se perder e for encontrado por outra pessoa.",
+  "onboarding.p1.foto.apoio": "Ajuda quem cuida a reconhecer no balcão. Pode ficar para depois.",
+  "onboarding.p1.foto.escolher": "Escolher foto",
+  "onboarding.p1.foto.trocar": "Trocar",
+  "onboarding.p1.foto.falhou": "{nome} já está registrado, mas a foto não subiu. Dá para mandar de novo na página do animal.",
+  "onboarding.p1.acao": "Registrar o animal",
+  "onboarding.p1.depois": "Fica registrado agora. Os próximos passos são opcionais.",
+  "onboarding.p2.titulo": "{nome} tem algum número de identificação?",
+  "onboarding.p2.apoio": "Metade dos animais no Brasil não tem nenhum, e o Petfy funciona igual sem. Se tiver, o microchip é o que leva quem encontrar {nome} até você.",
   "onboarding.p2.microchip": "Microchip",
   "onboarding.p2.microchip.apoio": "15 dígitos, geralmente na carteirinha ou na nota da aplicação.",
   "onboarding.p2.semRgaNemTatuagem": "RGA e tatuagem ainda não têm onde ser guardados. Só o microchip tem campo próprio, e usar o dele para outro número faria o registro mentir.",
-  "onboarding.p2.naoValida": "O Petfy não emite nem valida esses números — guarda e usa o que você informar.",
-  "onboarding.p2.naoTem": "O {nome} não tem nenhum",
-  // As chaves `onboarding.p3.*` e o trilho "Carteirinha" saíram em 2026-08-15, com o passo.
-  // A rota de OCR existe, mas cria um animal NOVO e não devolve as doses para conferência —
-  // é backend novo, está no ROADMAP, e o passo não fica na tela prometendo o que não faz.
-  "onboarding.p4.titulo": "Quem mais cuida do {nome}?",
+  "onboarding.p2.naoValida": "O Petfy não emite nem valida o número: guarda o que você informar.",
+  "onboarding.p2.acao": "Gravar o microchip",
+  "onboarding.p2.naoTem": "{nome} não tem nenhum",
+  "onboarding.p4.titulo": "Quem mais cuida de {nome}?",
   "onboarding.p4.apoio": "Você escolhe o que cada pessoa ou organização vê, e por quanto tempo. Dá para mudar ou revogar depois, a qualquer momento.",
   "onboarding.p4.pessoa": "Alguém que divide o cuidado",
   "onboarding.p4.pessoa.apoio": "Quem também dá remédio e leva ao veterinário. Vê tudo e registra junto com você.",
-  "onboarding.p4.pessoa.campo": "e-mail",
+  "onboarding.p4.pessoa.campo": "E-mail",
   "onboarding.p4.convidar": "Convidar",
-  // "Convite enviado" era mentira quando foi escrito, e passou a ser verdade agora: até o
-  // `InviteNotifier`, o backend gravava o convite, devolvia o token e não mandava nada. Quem
-  // chegava aqui saía achando que tinha convidado alguém.
   "onboarding.p4.convidado":
-    "Mandamos o convite para {email}, com um código para ela colar no Petfy. Se não chegar, este link abre o mesmo convite. Ela aparece na rede quando aceitar.",
+    "Mandamos o convite para {email}, com um código para colar no Petfy. Se não chegar, este link abre o mesmo convite.",
   "onboarding.p4.organizacao": "Uma clínica ou creche",
   "onboarding.p4.organizacao.apoio": "Vê só o que você marcar, pelo prazo que você definir. Nada de tudo ou nada.",
-  "onboarding.p4.organizacao.semAnimal": "Primeiro cadastre o animal, no passo 1.",
   "onboarding.p4.escolherOQueVe": "Escolher o que ela vê",
-  "onboarding.p4.ir": "Ir para o {nome}",
-  "onboarding.p4.sozinho": "Cuido sozinho por enquanto",
+  "onboarding.p4.ir": "Ver a vida de {nome}",
 
   // ------------------------------------------------- consentimento atualizado (Tela 07)
   //

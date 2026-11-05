@@ -26,8 +26,7 @@ import { definirOrganizacaoAtiva, lerSessao } from "../dados/sessao.ts";
  *
  *   · COMPLETA  — toda tela autenticada: area do tutor, area de organizacao, administracao.
  *   · REDUZIDA  — login e criacao de conta ficam "com a marca no lugar do cabecalho e uma
- *                 linha so de rodape". O stepper do primeiro animal mantem a marca e o
- *                 "fazer isso depois", sem navegacao: sair no meio e botao, nao link de menu.
+ *                 linha so de rodape".
  *   · MINIMA    — o cartao de emergencia e as telas publicas. "Sem sessao, sem navegacao, sem
  *                 rodape institucional entre o dedo e o telefone do veterinario."
  *
@@ -40,16 +39,6 @@ import { definirOrganizacaoAtiva, lerSessao } from "../dados/sessao.ts";
 
 /** As portas. Marca no lugar do cabecalho, e uma linha so de rodape. */
 const PORTAS = ["/entrar", "/criar-conta"];
-
-/**
- * O stepper do primeiro animal: marca, sem navegacao — "sair no meio e botao, nao link de menu".
- *
- * Sao duas rotas porque o percurso e um so: `/comecar` e o "depois do login" e `/animais/novo` e
- * o cadastro em quatro passos que ele abre. Dar navegacao a essas telas seria oferecer saidas
- * laterais no meio de um preenchimento — e o "fazer isso depois" que elas ja tem e a saida certa,
- * porque leva a pessoa para o produto em vez de abandona-la num formulario pela metade.
- */
-const SEM_NAVEGACAO = ["/comecar", "/animais/novo"];
 
 /**
  * As telas publicas, lidas por quem nao tem conta (Tela 34).
@@ -78,7 +67,7 @@ const MINIMAS = ["/cartao/"];
  * As telas da reconstrução (docs/reconstrucao-do-front.md). Trazem a própria moldura, no
  * visual novo; a antiga não entra nelas.
  */
-const PROPRIAS = ["/conheca", "/criar-conta", "/entrar"];
+const PROPRIAS = ["/conheca", "/criar-conta", "/entrar", "/comecar", "/animais/novo"];
 
 /** A ficha de um animal (`/animais/{id}`), sem pegar `/animais/novo` nem as sub-rotas dela. */
 const FICHA_DO_ANIMAL = /^\/animais\/(?!novo$)[^/]+$/;
@@ -97,7 +86,7 @@ export function Moldura({ children }: { children: ReactNode }) {
     ) {
       return "minima";
     }
-    if (PORTAS.includes(caminho) || SEM_NAVEGACAO.includes(caminho) || PUBLICAS.includes(caminho)) {
+    if (PORTAS.includes(caminho) || PUBLICAS.includes(caminho)) {
       return "reduzida";
     }
     return "completa";

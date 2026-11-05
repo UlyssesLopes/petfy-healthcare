@@ -1,51 +1,25 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useIntl } from "react-intl";
 
+import { Plaquinha } from "../componentes/novo/Plaquinha.tsx";
 import { useCriarAnimal, useIdentificarAnimal, type Especie } from "../dados/animais.ts";
 import { useConvidarCoTutor } from "../dados/animal.ts";
 import { useDefinirFotoDoAnimal, useEnviarAnexo } from "../dados/carteira.ts";
+import { useMeuContexto } from "../dados/contexto.ts";
 import { lerSessao } from "../dados/sessao.ts";
 import { chaveDoErro } from "../i18n/erroDaApi.ts";
+import "../estilos/novo/tokens.css";
+import "../estilos/novo/base.css";
+import "../estilos/novo/porta.css";
+import "../estilos/novo/primeiro-animal.css";
 
-/* ------------------------------------------------------------------ o que este arquivo e
- *
- * O onboarding de `design/IdentidadeVisual/Onboarding Petfy.dc.html` — "o primeiro animal,
- * em quatro passos" —, que e para onde a Tela 08 aponta.
- *
- * A regra que o proprio arquivo escreve, e que manda em tudo aqui: <b>"so o passo 1 e
- * obrigatorio. Do 2 em diante, 'agora nao' e um botao de verdade"</b>. E: "cada etapa deixa
- * algo registrado, e sair no meio nao desfaz nada". Por isso o animal e criado no fim do
- * passo 1 e cada passo seguinte grava por conta propria — nao existe rascunho, nao existe
- * "salvar tudo no final", e fechar o navegador no passo 3 nao perde o passo 2.
- *
- * ------------------------------------------------------- o que mudou em 2026-08-15, e por que
- *
- * <b>Tres "ainda nao" desta tela eram falsos, e um era verdadeiro.</b> A conferencia veio de
- * fora: o Ulysses abriu a tela, clicou em "Outro" e listou o que nao funcionava. Vale a regra
- * que a Tela 08 ja tinha ensinado — "ainda nao" tem tres significados, e a maioria e texto
- * velho que ninguem apagou.
- *
- * <ul>
- *   <li><b>"Outro" como especie: PASSOU A FUNCIONAR.</b> O {@code Species} tinha CANINA e
- *       FELINA, e a opcao ficava desabilitada com um paragrafo explicando por que o animal da
- *       pessoa nao cabia. Agora o enum tem oito valores e "Outro" abre um seletor. A coluna
- *       sempre foi {@code varchar(32)} sem CHECK — nao houve migration.</li>
- *   <li><b>A foto: o contrato SEMPRE declarou o multipart.</b> Estava escrito aqui que nao, e
- *       era falso — {@code POST /animals/{animalId}/attachments} e {@code multipart/form-data}
- *       no contrato e no cliente gerado. O que faltava era a funcao de envio no front.</li>
- *   <li><b>O passo 3 saiu do stepper.</b> A rota de OCR existe, mas <b>ela CRIA um animal
- *       novo</b> ({@code importAnimalFromIdCard}) — no passo 3 o animal ja existe desde o passo
- *       1, e chama-la ali criaria um segundo. E ela nao devolve as doses para conferencia, que
- *       e o que o desenho pede ("Confira o que lemos · 4 doses"). Esse e backend novo, e o
- *       passo nao fica na tela prometendo o que nao faz.</li>
- *   <li><b>RGA e tatuagem.</b> So {@code microchipNumber} existe. Ver {@code useIdentificarAnimal}.
- *       Continua verdadeiro.</li>
- *   <li><b>"O que sobra vira pendencia".</b> O {@code DueItemKind} nao tem "lancar a
- *       carteirinha". Continua verdadeiro, e a tela nao promete que gera.</li>
- * </ul>
+/**
+ * O primeiro animal, em três passos. Só o primeiro é obrigatório; cada passo grava sozinho, e
+ * sair no meio não desfaz nada. O animal nasce no fim do passo 1, a foto sobe depois dele e a
+ * falha dela não segura o passo. A carteirinha não entra aqui: o OCR cria outro animal
+ * (docs/reconstrucao-do-front.md).
  */
-
 export const Route = createFileRoute("/animais/novo")({
   validateSearch: (search: Record<string, unknown>): { nome?: string } =>
     typeof search.nome === "string" && search.nome.trim() !== ""
@@ -61,37 +35,19 @@ export const Route = createFileRoute("/animais/novo")({
 
 type Passo = 1 | 2 | 3;
 
-/**
- * As especies que o botao "Outro" abre — todas menos as duas que ja tem botao proprio.
- *
- * <b>Derivada do tipo gerado, e nao escrita a mao</b>: quando o backend ganhar uma especie, o
- * `tsc` acusa aqui em vez de a tela esquecer de oferecer a nova. A ordem e a de quem cadastra,
- * e `OUTRA` fica por ultimo porque e o fim da lista, nao o comeco dela.
- */
+/** As espécies atrás do "Outro". Derivada do tipo gerado: espécie nova no backend acusa aqui. */
 const AS_OUTRAS = ["AVE", "ROEDORA", "LAGOMORFA", "REPTIL", "EQUINA", "OUTRA"] as const satisfies
   readonly Exclude<Especie, "CANINA" | "FELINA">[];
 
-/** Se a especie escolhida e uma das que moram atras do "Outro" — e portanto se o seletor abre. */
 function ehOutra(especie: Especie): boolean {
   return (AS_OUTRAS as readonly string[]).includes(especie);
 }
 
-function useHover() {
-  const [sobre, setSobre] = useState(false);
-  return {
-    sobre,
-    props: {
-      onMouseEnter: () => setSobre(true),
-      onMouseLeave: () => setSobre(false),
-      onFocus: () => setSobre(true),
-      onBlur: () => setSobre(false),
-    },
-  };
-}
-
 function PrimeiroAnimal() {
   const intl = useIntl();
+  const t = (id: string, valores?: Record<string, string>) => intl.formatMessage({ id }, valores);
   const navegar = useNavigate();
+  const contexto = useMeuContexto();
 
   const criar = useCriarAnimal();
   const identificar = useIdentificarAnimal();
@@ -100,576 +56,454 @@ function PrimeiroAnimal() {
   const definirFoto = useDefinirFotoDoAnimal();
 
   const [passo, setPasso] = useState<Passo>(1);
-
   const [nome, setNome] = useState(Route.useSearch().nome ?? "");
   const [especie, setEspecie] = useState<Especie>("CANINA");
   const [nascimento, setNascimento] = useState("");
   const [microchip, setMicrochip] = useState("");
   const [email, setEmail] = useState("");
   const [foto, setFoto] = useState<File | undefined>(undefined);
+  const [previa, setPrevia] = useState<string | undefined>(undefined);
+  const [tocado, setTocado] = useState(false);
+  const [face, setFace] = useState<"frente" | "verso">("frente");
 
-  /*
-   * A previa e um object URL, e ele e revogado quando a foto troca ou a tela sai — sem isso o
-   * blob fica preso na memoria da aba ate a navegacao dura.
-   */
-  const [previaDaFoto, setPreviaDaFoto] = useState<string | undefined>(undefined);
-
+  // O object URL é revogado quando a foto troca ou a tela sai.
   useEffect(() => {
     if (foto === undefined) {
-      setPreviaDaFoto(undefined);
+      setPrevia(undefined);
       return;
     }
-
     const url = URL.createObjectURL(foto);
-    setPreviaDaFoto(url);
-
+    setPrevia(url);
     return () => URL.revokeObjectURL(url);
   }, [foto]);
 
-  /* O animal existe a partir do fim do passo 1, e o id e o que os passos seguintes usam. */
   const animalId = criar.data?.animalId;
+  const nomeGravado = criar.data?.name ?? nome.trim();
+  const nomeVazio = tocado && nome.trim() === "";
 
-  /* O link do convite, que e a unica copia que existe dele — o backend nao envia e-mail. */
+  const irPara = (proximo: Passo) => {
+    setPasso(proximo);
+    setFace(proximo === 2 ? "verso" : "frente");
+    window.scrollTo({ top: 0 });
+  };
+
+  const irParaOAnimal = async () => {
+    if (animalId !== undefined) {
+      await navegar({ to: "/animais/$animalId", params: { animalId } });
+    } else {
+      await navegar({ to: "/" });
+    }
+  };
+
+  const registrarAnimal = async (evento: FormEvent) => {
+    evento.preventDefault();
+    setTocado(true);
+    if (nome.trim() === "") {
+      document.getElementById("novo-nome")?.focus();
+      return;
+    }
+
+    const animal = await criar.mutateAsync({
+      nome: nome.trim(),
+      especie,
+      nascimento: nascimento === "" ? undefined : nascimento,
+    });
+
+    if (foto !== undefined && animal.animalId !== undefined) {
+      try {
+        const anexo = await enviarFoto.mutateAsync({
+          animalId: animal.animalId,
+          arquivo: foto,
+          descricao: t("onboarding.p1.foto"),
+        });
+        if (anexo.attachmentId !== undefined) {
+          await definirFoto.mutateAsync({ animalId: animal.animalId, attachmentId: anexo.attachmentId });
+        }
+      } catch {
+        // O aviso da foto aparece no passo 2; o animal já está gravado.
+      }
+    }
+
+    irPara(2);
+  };
+
+  const registrarMicrochip = async (evento: FormEvent) => {
+    evento.preventDefault();
+    if (microchip.trim() === "" || animalId === undefined) return;
+    await identificar.mutateAsync({ animalId, nome: nomeGravado, especie, microchip: microchip.trim() });
+    irPara(3);
+  };
+
+  const enviarConvite = async (evento: FormEvent) => {
+    evento.preventDefault();
+    if (email.trim() === "" || animalId === undefined) return;
+    await convidar.mutateAsync({ animalId, email: email.trim() });
+  };
+
+  // O link é a única cópia do convite fora do e-mail, para quando o e-mail não chega.
   const linkDoConvite =
     convidar.data?.token === undefined || convidar.data.token === null
       ? undefined
       : `${window.location.origin}/convites/animal?token=${convidar.data.token}`;
 
-  const irParaOAnimal = async () => {
-    if (animalId !== undefined) {
-      await navegar({ to: "/animais/$animalId", params: { animalId } });
-      return;
-    }
-
-    await navegar({ to: "/" });
-  };
+  const PASSOS = [
+    { n: 1, rotulo: t("onboarding.trilho.animal"), feito: criar.data?.name },
+    { n: 2, rotulo: t("onboarding.trilho.identificacao"), feito: identificar.data?.microchipNumber ?? undefined },
+    { n: 3, rotulo: t("onboarding.trilho.quemCuida"), feito: undefined },
+  ] as const;
 
   return (
-    <div style={{ padding: "40px 24px" }}>
-      <div style={{ maxWidth: "1000px", margin: "0 auto", background: "oklch(0.985 0.004 120)", border: "1px solid oklch(0.86 0.008 150)", borderRadius: "12px", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 28px", borderBottom: "1px solid oklch(0.90 0.008 150)", background: "oklch(1 0 0)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div aria-hidden style={{ width: "26px", height: "26px", borderRadius: "999px", border: "2.5px solid oklch(0.46 0.085 150)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: "8px", height: "8px", borderRadius: "999px", background: "oklch(0.46 0.085 150)" }}></div>
-            </div>
-            <span style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "17px", fontWeight: 600 }}>Petfy</span>
-          </div>
+    <div className="pf pf-pagina pf-porta pf-porta--passos">
+      <header className="pf-porta__topo pf-passos__topo">
+        <span className="pf-porta__marca" translate="no">
+          Petfy
+        </span>
+        <button type="button" className="pf-texto-botao pf-passos__sair" onClick={() => void irParaOAnimal()}>
+          {t("onboarding.depois")}
+        </button>
+      </header>
 
-          {/* "Fazer isso depois" leva para onde a pessoa ja esta indo: o produto. */}
-          <button
-            type="button"
-            onClick={() => void irParaOAnimal()}
-            style={{ fontFamily: "inherit", fontSize: "15px", color: "oklch(0.46 0.085 150)", background: "transparent", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}
-          >
-            {intl.formatMessage({ id: "onboarding.depois" })}
-          </button>
-        </div>
+      <aside className="pf-porta__painel" aria-label={t("onboarding.medalha.rotulo")}>
+        <Plaquinha
+          face={face}
+          frente={
+            <>
+              {previa !== undefined && <img className="pf-plaquinha__foto" src={previa} alt="" />}
+              <span
+                className="pf-plaquinha__animal"
+                data-longo={nomeGravado.length > 9 ? "" : undefined}
+                data-vazio={nomeGravado === "" ? "" : undefined}
+                translate="no"
+              >
+                {nomeGravado === "" ? t("criarConta.medalha.semAnimal") : nomeGravado}
+              </span>
+              <span className="pf-plaquinha__marca">{t(`animal.especie.${especie}`)}</span>
+            </>
+          }
+          verso={
+            <>
+              <span className="pf-plaquinha__aviso">{t("onboarding.medalha.chip")}</span>
+              <span
+                className="pf-plaquinha__chip"
+                data-vazio={microchip.trim() === "" ? "" : undefined}
+                translate="no"
+              >
+                {microchip.trim() === "" ? t("onboarding.medalha.semChip") : microchip.trim()}
+              </span>
+              {contexto.data?.personName !== undefined && (
+                <span className="pf-plaquinha__aviso" translate="no">
+                  {t("onboarding.medalha.tutor", { nome: contexto.data.personName.split(" ")[0] ?? "" })}
+                </span>
+              )}
+            </>
+          }
+        />
+        <button
+          type="button"
+          className="pf-porta__virar"
+          onClick={() => setFace((antes) => (antes === "frente" ? "verso" : "frente"))}
+        >
+          <span className="pf-porta__virar-seta" aria-hidden="true">
+            ↻
+          </span>
+          {t(face === "frente" ? "criarConta.medalha.verVerso" : "criarConta.medalha.verFrente")}
+        </button>
+      </aside>
 
-        <div style={{ padding: "28px 56px 0" }}>
-          {/*
-           * TRES trilhos, e nao quatro: "Carteirinha" saiu junto com o passo dela.
-           *
-           * A barra "mostra o que ja ficou registrado em cada passo, e nao so quantos faltam" —
-           * um trilho para um passo que nao existe mostraria o contrario.
-           */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-            <Trilho ativo={passo >= 1} feito={passo > 1} rotulo={intl.formatMessage({ id: "onboarding.trilho.animal" })} detalhe={criar.data?.name} />
-            <Trilho ativo={passo >= 2} feito={passo > 2} rotulo={intl.formatMessage({ id: "onboarding.trilho.identificacao" })} detalhe={identificar.data?.microchipNumber ?? undefined} />
-            <Trilho ativo={passo >= 3} feito={false} rotulo={intl.formatMessage({ id: "onboarding.trilho.quemCuida" })} />
-          </div>
-        </div>
+      <main className="pf-porta__folha">
+        <div className="pf-porta__corpo">
+          <ol className="pf-passos" aria-label={t("onboarding.passos")}>
+            {PASSOS.map(({ n, rotulo, feito }) => (
+              <li
+                key={n}
+                className="pf-passos__item"
+                data-estado={passo === n ? "agora" : passo > n ? "feito" : "depois"}
+                aria-current={passo === n ? "step" : undefined}
+              >
+                <span className="pf-passos__marca" aria-hidden="true" />
+                <span className="pf-passos__rotulo">{rotulo}</span>
+                {passo > n && feito !== undefined && feito !== "" && (
+                  <span className="pf-passos__feito" translate="no">
+                    {feito}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
 
-        <div style={{ padding: "40px 56px 44px" }}>
           {passo === 1 && (
             <>
-              <Titulo>{intl.formatMessage({ id: "onboarding.p1.titulo" })}</Titulo>
-              <Apoio>{intl.formatMessage({ id: "onboarding.p1.apoio" })}</Apoio>
+              <h1 className="pf-titulo pf-porta__titulo">{t("onboarding.p1.titulo")}</h1>
+              <p className="pf-porta__apoio">{t("onboarding.p1.apoio")}</p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 24px", maxWidth: "640px" }}>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <Rotulo para="novo-nome">{intl.formatMessage({ id: "onboarding.p1.nome" })}</Rotulo>
+              <form className="pf-form" onSubmit={(e) => void registrarAnimal(e)} noValidate>
+                <div className="pf-campo">
+                  <label htmlFor="novo-nome">{t("onboarding.p1.nome")}</label>
                   <input
                     id="novo-nome"
                     type="text"
                     value={nome}
-                    onChange={(evento) => setNome(evento.target.value)}
-                    style={estiloDoCampo}
+                    maxLength={60}
+                    autoComplete="off"
+                    onChange={(e) => setNome(e.target.value)}
+                    onFocus={() => setFace("frente")}
+                    aria-invalid={nomeVazio || undefined}
+                    aria-describedby={nomeVazio ? "novo-nome-erro" : undefined}
                   />
-                </div>
-
-                <div>
-                  <Rotulo>{intl.formatMessage({ id: "onboarding.p1.especie" })}</Rotulo>
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <Opcao
-                      escolhida={especie === "CANINA"}
-                      aoEscolher={() => setEspecie("CANINA")}
-                      texto={intl.formatMessage({ id: "animal.especie.CANINA" })}
-                    />
-                    <Opcao
-                      escolhida={especie === "FELINA"}
-                      aoEscolher={() => setEspecie("FELINA")}
-                      texto={intl.formatMessage({ id: "animal.especie.FELINA" })}
-                    />
-                    <Opcao
-                      escolhida={ehOutra(especie)}
-                      aoEscolher={() => setEspecie(AS_OUTRAS[0])}
-                      texto={intl.formatMessage({ id: "onboarding.p1.especie.outro" })}
-                    />
-                  </div>
-
-                  {/*
-                   * "Outro" nao e uma especie: e a porta para as que nao cabem em tres botoes.
-                   * Escolher revela o seletor, e o valor entra no dominio com o nome certo —
-                   * calopsita vira AVE, e nao um CANINA que registraria cachorro.
-                   */}
-                  {ehOutra(especie) && (
-                    <div style={{ marginTop: "12px" }}>
-                      <Rotulo para="novo-especie-qual">
-                        {intl.formatMessage({ id: "onboarding.p1.especie.qual" })}
-                      </Rotulo>
-                      <select
-                        id="novo-especie-qual"
-                        value={especie}
-                        onChange={(evento) => setEspecie(evento.target.value as Especie)}
-                        style={estiloDoCampo}
-                      >
-                        {AS_OUTRAS.map((valor) => (
-                          <option key={valor} value={valor}>
-                            {intl.formatMessage({ id: `animal.especie.${valor}` })}
-                          </option>
-                        ))}
-                      </select>
-                      <Nota>{intl.formatMessage({ id: "onboarding.p1.especie.semProtocolo" })}</Nota>
-                    </div>
+                  {nomeVazio && (
+                    <p id="novo-nome-erro" className="pf-campo__erro">
+                      {t("onboarding.p1.semNome")}
+                    </p>
                   )}
                 </div>
 
-                <div>
-                  <Rotulo para="novo-nascimento">
-                    {intl.formatMessage({ id: "onboarding.p1.nascimento" })}
-                    <span style={{ fontWeight: 400, color: "oklch(0.55 0.015 150)" }}>
-                      {" "}
-                      {intl.formatMessage({ id: "onboarding.opcional" })}
-                    </span>
-                  </Rotulo>
+                <fieldset className="pf-especie">
+                  <legend>{t("onboarding.p1.especie")}</legend>
+                  <div className="pf-especie__opcoes">
+                    <Opcao valor="CANINA" escolhida={especie === "CANINA"} aoEscolher={() => setEspecie("CANINA")}>
+                      {t("animal.especie.CANINA")}
+                    </Opcao>
+                    <Opcao valor="FELINA" escolhida={especie === "FELINA"} aoEscolher={() => setEspecie("FELINA")}>
+                      {t("animal.especie.FELINA")}
+                    </Opcao>
+                    <Opcao valor="OUTRA" escolhida={ehOutra(especie)} aoEscolher={() => setEspecie(AS_OUTRAS[0])}>
+                      {t("onboarding.p1.especie.outro")}
+                    </Opcao>
+                  </div>
+                </fieldset>
+
+                {ehOutra(especie) && (
+                  <div className="pf-campo">
+                    <label htmlFor="novo-especie-qual">{t("onboarding.p1.especie.qual")}</label>
+                    <select
+                      id="novo-especie-qual"
+                      value={especie}
+                      onChange={(e) => setEspecie(e.target.value as Especie)}
+                      aria-describedby="novo-especie-nota"
+                    >
+                      {AS_OUTRAS.map((valor) => (
+                        <option key={valor} value={valor}>
+                          {t(`animal.especie.${valor}`)}
+                        </option>
+                      ))}
+                    </select>
+                    <p id="novo-especie-nota" className="pf-campo__dica">
+                      {t("onboarding.p1.especie.semProtocolo")}
+                    </p>
+                  </div>
+                )}
+
+                <div className="pf-campo">
+                  <label htmlFor="novo-nascimento">
+                    {t("onboarding.p1.nascimento")} <span className="pf-campo__opcional">{t("onboarding.opcional")}</span>
+                  </label>
                   <input
                     id="novo-nascimento"
                     type="month"
                     value={nascimento}
                     max={new Date().toISOString().slice(0, 7)}
-                    onChange={(evento) => setNascimento(evento.target.value)}
-                    style={{ ...estiloDoCampo, fontFamily: "'DM Mono', monospace" }}
+                    onChange={(e) => setNascimento(e.target.value)}
+                    aria-describedby="novo-nascimento-dica"
                   />
-                  <Nota>{intl.formatMessage({ id: "onboarding.p1.nascimento.apoio" })}</Nota>
+                  <p id="novo-nascimento-dica" className="pf-campo__dica">
+                    {t("onboarding.p1.nascimento.apoio")}
+                  </p>
                 </div>
 
-                {/*
-                 * A moldura da foto do desenho, agora com o botao que ela sempre pediu.
-                 *
-                 * <b>A foto e escolhida aqui e enviada depois</b>, no "Continuar": anexo pertence
-                 * a um animal, e o animal so passa a existir no fim deste passo. Guardar o
-                 * `File` em estado e o unico jeito de honrar a ordem sem inventar um rascunho.
-                 *
-                 * <b>Falha no envio nao desfaz o passo.</b> O animal ja foi gravado quando a foto
-                 * sobe; perder o cadastro inteiro porque uma imagem falhou seria trocar o que
-                 * importa pelo que pode ficar para depois — e o proprio desenho diz que a foto
-                 * pode. O aviso aparece e o stepper segue.
-                 */}
-                <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "20px", border: "1px dashed oklch(0.84 0.012 150)", borderRadius: "12px", padding: "20px 22px" }}>
-                  <div aria-hidden style={{ width: "64px", height: "64px", borderRadius: "999px", overflow: "hidden", background: "repeating-linear-gradient(135deg, oklch(0.94 0.006 150) 0 8px, oklch(0.96 0.004 150) 8px 16px)", flex: "none" }}>
-                    {previaDaFoto !== undefined && (
-                      <img src={previaDaFoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    )}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "16px", marginBottom: "4px" }}>
-                      {intl.formatMessage({ id: "onboarding.p1.foto" })}
-                    </div>
-                    <div style={{ fontSize: "14px", color: "oklch(0.5 0.015 150)", lineHeight: 1.5 }}>
-                      {foto === undefined
-                        ? intl.formatMessage({ id: "onboarding.p1.foto.apoio" })
-                        : foto.name}
-                    </div>
-                  </div>
-
-                  <label style={{ fontFamily: "inherit", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", padding: "12px 18px", minHeight: "44px", display: "flex", alignItems: "center", cursor: "pointer" }}>
-                    {intl.formatMessage({ id: "onboarding.p1.foto.escolher" })}
+                <div className="pf-foto">
+                  <span className="pf-foto__previa" aria-hidden="true">
+                    {previa !== undefined && <img src={previa} alt="" />}
+                  </span>
+                  <span className="pf-foto__texto">
+                    <span className="pf-foto__titulo">{t("onboarding.p1.foto")}</span>
+                    <span className="pf-foto__dica">{foto === undefined ? t("onboarding.p1.foto.apoio") : foto.name}</span>
+                  </span>
+                  <label className="pf-foto__escolher">
+                    {t(foto === undefined ? "onboarding.p1.foto.escolher" : "onboarding.p1.foto.trocar")}
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
-                      style={{ display: "none" }}
-                      onChange={(evento) => setFoto(evento.target.files?.[0])}
+                      className="pf-foto__arquivo"
+                      onChange={(e) => {
+                        setFoto(e.target.files?.[0]);
+                        setFace("frente");
+                      }}
                     />
                   </label>
                 </div>
 
-                {enviarFoto.isError && (
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <Alerta>{intl.formatMessage({ id: chaveDoErro(enviarFoto.error) })}</Alerta>
-                  </div>
-                )}
-              </div>
+                <div aria-live="polite">
+                  {criar.isError && (
+                    <p role="alert" className="pf-porta__erro">
+                      {t(chaveDoErro(criar.error))}
+                    </p>
+                  )}
+                </div>
 
-              {criar.isError && <Alerta>{intl.formatMessage({ id: chaveDoErro(criar.error) })}</Alerta>}
-
-              <Rodape>
-                <Principal
-                  pendente={criar.isPending}
-                  desabilitado={nome.trim() === ""}
-                  aoClicar={async () => {
-                    const animal = await criar.mutateAsync({
-                      nome: nome.trim(),
-                      especie,
-                      nascimento: nascimento === "" ? undefined : nascimento,
-                    });
-
-                    /* A foto sobe depois do animal, e a falha dela nao segura o passo. */
-                    if (foto !== undefined && animal.animalId !== undefined) {
-                      try {
-                        const anexo = await enviarFoto.mutateAsync({
-                          animalId: animal.animalId,
-                          arquivo: foto,
-                          descricao: intl.formatMessage({ id: "onboarding.p1.foto" }),
-                        });
-                        /* O anexo vira a foto do animal, e nao so mais um arquivo dele. */
-                        if (anexo.attachmentId !== undefined) {
-                          await definirFoto.mutateAsync({
-                            animalId: animal.animalId,
-                            attachmentId: anexo.attachmentId,
-                          });
-                        }
-                      } catch {
-                        setPasso(2);
-                        return;
-                      }
-                    }
-
-                    setPasso(2);
-                  }}
+                <button
+                  type="submit"
+                  className="pf-botao pf-porta__acao"
+                  disabled={criar.isPending}
+                  aria-busy={criar.isPending || undefined}
                 >
-                  {intl.formatMessage({ id: criar.isPending ? "onboarding.registrando" : "onboarding.continuar" })}
-                </Principal>
-                <span style={{ fontSize: "15px", color: "oklch(0.5 0.015 150)" }}>
-                  {intl.formatMessage({ id: "onboarding.p1.aviso" }, { nome: nome.trim() })}
-                </span>
-              </Rodape>
+                  {t(criar.isPending ? "onboarding.registrando" : "onboarding.p1.acao")}
+                </button>
+                <p className="pf-porta__seguinte">{t("onboarding.p1.depois")}</p>
+              </form>
             </>
           )}
 
           {passo === 2 && (
             <>
-              <Titulo>{intl.formatMessage({ id: "onboarding.p2.titulo" }, { nome: criar.data?.name ?? "" })}</Titulo>
-              <Apoio>{intl.formatMessage({ id: "onboarding.p2.apoio" }, { nome: criar.data?.name ?? "" })}</Apoio>
+              <h1 className="pf-titulo pf-porta__titulo">{t("onboarding.p2.titulo", { nome: nomeGravado })}</h1>
+              <p className="pf-porta__apoio">{t("onboarding.p2.apoio", { nome: nomeGravado })}</p>
 
-              <div style={{ maxWidth: "420px" }}>
-                <Rotulo para="novo-microchip">{intl.formatMessage({ id: "onboarding.p2.microchip" })}</Rotulo>
-                <input
-                  id="novo-microchip"
-                  type="text"
-                  value={microchip}
-                  inputMode="numeric"
-                  onChange={(evento) => setMicrochip(evento.target.value)}
-                  style={{ ...estiloDoCampo, fontFamily: "'DM Mono', monospace" }}
-                />
-                <Nota>{intl.formatMessage({ id: "onboarding.p2.microchip.apoio" })}</Nota>
-                <Nota>{intl.formatMessage({ id: "onboarding.p2.semRgaNemTatuagem" })}</Nota>
-                <Nota>{intl.formatMessage({ id: "onboarding.p2.naoValida" })}</Nota>
-              </div>
+              {enviarFoto.isError && (
+                <p role="alert" className="pf-porta__nota">
+                  {t("onboarding.p1.foto.falhou", { nome: nomeGravado })}
+                </p>
+              )}
 
-              {identificar.isError && <Alerta>{intl.formatMessage({ id: chaveDoErro(identificar.error) })}</Alerta>}
+              <form className="pf-form" onSubmit={(e) => void registrarMicrochip(e)} noValidate>
+                <div className="pf-campo">
+                  <label htmlFor="novo-microchip">{t("onboarding.p2.microchip")}</label>
+                  <input
+                    id="novo-microchip"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    spellCheck={false}
+                    maxLength={23}
+                    value={microchip}
+                    onChange={(e) => setMicrochip(e.target.value)}
+                    onFocus={() => setFace("verso")}
+                    aria-describedby="novo-microchip-dica"
+                    className="pf-campo__numero"
+                  />
+                  <p id="novo-microchip-dica" className="pf-campo__dica">
+                    {t("onboarding.p2.microchip.apoio")} {t("onboarding.p2.naoValida")}
+                  </p>
+                </div>
 
-              <Rodape>
-                <Principal
-                  pendente={identificar.isPending}
-                  desabilitado={microchip.trim() === "" || animalId === undefined}
-                  aoClicar={async () => {
-                    await identificar.mutateAsync({
-                      animalId: animalId!,
-                      nome: criar.data?.name ?? nome.trim(),
-                      especie,
-                      microchip: microchip.trim(),
-                    });
-                    setPasso(3);
-                  }}
+                <div aria-live="polite">
+                  {identificar.isError && (
+                    <p role="alert" className="pf-porta__erro">
+                      {t(chaveDoErro(identificar.error))}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  className="pf-botao pf-porta__acao"
+                  disabled={identificar.isPending || microchip.trim() === ""}
+                  aria-busy={identificar.isPending || undefined}
                 >
-                  {intl.formatMessage({ id: "onboarding.continuar" })}
-                </Principal>
-                <Secundario aoClicar={() => setPasso(3)}>
-                  {intl.formatMessage({ id: "onboarding.p2.naoTem" }, { nome: criar.data?.name ?? "" })}
-                </Secundario>
-              </Rodape>
+                  {t(identificar.isPending ? "onboarding.registrando" : "onboarding.p2.acao")}
+                </button>
+                <button type="button" className="pf-texto-botao pf-passos__pular" onClick={() => irPara(3)}>
+                  {t("onboarding.p2.naoTem", { nome: nomeGravado })}
+                </button>
+              </form>
+
+              <p className="pf-porta__ja-tem pf-passos__nota">{t("onboarding.p2.semRgaNemTatuagem")}</p>
             </>
           )}
 
           {passo === 3 && (
             <>
-              <Titulo>{intl.formatMessage({ id: "onboarding.p4.titulo" }, { nome: criar.data?.name ?? "" })}</Titulo>
-              <Apoio>{intl.formatMessage({ id: "onboarding.p4.apoio" })}</Apoio>
+              <h1 className="pf-titulo pf-porta__titulo">{t("onboarding.p4.titulo", { nome: nomeGravado })}</h1>
+              <p className="pf-porta__apoio">{t("onboarding.p4.apoio")}</p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", maxWidth: "820px" }}>
-                <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", background: "oklch(1 0 0)", padding: "24px 26px" }}>
-                  <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "19px", fontWeight: 500, marginBottom: "8px" }}>
-                    {intl.formatMessage({ id: "onboarding.p4.pessoa" })}
-                  </div>
-                  <div style={{ fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)", marginBottom: "16px" }}>
-                    {intl.formatMessage({ id: "onboarding.p4.pessoa.apoio" })}
-                  </div>
-
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(evento) => setEmail(evento.target.value)}
-                    placeholder={intl.formatMessage({ id: "onboarding.p4.pessoa.campo" })}
-                    aria-label={intl.formatMessage({ id: "onboarding.p4.pessoa.campo" })}
-                    style={{ ...estiloDoCampo, marginBottom: "12px" }}
-                  />
-
+              <div className="pf-quem">
+                <Cartao titulo={t("onboarding.p4.pessoa")} texto={t("onboarding.p4.pessoa.apoio")}>
                   {convidar.isSuccess ? (
-                    <div style={{ fontSize: "15px", color: "oklch(0.38 0.07 150)" }}>
-                      {intl.formatMessage({ id: "onboarding.p4.convidado" }, { email: convidar.data?.email ?? "" })}
-
-                      {/*
-                       * O LINK, para quando o e-mail nao chega.
-                       *
-                       * Esta caixa dizia "Convite enviado para {email}" desde o primeiro dia, e nada
-                       * era enviado: o `invite` gravava o convite e devolvia o token — "unico
-                       * momento em que o token existe fora do cliente". Quem seguia o passo 4 ate o
-                       * fim saia daqui achando que tinha convidado alguem. O `InviteNotifier` fez a
-                       * frase virar verdade; o link fica porque spam e dedo trocado existem.
-                       */}
+                    <div role="status" className="pf-quem__feito">
+                      <p>{t("onboarding.p4.convidado", { email: convidar.data?.email ?? "" })}</p>
                       {linkDoConvite !== undefined && (
-                        <div
-                          style={{ marginTop: "10px", padding: "12px 14px", background: "oklch(0.975 0.008 150)", border: "1px solid oklch(0.90 0.008 150)", borderRadius: "6px", fontFamily: "'DM Mono', monospace", fontSize: "13px", lineHeight: 1.5, wordBreak: "break-all", color: "oklch(0.3 0.02 150)" }}
-                        >
+                        <p className="pf-quem__link" translate="no">
                           {linkDoConvite}
-                        </div>
+                        </p>
                       )}
                     </div>
                   ) : (
-                    <Principal
-                      pendente={convidar.isPending}
-                      desabilitado={email.trim() === "" || animalId === undefined}
-                      aoClicar={async () => {
-                        await convidar.mutateAsync({ animalId: animalId!, email: email.trim() });
-                      }}
-                    >
-                      {intl.formatMessage({ id: "onboarding.p4.convidar" })}
-                    </Principal>
+                    <form className="pf-quem__convite" onSubmit={(e) => void enviarConvite(e)} noValidate>
+                      <div className="pf-campo">
+                        <label htmlFor="novo-convite">{t("onboarding.p4.pessoa.campo")}</label>
+                        <input
+                          id="novo-convite"
+                          type="email"
+                          inputMode="email"
+                          spellCheck={false}
+                          autoComplete="off"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="pf-botao pf-botao--pequeno"
+                        disabled={convidar.isPending || email.trim() === ""}
+                        aria-busy={convidar.isPending || undefined}
+                      >
+                        {t("onboarding.p4.convidar")}
+                      </button>
+                      {convidar.isError && (
+                        <p role="alert" className="pf-porta__erro">
+                          {t(chaveDoErro(convidar.error))}
+                        </p>
+                      )}
+                    </form>
                   )}
+                </Cartao>
 
-                  {convidar.isError && <Alerta>{intl.formatMessage({ id: chaveDoErro(convidar.error) })}</Alerta>}
-                </div>
-
-                <div style={{ border: "1px solid oklch(0.90 0.008 150)", borderRadius: "12px", background: "oklch(1 0 0)", padding: "24px 26px" }}>
-                  <div style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "19px", fontWeight: 500, marginBottom: "8px" }}>
-                    {intl.formatMessage({ id: "onboarding.p4.organizacao" })}
-                  </div>
-                  <div style={{ fontSize: "15px", lineHeight: 1.6, color: "oklch(0.42 0.015 150)", marginBottom: "16px" }}>
-                    {intl.formatMessage({ id: "onboarding.p4.organizacao.apoio" })}
-                  </div>
-
-                  {/* O "escolher o que ela ve" do desenho e a Tela 09, que ja existe. */}
-                  {animalId === undefined ? (
-                    <Nota>{intl.formatMessage({ id: "onboarding.p4.organizacao.semAnimal" })}</Nota>
-                  ) : (
-                    <Link
-                      to="/animais/$animalId/conceder-acesso"
-                      params={{ animalId }}
-                      style={{ display: "inline-flex", alignItems: "center", minHeight: "48px", padding: "13px 18px", fontSize: "15px", fontWeight: 500, color: "oklch(0.25 0.02 150)", background: "oklch(1 0 0)", border: "1px solid oklch(0.82 0.012 150)", borderRadius: "8px", textDecoration: "none" }}
-                    >
-                      {intl.formatMessage({ id: "onboarding.p4.escolherOQueVe" })}
+                <Cartao titulo={t("onboarding.p4.organizacao")} texto={t("onboarding.p4.organizacao.apoio")}>
+                  {animalId !== undefined && (
+                    <Link to="/animais/$animalId/conceder-acesso" params={{ animalId }} className="pf-quem__abrir">
+                      {t("onboarding.p4.escolherOQueVe")}
                     </Link>
                   )}
-                </div>
+                </Cartao>
               </div>
 
-              <Rodape>
-                <Principal pendente={false} desabilitado={false} aoClicar={irParaOAnimal}>
-                  {intl.formatMessage({ id: "onboarding.p4.ir" }, { nome: criar.data?.name ?? "" })}
-                </Principal>
-                <Secundario aoClicar={() => void irParaOAnimal()}>
-                  {intl.formatMessage({ id: "onboarding.p4.sozinho" })}
-                </Secundario>
-              </Rodape>
+              <div className="pf-form">
+                <button type="button" className="pf-botao pf-porta__acao" onClick={() => void irParaOAnimal()}>
+                  {t("onboarding.p4.ir", { nome: nomeGravado })}
+                </button>
+              </div>
             </>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------------------ pedacos */
-
-const estiloDoCampo = {
-  fontFamily: "inherit",
-  border: "1px solid oklch(0.82 0.012 150)",
-  borderRadius: "4px",
-  padding: "13px 14px",
-  fontSize: "16px",
-  minHeight: "48px",
-  width: "100%",
-  background: "oklch(1 0 0)",
-} as const;
-
-/** Uma coluna do stepper: a barra, o ponto e o que aquele passo deixou registrado. */
-function Trilho({
-  ativo,
-  feito,
-  rotulo,
-  detalhe,
-}: {
-  ativo: boolean;
-  feito: boolean;
-  rotulo: string;
-  detalhe?: string;
-}) {
-  return (
-    <div>
-      <div style={{ height: "4px", borderRadius: "2px", background: ativo ? "oklch(0.46 0.085 150)" : "oklch(0.90 0.008 150)", marginBottom: "10px" }}></div>
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <div
-          aria-hidden
-          style={
-            ativo
-              ? { width: "11px", height: "11px", borderRadius: "999px", background: "oklch(0.46 0.085 150)", flex: "none" }
-              : { width: "11px", height: "11px", borderRadius: "999px", border: "2px solid oklch(0.80 0.012 150)", flex: "none" }
-          }
-        ></div>
-        <span style={{ fontSize: "14px", fontWeight: ativo ? 500 : 400, color: ativo ? "oklch(0.25 0.02 150)" : "oklch(0.5 0.015 150)" }}>
-          {rotulo}
-        </span>
-      </div>
-      {/* O desenho troca o rotulo pelo que ficou registrado — "Code", "Microchip", "4 doses". */}
-      {feito && detalhe !== undefined && detalhe !== "" && (
-        <div style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)", marginTop: "4px", paddingLeft: "19px" }}>
-          {detalhe}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Titulo({ children }: { children: ReactNode }) {
-  return (
-    <h1 style={{ fontFamily: "Bitter, Georgia, serif", fontSize: "32px", fontWeight: 500, margin: "0 0 10px", letterSpacing: "-0.02em" }}>
-      {children}
-    </h1>
-  );
-}
-
-function Apoio({ children }: { children: ReactNode }) {
-  return (
-    <p style={{ fontSize: "16px", lineHeight: 1.6, color: "oklch(0.45 0.015 150)", margin: "0 0 32px", maxWidth: "54ch" }}>
-      {children}
-    </p>
-  );
-}
-
-function Rotulo({ children, para }: { children: ReactNode; para?: string }) {
-  return (
-    <label htmlFor={para} style={{ display: "block", fontSize: "13px", fontWeight: 500, color: "oklch(0.42 0.015 150)", marginBottom: "7px" }}>
-      {children}
-    </label>
-  );
-}
-
-function Nota({ children }: { children: ReactNode }) {
-  return (
-    <div style={{ fontSize: "13px", color: "oklch(0.5 0.015 150)", marginTop: "7px", lineHeight: 1.5 }}>
-      {children}
-    </div>
-  );
-}
-
-function Alerta({ children }: { children: ReactNode }) {
-  return (
-    <p role="alert" style={{ fontSize: "14px", lineHeight: 1.55, color: "oklch(0.45 0.13 30)", background: "oklch(0.97 0.012 30)", borderRadius: "8px", padding: "12px 14px", marginTop: "20px", marginBottom: 0 }}>
-      {children}
-    </p>
-  );
-}
-
-function Rodape({ children }: { children: ReactNode }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "14px", marginTop: "36px", flexWrap: "wrap" }}>
-      {children}
+      </main>
     </div>
   );
 }
 
 function Opcao({
+  valor,
   escolhida,
   aoEscolher,
-  texto,
-  indisponivel = false,
-}: {
-  escolhida: boolean;
-  aoEscolher?: () => void;
-  texto: string;
-  indisponivel?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={escolhida}
-      disabled={indisponivel}
-      onClick={aoEscolher}
-      style={{
-        flex: 1,
-        fontFamily: "inherit",
-        fontSize: "16px",
-        fontWeight: escolhida ? 500 : 400,
-        border: `1px solid ${escolhida ? "oklch(0.46 0.085 150)" : "oklch(0.82 0.012 150)"}`,
-        background: escolhida ? "oklch(0.96 0.02 150)" : "oklch(1 0 0)",
-        color: escolhida ? "oklch(0.38 0.07 150)" : "oklch(0.42 0.015 150)",
-        borderRadius: "8px",
-        padding: "13px",
-        minHeight: "48px",
-        cursor: indisponivel ? "not-allowed" : "pointer",
-        opacity: indisponivel ? 0.55 : 1,
-      }}
-    >
-      {texto}
-    </button>
-  );
-}
-
-function Principal({
   children,
-  pendente,
-  desabilitado,
-  aoClicar,
 }: {
+  valor: string;
+  escolhida: boolean;
+  aoEscolher: () => void;
   children: ReactNode;
-  pendente: boolean;
-  desabilitado: boolean;
-  aoClicar: () => Promise<void> | void;
 }) {
-  const hover = useHover();
-
   return (
-    <button
-      type="button"
-      disabled={pendente || desabilitado}
-      {...hover.props}
-      onClick={() => void aoClicar()}
-      style={{ fontFamily: "inherit", fontSize: "16px", fontWeight: 500, color: "oklch(1 0 0)", background: pendente || desabilitado ? "oklch(0.62 0.05 150)" : hover.sobre ? "oklch(0.40 0.09 150)" : "oklch(0.46 0.085 150)", border: "none", borderRadius: "8px", padding: "15px 28px", minHeight: "52px", cursor: desabilitado ? "not-allowed" : "pointer" }}
-    >
+    <label className="pf-especie__opcao" data-escolhida={escolhida ? "" : undefined}>
+      <input type="radio" name="especie" value={valor} checked={escolhida} onChange={aoEscolher} />
       {children}
-    </button>
+    </label>
   );
 }
 
-function Secundario({ children, aoClicar }: { children: ReactNode; aoClicar: () => void }) {
+function Cartao({ titulo, texto, children }: { titulo: string; texto: string; children: ReactNode }) {
   return (
-    <button
-      type="button"
-      onClick={aoClicar}
-      style={{ fontFamily: "inherit", fontSize: "15px", color: "oklch(0.42 0.015 150)", background: "transparent", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px", minHeight: "44px" }}
-    >
+    <section className="pf-quem__cartao">
+      <h2 className="pf-quem__titulo">{titulo}</h2>
+      <p className="pf-quem__texto">{texto}</p>
       {children}
-    </button>
+    </section>
   );
 }

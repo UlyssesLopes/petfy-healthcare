@@ -1,0 +1,459 @@
+/* O comeco e o primeiro animal: a mesma porta das telas de conta, com a plaquinha sendo gravada
+ * a cada passo. So tokens de `novo/tokens.css`; a porta vem de `porta.css`. */
+
+.pf-passos__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pf-passos__sair {
+  margin-right: -0.25rem;
+}
+
+/* ------------------------------------------------------------------ a plaquinha dos passos */
+
+.pf-plaquinha__foto {
+  width: 30cqi;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1cqi solid var(--pf-areia-funda);
+}
+
+/* Com foto, o nome encolhe um degrau para caber no disco. */
+.pf-plaquinha__foto + .pf-plaquinha__animal {
+  font-size: max(1.125rem, 12cqi);
+}
+
+.pf-plaquinha__foto + .pf-plaquinha__animal[data-longo] {
+  font-size: max(1rem, 9cqi);
+}
+
+.pf-plaquinha__chip {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: max(0.9375rem, 6.6cqi);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+
+.pf-plaquinha__chip[data-vazio] {
+  color: var(--pf-cobalto-suave);
+  font-size: max(0.9375rem, 7cqi);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* ------------------------------------------------------------------ o trilho dos passos */
+
+.pf-passos {
+  list-style: none;
+  margin: 0 0 2.25rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.pf-passos__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  align-content: start;
+  column-gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 3px solid var(--pf-areia-funda);
+  font-size: 0.9375rem;
+  color: var(--pf-tinta-suave);
+}
+
+.pf-passos__item[data-estado="agora"],
+.pf-passos__item[data-estado="feito"] {
+  border-top-color: var(--pf-cobalto);
+  color: var(--pf-tinta);
+}
+
+.pf-passos__item[data-estado="agora"] {
+  font-weight: 600;
+}
+
+/* A marca do passo e um furo: vazado antes, cheio quando ja ficou registrado. */
+.pf-passos__marca {
+  width: 0.75rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+}
+
+.pf-passos__item[data-estado="feito"] .pf-passos__marca {
+  background: currentColor;
+}
+
+.pf-passos__rotulo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-passos__feito {
+  grid-column: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  color: var(--pf-tinta-suave);
+}
+
+.pf-passos__pular {
+  justify-self: center;
+}
+
+.pf-passos__nota {
+  font-size: 0.9375rem;
+  color: var(--pf-tinta-suave);
+  text-wrap: pretty;
+}
+
+/* ------------------------------------------------------------------ os campos que a porta nao tinha */
+
+.pf-campo select {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0 1rem;
+  border: 2px solid var(--pf-papel);
+  border-radius: 0.875rem;
+  background: var(--pf-papel);
+  color: var(--pf-cobalto);
+  font: inherit;
+  font-size: 1.0625rem;
+}
+
+.pf-pagina .pf-campo select:focus-visible {
+  border-color: var(--pf-cobalto);
+  outline-offset: 2px;
+}
+
+.pf-campo__opcional {
+  font-weight: 400;
+  color: var(--pf-tinta-suave);
+}
+
+.pf-campo .pf-campo__numero {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* A especie: tres pilulas, e a escolhida fica cobalto como na pagina publica. */
+.pf-especie {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.pf-especie legend {
+  padding: 0;
+  margin-bottom: 0.45rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.pf-especie__opcoes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.pf-especie__opcao {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 3.25rem;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  background: var(--pf-areia-funda);
+  color: var(--pf-cobalto);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--pf-t-hover) ease, color var(--pf-t-hover) ease,
+    transform var(--pf-t-press) var(--pf-ease-out);
+}
+
+.pf-especie__opcao input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pf-especie__opcao[data-escolhida] {
+  background: var(--pf-cobalto);
+  color: var(--pf-papel);
+}
+
+.pf-especie__opcao:active {
+  transform: scale(0.97);
+}
+
+.pf-especie__opcao:has(input:focus-visible) {
+  outline: 3px solid var(--pf-cobalto);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-especie__opcao:not([data-escolhida]):hover {
+    background: var(--pf-papel);
+  }
+}
+
+/* A foto: a previa redonda, o que ela e e o botao de escolher. */
+.pf-foto {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--pf-papel);
+}
+
+.pf-foto__previa {
+  width: 3.5rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px dashed var(--pf-cobalto-suave);
+}
+
+.pf-foto__previa:has(img) {
+  border: 0;
+}
+
+.pf-foto__previa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pf-foto__texto {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.pf-foto__titulo {
+  font-weight: 600;
+}
+
+.pf-foto__dica {
+  font-size: 0.9375rem;
+  color: var(--pf-tinta-suave);
+  overflow-wrap: anywhere;
+}
+
+.pf-foto__escolher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+  background: var(--pf-areia);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--pf-t-hover) ease;
+}
+
+.pf-foto__escolher:has(input:focus-visible) {
+  outline: 3px solid var(--pf-cobalto);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-foto__escolher:hover {
+    background: var(--pf-areia-funda);
+  }
+}
+
+.pf-foto__arquivo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ quem mais cuida */
+
+.pf-quem {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2.25rem;
+}
+
+.pf-quem__cartao {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  background: var(--pf-papel);
+}
+
+.pf-pagina .pf-quem__titulo {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.pf-quem__texto {
+  font-size: 0.9375rem;
+  color: var(--pf-tinta-suave);
+  text-wrap: pretty;
+}
+
+.pf-quem__convite {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.pf-quem__convite .pf-campo input {
+  min-height: 2.75rem;
+  border-color: var(--pf-areia);
+  background: var(--pf-areia);
+}
+
+.pf-pagina .pf-quem__convite .pf-campo input:focus-visible {
+  border-color: var(--pf-cobalto);
+}
+
+.pf-quem__convite .pf-porta__erro {
+  grid-column: 1 / -1;
+}
+
+.pf-quem__feito {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.pf-quem__link {
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--pf-areia);
+  font-size: 0.875rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.pf-pagina .pf-quem__abrir {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-weight: 600;
+  text-underline-offset: 0.2em;
+}
+
+/* ------------------------------------------------------------------ quem atende */
+
+.pf-atende {
+  display: grid;
+  gap: 0.375rem;
+  margin-top: 2.5rem;
+  padding-top: 1.75rem;
+  border-top: 2px solid var(--pf-areia-funda);
+}
+
+.pf-pagina .pf-atende__titulo {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.pf-atende__texto {
+  font-size: 0.9375rem;
+  color: var(--pf-tinta-suave);
+  text-wrap: pretty;
+}
+
+.pf-atende__portas {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pf-pagina .pf-atende__portas a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+  background: var(--pf-papel);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--pf-t-hover) ease, transform var(--pf-t-press) var(--pf-ease-out);
+}
+
+.pf-atende__portas a:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-pagina .pf-atende__portas a:hover {
+    background: var(--pf-areia-funda);
+  }
+}
+
+/* ------------------------------------------------------------------ telefone */
+
+@media (max-width: 56rem) {
+  .pf-porta--passos .pf-porta__painel {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  /* Na mao, so o passo de agora tem nome, e os outros ficam so na barra. */
+  .pf-passos__item:not([aria-current]) > * {
+    display: none;
+  }
+
+  .pf-passos__item[aria-current] .pf-passos__rotulo {
+    overflow: visible;
+  }
+
+  .pf-foto {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+
+  .pf-foto__escolher {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+
+  .pf-quem__convite {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-especie__opcao,
+  .pf-atende__portas a {
+    transition: none;
+  }
+}
